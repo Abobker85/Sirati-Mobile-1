@@ -153,9 +153,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const LanguageToggle(),
                   ],
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 _RegisterHero(english: en),
-                SizedBox(height: 22),
+                const SizedBox(height: 22),
                 if (_showFormBanner)
                   AppFormErrorBanner(
                     message: en
@@ -164,7 +164,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onDismiss: () => setState(() => _showFormBanner = false),
                   ),
                 _FieldLabel(text: en ? 'Full Name' : 'الاسم الكامل'),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 AppTextFormField(
                   controller: _nameController,
                   showSuccessWhenValid: true,
@@ -178,16 +178,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onFieldSubmitted: (_) =>
                       FocusScope.of(context).nextFocus(),
                   hintText: en ? 'Enter your full name' : 'اكتب اسمك الكامل',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
+                  prefixIcon: const Icon(Icons.person_outline_rounded),
                   validator: (value) => value == null || value.trim().isEmpty
                       ? (en
                           ? 'Please enter your full name'
                           : 'يرجى إدخال اسمك الكامل')
                       : null,
                 ),
-                SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
                 _FieldLabel(text: en ? 'Email Address' : 'البريد الإلكتروني'),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 AppTextFormField(
                   controller: _emailController,
                   showSuccessWhenValid: true,
@@ -202,7 +202,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onFieldSubmitted: (_) =>
                       FocusScope.of(context).nextFocus(),
                   hintText: 'example@mail.com',
-                  prefixIcon: Icon(Icons.mail_outline_rounded),
+                  prefixIcon: const Icon(Icons.mail_outline_rounded),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return en
@@ -217,9 +217,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
                 _FieldLabel(text: en ? 'Phone Number' : 'رقم الجوال'),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 AppTextFormField(
                   controller: _phoneController,
                   showSuccessWhenValid: true,
@@ -234,7 +234,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onFieldSubmitted: (_) =>
                       FocusScope.of(context).nextFocus(),
                   hintText: '05XXXXXXXX',
-                  prefixIcon: Icon(Icons.phone_iphone_outlined),
+                  prefixIcon: const Icon(Icons.phone_iphone_outlined),
                   validator: (value) {
                     final phone = value?.trim() ?? '';
                     if (phone.isEmpty) {
@@ -252,9 +252,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
                 _FieldLabel(text: en ? 'City/Country' : 'المدينة/الدولة'),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 AppTextFormField(
                   controller: _locationController,
                   showSuccessWhenValid: true,
@@ -267,7 +267,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onFieldSubmitted: (_) =>
                       FocusScope.of(context).nextFocus(),
                   hintText: en ? 'Riyadh, Saudi Arabia' : 'الرياض، السعودية',
-                  prefixIcon: Icon(Icons.place_outlined),
+                  prefixIcon: const Icon(Icons.place_outlined),
                   validator: (value) {
                     if ((value?.trim().isEmpty ?? true)) {
                       return en
@@ -277,9 +277,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
                 _FieldLabel(text: en ? 'Password' : 'كلمة المرور'),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 AppTextFormField(
                   controller: _passwordController,
                   showSuccessWhenValid: true,
@@ -292,7 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _register(),
                   hintText: '••••••••',
-                  prefixIcon: Icon(Icons.lock_outline_rounded),
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -318,12 +318,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.xs),
                 PasswordStrengthMeter(
                   password: _passwordController.text,
                   english: en,
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
                 PressScale(
                   child: Material(
                     color: Colors.transparent,
@@ -380,7 +380,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                 ),
-                SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.xs),
                 SubmitButton(
                   label: en ? 'Create Account' : 'إنشاء الحساب',
                   loadingLabel:
@@ -389,7 +389,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   icon: Icons.arrow_forward_rounded,
                   onPressed: _register,
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
                 Center(
                   child: RichText(
                     text: TextSpan(
@@ -420,10 +420,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                 ),
-                SizedBox(height: 18),
+                const SizedBox(height: 18),
                 _SocialDivider(english: en),
-                SizedBox(height: 16),
-                Row(
+                const SizedBox(height: 16),
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _SocialCircle(label: 'G'),
@@ -433,7 +433,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _SocialCircle(label: 'in'),
                   ],
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 TextButton(
                   onPressed: _continueAsPreview,
                   child: Text(
@@ -484,7 +484,7 @@ class _RegisterHero extends StatelessWidget {
     return Column(
       children: [
         const SiratiMark(size: 52),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Text(
           english ? 'Join Us Today' : 'انضم إلينا اليوم',
           textAlign: TextAlign.center,
@@ -494,7 +494,7 @@ class _RegisterHero extends StatelessWidget {
             color: context.sirati.textPrimary,
           ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text(
           english
               ? 'Start your career journey and build a professional CV'

@@ -67,7 +67,7 @@ class ScreenHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             avatar,
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,7 +86,7 @@ class ScreenHeader extends StatelessWidget {
                     ),
                   ),
                   if (hasSubtitle) ...[
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle!,
                       maxLines: compact ? 1 : 2,
@@ -101,7 +101,7 @@ class ScreenHeader extends StatelessWidget {
                     ),
                   ],
                   if (hasStatus) ...[
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     _StatusDotChip(
                       label: status!,
                     ),
@@ -109,7 +109,7 @@ class ScreenHeader extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             NotificationBellButton(
               unreadCount: unreadCount,
               onTap: onNotifications,
@@ -201,7 +201,7 @@ class NotificationBellButton extends StatelessWidget {
                     ),
                     child: Text(
                       unreadCount > 9 ? '9+' : '$unreadCount',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
@@ -319,7 +319,7 @@ class _StatusDotChip extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-          SizedBox(width: 6),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(

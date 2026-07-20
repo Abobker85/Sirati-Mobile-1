@@ -83,7 +83,7 @@ class _Section extends StatelessWidget {
               color: context.sirati.primary,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             body,
             textAlign: TextAlign.start,

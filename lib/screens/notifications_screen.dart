@@ -94,7 +94,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       AppSpacing.lg, 18, AppSpacing.lg, 32),
                   itemCount: items.length,
                   separatorBuilder: (_, __) =>
-                      SizedBox(height: AppSpacing.sm),
+                      const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (context, index) {
                     final item = items[index];
                     return MotionReveal(
@@ -175,14 +175,14 @@ class _NotificationCard extends StatelessWidget {
                       ),
                   ],
                 ),
-                SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   _text(item['body'], ''),
                   textAlign: TextAlign.start,
                   style: AppTextStyles.bodySm(),
                 ),
                 if (_notificationTime(item, english: english).isNotEmpty) ...[
-                  SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     _notificationTime(item, english: english),
                     style: AppTextStyles.labelMd().copyWith(

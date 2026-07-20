@@ -381,13 +381,13 @@ class _DashboardTabState extends State<_DashboardTab> {
                                 ),
                               ),
                               if (offline) ...[
-                                SizedBox(height: AppSpacing.sm),
+                                const SizedBox(height: AppSpacing.sm),
                                 OfflineCacheBanner(
                                   english: english,
                                   surface: 'dashboard',
                                 ),
                               ],
-                              SizedBox(height: AppSpacing.lg),
+                              const SizedBox(height: AppSpacing.lg),
                               MotionReveal(
                                 order: 1,
                                 child: Row(
@@ -402,7 +402,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                                         icon: Icons.description_outlined,
                                       ),
                                     ),
-                                    SizedBox(width: 16),
+                                    const SizedBox(width: 16),
                                     Expanded(
                                       child: _DashboardStatCard(
                                         label:
@@ -414,7 +414,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                                   ],
                                 ),
                               ),
-                              SizedBox(height: AppSpacing.md),
+                              const SizedBox(height: AppSpacing.md),
                               MotionReveal(
                                 order: 2,
                                 child: _DashboardActionCard(
@@ -435,7 +435,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                                   onTap: () => _openCreateCv(context),
                                 ),
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               MotionReveal(
                                 order: 3,
                                 child: _DashboardActionCard(
@@ -461,7 +461,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 24),
+                              const SizedBox(height: 24),
                               Align(
                                 alignment: AlignmentDirectional.centerStart,
                                 child: OutlinedButton.icon(
@@ -469,12 +469,12 @@ class _DashboardTabState extends State<_DashboardTab> {
                                     MaterialPageRoute(
                                         builder: (_) => const HistoryScreen()),
                                   ),
-                                  icon: Icon(Icons.history_rounded,
+                                  icon: const Icon(Icons.history_rounded,
                                       size: 18),
                                   label: Text(english ? 'History' : 'السجل'),
                                 ),
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               Row(
                                 children: [
                                   Text(
@@ -499,12 +499,12 @@ class _DashboardTabState extends State<_DashboardTab> {
                                     ),
                                     child: Text(
                                       english ? 'View All' : 'عرض الكل',
-                                      style: TextStyle(fontSize: 12.5),
+                                      style: const TextStyle(fontSize: 12.5),
                                     ),
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 12),
+                              const SizedBox(height: 12),
                               if (hasNews)
                                 MotionReveal(
                                   order: 4,
@@ -662,9 +662,9 @@ class _DashboardStatCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.labelMd(),
               ),
-              SizedBox(height: 6),
+              const SizedBox(height: 6),
               _CountUpValue(count: count),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               ExcludeSemantics(
                 child: Container(
                   width: 30,
@@ -815,7 +815,7 @@ class _DashboardActionCard extends StatelessWidget {
                               : Colors.white.withValues(alpha: .94),
                           size: 22,
                         ),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         Text(
                           title,
                           maxLines: 2,
@@ -828,7 +828,7 @@ class _DashboardActionCard extends StatelessWidget {
                             color: ink,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           subtitle,
                           maxLines: 2,
@@ -841,7 +841,7 @@ class _DashboardActionCard extends StatelessWidget {
                             color: ink.withValues(alpha: .82),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         Align(
                           alignment: AlignmentDirectional.centerStart,
                           child: Container(
@@ -866,7 +866,7 @@ class _DashboardActionCard extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Icon(
                                   Icons.arrow_forward_rounded,
                                   size: 14,
@@ -892,18 +892,16 @@ class _DashboardActionCard extends StatelessWidget {
 class _NewsCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final IconData icon;
 
   const _NewsCard({
     required this.title,
     required this.subtitle,
-    this.icon = Icons.schedule_rounded,
   });
 
   @override
   Widget build(BuildContext context) {
     return AppListTile(
-      leadingIcon: icon,
+      leadingIcon: Icons.schedule_rounded,
       title: title,
       subtitle: subtitle,
     );

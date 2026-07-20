@@ -75,7 +75,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         automaticallyImplyLeading: canPop,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded),
             tooltip: english ? 'Refresh' : 'تحديث',
             onPressed: () => setState(() => _historyFuture = _loadHistory()),
           ),
@@ -170,7 +170,7 @@ class _AnalysisList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: analyses.length,
-      separatorBuilder: (_, __) => SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) {
         final analysis = analyses[i];
         final color = scoreColor(analysis.scoreTotal);
@@ -205,7 +205,7 @@ class _AnalysisList extends StatelessWidget {
                         child: Icon(Icons.manage_search,
                             size: 18, color: context.sirati.primary),
                       ),
-                      SizedBox(width: AppSpacing.sm),
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
                           LocaleFormat.mixedTitle(analysis.targetJobTitle,
@@ -221,18 +221,18 @@ class _AnalysisList extends StatelessWidget {
                               color: color)),
                     ],
                   ),
-                  SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: AppSpacing.xs),
                   AnimatedAtsScoreBar(
                     value: analysis.scoreTotal / 100,
                     color: color,
                     height: 5,
                     borderRadius: 4,
                   ),
-                  SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: AppSpacing.xs),
                   Row(
                     children: [
                       _MetaChip(label: analysis.grade, color: color),
-                      SizedBox(width: 6),
+                      const SizedBox(width: 6),
                       _MetaChip(
                           label: analysis.inputMethodLabel,
                           color: context.sirati.textSecondary),
@@ -284,7 +284,7 @@ class _GeneratedCvList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: cvs.length,
-      separatorBuilder: (_, __) => SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) {
         final cv = cvs[i];
         final color = scoreColor(cv.scoreTotal);
@@ -331,7 +331,7 @@ class _GeneratedCvList extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,19 +341,19 @@ class _GeneratedCvList extends StatelessWidget {
                                 english: english),
                             textAlign: TextAlign.start,
                             style: AppTextStyles.titleSm()),
-                        SizedBox(height: 3),
+                        const SizedBox(height: 3),
                         Text(
                             LocaleFormat.mixedTitle(cv.targetJobTitle,
                                 english: english),
                             textAlign: TextAlign.start,
                             style: AppTextStyles.bodySm()),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Row(
                           children: [
                             _MetaChip(
                                 label: cv.language == 'ar' ? 'عربي' : 'English',
                                 color: context.sirati.primary),
-                            SizedBox(width: 5),
+                            const SizedBox(width: 5),
                             Text(_dateLabel(cv.createdAt, english: english),
                                 style: TextStyle(
                                     fontSize: 11,

@@ -102,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting &&
               SessionCache.instance.user.value == null) {
-            return Padding(
+            return const Padding(
               padding: EdgeInsets.all(AppSpacing.lg),
               child: AppSkeletonScope(
                 child: Column(
@@ -145,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: AppTextStyles.titleSm()
                       .copyWith(color: context.sirati.textSecondary),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 AppTextFormField(
                   controller: _nameCtrl,
                   showSuccessWhenValid: true,
@@ -158,29 +158,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _save(),
-                  prefixIcon: Icon(Icons.person_outline_rounded),
+                  prefixIcon: const Icon(Icons.person_outline_rounded),
                   hintText: en ? 'Your name' : 'اسمك',
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? (en ? 'Name is required' : 'الاسم مطلوب')
                       : null,
                 ),
-                SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   en ? 'Email' : 'البريد الإلكتروني',
                   textAlign: TextAlign.start,
                   style: AppTextStyles.titleSm()
                       .copyWith(color: context.sirati.textSecondary),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 AppTextFormField(
                   initialValue: user?.email ?? '',
                   enabled: false,
                   readOnly: true,
                   textDirection: TextDirection.ltr,
                   textAlign: TextAlign.left,
-                  prefixIcon: Icon(Icons.mail_outline_rounded),
+                  prefixIcon: const Icon(Icons.mail_outline_rounded),
                 ),
-                SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   en
                       ? 'Email cannot be changed here.'
@@ -190,41 +190,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       .copyWith(color: context.sirati.textHint),
                 ),
                 if ((user?.phone ?? '').isNotEmpty) ...[
-                  SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.md),
                   Text(
                     en ? 'Phone' : 'الجوال',
                     textAlign: TextAlign.start,
                     style: AppTextStyles.titleSm()
                         .copyWith(color: context.sirati.textSecondary),
                   ),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   AppTextFormField(
                     initialValue: user!.phone,
                     enabled: false,
                     readOnly: true,
                     textDirection: TextDirection.ltr,
                     textAlign: TextAlign.left,
-                    prefixIcon: Icon(Icons.phone_iphone_outlined),
+                    prefixIcon: const Icon(Icons.phone_iphone_outlined),
                   ),
                 ],
                 if ((user?.location ?? '').isNotEmpty) ...[
-                  SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.md),
                   Text(
                     en ? 'Location' : 'الموقع',
                     textAlign: TextAlign.start,
                     style: AppTextStyles.titleSm()
                         .copyWith(color: context.sirati.textSecondary),
                   ),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   AppTextFormField(
                     initialValue: user!.location,
                     enabled: false,
                     readOnly: true,
                     textAlign: TextAlign.start,
-                    prefixIcon: Icon(Icons.place_outlined),
+                    prefixIcon: const Icon(Icons.place_outlined),
                   ),
                 ],
-                SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xl),
                 SubmitButton(
                   label: en ? 'Save changes' : 'حفظ التغييرات',
                   loadingLabel: en ? 'Saving...' : 'جارٍ الحفظ...',

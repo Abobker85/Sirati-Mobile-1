@@ -45,7 +45,7 @@ class SubmitButton extends StatelessWidget {
           )
         else if (icon != null)
           Icon(icon, size: 18),
-        if (isLoading || icon != null) SizedBox(width: AppSpacing.xs),
+        if (isLoading || icon != null) const SizedBox(width: AppSpacing.xs),
         Flexible(
           child: Text(
             text,

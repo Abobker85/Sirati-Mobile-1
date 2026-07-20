@@ -174,7 +174,7 @@ class AppTheme {
         primary: c.primary,
         onPrimary: c.onPrimary,
         secondary: c.amber,
-        onSecondary: isDark ? c.textPrimary : Color(0xFF1A1200),
+        onSecondary: isDark ? c.textPrimary : const Color(0xFF1A1200),
         tertiary: c.tertiary,
         onTertiary: c.onPrimary,
         error: c.error,
@@ -232,7 +232,7 @@ class AppTheme {
           elevation: 0,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -242,13 +242,13 @@ class AppTheme {
           minimumSize: const Size.fromHeight(54),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: c.primary,
-          textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
       inputDecorationTheme: AppFormStyles.inputThemeFor(c),
@@ -279,8 +279,8 @@ class AppTheme {
         selectedItemColor: c.primary,
         unselectedItemColor: c.textHint,
         selectedLabelStyle:
-            TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
-        unselectedLabelStyle: TextStyle(fontSize: 11.5),
+            const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+        unselectedLabelStyle: const TextStyle(fontSize: 11.5),
         elevation: 0,
         type: BottomNavigationBarType.fixed,
       ),
@@ -288,8 +288,8 @@ class AppTheme {
         labelColor: c.primary,
         unselectedLabelColor: c.textHint,
         indicatorColor: c.primary,
-        labelStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-        unselectedLabelStyle: TextStyle(fontSize: 14),
+        labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        unselectedLabelStyle: const TextStyle(fontSize: 14),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: c.primary,

@@ -208,7 +208,7 @@ class _EducationScreenState extends State<EducationScreen> {
                       controller: _booster,
                       bottomInset: AppSpacing.scrollBottomNav - 48,
                       body: ListView(
-                        padding: EdgeInsets.fromLTRB(
+                        padding: const EdgeInsets.fromLTRB(
                           0,
                           18,
                           0,
@@ -235,7 +235,7 @@ class _EducationScreenState extends State<EducationScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(height: AppSpacing.xxl + 6),
+                          const SizedBox(height: AppSpacing.xxl + 6),
                           Padding(
                             padding: EdgeInsets.symmetric(
                                 horizontal: horizontalPadding),
@@ -253,7 +253,7 @@ class _EducationScreenState extends State<EducationScreen> {
                                       : 'محتوى مخصص حسب وظيفتك المستهدفة'),
                             ),
                           ),
-                          SizedBox(height: AppSpacing.md),
+                          const SizedBox(height: AppSpacing.md),
                           Padding(
                             padding: EdgeInsets.symmetric(
                                 horizontal: horizontalPadding),
@@ -265,7 +265,7 @@ class _EducationScreenState extends State<EducationScreen> {
                               english: english,
                             ),
                           ),
-                          SizedBox(height: AppSpacing.md),
+                          const SizedBox(height: AppSpacing.md),
                           // Quick boost field — blur-validated, feeds ScoreBooster.
                           Padding(
                             padding: EdgeInsets.symmetric(
@@ -316,7 +316,7 @@ class _EducationScreenState extends State<EducationScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(height: AppSpacing.md),
+                          const SizedBox(height: AppSpacing.md),
                           if (cards.isEmpty)
                             Padding(
                               padding: EdgeInsets.symmetric(
@@ -361,7 +361,7 @@ class _EducationScreenState extends State<EducationScreen> {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: AppSpacing.sm + 2),
+                              const SizedBox(height: AppSpacing.sm + 2),
                             ],
                         ],
                       ),
@@ -441,7 +441,7 @@ class _EducationHero extends StatelessWidget {
             height: 1.35,
           ),
         ),
-        SizedBox(height: 6),
+        const SizedBox(height: 6),
         Text(
           subtitle,
           textAlign: TextAlign.start,
@@ -513,7 +513,7 @@ class _EducationTabs extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(width: AppSpacing.xs),
+            const SizedBox(width: AppSpacing.xs),
           ],
         ],
       ),
@@ -566,14 +566,14 @@ class _StudyCard extends StatelessWidget {
                     color: c.primary,
                   ),
                 ),
-              if (badge.isNotEmpty) SizedBox(height: 8),
+              if (badge.isNotEmpty) const SizedBox(height: 8),
               Text(
                 title,
                 textAlign: TextAlign.start,
                 style: AppTextStyles.titleMd(c).copyWith(height: 1.5),
               ),
               if (duration.isNotEmpty) ...[
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   duration,
                   style: AppTextStyles.bodySm(c),

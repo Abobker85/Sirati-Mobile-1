@@ -62,7 +62,7 @@ class AppListTile extends StatelessWidget {
         children: [
           if (resolvedLeading != null) ...[
             ExcludeSemantics(child: resolvedLeading),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
           ],
           Expanded(
             child: Column(
@@ -78,7 +78,7 @@ class AppListTile extends StatelessWidget {
                   ),
                 ),
                 if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   Text(
                     subtitle!,
                     textAlign: TextAlign.start,
@@ -91,10 +91,10 @@ class AppListTile extends StatelessWidget {
             ),
           ),
           if (trailing != null) ...[
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             trailing!,
           ] else if (showChevron) ...[
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             // Decorative; whole row is the control when [onTap] is set.
             ExcludeSemantics(
               child: Icon(

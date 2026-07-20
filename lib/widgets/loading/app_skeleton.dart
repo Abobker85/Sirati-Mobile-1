@@ -302,7 +302,7 @@ class ListScreenSkeleton extends StatelessWidget {
       child: ListView.separated(
         padding: padding,
         itemCount: itemCount,
-        separatorBuilder: (_, __) => SizedBox(height: 10),
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (_, __) => const AppSkeleton(height: 88, radius: 16),
       ),
     );

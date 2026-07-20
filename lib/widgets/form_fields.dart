@@ -14,12 +14,12 @@ class AppFormStyles {
   /// [inputThemeFor] / [context.sirati] in widgets.
   static final border = OutlineInputBorder(
     borderRadius: BorderRadius.circular(radius),
-    borderSide: BorderSide(color: AppColors.border, width: 1),
+    borderSide: const BorderSide(color: AppColors.border, width: 1),
   );
 
   static final focusedBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(radius),
-    borderSide: BorderSide(color: AppColors.primary, width: 1.8),
+    borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
   );
 
   static final errorBorder = OutlineInputBorder(
@@ -32,7 +32,7 @@ class AppFormStyles {
 
   static final focusedErrorBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(radius),
-    borderSide: BorderSide(color: AppColors.red, width: 1.8),
+    borderSide: const BorderSide(color: AppColors.red, width: 1.8),
   );
 
   static final successBorder = OutlineInputBorder(
@@ -45,17 +45,17 @@ class AppFormStyles {
 
   static final focusedSuccessBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(radius),
-    borderSide: BorderSide(color: AppColors.success, width: 1.8),
+    borderSide: const BorderSide(color: AppColors.success, width: 1.8),
   );
 
-  static TextStyle get errorTextStyle => TextStyle(
+  static TextStyle get errorTextStyle => const TextStyle(
         fontSize: 12.5,
         height: 1.35,
         fontWeight: FontWeight.w600,
         color: AppColors.red,
       );
 
-  static TextStyle get successTextStyle => TextStyle(
+  static TextStyle get successTextStyle => const TextStyle(
         fontSize: 12.5,
         height: 1.35,
         fontWeight: FontWeight.w600,
@@ -156,7 +156,7 @@ class AppFieldError extends StatelessWidget {
               color: context.sirati.red,
             ),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
@@ -218,7 +218,7 @@ class AppFormErrorBanner extends StatelessWidget {
           children: [
             Icon(Icons.error_outline_rounded,
                 size: 20, color: context.sirati.red),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 message,
@@ -286,7 +286,7 @@ class AppFormSuccessBanner extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, size: 22, color: context.sirati.success),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   message,
@@ -611,7 +611,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
             children: [
               if (suffixIcon != null) suffixIcon,
               Padding(
-                padding: EdgeInsetsDirectional.only(end: 10),
+                padding: const EdgeInsetsDirectional.only(end: 10),
                 child: Icon(
                   Icons.check_circle_rounded,
                   size: 20,
@@ -718,7 +718,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
               disabledBorder: InputBorder.none,
               contentPadding: contentPadding ??
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              errorStyle: TextStyle(height: 0, fontSize: 0),
+              errorStyle: const TextStyle(height: 0, fontSize: 0),
               errorText: null,
               counterText: '',
             ),
@@ -740,7 +740,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
                         style: AppFormStyles.successTextStyle,
                       ),
                     )
-                  : SizedBox(width: double.infinity),
+                  : const SizedBox(width: double.infinity),
         ),
       ],
     );

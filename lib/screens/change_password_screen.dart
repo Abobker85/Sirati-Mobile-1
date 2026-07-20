@@ -121,7 +121,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 onDismiss: () => setState(() => _showBanner = false),
               ),
             _Label(en ? 'Current password' : 'كلمة المرور الحالية'),
-            SizedBox(height: 6),
+            const SizedBox(height: 6),
             AppTextFormField(
               controller: _currentCtrl,
               autovalidateMode: auto,
@@ -131,7 +131,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
               hintText: '••••••••',
-              prefixIcon: Icon(Icons.lock_outline_rounded),
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureCurrent
@@ -156,9 +156,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 }
               },
             ),
-            SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
             _Label(en ? 'New password' : 'كلمة المرور الجديدة'),
-            SizedBox(height: 6),
+            const SizedBox(height: 6),
             AppTextFormField(
               controller: _newCtrl,
               autovalidateMode: auto,
@@ -168,7 +168,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
               hintText: '••••••••',
-              prefixIcon: Icon(Icons.lock_outline_rounded),
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureNew
@@ -195,11 +195,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 return null;
               },
             ),
-            SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.xs),
             PasswordStrengthMeter(password: _newCtrl.text, english: en),
-            SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
             _Label(en ? 'Confirm new password' : 'تأكيد كلمة المرور الجديدة'),
-            SizedBox(height: 6),
+            const SizedBox(height: 6),
             AppTextFormField(
               controller: _confirmCtrl,
               autovalidateMode: auto,
@@ -209,7 +209,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
               hintText: '••••••••',
-              prefixIcon: Icon(Icons.lock_outline_rounded),
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureConfirm
@@ -233,7 +233,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 return null;
               },
             ),
-            SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.xl),
             SubmitButton(
               label: en ? 'Update password' : 'تحديث كلمة المرور',
               loadingLabel: en ? 'Updating...' : 'جارٍ التحديث...',

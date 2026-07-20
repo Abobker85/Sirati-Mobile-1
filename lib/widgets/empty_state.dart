@@ -49,14 +49,14 @@ class AppEmptyState extends StatelessWidget {
             child: Icon(icon,
                 size: 32, color: iconColor ?? context.sirati.primary),
           ),
-          SizedBox(height: AppSpacing.md + 2),
+          const SizedBox(height: AppSpacing.md + 2),
           Text(
             title,
             textAlign: TextAlign.center,
             style: AppTextStyles.titleLg(),
           ),
           if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
-            SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               subtitle!,
               textAlign: TextAlign.center,
@@ -67,7 +67,7 @@ class AppEmptyState extends StatelessWidget {
             ),
           ],
           if (actionLabel != null && onAction != null) ...[
-            SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.lg),
             FilledButton.icon(
               onPressed: onAction,
               icon: Icon(actionIcon, size: 18),
@@ -81,7 +81,7 @@ class AppEmptyState extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
-                textStyle: TextStyle(
+                textStyle: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
@@ -103,7 +103,7 @@ class AppEmptyState extends StatelessWidget {
           height: MediaQuery.sizeOf(context).height * topInsetFactor,
         ),
         panel,
-        SizedBox(height: 48),
+        const SizedBox(height: 48),
       ],
     );
   }

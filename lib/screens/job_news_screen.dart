@@ -209,7 +209,7 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
                                     ),
                                   ),
                                   if (offline) ...[
-                                    SizedBox(height: AppSpacing.sm),
+                                    const SizedBox(height: AppSpacing.sm),
                                     OfflineCacheBanner(
                                       english: english,
                                       surface: 'news',
@@ -219,25 +219,25 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
                                       (snapshot.connectionState ==
                                               ConnectionState.waiting &&
                                           snapshot.hasData))
-                                    Padding(
+                                    const Padding(
                                       padding:
                                           EdgeInsets.only(top: 10, bottom: 2),
                                       child:
                                           LinearProgressIndicator(minHeight: 3),
                                     ),
-                                  SizedBox(height: AppSpacing.lg),
+                                  const SizedBox(height: AppSpacing.lg),
                                   _SearchBar(
                                     english: english,
                                     controller: _searchController,
                                     onChanged: _onSearchChanged,
                                   ),
-                                  SizedBox(height: AppSpacing.md),
+                                  const SizedBox(height: AppSpacing.md),
                                   _CategoryChips(
                                     english: english,
                                     selectedCategory: _selectedCategory,
                                     onSelected: _selectCategory,
                                   ),
-                                  SizedBox(height: AppSpacing.md),
+                                  const SizedBox(height: AppSpacing.md),
                                   // Featured + section title animate on filter;
                                   // list rows are built lazily below.
                                   AnimatedSwitcher(
@@ -268,7 +268,7 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
                                             ),
                                           ),
                                         if (featured != null)
-                                          SizedBox(height: AppSpacing.lg),
+                                          const SizedBox(height: AppSpacing.lg),
                                         Text(
                                           english
                                               ? 'Latest Postings'
@@ -276,7 +276,7 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
                                           textAlign: TextAlign.start,
                                           style: AppTextStyles.titleMd(),
                                         ),
-                                        SizedBox(height: AppSpacing.sm),
+                                        const SizedBox(height: AppSpacing.sm),
                                         if (latest.isEmpty)
                                           _EmptyNews(english: english),
                                       ],
@@ -368,7 +368,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                       color: context.sirati.textPrimary,
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Wrap(
                     alignment: WrapAlignment.start,
                     spacing: 8,
@@ -391,7 +391,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                         ),
                     ],
                   ),
-                  SizedBox(height: 22),
+                  const SizedBox(height: 22),
                   Text(
                     LocaleFormat.mixedBody(item.body, english: english),
                     textAlign: TextAlign.start,
@@ -402,11 +402,11 @@ class JobNewsDetailScreen extends StatelessWidget {
                     ),
                   ),
                   if (actionUrl != null) ...[
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     ElevatedButton.icon(
                       onPressed: () => launchUrl(Uri.parse(actionUrl),
                           mode: LaunchMode.externalApplication),
-                      icon: Icon(Icons.send_rounded),
+                      icon: const Icon(Icons.send_rounded),
                       label: Text(english ? 'Apply Now' : 'تقدّم الآن'),
                     ),
                   ],
@@ -472,7 +472,7 @@ class _JobNewsCard extends StatelessWidget {
                             ),
                           ),
                           if (isNew) ...[
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
@@ -492,7 +492,7 @@ class _JobNewsCard extends StatelessWidget {
                           ],
                         ],
                       ),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       if (meta.isNotEmpty)
                         Text(
                           meta,
@@ -503,7 +503,7 @@ class _JobNewsCard extends StatelessWidget {
                             color: context.sirati.textSecondary,
                           ),
                         ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         _jobPublishedText(item, english: english),
                         style: TextStyle(
@@ -515,7 +515,7 @@ class _JobNewsCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Icon(Icons.bookmark_border_rounded,
                     size: 18, color: context.sirati.textHint),
               ],
@@ -600,8 +600,8 @@ class _SearchBar extends StatelessWidget {
             : 'ابحث عن وظيفة أو شركة...',
         // Keep the search affordance on the physical leading edge of the field
         // (left) in both locales — matches the current product screenshots.
-        prefixIcon: english ? Icon(Icons.search_rounded, size: 18) : null,
-        suffixIcon: english ? null : Icon(Icons.search_rounded, size: 18),
+        prefixIcon: english ? const Icon(Icons.search_rounded, size: 18) : null,
+        suffixIcon: english ? null : const Icon(Icons.search_rounded, size: 18),
         filled: true,
         fillColor: context.sirati.surface,
         contentPadding:
@@ -732,18 +732,18 @@ class _FeaturedJobCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
                 Text(
                   LocaleFormat.mixedTitle(item.title, english: english),
                   textAlign: TextAlign.start,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 17,
                     height: 1.35,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
                   LocaleFormat.mixedTitle(item.company ?? '', english: english),
                   textAlign: TextAlign.start,
@@ -753,7 +753,7 @@ class _FeaturedJobCard extends StatelessWidget {
                     color: Colors.white.withValues(alpha: .88),
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   [
                     if ((item.location ?? '').isNotEmpty) item.location!,
@@ -766,7 +766,7 @@ class _FeaturedJobCard extends StatelessWidget {
                     color: Colors.white.withValues(alpha: .75),
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 18, vertical: 9),

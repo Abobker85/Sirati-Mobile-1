@@ -152,15 +152,15 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                const Row(
                   children: [
                     Spacer(),
                     LanguageToggle(),
                   ],
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 const SiratiMark(size: 56, elevated: true),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
                 Text(
                   english ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
                   textAlign: TextAlign.start,
@@ -169,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontWeight: FontWeight.w800,
                       color: context.sirati.primary),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
                   english ? 'Sign in to continue' : 'سجّل دخولك للمتابعة',
                   textAlign: TextAlign.start,
@@ -200,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             setState(() => _showFormBanner = false),
                       ),
                     _AuthLabel(text: english ? 'Email' : 'البريد الإلكتروني'),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     AppTextFormField(
                       controller: _emailController,
                       showSuccessWhenValid: true,
@@ -216,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onFieldSubmitted: (_) =>
                           FocusScope.of(context).nextFocus(),
                       hintText: 'name@example.com',
-                      prefixIcon: Icon(Icons.email_outlined),
+                      prefixIcon: const Icon(Icons.email_outlined),
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
                           return english
@@ -231,9 +231,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-                    SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.md),
                     _AuthLabel(text: english ? 'Password' : 'كلمة المرور'),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     AppTextFormField(
                       controller: _passwordController,
                       showSuccessWhenValid: true,
@@ -247,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textInputAction: TextInputAction.send,
                       onFieldSubmitted: (_) => _login(),
                       hintText: '••••••••',
-                      prefixIcon: Icon(Icons.lock_outline),
+                      prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(_obscurePassword
                             ? Icons.visibility_outlined
@@ -269,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-                    SizedBox(height: AppSpacing.xs),
+                    const SizedBox(height: AppSpacing.xs),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: TextButton(
@@ -281,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             english ? 'Forgot password?' : 'نسيت كلمة المرور؟'),
                       ),
                     ),
-                    SizedBox(height: AppSpacing.xs),
+                    const SizedBox(height: AppSpacing.xs),
                     SubmitButton(
                       label: english ? 'Sign in' : 'تسجيل الدخول',
                       loadingLabel:
@@ -289,7 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       isLoading: _isLoading,
                       onPressed: _login,
                     ),
-                    SizedBox(height: AppSpacing.xl),
+                    const SizedBox(height: AppSpacing.xl),
                     Row(
                       children: [
                         Expanded(child: Divider(color: context.sirati.border)),
@@ -305,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Expanded(child: Divider(color: context.sirati.border)),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Row(
                       children: [
                         Expanded(
@@ -315,7 +315,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onTap: _loginWithGoogle,
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: _SocialButton(
                             icon: Icons.apple,
@@ -325,7 +325,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 28),
+                    const SizedBox(height: 28),
                     Wrap(
                       alignment: WrapAlignment.center,
                       crossAxisAlignment: WrapCrossAlignment.center,
@@ -407,7 +407,7 @@ class _SocialButton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(icon, size: 22, color: context.sirati.textPrimary),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Flexible(
                   child: Text(
                     label,

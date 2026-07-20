@@ -691,9 +691,9 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     _WizardProgressBar(progress: progress),
-                    SizedBox(height: 14),
+                    const SizedBox(height: 14),
                     Row(
                       children: List.generate(steps.length * 2 - 1, (i) {
                         if (i.isOdd) {
@@ -732,7 +732,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                               ),
                               child: Center(
                                 child: done
-                                    ? Icon(Icons.check_rounded,
+                                    ? const Icon(Icons.check_rounded,
                                         size: 16, color: Colors.white)
                                     : FittedBox(
                                         fit: BoxFit.scaleDown,
@@ -750,7 +750,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                         );
                       }),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: steps
@@ -831,7 +831,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                 border: Border(
                   top: BorderSide(color: context.sirati.border),
                 ),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
                     color: Color(0x0D000000),
                     blurRadius: 12,
@@ -846,7 +846,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                       child: PressScale(
                         child: OutlinedButton.icon(
                           onPressed: () => _goToStep(_step - 1),
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.arrow_back_rounded,
                             size: 18,
                           ),
@@ -854,7 +854,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                   ],
                   Expanded(
                     flex: 2,
@@ -980,7 +980,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                   fontWeight: FontWeight.w600,
                   color: context.sirati.textSecondary)),
         ),
-        SizedBox(height: 6),
+        const SizedBox(height: 6),
         field,
       ],
     );
@@ -1011,7 +1011,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
             text: english ? 'Personal Information' : 'المعلومات الشخصية',
             english: english,
           ),
-          SizedBox(height: 18),
+          const SizedBox(height: 18),
           if (_stepShowBanner[0])
             AppFormErrorBanner(
               message: _bannerCopy(english),
@@ -1026,7 +1026,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) => _focusNext(),
                 hintText: english ? 'Salem Sayer' : 'سالم سيار',
-                prefixIcon: Icon(Icons.person_outline),
+                prefixIcon: const Icon(Icons.person_outline),
                 validator: (value) => (value?.trim().isEmpty ?? true)
                     ? (english
                         ? 'Full name is required.'
@@ -1034,7 +1034,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                     : null,
               ),
               english),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           _fieldGroup(
               english ? 'Email' : 'البريد الإلكتروني',
               AppTextFormField(
@@ -1045,7 +1045,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                 textDirection: TextDirection.ltr,
                 textAlign: TextAlign.start,
                 hintText: 'salem@example.com',
-                prefixIcon: Icon(Icons.email_outlined),
+                prefixIcon: const Icon(Icons.email_outlined),
                 validator: (value) {
                   final email = value?.trim() ?? '';
                   if (email.isEmpty) return null; // optional
@@ -1058,7 +1058,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                 },
               ),
               english),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           _fieldGroup(
               english ? 'Phone' : 'رقم الهاتف',
               AppTextFormField(
@@ -1069,10 +1069,10 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                 textDirection: TextDirection.ltr,
                 textAlign: TextAlign.start,
                 hintText: '+966 5X XXX XXXX',
-                prefixIcon: Icon(Icons.phone_outlined),
+                prefixIcon: const Icon(Icons.phone_outlined),
               ),
               english),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           _fieldGroup(
               english ? 'LinkedIn URL' : 'رابط LinkedIn',
               AppTextFormField(
@@ -1083,10 +1083,10 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                 textDirection: TextDirection.ltr,
                 textAlign: TextAlign.start,
                 hintText: 'linkedin.com/in/username',
-                prefixIcon: Icon(Icons.link_rounded),
+                prefixIcon: const Icon(Icons.link_rounded),
               ),
               english),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           _fieldGroup(
               english ? 'Target Job Title *' : 'المسمى الوظيفي المستهدف *',
               AppTextFormField(
@@ -1097,7 +1097,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                 hintText: english
                     ? 'Laravel Backend Developer'
                     : 'مطوّر Laravel Backend',
-                prefixIcon: Icon(Icons.work_outline_rounded),
+                prefixIcon: const Icon(Icons.work_outline_rounded),
                 validator: (value) => (value?.trim().isEmpty ?? true)
                     ? (english
                         ? 'Target job title is required.'
@@ -1105,7 +1105,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                     : null,
               ),
               english),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           _fieldGroup(
               english
                   ? 'Job Description (optional)'
@@ -1132,10 +1132,10 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                       hintText: english
                           ? 'Paste the job description or let Sirati complete it from the role...'
                           : 'الصق الوصف الوظيفي أو دع سيرتي يكمله من المسمى...',
-                      prefixIcon: Icon(Icons.assignment_outlined),
+                      prefixIcon: const Icon(Icons.assignment_outlined),
                     ),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   SubmitButton(
                     label: english ? 'Enhance' : 'تحسين',
                     loadingLabel: english ? 'Enhancing...' : 'جارٍ التحسين...',
@@ -1150,12 +1150,12 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                 ],
               ),
               english),
-          SizedBox(height: 18),
+          const SizedBox(height: 18),
           _FieldLabel(
             text: english ? 'CV Language' : 'لغة السيرة الذاتية',
             english: english,
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
               color: context.sirati.surface,
@@ -1201,14 +1201,14 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
             text: english ? 'Skills & Summary' : 'المهارات والملخص',
             english: english,
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           _HelperText(
             text: english
                 ? 'Enter skills separated by commas'
                 : 'أدخل مهاراتك مفصولة بفاصلة',
             english: english,
           ),
-          SizedBox(height: 18),
+          const SizedBox(height: 18),
           if (_stepShowBanner[1])
             AppFormErrorBanner(
               message: _bannerCopy(english),
@@ -1232,7 +1232,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                     : null,
               ),
               english),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           _fieldGroup(
               english
                   ? 'Professional Summary (optional)'
@@ -1264,14 +1264,14 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
             text: english ? 'Work Experience' : 'الخبرات العملية',
             english: english,
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           _HelperText(
             text: english
                 ? 'Include title, company, dates, and measurable achievements'
                 : 'اذكر المسمى، الشركة، التاريخ، والإنجازات بأرقام',
             english: english,
           ),
-          SizedBox(height: 18),
+          const SizedBox(height: 18),
           if (_stepShowBanner[2])
             AppFormErrorBanner(
               message: _bannerCopy(english),
@@ -1292,13 +1292,13 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                         style: TextStyle(
                             fontSize: 12, color: context.sirati.primaryDark),
                         textAlign: TextAlign.start)),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Icon(Icons.tips_and_updates_outlined,
                     color: context.sirati.primary, size: 20),
               ],
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           AppTextFormField(
             controller: _experienceCtrl,
             textAlign: TextAlign.start,
@@ -1334,7 +1334,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
             text: english ? 'Education & Certifications' : 'التعليم والشهادات',
             english: english,
           ),
-          SizedBox(height: 18),
+          const SizedBox(height: 18),
           if (_stepShowBanner[3])
             AppFormErrorBanner(
               message: _bannerCopy(english),
@@ -1356,7 +1356,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                     : null,
               ),
               english),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           _fieldGroup(
               english
                   ? 'Certifications & Courses (optional)'

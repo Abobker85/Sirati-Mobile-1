@@ -192,7 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SessionCache.instance.user.value == null;
 
           if (waiting) {
-            return Padding(
+            return const Padding(
               padding: EdgeInsets.all(AppSpacing.lg),
               child: AppSkeletonScope(
                 child: Column(
@@ -264,7 +264,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           size: 64,
                           english: english,
                         ),
-                        SizedBox(width: AppSpacing.md),
+                        const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,7 +277,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 style: AppTextStyles.titleLg(),
                               ),
                               if (email.isNotEmpty) ...[
-                                SizedBox(height: 4),
+                                const SizedBox(height: 4),
                                 Text(
                                   email,
                                   textAlign: TextAlign.start,
@@ -287,7 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   textDirection: TextDirection.ltr,
                                 ),
                               ],
-                              SizedBox(height: 6),
+                              const SizedBox(height: 6),
                               Text(
                                 english ? 'View profile' : 'عرض الملف الشخصي',
                                 style: AppTextStyles.labelMd().copyWith(
@@ -308,9 +308,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
 
-              SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xl),
               _SectionLabel(english ? 'Account' : 'الحساب'),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               AppListTile(
                 leadingIcon: Icons.person_outline_rounded,
                 title: english ? 'Edit profile' : 'تعديل الملف الشخصي',
@@ -321,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _refreshUser();
                 },
               ),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               AppListTile(
                 leadingIcon: Icons.lock_outline_rounded,
                 title: english ? 'Change password' : 'تغيير كلمة المرور',
@@ -331,9 +331,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
 
-              SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xl),
               _SectionLabel(english ? 'Preferences' : 'التفضيلات'),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               AppListTile(
                 leadingIcon: Icons.language_rounded,
                 title: english ? 'Language' : 'اللغة',
@@ -351,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 onTap: _toggleLanguage,
               ),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               ValueListenableBuilder<ThemeMode>(
                 valueListenable: AppThemeController.themeMode,
                 builder: (context, mode, _) {
@@ -390,7 +390,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                 },
               ),
-              SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: AppSpacing.xs),
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: ValueListenableBuilder<ThemeMode>(
@@ -457,9 +457,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: () => _toggleNotifications(!_notificationsEnabled),
               ),
 
-              SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xl),
               _SectionLabel(english ? 'About' : 'حول'),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               AppListTile(
                 leadingIcon: Icons.privacy_tip_outlined,
                 title: english ? 'Privacy policy' : 'سياسة الخصوصية',
@@ -468,7 +468,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       builder: (_) => const PrivacyPolicyScreen()),
                 ),
               ),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               AppListTile(
                 leadingIcon: Icons.auto_stories_outlined,
                 title: english ? 'Replay app intro' : 'إعادة مقدمة التطبيق',
@@ -477,7 +477,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : 'اعرض جولة التعريف بالمنتج مجدداً',
                 onTap: _replayIntro,
               ),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               AppListTile(
                 leadingIcon: Icons.info_outline_rounded,
                 title: english ? 'App version' : 'إصدار التطبيق',
@@ -486,9 +486,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: null,
               ),
 
-              SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xl),
               _SectionLabel(english ? 'Danger zone' : 'منطقة الخطر'),
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               Semantics(
                 button: true,
                 label: english ? 'Log out' : 'تسجيل الخروج',
@@ -502,7 +502,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: _loggingOut ? null : _logout,
                 ),
               ),
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.lg),
               Semantics(
                 button: true,
                 label: english ? 'Delete account' : 'حذف الحساب',

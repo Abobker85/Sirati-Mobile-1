@@ -169,7 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     index: _index,
                     activeColor: page.accent,
                   ),
-                  SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.lg),
                   SubmitButton(
                     label: last
                         ? (en ? 'Get started' : 'ابدأ الآن')
@@ -229,7 +229,7 @@ class _OnboardingPageView extends StatelessWidget {
             ),
             child: Icon(page.icon, size: 52, color: page.accent),
           ),
-          SizedBox(height: AppSpacing.xxl),
+          const SizedBox(height: AppSpacing.xxl),
           Text(
             page.title,
             textAlign: TextAlign.center,
@@ -240,7 +240,7 @@ class _OnboardingPageView extends StatelessWidget {
               color: context.sirati.textPrimary,
             ),
           ),
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           Text(
             page.body,
             textAlign: TextAlign.center,

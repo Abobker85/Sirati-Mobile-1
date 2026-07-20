@@ -161,7 +161,7 @@ class _BootstrapBody extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const BrandedLoader(size: 72),
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           Text(
             en ? 'Sirati' : 'سيرتي',
             style: TextStyle(
@@ -170,7 +170,7 @@ class _BootstrapBody extends StatelessWidget {
               color: context.sirati.primary,
             ),
           ),
-          SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             en ? 'Preparing your workspace…' : 'جارٍ تجهيز مساحتك…',
             style: AppTextStyles.bodySm().copyWith(
@@ -226,12 +226,12 @@ class _WelcomeBody extends StatelessWidget {
                         child: LanguageToggle(),
                       ),
                     ),
-                    SizedBox(height: AppSpacing.xxl + 4),
+                    const SizedBox(height: AppSpacing.xxl + 4),
                     const MotionReveal(
                       order: 1,
                       child: Center(child: _SplashLogo()),
                     ),
-                    SizedBox(height: AppSpacing.lg - 2),
+                    const SizedBox(height: AppSpacing.lg - 2),
                     MotionReveal(
                       order: 2,
                       child: Text(
@@ -244,7 +244,7 @@ class _WelcomeBody extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(height: AppSpacing.sm - 2),
+                    const SizedBox(height: AppSpacing.sm - 2),
                     MotionReveal(
                       order: 2,
                       child: Text(
@@ -258,7 +258,7 @@ class _WelcomeBody extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(height: AppSpacing.xl + 4),
+                    const SizedBox(height: AppSpacing.xl + 4),
                     MotionReveal(
                       order: 3,
                       child: _ValueCard(
@@ -266,7 +266,7 @@ class _WelcomeBody extends StatelessWidget {
                         body: cardBody,
                       ),
                     ),
-                    SizedBox(height: AppSpacing.xl + 4),
+                    const SizedBox(height: AppSpacing.xl + 4),
                     MotionReveal(
                       order: 4,
                       child: SubmitButton(
@@ -275,7 +275,7 @@ class _WelcomeBody extends StatelessWidget {
                         onPressed: onRegister,
                       ),
                     ),
-                    SizedBox(height: AppSpacing.sm),
+                    const SizedBox(height: AppSpacing.sm),
                     MotionReveal(
                       order: 4,
                       child: SubmitButton(
@@ -284,7 +284,7 @@ class _WelcomeBody extends StatelessWidget {
                         onPressed: onLogin,
                       ),
                     ),
-                    SizedBox(height: AppSpacing.lg - 2),
+                    const SizedBox(height: AppSpacing.lg - 2),
                     MotionReveal(
                       order: 5,
                       child: TextButton(
@@ -339,7 +339,7 @@ class _ValueCard extends StatelessWidget {
               height: 1.3,
             ),
           ),
-          SizedBox(height: AppSpacing.sm - 2),
+          const SizedBox(height: AppSpacing.sm - 2),
           Text(
             body,
             textAlign: TextAlign.start,

@@ -244,7 +244,7 @@ class _AppSnackBarContent extends StatelessWidget {
               ),
               child: Icon(icon, size: 20, color: scheme.iconColor),
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 message,
@@ -258,7 +258,7 @@ class _AppSnackBarContent extends StatelessWidget {
               ),
             ),
             if (showAction) ...[
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               TextButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -270,7 +270,7 @@ class _AppSnackBarContent extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   minimumSize: const Size(0, 32),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  textStyle: TextStyle(
+                  textStyle: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),

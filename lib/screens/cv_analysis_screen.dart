@@ -193,7 +193,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                     textAlign: TextAlign.start,
                     style: AppTextStyles.titleSm(),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   AppTextFormField(
                     controller: _jobTitleController,
                     autovalidateMode: _submitted
@@ -206,7 +206,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                     hintText: english
                         ? 'e.g. Laravel Backend Developer'
                         : 'مثال: مطوّر Laravel Backend',
-                    prefixIcon: Icon(Icons.work_outline_rounded),
+                    prefixIcon: const Icon(Icons.work_outline_rounded),
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? (english
                             ? 'Please enter a target job title'
@@ -216,7 +216,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             AppCard(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -227,7 +227,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                     textAlign: TextAlign.start,
                     style: AppTextStyles.titleSm(),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   if (_uploadedFile == null)
                     GestureDetector(
                       onTap: _pickFile,
@@ -254,7 +254,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                               child: Icon(Icons.cloud_upload_outlined,
                                   size: 28, color: context.sirati.primary),
                             ),
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             Text(
                               english
                                   ? 'Tap to upload PDF or TXT'
@@ -264,7 +264,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                                   fontWeight: FontWeight.w600,
                                   color: context.sirati.primary),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
                               english
                                   ? 'Maximum size 5 MB'
@@ -291,7 +291,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                         children: [
                           Icon(Icons.insert_drive_file_outlined,
                               color: context.sirati.tealDark, size: 20),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               BidiText.isolateLtr(_uploadedFile!.name),
@@ -315,7 +315,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(child: Divider(color: context.sirati.border)),
@@ -338,7 +338,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                 Expanded(child: Divider(color: context.sirati.border)),
               ],
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             AppCard(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -349,7 +349,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                     textAlign: TextAlign.start,
                     style: AppTextStyles.titleSm(),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   AppTextFormField(
                     controller: _resumeTextController,
                     autovalidateMode: _submitted
@@ -375,7 +375,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                 ],
               ),
             ),
-            SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.xl),
             SubmitButton(
               label: english ? 'Analyze CV' : 'تحليل السيرة الذاتية',
               loadingLabel: english ? 'Analyzing...' : 'جارٍ التحليل...',

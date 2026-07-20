@@ -130,20 +130,20 @@ class _MyCvsScreenState extends State<MyCvsScreen> {
                                   ),
                                 ),
                                 if (offline) ...[
-                                  SizedBox(height: AppSpacing.sm),
+                                  const SizedBox(height: AppSpacing.sm),
                                   OfflineCacheBanner(
                                     english: english,
                                     surface: 'cvs',
                                   ),
                                 ],
-                                SizedBox(height: AppSpacing.lg),
+                                const SizedBox(height: AppSpacing.lg),
                                 Text(
                                   _summaryLabel(
                                       english, items.length, data['summary']),
                                   textAlign: TextAlign.start,
                                   style: AppTextStyles.bodySm(),
                                 ),
-                                SizedBox(height: AppSpacing.md),
+                                const SizedBox(height: AppSpacing.md),
                               ],
                             );
                           }
@@ -427,7 +427,7 @@ class _CvDocumentCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _DocumentIcon(color: color),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,7 +445,7 @@ class _CvDocumentCard extends StatelessWidget {
                         style: AppTextStyles.titleMd(),
                       ),
                       if (updatedAt.isNotEmpty) ...[
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           updatedAt,
                           textAlign: TextAlign.start,
@@ -456,7 +456,7 @@ class _CvDocumentCard extends StatelessWidget {
                         ),
                       ],
                       if (badge.isNotEmpty) ...[
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Align(
                           alignment: AlignmentDirectional.centerStart,
                           child: _StatusBadge(
@@ -471,13 +471,13 @@ class _CvDocumentCard extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 14),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: onEdit,
-                    icon: Icon(Icons.edit_outlined, size: 16),
+                    icon: const Icon(Icons.edit_outlined, size: 16),
                     label: Text(english ? 'Edit' : 'تعديل'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: context.sirati.primaryLight,
@@ -489,14 +489,14 @@ class _CvDocumentCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      textStyle: TextStyle(
+                      textStyle: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 _CircleActionButton(
                   icon: Icons.download_rounded,
                   label: english ? 'Download' : 'تنزيل',
@@ -508,7 +508,7 @@ class _CvDocumentCard extends StatelessWidget {
                       : context.sirati.border,
                   onTap: canDownload ? onDownload : null,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 _CircleActionButton(
                   icon: Icons.delete_outline_rounded,
                   label: english ? 'Delete' : 'حذف',
@@ -553,7 +553,7 @@ class _CvTemplatePicker extends StatelessWidget {
                     color: context.sirati.textPrimary,
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
               ],
             );
           }
@@ -573,7 +573,7 @@ class _CvTemplatePicker extends StatelessWidget {
               title: Text(
                 template.name,
                 textAlign: TextAlign.start,
-                style: TextStyle(fontWeight: FontWeight.w800),
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
               subtitle: Text(
                 template.isDefault
@@ -581,7 +581,7 @@ class _CvTemplatePicker extends StatelessWidget {
                     : template.slug,
                 textAlign: TextAlign.start,
               ),
-              trailing: Icon(Icons.download_rounded),
+              trailing: const Icon(Icons.download_rounded),
             ),
           );
         },
@@ -604,7 +604,7 @@ class _DocumentIcon extends StatelessWidget {
         color: color.withValues(alpha: .12),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Center(child: SiratiMark(size: 22)),
+      child: const Center(child: SiratiMark(size: 22)),
     );
   }
 }
@@ -708,7 +708,7 @@ class _CreateCvDashedCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.add_rounded, size: 18, color: context.sirati.primary),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Flexible(
                 child: Text(
                   english ? 'Create New CV' : 'إنشاء سيرة جديدة',

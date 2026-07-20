@@ -133,14 +133,14 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 ),
               ),
             ),
-            SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               en ? 'Confirm with password' : 'أكد بكلمة المرور',
               textAlign: TextAlign.start,
               style: AppTextStyles.titleSm()
                   .copyWith(color: context.sirati.textSecondary),
             ),
-            SizedBox(height: 6),
+            const SizedBox(height: 6),
             AppTextFormField(
               controller: _passwordCtrl,
               autovalidateMode: _submitted
@@ -152,7 +152,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _delete(),
               hintText: '••••••••',
-              prefixIcon: Icon(Icons.lock_outline_rounded),
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscure
@@ -165,7 +165,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                   ? (en ? 'Password is required' : 'كلمة المرور مطلوبة')
                   : null,
             ),
-            SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.xl),
             SubmitButton(
               label: en ? 'Delete my account' : 'احذف حسابي',
               loadingLabel: en ? 'Deleting...' : 'جارٍ الحذف...',

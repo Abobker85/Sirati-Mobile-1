@@ -101,7 +101,7 @@ class GeneratedCvScreen extends StatelessWidget {
         actions: [
           const LanguageToggle(),
           IconButton(
-              icon: Icon(Icons.edit_outlined),
+              icon: const Icon(Icons.edit_outlined),
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => CvGeneratorScreen(initialCv: generatedCv)))),
         ],
@@ -121,7 +121,7 @@ class GeneratedCvScreen extends StatelessWidget {
                 children: [
                   Icon(Icons.auto_awesome,
                       color: context.sirati.teal, size: 18),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       english
@@ -167,7 +167,7 @@ class GeneratedCvScreen extends StatelessWidget {
                 children: [
                   Icon(Icons.info_outline,
                       color: context.sirati.amber, size: 18),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       english
@@ -200,13 +200,13 @@ class GeneratedCvScreen extends StatelessWidget {
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: context.sirati.primaryDark)),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(generatedCv.targetJobTitle,
                         style: TextStyle(
                             fontSize: 14,
                             color: context.sirati.primary,
                             fontWeight: FontWeight.w500)),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     if (contact.isNotEmpty)
                       Text(contact,
                           style: TextStyle(
@@ -240,17 +240,17 @@ class GeneratedCvScreen extends StatelessWidget {
                   child: PressScale(
                     child: OutlinedButton.icon(
                       onPressed: _shareCv,
-                      icon: Icon(Icons.share_outlined, size: 18),
+                      icon: const Icon(Icons.share_outlined, size: 18),
                       label: Text(english ? 'Share' : 'مشاركة'),
                     ),
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: PressScale(
                     child: ElevatedButton.icon(
                       onPressed: () => _downloadPdf(context),
-                      icon: Icon(Icons.download_outlined, size: 18),
+                      icon: const Icon(Icons.download_outlined, size: 18),
                       label: Text(english ? 'Download PDF' : 'تنزيل PDF'),
                     ),
                   ),
@@ -296,7 +296,7 @@ class GeneratedCvScreen extends StatelessWidget {
           ),
         ));
         widgets.add(Divider(height: 1, color: context.sirati.border));
-        widgets.add(SizedBox(height: 6));
+        widgets.add(const SizedBox(height: 6));
       } else if (raw.startsWith('**') && raw.endsWith('**')) {
         final cleaned = raw.replaceAll('**', '').trim();
         widgets.add(Padding(
@@ -386,7 +386,7 @@ class _CvTemplatePicker extends StatelessWidget {
               color: context.sirati.textPrimary,
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           for (final entry in templates.asMap().entries)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -409,7 +409,7 @@ class _CvTemplatePicker extends StatelessWidget {
                     title: Text(
                       entry.value.name,
                       textAlign: TextAlign.start,
-                      style: TextStyle(fontWeight: FontWeight.w800),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                     subtitle: Text(
                       entry.value.isDefault
@@ -417,7 +417,7 @@ class _CvTemplatePicker extends StatelessWidget {
                           : entry.value.slug,
                       textAlign: TextAlign.start,
                     ),
-                    trailing: Icon(Icons.download_rounded),
+                    trailing: const Icon(Icons.download_rounded),
                   ),
                 ),
               ),

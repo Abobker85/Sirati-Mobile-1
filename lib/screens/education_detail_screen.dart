@@ -124,13 +124,13 @@ class _DetailBody extends StatelessWidget {
             if (duration.isNotEmpty) _Chip(label: duration),
           ],
         ),
-        SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.xl),
         Text(
           title.isEmpty ? (english ? 'Untitled' : 'بدون عنوان') : title,
           textAlign: TextAlign.start,
           style: AppTextStyles.titleLg().copyWith(fontSize: 26, height: 1.35),
         ),
-        SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.md),
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(

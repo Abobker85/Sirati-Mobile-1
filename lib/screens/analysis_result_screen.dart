@@ -147,7 +147,7 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
             actions: [
               const LanguageToggle(),
               IconButton(
-                icon: Icon(Icons.share_outlined),
+                icon: const Icon(Icons.share_outlined),
                 onPressed: () => _shareAnalysis(english),
               ),
             ],
@@ -237,7 +237,7 @@ class _ScoreTab extends StatelessWidget {
                 score: score,
                 scoreColor: scoreColor,
               ),
-              SizedBox(height: 14),
+              const SizedBox(height: 14),
               // Grade badge
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -257,7 +257,7 @@ class _ScoreTab extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 6),
+              const SizedBox(height: 6),
               Text(
                 gradeDesc,
                 style: TextStyle(
@@ -267,9 +267,9 @@ class _ScoreTab extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 16),
-              Divider(),
-              SizedBox(height: 14),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 14),
               // Job match row
               Row(
                 children: [
@@ -278,7 +278,7 @@ class _ScoreTab extends StatelessWidget {
                     size: 16,
                     color: context.sirati.textSecondary,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       jobTitle,
@@ -290,7 +290,7 @@ class _ScoreTab extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -311,7 +311,7 @@ class _ScoreTab extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               AnimatedAtsScoreBar(
                 value: jobMatch / 100,
                 color: context.sirati.primary,
@@ -321,7 +321,7 @@ class _ScoreTab extends StatelessWidget {
                 celebrateOnComplete: true,
                 semanticLabel: english ? 'Job match' : 'تطابق الوظيفة',
               ),
-              SizedBox(height: 6),
+              const SizedBox(height: 6),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: Text(
@@ -336,11 +336,11 @@ class _ScoreTab extends StatelessWidget {
           ),
         ),
 
-        SizedBox(height: 24),
+        const SizedBox(height: 24),
 
         // ── Criteria ────────────────────────────────────────────────────────
         SectionTitle(english ? 'Criteria Details' : 'تفاصيل المعايير'),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         AppCard(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Column(
@@ -372,7 +372,7 @@ class _ScoreTab extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
                               '${c.score} / ${c.max}',
                               style: TextStyle(
@@ -380,7 +380,7 @@ class _ScoreTab extends StatelessWidget {
                                 color: context.sirati.textSecondary,
                               ),
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 7,
@@ -401,7 +401,7 @@ class _ScoreTab extends StatelessWidget {
                             ),
                           ],
                         ),
-                        SizedBox(height: 7),
+                        const SizedBox(height: 7),
                         AnimatedAtsScoreBar(
                           value: pct,
                           color: barColor,
@@ -411,18 +411,18 @@ class _ScoreTab extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (i < criteria.length - 1) Divider(height: 1),
+                  if (i < criteria.length - 1) const Divider(height: 1),
                 ],
               );
             }),
           ),
         ),
 
-        SizedBox(height: 24),
+        const SizedBox(height: 24),
 
         // ── Keywords ────────────────────────────────────────────────────────
         SectionTitle(english ? 'Keywords' : 'الكلمات المفتاحية'),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         AppCard(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -439,7 +439,7 @@ class _ScoreTab extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     english
                         ? 'Found  (${keywordsFound.length})'
@@ -452,7 +452,7 @@ class _ScoreTab extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -460,9 +460,9 @@ class _ScoreTab extends StatelessWidget {
                     .map((k) => _KeywordChip(label: k, found: true))
                     .toList(),
               ),
-              SizedBox(height: 16),
-              Divider(),
-              SizedBox(height: 14),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 14),
               // Missing
               Row(
                 children: [
@@ -474,7 +474,7 @@ class _ScoreTab extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     english
                         ? 'Missing  (${keywordsMissing.length})'
@@ -487,7 +487,7 @@ class _ScoreTab extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -532,7 +532,7 @@ class _RecommendationsTab extends StatelessWidget {
           iconBg: context.sirati.tealLight,
           label: english ? 'Strengths' : 'نقاط القوة',
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         AppCard(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: strengths.isEmpty
@@ -568,7 +568,7 @@ class _RecommendationsTab extends StatelessWidget {
                                   color: context.sirati.tealDark,
                                 ),
                               ),
-                              SizedBox(width: 10),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   strengths[i],
@@ -582,14 +582,14 @@ class _RecommendationsTab extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (i < strengths.length - 1) Divider(height: 1),
+                        if (i < strengths.length - 1) const Divider(height: 1),
                       ],
                     );
                   }),
                 ),
         ),
 
-        SizedBox(height: 24),
+        const SizedBox(height: 24),
 
         // ── Quick Wins ────────────────────────────────────────────────────────
         _SectionHeader(
@@ -598,7 +598,7 @@ class _RecommendationsTab extends StatelessWidget {
           iconBg: context.sirati.amberLight,
           label: english ? 'Quick Wins' : 'تحسينات سريعة',
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         AppCard(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: quickWins.isEmpty
@@ -638,7 +638,7 @@ class _RecommendationsTab extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              SizedBox(width: 10),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   quickWins[i],
@@ -652,14 +652,14 @@ class _RecommendationsTab extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (i < quickWins.length - 1) Divider(height: 1),
+                        if (i < quickWins.length - 1) const Divider(height: 1),
                       ],
                     );
                   }),
                 ),
         ),
 
-        SizedBox(height: 28),
+        const SizedBox(height: 28),
 
         // ── CTA ──────────────────────────────────────────────────────────────
         Container(
@@ -684,7 +684,7 @@ class _RecommendationsTab extends StatelessWidget {
                   color: context.sirati.primary,
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,7 +699,7 @@ class _RecommendationsTab extends StatelessWidget {
                         color: context.sirati.primaryDark,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       english
                           ? 'We will generate an improved CV from this analysis.'
@@ -716,7 +716,7 @@ class _RecommendationsTab extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         SubmitButton(
           label: english ? 'Generate Improved CV' : 'توليد سيرة محسّنة',
           loadingLabel: english ? 'Generating...' : 'جارٍ التوليد...',
@@ -756,7 +756,7 @@ class _SectionHeader extends StatelessWidget {
           ),
           child: Icon(icon, size: 16, color: iconColor),
         ),
-        SizedBox(width: 10),
+        const SizedBox(width: 10),
         Text(
           label,
           style: TextStyle(

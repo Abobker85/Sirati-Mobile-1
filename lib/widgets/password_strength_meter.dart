@@ -89,7 +89,7 @@ class PasswordStrengthMeter extends StatelessWidget {
                 );
               }),
             ),
-            SizedBox(height: AppSpacing.xxs),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               label,
               textAlign: TextAlign.start,
