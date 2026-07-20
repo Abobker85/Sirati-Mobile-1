@@ -16,6 +16,10 @@ class ApiClient {
   final Future<String?> Function()? _tokenProvider;
   static const _timeout = Duration(seconds: 45);
 
+  /// Invoked once when an authenticated call returns 401/403.
+  /// Set from app bootstrap (see [AuthSessionGuard]).
+  static Future<void> Function()? onAuthExpired;
+
   Future<Map<String, dynamic>> getJson(String path) async {
     final headers = await _headers();
     final response = await _send(() {
@@ -60,12 +64,15 @@ class ApiClient {
     return _decodeObject(response);
   }
 
-  Future<Map<String, dynamic>> deleteJson(String path) async {
-    final headers = await _headers();
+  Future<Map<String, dynamic>> deleteJson(String path,
+      {Map<String, dynamic>? body}) async {
+    final headers =
+        await _headers(contentType: body != null ? 'application/json' : null);
     final response = await _send(() {
       return _httpClient.delete(
         ApiConfig.uri(path),
         headers: headers,
+        body: body != null ? jsonEncode(body) : null,
       );
     });
 
@@ -102,16 +109,29 @@ class ApiClient {
         return response;
       }
 
-      throw _exceptionFromResponse(response);
+      final exception = _exceptionFromResponse(response);
+      // Only HTTP 401 means the session token is invalid/expired.
+      // 403 (forbidden / not your resource) must NOT force logout.
+      if (response.statusCode == 401 &&
+          _tokenProvider != null &&
+          onAuthExpired != null) {
+        // Fire-and-forget; do not block the throw path.
+        // ignore: unawaited_futures
+        onAuthExpired!();
+      }
+      throw exception;
     } on ApiException {
       rethrow;
     } on TimeoutException {
-      throw const ApiException('انتهت مهلة الاتصال بالخادم. حاول مرة أخرى.');
+      throw const ApiException.timeout(
+          'انتهت مهلة الاتصال بالخادم. حاول مرة أخرى.');
     } on http.ClientException {
-      throw const ApiException(
+      throw const ApiException.network(
           'تعذر الاتصال بالخادم. تأكد من تشغيل Laravel وصحة رابط API.');
-    } catch (_) {
-      throw const ApiException('حدث خطأ غير متوقع أثناء الاتصال بالخادم.');
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw const ApiException.network(
+          'حدث خطأ غير متوقع أثناء الاتصال بالخادم.');
     }
   }
 
@@ -121,7 +141,8 @@ class ApiClient {
       return decoded;
     }
 
-    throw const ApiException('استجابة الخادم غير متوقعة.');
+    throw const ApiException('استجابة الخادم غير متوقعة.',
+        type: ApiErrorType.unknown);
   }
 
   Future<Map<String, String>> _headers({String? contentType}) async {
@@ -157,12 +178,23 @@ class ApiClient {
       }
 
       return ApiException(message,
-          statusCode: response.statusCode, errors: errors);
+          statusCode: response.statusCode,
+          errors: errors,
+          type: _typeFromStatus(response.statusCode));
     } catch (_) {
       return ApiException(
         'فشل الطلب برمز ${response.statusCode}.',
         statusCode: response.statusCode,
+        type: _typeFromStatus(response.statusCode),
       );
     }
+  }
+
+  static ApiErrorType _typeFromStatus(int status) {
+    if (status == 401 || status == 403) return ApiErrorType.auth;
+    if (status == 404) return ApiErrorType.notFound;
+    if (status == 422) return ApiErrorType.validation;
+    if (status >= 500 && status < 600) return ApiErrorType.server;
+    return ApiErrorType.unknown;
   }
 }

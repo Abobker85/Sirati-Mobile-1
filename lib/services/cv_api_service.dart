@@ -119,7 +119,9 @@ class CvApiService {
 
   String pdfUrlForTemplate(GeneratedCv cv, String? templateSlug) {
     final templateBaseUrl = cv.templatePdfUrl ?? '';
-    if (templateSlug == null || templateSlug.isEmpty || templateBaseUrl.isEmpty) {
+    if (templateSlug == null ||
+        templateSlug.isEmpty ||
+        templateBaseUrl.isEmpty) {
       return templateBaseUrl.isNotEmpty ? templateBaseUrl : cv.pdfUrl ?? '';
     }
 

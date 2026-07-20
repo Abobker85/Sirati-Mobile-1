@@ -22,14 +22,38 @@ class AuthUser {
   final int id;
   final String name;
   final String email;
+  final String? phone;
+  final String? location;
 
-  const AuthUser({required this.id, required this.name, required this.email});
+  const AuthUser({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.phone,
+    this.location,
+  });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
       id: _asInt(json['id']),
       name: json['name']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
+      phone: json['phone']?.toString(),
+      location: json['location']?.toString(),
+    );
+  }
+
+  AuthUser copyWith({
+    String? name,
+    String? phone,
+    String? location,
+  }) {
+    return AuthUser(
+      id: id,
+      name: name ?? this.name,
+      email: email,
+      phone: phone ?? this.phone,
+      location: location ?? this.location,
     );
   }
 }

@@ -1,13 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../app_locale.dart';
+import '../services/analytics_service.dart';
 import '../services/api_exception.dart';
 import '../services/auth_api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_snack_bar.dart';
+import '../widgets/form_fields.dart';
+import '../widgets/language_toggle.dart';
+import '../widgets/motion.dart';
+import '../widgets/submit_button.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  /// When true, shows a one-shot "session expired" snackbar after first frame.
+  final bool sessionExpiredNotice;
+
+  const LoginScreen({super.key, this.sessionExpiredNotice = false});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -20,6 +32,25 @@ class _LoginScreenState extends State<LoginScreen> {
   final _authService = AuthApiService();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _submitted = false;
+  bool _showFormBanner = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sessionExpiredNotice) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final english = AppLocale.isEnglish(context);
+        AppSnackBar.info(
+          context,
+          english
+              ? 'Session expired, please log in again.'
+              : 'انتهت الجلسة، سجّل الدخول مجدداً.',
+        );
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -29,7 +60,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+    final english = AppLocale.isEnglish(context);
+    setState(() {
+      _submitted = true;
+      _showFormBanner = false;
+    });
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _showFormBanner = true);
+      HapticFeedback.selectionClick();
+      return;
+    }
     setState(() => _isLoading = true);
 
     try {
@@ -39,72 +79,102 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
+      AnalyticsService.logLoginSuccess(method: 'email');
+      HapticFeedback.lightImpact();
+      // Use pushAndRemoveUntil so HomeScreen becomes the root route.
+      // This prevents the back button from popping back to the SplashScreen
+      // (welcome/login UI) after the user is already authenticated.
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
       );
     } on ApiException catch (exception) {
-      if (mounted) _showError(exception.displayMessage);
+      if (mounted) {
+        AppSnackBar.fromException(
+          context,
+          exception,
+          retryLabel: english ? 'Retry' : 'إعادة',
+          onRetry: _login,
+        );
+      }
     } catch (_) {
-      if (mounted) _showError('حدث خطأ غير متوقع أثناء تسجيل الدخول.');
+      if (mounted) {
+        _showError(english
+            ? 'An unexpected error occurred while signing in.'
+            : 'حدث خطأ غير متوقع أثناء تسجيل الدخول.');
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _loginWithGoogle() async {
-    _showError('تسجيل الدخول عبر Google غير مفعّل حالياً.');
+    final english = AppLocale.isEnglish(context);
+    _showError(english
+        ? 'Google sign-in is not enabled yet.'
+        : 'تسجيل الدخول عبر Google غير مفعّل حالياً.');
   }
 
   Future<void> _loginWithApple() async {
-    _showError('تسجيل الدخول عبر Apple غير مفعّل حالياً.');
+    final english = AppLocale.isEnglish(context);
+    _showError(english
+        ? 'Apple sign-in is not enabled yet.'
+        : 'تسجيل الدخول عبر Apple غير مفعّل حالياً.');
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(message, textAlign: TextAlign.right),
-          behavior: SnackBarBehavior.floating),
-    );
+    AppSnackBar.error(context, message);
   }
 
   @override
   Widget build(BuildContext context) {
+    final english = AppLocale.isEnglish(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.sirati.background,
       body: Column(
         children: [
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.sirati.surface,
               border: Border(
-                bottom:
-                    BorderSide(color: AppColors.border.withValues(alpha: .5)),
+                bottom: BorderSide(
+                    color: context.sirati.border.withValues(alpha: .5)),
               ),
             ),
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 24,
-              right: 20,
-              left: 20,
+            padding: EdgeInsetsDirectional.only(
+              top: MediaQuery.of(context).padding.top + 16,
+              start: 20,
+              end: 12,
               bottom: 24,
             ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SiratiMark(size: 56, elevated: true),
+                Row(
+                  children: [
+                    Spacer(),
+                    LanguageToggle(),
+                  ],
+                ),
+                SizedBox(height: 8),
+                const SiratiMark(size: 56, elevated: true),
                 SizedBox(height: 14),
                 Text(
-                  'مرحباً بك في سيرتي',
+                  english ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
+                  textAlign: TextAlign.start,
                   style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary),
+                      color: context.sirati.primary),
                 ),
                 SizedBox(height: 6),
                 Text(
-                  'سجّل دخولك للمتابعة',
-                  style:
-                      TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                  english ? 'Sign in to continue' : 'سجّل دخولك للمتابعة',
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                      fontSize: 14, color: context.sirati.textSecondary),
                 ),
               ],
             ),
@@ -112,60 +182,94 @@ class _LoginScreenState extends State<LoginScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-              child: Form(
+              child: AutofillGroup(
+                child: Form(
                 key: _formKey,
+                autovalidateMode: _submitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const _AuthLabel(text: 'البريد الإلكتروني'),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      textDirection: TextDirection.ltr,
-                      textAlign: TextAlign.right,
-                      decoration: const InputDecoration(
-                        hintText: 'name@example.com',
-                        prefixIcon: Icon(Icons.email_outlined),
+                    if (_showFormBanner)
+                      AppFormErrorBanner(
+                        message: english
+                            ? 'Please fix the highlighted fields to continue.'
+                            : 'يرجى تصحيح الحقول المحددة للمتابعة.',
+                        onDismiss: () =>
+                            setState(() => _showFormBanner = false),
                       ),
+                    _AuthLabel(text: english ? 'Email' : 'البريد الإلكتروني'),
+                    SizedBox(height: 6),
+                    AppTextFormField(
+                      controller: _emailController,
+                      showSuccessWhenValid: true,
+                      successMessage: english ? 'Looks good' : 'يبدو جيداً',
+                      autovalidateMode: _submitted
+                          ? AutovalidateMode.onUserInteraction
+                          : AutovalidateMode.disabled,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      textDirection: TextDirection.ltr,
+                      textAlign: TextAlign.left,
+                      textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
+                      hintText: 'name@example.com',
+                      prefixIcon: Icon(Icons.email_outlined),
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
-                          return 'يرجى إدخال البريد الإلكتروني';
+                          return english
+                              ? 'Please enter your email'
+                              : 'يرجى إدخال البريد الإلكتروني';
                         }
                         if (!v.contains('@')) {
-                          return 'البريد الإلكتروني غير صحيح';
+                          return english
+                              ? 'Email address is invalid'
+                              : 'البريد الإلكتروني غير صحيح';
                         }
                         return null;
                       },
                     ),
-                    const SizedBox(height: 14),
-                    const _AuthLabel(text: 'كلمة المرور'),
-                    const SizedBox(height: 6),
-                    TextFormField(
+                    SizedBox(height: AppSpacing.md),
+                    _AuthLabel(text: english ? 'Password' : 'كلمة المرور'),
+                    SizedBox(height: 6),
+                    AppTextFormField(
                       controller: _passwordController,
+                      showSuccessWhenValid: true,
+                      autovalidateMode: _submitted
+                          ? AutovalidateMode.onUserInteraction
+                          : AutovalidateMode.disabled,
                       obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        hintText: '••••••••',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined),
-                          onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword),
-                        ),
+                      autofillHints: const [AutofillHints.password],
+                      textDirection: TextDirection.ltr,
+                      textAlign: TextAlign.left,
+                      textInputAction: TextInputAction.send,
+                      onFieldSubmitted: (_) => _login(),
+                      hintText: '••••••••',
+                      prefixIcon: Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) {
-                          return 'يرجى إدخال كلمة المرور';
+                          return english
+                              ? 'Please enter your password'
+                              : 'يرجى إدخال كلمة المرور';
                         }
                         if (v.length < 6) {
-                          return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+                          return english
+                              ? 'Password must be at least 6 characters'
+                              : 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
                         }
                         return null;
                       },
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: AppSpacing.xs),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: TextButton(
@@ -173,37 +277,35 @@ class _LoginScreenState extends State<LoginScreen> {
                           MaterialPageRoute(
                               builder: (_) => const ForgotPasswordScreen()),
                         ),
-                        child: const Text('نسيت كلمة المرور؟'),
+                        child: Text(
+                            english ? 'Forgot password?' : 'نسيت كلمة المرور؟'),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2.5),
-                            )
-                          : const Text('تسجيل الدخول'),
+                    SizedBox(height: AppSpacing.xs),
+                    SubmitButton(
+                      label: english ? 'Sign in' : 'تسجيل الدخول',
+                      loadingLabel:
+                          english ? 'Signing in...' : 'جارٍ تسجيل الدخول...',
+                      isLoading: _isLoading,
+                      onPressed: _login,
                     ),
-                    const SizedBox(height: 24),
-                    const Row(
+                    SizedBox(height: AppSpacing.xl),
+                    Row(
                       children: [
-                        Expanded(child: Divider(color: AppColors.border)),
+                        Expanded(child: Divider(color: context.sirati.border)),
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 14),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
                           child: Text(
-                            'أو تابع بـ',
+                            english ? 'Or continue with' : 'أو تابع بـ',
                             style: TextStyle(
-                                fontSize: 13, color: AppColors.textSecondary),
+                                fontSize: 13,
+                                color: context.sirati.textSecondary),
                           ),
                         ),
-                        Expanded(child: Divider(color: AppColors.border)),
+                        Expanded(child: Divider(color: context.sirati.border)),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     Row(
                       children: [
                         Expanded(
@@ -213,7 +315,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onTap: _loginWithGoogle,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: _SocialButton(
                             icon: Icons.apple,
@@ -223,26 +325,30 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 28),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    SizedBox(height: 28),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
+                        Text(
+                          english ? "Don't have an account?" : 'ليس لديك حساب؟',
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: context.sirati.textSecondary),
+                        ),
                         TextButton(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(
                                 builder: (_) => const RegisterScreen()),
                           ),
-                          child: const Text('أنشئ حساباً'),
-                        ),
-                        const Text(
-                          'ليس لديك حساب؟',
-                          style: TextStyle(
-                              fontSize: 14, color: AppColors.textSecondary),
+                          child:
+                              Text(english ? 'Create account' : 'أنشئ حساباً'),
                         ),
                       ],
                     ),
                   ],
                 ),
+              ),
               ),
             ),
           ),
@@ -263,12 +369,11 @@ class _AuthLabel extends StatelessWidget {
       width: double.infinity,
       child: Text(
         text,
-        textDirection: TextDirection.rtl,
-        textAlign: TextAlign.right,
-        style: const TextStyle(
+        textAlign: TextAlign.start,
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w700,
-          color: AppColors.textSecondary,
+          color: context.sirati.textSecondary,
         ),
       ),
     );
@@ -285,27 +390,39 @@ class _SocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 13),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border.withValues(alpha: .7)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 22, color: AppColors.textSecondary),
-            const SizedBox(width: 8),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary)),
-          ],
+    return PressScale(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 50),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: context.sirati.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: context.sirati.border),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 22, color: context.sirati.textPrimary),
+                SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: context.sirati.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

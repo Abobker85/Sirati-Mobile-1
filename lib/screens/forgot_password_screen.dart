@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_locale.dart';
 import '../services/api_exception.dart';
 import '../services/auth_api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_snack_bar.dart';
+import '../widgets/form_fields.dart';
 import '../widgets/language_toggle.dart';
+import '../widgets/submit_button.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -14,9 +18,11 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _authService = AuthApiService();
   bool _isLoading = false;
+  bool _submitted = false;
   String? _successMessage;
 
   @override
@@ -26,35 +32,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _submit() async {
-    final english = AppLocale.isEnglish(context);
-    final email = _emailController.text.trim();
-    if (!email.contains('@')) {
-      _message(english
-          ? 'Enter a valid email address.'
-          : 'أدخل بريداً إلكترونياً صحيحاً.');
+    setState(() {
+      _submitted = true;
+      _successMessage = null;
+    });
+    if (!_formKey.currentState!.validate()) {
+      HapticFeedback.selectionClick();
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _successMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      final message = await _authService.forgotPassword(email: email);
+      final message = await _authService.forgotPassword(
+        email: _emailController.text.trim(),
+      );
       if (!mounted) return;
       setState(() => _successMessage = message);
     } on ApiException catch (exception) {
-      if (mounted) _message(exception.displayMessage);
+      if (mounted) {
+        AppSnackBar.fromException(
+          context,
+          exception,
+          retryLabel: AppLocale.languageCode.value == 'en' ? 'Retry' : 'إعادة',
+          onRetry: _submit,
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _message(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
   }
 
   @override
@@ -71,95 +77,67 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
-        children: [
-          Text(
-            english
-                ? 'Enter your email and we will send a password reset link.'
-                : 'أدخل بريدك الإلكتروني وسنرسل لك رابط استعادة كلمة المرور.',
-            textAlign: english ? TextAlign.left : TextAlign.right,
-            style: const TextStyle(
-              fontSize: 18,
-              height: 1.55,
-              color: AppColors.textPrimary,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
+          children: [
+            Text(
+              english
+                  ? 'Enter your email and we will send a password reset link.'
+                  : 'أدخل بريدك الإلكتروني وسنرسل لك رابط استعادة كلمة المرور.',
+              textAlign: TextAlign.start,
+              style:
+                  AppTextStyles.titleMd().copyWith(fontSize: 17, height: 1.55),
             ),
-          ),
-          const SizedBox(height: 22),
-          _ResetLabel(
-            text: english ? 'Email Address' : 'البريد الإلكتروني',
-            english: english,
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            textDirection: TextDirection.ltr,
-            textAlign: english ? TextAlign.left : TextAlign.right,
-            decoration: const InputDecoration(
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              english ? 'Email Address' : 'البريد الإلكتروني',
+              textAlign: TextAlign.start,
+              style:
+                  AppTextStyles.labelMd().copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 6),
+            AppTextFormField(
+              controller: _emailController,
+              autovalidateMode: _submitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
+              keyboardType: TextInputType.emailAddress,
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.start,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submit(),
               hintText: 'name@example.com',
-              prefixIcon: Icon(Icons.email_outlined),
+              prefixIcon: const Icon(Icons.email_outlined),
+              validator: (value) {
+                final email = value?.trim() ?? '';
+                if (email.isEmpty) {
+                  return english
+                      ? 'Please enter your email'
+                      : 'يرجى إدخال البريد الإلكتروني';
+                }
+                if (!email.contains('@')) {
+                  return english
+                      ? 'Enter a valid email address'
+                      : 'أدخل بريداً إلكترونياً صحيحاً';
+                }
+                return null;
+              },
             ),
-          ),
-          const SizedBox(height: 18),
-          ElevatedButton.icon(
-            onPressed: _isLoading ? null : _submit,
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2.2),
-                  )
-                : const Icon(Icons.send_outlined),
-            label: Text(english ? 'Send Reset Link' : 'إرسال الرابط'),
-          ),
-          if (_successMessage != null) ...[
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.tealLight,
-                borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: AppColors.teal.withValues(alpha: .35)),
-              ),
-              child: Text(
-                _successMessage!,
-                textAlign: english ? TextAlign.left : TextAlign.right,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                  color: AppColors.tealDark,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            const SizedBox(height: AppSpacing.md),
+            SubmitButton(
+              label: english ? 'Send Reset Link' : 'إرسال الرابط',
+              loadingLabel: english ? 'Sending...' : 'جارٍ الإرسال...',
+              isLoading: _isLoading,
+              icon: Icons.send_outlined,
+              onPressed: _submit,
             ),
+            if (_successMessage != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              AppFormSuccessBanner(message: _successMessage!),
+            ],
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ResetLabel extends StatelessWidget {
-  final String text;
-  final bool english;
-
-  const _ResetLabel({required this.text, required this.english});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: Text(
-        text,
-        textDirection: english ? TextDirection.ltr : TextDirection.rtl,
-        textAlign: english ? TextAlign.left : TextAlign.right,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textSecondary,
         ),
       ),
     );

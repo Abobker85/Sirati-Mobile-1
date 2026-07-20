@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
+
+import '../app_locale.dart';
 import '../theme/app_theme.dart';
+import '../services/analytics_service.dart';
 import '../services/api_exception.dart';
 import '../services/cv_api_service.dart';
+import '../services/notification_engagement_service.dart';
+import '../widgets/app_snack_bar.dart';
+import '../widgets/form_fields.dart';
+import '../widgets/loading/ai_progress_overlay.dart';
+import '../widgets/submit_button.dart';
 import 'analysis_result_screen.dart';
 
 class CvAnalysisScreen extends StatefulWidget {
@@ -20,6 +29,10 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
   final _apiService = CvApiService();
   PlatformFile? _uploadedFile;
   bool _isLoading = false;
+  bool _submitted = false;
+
+  /// Bumped on each submit/cancel so a late AI response cannot apply.
+  int _aiRequestGen = 0;
 
   @override
   void dispose() {
@@ -43,12 +56,37 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
   void _clearFile() => setState(() => _uploadedFile = null);
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_uploadedFile == null && _resumeTextController.text.trim().isEmpty) {
-      _showError('الصق نص السيرة أو ارفع ملف PDF/TXT للبدء.');
+    final english = AppLocale.isEnglish(context);
+    setState(() => _submitted = true);
+    if (!_formKey.currentState!.validate()) {
+      HapticFeedback.selectionClick();
       return;
     }
+    if (_uploadedFile == null && _resumeTextController.text.trim().isEmpty) {
+      _showError(english
+          ? 'Paste resume text or upload a PDF/TXT file to start.'
+          : 'الصق نص السيرة أو ارفع ملف PDF/TXT للبدء.');
+      return;
+    }
+    final requestId = ++_aiRequestGen;
     setState(() => _isLoading = true);
+    final startedAt = DateTime.now();
+    AnalyticsService.logAnalysisStarted();
+
+    final progress = await AiProgressOverlay.show(
+      context,
+      kind: AiProgressKind.analysis,
+      english: english,
+      onCancelled: () {
+        if (_aiRequestGen == requestId) _aiRequestGen++;
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        AppSnackBar.info(
+          context,
+          english ? 'Cancelled' : 'تم الإلغاء',
+        );
+      },
+    );
 
     try {
       final analysis = await _apiService.submitAnalysis(
@@ -57,17 +95,51 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
         resumeFile: await _multipartFile(),
       );
 
-      if (!mounted) return;
+      if (!mounted ||
+          progress.isCancelled ||
+          requestId != _aiRequestGen) {
+        return;
+      }
+
+      final durationMs =
+          DateTime.now().difference(startedAt).inMilliseconds;
+      // Bucket only — never the exact score.
+      AnalyticsService.logAnalysisCompleted(
+        score: analysis.scoreTotal,
+        durationMs: durationMs,
+      );
+      await progress.dismiss();
+      if (!mounted || requestId != _aiRequestGen) return;
+      HapticFeedback.lightImpact();
+      // Fire-and-forget conversion for smart-notification measurement.
+      NotificationEngagementService.instance
+          .reportConversion('analysis_completed');
       Navigator.of(context).push(
         MaterialPageRoute(
             builder: (_) => AnalysisResultScreen(analysis: analysis)),
       );
     } on ApiException catch (exception) {
-      if (mounted) _showError(exception.displayMessage);
+      if (progress.isCancelled || requestId != _aiRequestGen) return;
+      AnalyticsService.logAnalysisFailed(errorType: exception.type.name);
+      if (mounted) AppSnackBar.fromException(context, exception);
     } catch (_) {
-      if (mounted) _showError('حدث خطأ غير متوقع أثناء تحليل السيرة.');
+      if (progress.isCancelled || requestId != _aiRequestGen) return;
+      AnalyticsService.logAnalysisFailed(errorType: 'unknown');
+      if (mounted) {
+        AppSnackBar.error(
+          context,
+          english
+              ? 'An unexpected error occurred while analyzing the CV.'
+              : 'حدث خطأ غير متوقع أثناء تحليل السيرة.',
+        );
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      await progress.dismiss();
+      if (mounted &&
+          requestId == _aiRequestGen &&
+          !progress.isCancelled) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -95,66 +167,67 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(msg, textAlign: TextAlign.right),
-          behavior: SnackBarBehavior.floating),
-    );
+    AppSnackBar.error(context, msg);
   }
 
   @override
   Widget build(BuildContext context) {
+    final english = AppLocale.isEnglish(context);
+
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('تحليل السيرة الذاتية'),
+        title: Text(english ? 'CV Analysis' : 'تحليل السيرة الذاتية'),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
           children: [
-            // ── Job title ──
             AppCard(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('المسمى الوظيفي المستهدف',
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary)),
-                  const SizedBox(height: 10),
-                  TextFormField(
+                  Text(
+                    english ? 'Target job title' : 'المسمى الوظيفي المستهدف',
+                    textAlign: TextAlign.start,
+                    style: AppTextStyles.titleSm(),
+                  ),
+                  SizedBox(height: 10),
+                  AppTextFormField(
                     controller: _jobTitleController,
-                    textDirection: TextDirection.rtl,
-                    textAlign: TextAlign.right,
-                    decoration: const InputDecoration(
-                      hintText: 'مثال: Laravel Backend Developer',
-                      prefixIcon: Icon(Icons.work_outline_rounded),
-                    ),
+                    autovalidateMode: _submitted
+                        ? AutovalidateMode.onUserInteraction
+                        : AutovalidateMode.disabled,
+                    textAlign: TextAlign.start,
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) =>
+                        FocusScope.of(context).nextFocus(),
+                    hintText: english
+                        ? 'e.g. Laravel Backend Developer'
+                        : 'مثال: مطوّر Laravel Backend',
+                    prefixIcon: Icon(Icons.work_outline_rounded),
                     validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'هذا الحقل مطلوب'
+                        ? (english
+                            ? 'Please enter a target job title'
+                            : 'يرجى إدخال المسمى الوظيفي المستهدف')
                         : null,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // ── Upload area ──
+            SizedBox(height: 16),
             AppCard(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('رفع ملف السيرة الذاتية',
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary)),
-                  const SizedBox(height: 12),
+                  Text(
+                    english ? 'Upload resume file' : 'رفع ملف السيرة الذاتية',
+                    textAlign: TextAlign.start,
+                    style: AppTextStyles.titleSm(),
+                  ),
+                  SizedBox(height: 12),
                   if (_uploadedFile == null)
                     GestureDetector(
                       onTap: _pickFile,
@@ -163,34 +236,43 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 28),
                         decoration: BoxDecoration(
                           border: Border.all(
-                              color: AppColors.primaryMid,
+                              color: context.sirati.primaryMid,
                               width: 1.5,
                               style: BorderStyle.solid),
                           borderRadius: BorderRadius.circular(14),
-                          color: AppColors.primaryLight.withValues(alpha: .5),
+                          color:
+                              context.sirati.primaryLight.withValues(alpha: .5),
                         ),
                         child: Column(
                           children: [
                             Container(
                               width: 52,
                               height: 52,
-                              decoration: const BoxDecoration(
-                                  color: AppColors.primaryLight,
+                              decoration: BoxDecoration(
+                                  color: context.sirati.primaryLight,
                                   shape: BoxShape.circle),
-                              child: const Icon(Icons.cloud_upload_outlined,
-                                  size: 28, color: AppColors.primary),
+                              child: Icon(Icons.cloud_upload_outlined,
+                                  size: 28, color: context.sirati.primary),
                             ),
-                            const SizedBox(height: 12),
-                            const Text('اضغط لرفع ملف PDF أو TXT',
-                                style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary)),
-                            const SizedBox(height: 4),
-                            const Text('الحد الأقصى 5 ميجابايت',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary)),
+                            SizedBox(height: 12),
+                            Text(
+                              english
+                                  ? 'Tap to upload PDF or TXT'
+                                  : 'اضغط لرفع ملف PDF أو TXT',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.sirati.primary),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              english
+                                  ? 'Maximum size 5 MB'
+                                  : 'الحد الأقصى 5 ميجابايت',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: context.sirati.textSecondary),
+                            ),
                           ],
                         ),
                       ),
@@ -200,99 +282,106 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        color: AppColors.tealLight,
+                        color: context.sirati.tealLight,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: AppColors.teal.withValues(alpha: .4)),
+                            color: context.sirati.teal.withValues(alpha: .4)),
                       ),
                       child: Row(
                         children: [
+                          Icon(Icons.insert_drive_file_outlined,
+                              color: context.sirati.tealDark, size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              BidiText.isolateLtr(_uploadedFile!.name),
+                              textAlign: TextAlign.start,
+                              textDirection: TextDirection.ltr,
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.sirati.tealDark),
+                            ),
+                          ),
                           IconButton(
-                            icon: const Icon(Icons.close,
-                                size: 18, color: AppColors.red),
+                            icon: Icon(Icons.close,
+                                size: 18, color: context.sirati.red),
                             onPressed: _clearFile,
                             visualDensity: VisualDensity.compact,
                           ),
-                          const Spacer(),
-                          Flexible(
-                            child: Text(_uploadedFile!.name,
-                                style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.tealDark)),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.insert_drive_file_outlined,
-                              color: AppColors.tealDark, size: 20),
                         ],
                       ),
                     ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-
-            // ── OR divider ──
+            SizedBox(height: 12),
             Row(
               children: [
-                const Expanded(child: Divider(color: AppColors.border)),
+                Expanded(child: Divider(color: context.sirati.border)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: context.sirati.background,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border)),
-                    child: const Text('أو',
-                        style: TextStyle(
-                            fontSize: 12, color: AppColors.textSecondary)),
+                        border: Border.all(color: context.sirati.border)),
+                    child: Text(
+                      english ? 'OR' : 'أو',
+                      style: TextStyle(
+                          fontSize: 12, color: context.sirati.textSecondary),
+                    ),
                   ),
                 ),
-                const Expanded(child: Divider(color: AppColors.border)),
+                Expanded(child: Divider(color: context.sirati.border)),
               ],
             ),
-            const SizedBox(height: 12),
-
-            // ── Paste area ──
+            SizedBox(height: 12),
             AppCard(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('لصق نص السيرة الذاتية',
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary)),
-                  const SizedBox(height: 10),
-                  TextFormField(
+                  Text(
+                    english ? 'Paste resume text' : 'لصق نص السيرة الذاتية',
+                    textAlign: TextAlign.start,
+                    style: AppTextStyles.titleSm(),
+                  ),
+                  SizedBox(height: 10),
+                  AppTextFormField(
                     controller: _resumeTextController,
-                    textDirection: TextDirection.rtl,
-                    textAlign: TextAlign.right,
+                    autovalidateMode: _submitted
+                        ? AutovalidateMode.onUserInteraction
+                        : AutovalidateMode.disabled,
+                    textAlign: TextAlign.start,
                     maxLines: 8,
-                    decoration: const InputDecoration(
-                      hintText: 'الصق نص السيرة الذاتية كاملاً هنا...',
-                      alignLabelWithHint: true,
-                    ),
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
+                    hintText: english
+                        ? 'Paste the full resume text here...'
+                        : 'الصق نص السيرة الذاتية كاملاً هنا...',
+                    validator: (value) {
+                      if (_uploadedFile != null) return null;
+                      if (value == null || value.trim().isEmpty) {
+                        return english
+                            ? 'Paste resume text or upload a PDF/TXT file.'
+                            : 'الصق نص السيرة أو ارفع ملف PDF/TXT.';
+                      }
+                      return null;
+                    },
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 28),
-
-            ElevatedButton.icon(
-              onPressed: _isLoading ? null : _submit,
-              icon: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2.5))
-                  : const Icon(Icons.analytics_outlined, size: 20),
-              label:
-                  Text(_isLoading ? 'جارٍ التحليل...' : 'تحليل السيرة الذاتية'),
+            SizedBox(height: AppSpacing.xl),
+            SubmitButton(
+              label: english ? 'Analyze CV' : 'تحليل السيرة الذاتية',
+              loadingLabel: english ? 'Analyzing...' : 'جارٍ التحليل...',
+              isLoading: _isLoading,
+              icon: Icons.analytics_outlined,
+              onPressed: _submit,
             ),
           ],
         ),

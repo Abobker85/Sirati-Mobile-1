@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -5,11 +7,123 @@ import '../app_locale.dart';
 import '../models/job_news.dart';
 import '../services/mobile_content_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/language_toggle.dart';
+import '../services/api_exception.dart';
+import '../services/session_cache.dart';
+import '../utils/app_format.dart';
+import '../widgets/loading/app_async_body.dart';
+import '../widgets/loading/app_skeleton.dart';
 import '../widgets/motion.dart';
+import '../widgets/offline_cache_banner.dart';
+import '../widgets/screen_header.dart';
+import 'notifications_screen.dart';
+import 'settings_screen.dart';
 
-class JobNewsScreen extends StatelessWidget {
-  const JobNewsScreen({super.key});
+/// Prefer computed relative time from [JobNews.publishedAt]; fall back to API label digits.
+String _jobPublishedText(JobNews item, {required bool english}) {
+  if (item.publishedAt != null) {
+    return AppFormat.relativeTime(item.publishedAt!, english: english);
+  }
+  final label = item.publishedLabel?.trim() ?? '';
+  if (label.isEmpty) return '';
+  return AppFormat.digits(label, english: english);
+}
+
+String _jobValidUntilText(JobNews item, {required bool english}) {
+  if (item.validUntil != null) {
+    return AppFormat.shortDate(item.validUntil!, english: english);
+  }
+  final label = item.validUntilLabel?.trim() ?? '';
+  if (label.isEmpty) return '';
+  return AppFormat.digits(label, english: english);
+}
+
+class JobNewsScreen extends StatefulWidget {
+  final bool isActive;
+
+  const JobNewsScreen({super.key, this.isActive = true});
+
+  @override
+  State<JobNewsScreen> createState() => _JobNewsScreenState();
+}
+
+class _JobNewsScreenState extends State<JobNewsScreen> {
+  final _searchController = TextEditingController();
+  Timer? _searchDebounce;
+  Future<Map<String, dynamic>>? _jobNewsFuture;
+  bool? _loadedEnglish;
+  String _selectedCategory = 'all';
+  String _searchQuery = '';
+  bool _isRefreshing = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final english = AppLocale.isEnglish(context);
+    if (_loadedEnglish != english || _jobNewsFuture == null) {
+      _loadedEnglish = english;
+      _reload();
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _reload({bool force = false}) {
+    final english = _loadedEnglish ?? AppLocale.isEnglish(context);
+    _jobNewsFuture = MobileContentService().jobNews(
+      english,
+      category: _selectedCategory == 'all' ? null : _selectedCategory,
+      query: _searchQuery,
+      force: force,
+    );
+  }
+
+  Future<void> _refresh({bool force = true}) async {
+    setState(() {
+      _isRefreshing = true;
+      _reload(force: force);
+    });
+    try {
+      await _jobNewsFuture;
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant JobNewsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When user revisits Jobs tab, always force refresh to reflect backend
+    // updates immediately instead of waiting for app restart or cache expiry.
+    if (widget.isActive && !oldWidget.isActive) {
+      unawaited(_refresh(force: true));
+    }
+  }
+
+  void _selectCategory(String category) {
+    if (_selectedCategory == category) return;
+    setState(() {
+      _selectedCategory = category;
+      _reload(force: true);
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      setState(() {
+        _searchQuery = value.trim();
+        _reload(force: true);
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,75 +131,206 @@ class JobNewsScreen extends StatelessWidget {
 
     return SafeArea(
       child: FutureBuilder<Map<String, dynamic>>(
-        future: MobileContentService().jobNews(english),
+        future: _jobNewsFuture,
         builder: (context, snapshot) {
-          final data = snapshot.data ?? _fallback(english);
-          final items = _list(data['items']).map(JobNews.fromJson).toList();
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final maxContentWidth = constraints.maxWidth >= 1100
+                  ? 920.0
+                  : constraints.maxWidth >= 780
+                      ? 760.0
+                      : constraints.maxWidth;
+              final horizontalPadding =
+                  AppSpacing.pageGutter(constraints.maxWidth);
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 112),
-            children: [
-              Row(
-                children: [
-                  const LanguageToggle(),
-                  const Spacer(),
-                  Column(
-                    crossAxisAlignment: english
-                        ? CrossAxisAlignment.start
-                        : CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        _text(data['title'],
-                            english ? 'Job News' : 'أخبار الوظائف'),
-                        style: const TextStyle(
-                          fontSize: 26,
-                          height: 1.2,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      SizedBox(
-                        width: 250,
-                        child: Text(
-                          _text(
-                            data['subtitle'],
-                            english
-                                ? 'Fresh opportunities and hiring updates.'
-                                : 'فرص وتحديثات توظيف جديدة.',
+              Widget shell(Widget child) => Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxContentWidth),
+                      child: child,
+                    ),
+                  );
+
+              return AppAsyncBody<Map<String, dynamic>>(
+                snapshot: snapshot,
+                english: english,
+                onRetry: () => setState(() => _reload(force: true)),
+                fallbackOnEmptyError: _fallback(english),
+                errorMessage: (error) => error is ApiException
+                    ? error.displayMessage
+                    : (english
+                        ? 'Could not load job news.'
+                        : 'تعذر تحميل أخبار الوظائف.'),
+                loading: shell(
+                  JobNewsSkeleton(horizontalPadding: horizontalPadding),
+                ),
+                builder: (data) {
+                  final items =
+                      _list(data['items']).map(JobNews.fromJson).toList();
+                  final featured = items.isNotEmpty ? items.first : null;
+                  final latest =
+                      items.length > 1 ? items.skip(1).toList() : items;
+                  final offline = MobileContentService.isOfflinePayload(data);
+                  final resultsKey =
+                      '$_selectedCategory|$_searchQuery|${items.length}|${featured?.id ?? 0}';
+
+                  return shell(
+                    RefreshIndicator(
+                      color: context.sirati.primary,
+                      onRefresh: () => _refresh(force: true),
+                      child: CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          SliverPadding(
+                            padding: EdgeInsets.fromLTRB(
+                                horizontalPadding, 18, horizontalPadding, 0),
+                            sliver: SliverToBoxAdapter(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  ScreenHeader(
+                                    english: english,
+                                    title: _text(data['title'],
+                                        english ? 'Job News' : 'أخبار الوظائف'),
+                                    avatarLabel: english ? 'J' : 'و',
+                                    unreadCount:
+                                        SessionCache.instance.unreadCount,
+                                    onNotifications: () =>
+                                        Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                          builder: (_) =>
+                                              const NotificationsScreen()),
+                                    ),
+                                    onAvatarTap: () =>
+                                        Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                          builder: (_) =>
+                                              const SettingsScreen()),
+                                    ),
+                                  ),
+                                  if (offline) ...[
+                                    SizedBox(height: AppSpacing.sm),
+                                    OfflineCacheBanner(
+                                      english: english,
+                                      surface: 'news',
+                                    ),
+                                  ],
+                                  if (_isRefreshing ||
+                                      (snapshot.connectionState ==
+                                              ConnectionState.waiting &&
+                                          snapshot.hasData))
+                                    Padding(
+                                      padding:
+                                          EdgeInsets.only(top: 10, bottom: 2),
+                                      child:
+                                          LinearProgressIndicator(minHeight: 3),
+                                    ),
+                                  SizedBox(height: AppSpacing.lg),
+                                  _SearchBar(
+                                    english: english,
+                                    controller: _searchController,
+                                    onChanged: _onSearchChanged,
+                                  ),
+                                  SizedBox(height: AppSpacing.md),
+                                  _CategoryChips(
+                                    english: english,
+                                    selectedCategory: _selectedCategory,
+                                    onSelected: _selectCategory,
+                                  ),
+                                  SizedBox(height: AppSpacing.md),
+                                  // Featured + section title animate on filter;
+                                  // list rows are built lazily below.
+                                  AnimatedSwitcher(
+                                    duration: MotionSettings.reduce(context)
+                                        ? Duration.zero
+                                        : MotionDurations.medium,
+                                    switchInCurve: MotionCurves.enter,
+                                    switchOutCurve: MotionCurves.exit,
+                                    child: Column(
+                                      key: ValueKey(resultsKey),
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        if (featured != null)
+                                          MotionReveal(
+                                            order: 0,
+                                            child: _FeaturedJobCard(
+                                              item: featured,
+                                              english: english,
+                                              onTap: () =>
+                                                  Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      JobNewsDetailScreen(
+                                                          item: featured),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        if (featured != null)
+                                          SizedBox(height: AppSpacing.lg),
+                                        Text(
+                                          english
+                                              ? 'Latest Postings'
+                                              : 'آخر الإعلانات',
+                                          textAlign: TextAlign.start,
+                                          style: AppTextStyles.titleMd(),
+                                        ),
+                                        SizedBox(height: AppSpacing.sm),
+                                        if (latest.isEmpty)
+                                          _EmptyNews(english: english),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          textAlign: english ? TextAlign.left : TextAlign.right,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.45,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-              if (items.isEmpty)
-                _EmptyNews(english: english)
-              else
-                for (final entry in items.asMap().entries) ...[
-                  MotionReveal(
-                    order: entry.key,
-                    child: _JobNewsCard(
-                      item: entry.value,
-                      english: english,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => JobNewsDetailScreen(item: entry.value),
-                        ),
+                          if (latest.isNotEmpty)
+                            SliverPadding(
+                              padding: EdgeInsets.fromLTRB(
+                                  horizontalPadding, 0, horizontalPadding, 112),
+                              sliver: SliverList.builder(
+                                itemCount: latest.length,
+                                itemBuilder: (context, index) {
+                                  final item = latest[index];
+                                  // +1 after featured (order 0); > max skips controllers.
+                                  final order = index + 1;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(
+                                        bottom: AppSpacing.sm),
+                                    child: MotionReveal(
+                                      order: order,
+                                      child: _JobNewsCard(
+                                        item: item,
+                                        english: english,
+                                        isNew: index == 0,
+                                        onTap: () => Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                JobNewsDetailScreen(item: item),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            )
+                          else
+                            const SliverPadding(
+                              padding: EdgeInsets.only(bottom: 112),
+                              sliver: SliverToBoxAdapter(
+                                child: SizedBox.shrink(),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                ],
-            ],
+                  );
+                },
+              );
+            },
           );
         },
       ),
@@ -105,54 +350,70 @@ class JobNewsDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(english ? 'Job Details' : 'تفاصيل الخبر')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-        children: [
-          Text(
-            item.title,
-            textAlign: english ? TextAlign.left : TextAlign.right,
-            style: const TextStyle(
-              fontSize: 25,
-              height: 1.25,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+      body: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    LocaleFormat.mixedTitle(item.title, english: english),
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      fontSize: 25,
+                      height: 1.35,
+                      fontWeight: FontWeight.w800,
+                      color: context.sirati.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.start,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if ((item.company ?? '').isNotEmpty)
+                        _MetaChip(
+                            text: LocaleFormat.mixedTitle(item.company!,
+                                english: english)),
+                      if ((item.location ?? '').isNotEmpty)
+                        _MetaChip(text: item.location!),
+                      if (_jobPublishedText(item, english: english).isNotEmpty)
+                        _MetaChip(
+                            text: _jobPublishedText(item, english: english)),
+                      if (_jobValidUntilText(item, english: english)
+                          .isNotEmpty)
+                        _MetaChip(
+                          text: _jobValidUntilText(item, english: english),
+                          highlight: true,
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: 22),
+                  Text(
+                    LocaleFormat.mixedBody(item.body, english: english),
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      fontSize: 16,
+                      height: 1.75,
+                      color: context.sirati.textPrimary,
+                    ),
+                  ),
+                  if (actionUrl != null) ...[
+                    SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () => launchUrl(Uri.parse(actionUrl),
+                          mode: LaunchMode.externalApplication),
+                      icon: Icon(Icons.send_rounded),
+                      label: Text(english ? 'Apply Now' : 'تقدّم الآن'),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            alignment: english ? WrapAlignment.start : WrapAlignment.end,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if ((item.company ?? '').isNotEmpty)
-                _MetaChip(text: item.company!),
-              if ((item.location ?? '').isNotEmpty)
-                _MetaChip(text: item.location!),
-              if ((item.publishedLabel ?? '').isNotEmpty)
-                _MetaChip(text: item.publishedLabel!),
-              if ((item.validUntilLabel ?? '').isNotEmpty)
-                _MetaChip(text: item.validUntilLabel!, highlight: true),
-            ],
-          ),
-          const SizedBox(height: 22),
-          Text(
-            item.body,
-            textAlign: english ? TextAlign.left : TextAlign.right,
-            style: const TextStyle(
-              fontSize: 16,
-              height: 1.75,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          if (actionUrl != null) ...[
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => launchUrl(Uri.parse(actionUrl),
-                  mode: LaunchMode.externalApplication),
-              icon: const Icon(Icons.send_rounded),
-              label: Text(english ? 'Apply Now' : 'تقدّم الآن'),
-            ),
-          ],
         ],
       ),
     );
@@ -162,11 +423,13 @@ class JobNewsDetailScreen extends StatelessWidget {
 class _JobNewsCard extends StatelessWidget {
   final JobNews item;
   final bool english;
+  final bool isNew;
   final VoidCallback onTap;
 
   const _JobNewsCard({
     required this.item,
     required this.english,
+    required this.isNew,
     required this.onTap,
   });
 
@@ -178,56 +441,85 @@ class _JobNewsCard extends StatelessWidget {
 
     return PressScale(
       child: Material(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        color: context.sirati.surface,
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border.withValues(alpha: .7)),
-          ),
-          child: Column(
-            crossAxisAlignment:
-                english ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-            children: [
-              const Icon(Icons.business_center_outlined,
-                  color: AppColors.primary, size: 28),
-              const SizedBox(height: 12),
-              Text(
-                item.title,
-                textAlign: english ? TextAlign.left : TextAlign.right,
-                style: const TextStyle(
-                  fontSize: 19,
-                  height: 1.35,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              if (meta.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  meta,
-                  textAlign: english ? TextAlign.left : TextAlign.right,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: context.sirati.border),
+              boxShadow: context.sirati.softShadow,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              LocaleFormat.mixedTitle(item.title,
+                                  english: english),
+                              textAlign: TextAlign.start,
+                              style: AppTextStyles.titleMd(),
+                            ),
+                          ),
+                          if (isNew) ...[
+                            SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: context.sirati.primaryLight,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                english ? 'New' : 'جديد',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.sirati.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      SizedBox(height: 5),
+                      if (meta.isNotEmpty)
+                        Text(
+                          meta,
+                          textAlign: TextAlign.start,
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.35,
+                            color: context.sirati.textSecondary,
+                          ),
+                        ),
+                      SizedBox(height: 4),
+                      Text(
+                        _jobPublishedText(item, english: english),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          height: 1.35,
+                          color: context.sirati.textHint,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                SizedBox(width: 10),
+                Icon(Icons.bookmark_border_rounded,
+                    size: 18, color: context.sirati.textHint),
               ],
-              if ((item.validUntilLabel ?? '').isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment:
-                      english ? Alignment.centerLeft : Alignment.centerRight,
-                  child:
-                      _MetaChip(text: item.validUntilLabel!, highlight: true),
-                ),
-              ],
-            ],
-          ),
+            ),
           ),
         ),
       ),
@@ -249,13 +541,13 @@ class _MetaChip extends StatelessWidget {
     return Chip(
       label: Text(
         text,
-        style: const TextStyle(
-          color: AppColors.primary,
+        style: TextStyle(
+          color: context.sirati.primary,
           fontWeight: FontWeight.w700,
         ),
       ),
-      backgroundColor: AppColors.primary.withValues(alpha: .08),
-      side: BorderSide(color: AppColors.primary.withValues(alpha: .25)),
+      backgroundColor: context.sirati.primaryLight,
+      side: BorderSide(color: context.sirati.borderStrong),
     );
   }
 }
@@ -270,16 +562,231 @@ class _EmptyNews extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        color: context.sirati.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.sirati.border),
       ),
       child: Text(
         english
             ? 'No job news is published yet.'
             : 'لا توجد أخبار وظائف منشورة حالياً.',
         textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
+        style: TextStyle(fontSize: 15, color: context.sirati.textSecondary),
+      ),
+    );
+  }
+}
+
+class _SearchBar extends StatelessWidget {
+  final bool english;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  const _SearchBar({
+    required this.english,
+    required this.controller,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      textAlign: TextAlign.start,
+      decoration: InputDecoration(
+        hintText: english
+            ? 'Search for a job or company...'
+            : 'ابحث عن وظيفة أو شركة...',
+        // Keep the search affordance on the physical leading edge of the field
+        // (left) in both locales — matches the current product screenshots.
+        prefixIcon: english ? Icon(Icons.search_rounded, size: 18) : null,
+        suffixIcon: english ? null : Icon(Icons.search_rounded, size: 18),
+        filled: true,
+        fillColor: context.sirati.surface,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: context.sirati.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: context.sirati.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: context.sirati.primary, width: 1.4),
+        ),
+      ),
+      style: TextStyle(
+          fontSize: 13.5, height: 1.3, color: context.sirati.textPrimary),
+    );
+  }
+}
+
+class _CategoryChips extends StatelessWidget {
+  final bool english;
+  final String selectedCategory;
+  final ValueChanged<String> onSelected;
+
+  const _CategoryChips({
+    required this.english,
+    required this.selectedCategory,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [
+      _CategoryOption('all', english ? 'All' : 'الكل'),
+      _CategoryOption('tech', english ? 'Tech' : 'تقنية'),
+      _CategoryOption('finance', english ? 'Finance' : 'تمويل'),
+      _CategoryOption('health', english ? 'Health' : 'صحة'),
+    ];
+
+    return Wrap(
+      spacing: AppSpacing.xs,
+      runSpacing: AppSpacing.xs,
+      children: [
+        for (final option in options)
+          PressScale(
+            pressedScale: .98,
+            child: ChoiceChip(
+              label: Text(option.label),
+              selected: selectedCategory == option.key,
+              onSelected: (_) => onSelected(option.key),
+              showCheckmark: false,
+              labelStyle: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: selectedCategory == option.key
+                    ? Colors.white
+                    : context.sirati.textSecondary,
+              ),
+              selectedColor: context.sirati.primary,
+              backgroundColor: context.sirati.primaryLight,
+              side: BorderSide.none,
+              shape: const StadiumBorder(),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _CategoryOption {
+  final String key;
+  final String label;
+
+  const _CategoryOption(this.key, this.label);
+}
+
+class _FeaturedJobCard extends StatelessWidget {
+  final JobNews item;
+  final bool english;
+  final VoidCallback onTap;
+
+  const _FeaturedJobCard({
+    required this.item,
+    required this.english,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PressScale(
+      child: Material(
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [context.sirati.primary, context.sirati.primaryDark],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: context.sirati.primaryLight,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    english ? 'New' : 'جديد',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: context.sirati.primary,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 14),
+                Text(
+                  LocaleFormat.mixedTitle(item.title, english: english),
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                    fontSize: 17,
+                    height: 1.35,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  LocaleFormat.mixedTitle(item.company ?? '', english: english),
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.45,
+                    color: Colors.white.withValues(alpha: .88),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  [
+                    if ((item.location ?? '').isNotEmpty) item.location!,
+                    _jobPublishedText(item, english: english),
+                  ].where((s) => s.isNotEmpty).join(' · '),
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.45,
+                    color: Colors.white.withValues(alpha: .75),
+                  ),
+                ),
+                SizedBox(height: 16),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    english ? 'Apply Now' : 'تقدم الآن',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: context.sirati.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

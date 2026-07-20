@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../app_locale.dart';
+import '../services/api_exception.dart';
 import '../services/mobile_content_service.dart';
+import '../services/session_cache.dart';
 import '../theme/app_theme.dart';
-import '../widgets/language_toggle.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/form_fields.dart';
+import '../widgets/loading/app_async_body.dart';
+import '../widgets/loading/app_skeleton.dart';
+import '../widgets/motion.dart';
+import '../widgets/score_booster_card.dart';
+import '../widgets/screen_header.dart';
 import 'education_detail_screen.dart';
+import 'notifications_screen.dart';
+import 'settings_screen.dart';
 
 class EducationScreen extends StatefulWidget {
   const EducationScreen({super.key});
@@ -15,107 +25,351 @@ class EducationScreen extends StatefulWidget {
 
 class _EducationScreenState extends State<EducationScreen> {
   String _selectedType = 'study';
+  Future<Map<String, dynamic>>? _future;
+  bool? _loadedEnglish;
+  String? _loadedType;
+
+  final _fieldOfStudyCtrl = TextEditingController();
+  late final ScoreBoosterController _booster;
+
+  @override
+  void initState() {
+    super.initState();
+    _booster = ScoreBoosterController(
+      fieldWeights: const {
+        'name': 25,
+        'role': 30,
+        'study': 15,
+        'content': 30,
+      },
+      tipForIncomplete: _tipFor,
+    );
+  }
+
+  @override
+  void dispose() {
+    _fieldOfStudyCtrl.dispose();
+    _booster.dispose();
+    super.dispose();
+  }
+
+  ScoreBoosterTip? _tipFor(List<String> incomplete) {
+    final english = AppLocale.isEnglish(context);
+    if (incomplete.isEmpty) {
+      return ScoreBoosterTip(
+        message: english
+            ? 'Great work — your education profile is ready for ATS scanners.'
+            : 'عمل رائع — ملفك التعليمي جاهز لأنظمة ATS.',
+        boostPoints: 0,
+        icon: Icons.verified_rounded,
+      );
+    }
+    switch (incomplete.first) {
+      case 'study':
+        return ScoreBoosterTip(
+          message: english
+              ? 'Adding your field of study will boost your ATS discoverability by +15 points!'
+              : 'إضافة تخصصك الدراسي سترفع قابلية اكتشاف سيرتك في أنظمة ATS بمقدار +15 نقطة!',
+          boostPoints: 15,
+          icon: Icons.school_outlined,
+        );
+      case 'role':
+        return ScoreBoosterTip(
+          message: english
+              ? 'Set a target role to tailor learning content — about +30 readiness points.'
+              : 'حدّد المسمى المستهدف لتخصيص المحتوى — نحو +30 نقطة جاهزية.',
+          boostPoints: 30,
+          icon: Icons.work_outline_rounded,
+        );
+      case 'name':
+        return ScoreBoosterTip(
+          message: english
+              ? 'Complete your profile name so learning tips feel personal (+25).'
+              : 'أكمل اسم ملفك ليبدو التعلّم شخصياً (+25).',
+          boostPoints: 25,
+          icon: Icons.person_outline_rounded,
+        );
+      case 'content':
+      default:
+        return ScoreBoosterTip(
+          message: english
+              ? 'Open a study card to deepen skills recruiters search for (+30).'
+              : 'افتح بطاقة دراسية لتعميق مهارات يبحث عنها مسؤولو التوظيف (+30).',
+          boostPoints: 30,
+          icon: Icons.menu_book_outlined,
+        );
+    }
+  }
+
+  void _syncBooster({
+    required String name,
+    required String targetRole,
+    required bool openedContent,
+  }) {
+    _booster.setAll({
+      'name': name.trim().isNotEmpty,
+      'role': targetRole.trim().isNotEmpty,
+      'study': _fieldOfStudyCtrl.text.trim().length >= 2,
+      'content': openedContent,
+    });
+  }
+
+  void _ensureFuture(bool english) {
+    if (_future == null ||
+        _loadedEnglish != english ||
+        _loadedType != _selectedType) {
+      _loadedEnglish = english;
+      _loadedType = _selectedType;
+      _future = MobileContentService().education(english, type: _selectedType);
+    }
+  }
 
   void _selectType(String type) {
     if (_selectedType == type) return;
-    setState(() => _selectedType = type);
+    setState(() {
+      _selectedType = type;
+      _future = null;
+    });
+  }
+
+  void _retry(bool english) {
+    setState(() {
+      _loadedEnglish = english;
+      _loadedType = _selectedType;
+      _future = MobileContentService()
+          .education(english, type: _selectedType, force: true);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
+    _ensureFuture(english);
 
     return SafeArea(
       child: FutureBuilder<Map<String, dynamic>>(
-        future: MobileContentService().education(english, type: _selectedType),
+        future: _future,
         builder: (context, snapshot) {
-          final data = snapshot.data ?? _fallback(english);
-          final profile = _map(data['profile']);
-          final tabs = _list(data['tabs']);
-          final cards = _list(data['study_cards']);
-          final featured = _map(data['featured_course']);
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final maxContentWidth = constraints.maxWidth >= 1100
+                  ? 920.0
+                  : constraints.maxWidth >= 780
+                      ? 760.0
+                      : constraints.maxWidth;
+              final horizontalPadding =
+                  AppSpacing.pageGutter(constraints.maxWidth);
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(0, 18, 0, 104),
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _EducationHeader(
-                  english: english,
-                  name: _text(profile['name'], english ? 'Ahmed' : 'أحمد'),
-                ),
-              ),
-              const SizedBox(height: 38),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _EducationHero(
-                  english: english,
-                  title: _text(data['title'],
-                      english ? 'Learning & Development' : 'التعلم والتطوير'),
-                  subtitle: _text(
-                      data['subtitle'],
-                      english
-                          ? 'Content tailored to your target job'
-                          : 'محتوى مخصص حسب وظيفتك المستهدفة'),
-                ),
-              ),
-              const SizedBox(height: 28),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: _EducationTabs(
-                  tabs: tabs,
-                  selectedType: _text(data['selected_type'], _selectedType),
-                  onSelect: _selectType,
-                  english: english,
-                ),
-              ),
-              const SizedBox(height: 28),
-              _TargetRow(
-                targetLabel: _text(
-                    data['target_label'],
-                    english
-                        ? 'Based on your target job'
-                        : 'حسب وظيفتك المستهدفة'),
-                targetRole: _text(data['target_role'],
-                    english ? 'Data Analyst' : 'محلل بيانات'),
-              ),
-              const SizedBox(height: 26),
-              for (var index = 0; index < cards.length; index++) ...[
-                _StudyCard(
-                  id: _int(cards[index]['id']),
-                  icon: index == 0
-                      ? Icons.menu_book_outlined
-                      : Icons.psychology_alt_outlined,
-                  iconColor: index == 0 ? AppColors.primary : AppColors.amber,
-                  title: _text(cards[index]['title'], ''),
-                  body: _text(cards[index]['body'], ''),
-                  duration: _text(cards[index]['duration'], ''),
-                  haloTopRight: index == 0,
-                  english: english,
-                  onTap: () => _openDetail(context, cards[index]),
-                ),
-                const SizedBox(height: 20),
-              ],
-              _FeaturedSqlCourse(
-                id: _int(featured['id']),
+              Widget shell(Widget child) => Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxContentWidth),
+                      child: child,
+                    ),
+                  );
+
+              return AppAsyncBody<Map<String, dynamic>>(
+                snapshot: snapshot,
                 english: english,
-                badge: _text(
-                    featured['badge'], english ? 'Recommended' : 'موصى به لك'),
-                title: _text(
-                    featured['title'],
-                    english
-                        ? 'SQL Mastery for Beginners'
-                        : 'رحلة احتراف SQL للمبتدئين'),
-                body: _text(
-                    featured['body'],
-                    english
-                        ? 'A complete learning path from zero to advanced queries.'
-                        : 'مسار تعليمي متكامل يأخذك من الصفر حتى بناء استعلامات معقدة.'),
-                buttonLabel: _text(featured['button_label'],
-                    english ? 'Start Learning' : 'ابدأ التعلم الآن'),
-                onTap: () => _openDetail(context, featured),
-              ),
-            ],
+                onRetry: () => _retry(english),
+                fallbackOnEmptyError: _fallback(english),
+                errorMessage: (error) => error is ApiException
+                    ? error.displayMessage
+                    : (english
+                        ? 'Could not load education content.'
+                        : 'تعذر تحميل محتوى التعلم.'),
+                loading: shell(
+                  EducationSkeleton(horizontalPadding: horizontalPadding),
+                ),
+                builder: (data) {
+                  final profile = _map(data['profile']);
+                  final tabs = _list(data['tabs']);
+                  final cards = _list(data['study_cards']);
+                  final cachedName =
+                      SessionCache.instance.user.value?.name.trim() ?? '';
+                  final name = _text(profile['name'], cachedName);
+                  final targetRole = _text(
+                    data['target_role'] ?? profile['target_role'],
+                    '',
+                  );
+
+                  // Keep booster in sync without rebuilding the whole list.
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    _syncBooster(
+                      name: name,
+                      targetRole: targetRole,
+                      openedContent: false,
+                    );
+                  });
+
+                  return shell(
+                    ScoreBoosterScaffold(
+                      controller: _booster,
+                      bottomInset: AppSpacing.scrollBottomNav - 48,
+                      body: ListView(
+                        padding: EdgeInsets.fromLTRB(
+                          0,
+                          18,
+                          0,
+                          AppSpacing.scrollBottomNav + 100,
+                        ),
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: horizontalPadding),
+                            child: ScreenHeader(
+                              english: english,
+                              title: AppLocale.greeting(name, context),
+                              titleSize: 22,
+                              avatarLabel: BidiText.avatarInitial(name),
+                              unreadCount: SessionCache.instance.unreadCount,
+                              onNotifications: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const NotificationsScreen()),
+                              ),
+                              onAvatarTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) => const SettingsScreen()),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.xxl + 6),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: horizontalPadding),
+                            child: _EducationHero(
+                              english: english,
+                              title: _text(
+                                  data['title'],
+                                  english
+                                      ? 'Learning & Development'
+                                      : 'التعلم والتطوير'),
+                              subtitle: _text(
+                                  data['subtitle'],
+                                  english
+                                      ? 'Content tailored to your target job'
+                                      : 'محتوى مخصص حسب وظيفتك المستهدفة'),
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.md),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: horizontalPadding),
+                            child: _EducationTabs(
+                              tabs: tabs,
+                              selectedType:
+                                  _text(data['selected_type'], _selectedType),
+                              onSelect: _selectType,
+                              english: english,
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.md),
+                          // Quick boost field — blur-validated, feeds ScoreBooster.
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: horizontalPadding),
+                            child: AutofillGroup(
+                              child: AppTextFormField(
+                                controller: _fieldOfStudyCtrl,
+                                labelText: english
+                                    ? 'Field of study'
+                                    : 'التخصص الدراسي',
+                                hintText: english
+                                    ? 'e.g. Computer Science'
+                                    : 'مثال: علوم الحاسب',
+                                autofillHints: const [
+                                  AutofillHints.organizationName,
+                                ],
+                                textInputAction: TextInputAction.done,
+                                onFieldSubmitted: (_) =>
+                                    FocusScope.of(context).unfocus(),
+                                prefixIcon:
+                                    const Icon(Icons.school_outlined),
+                                showSuccessWhenValid: true,
+                                successMessage: english
+                                    ? 'Nice — ATS loves clear majors'
+                                    : 'ممتاز — أنظمة ATS تفضّل التخصص الواضح',
+                                validator: (v) {
+                                  final t = v?.trim() ?? '';
+                                  if (t.isEmpty) {
+                                    return english
+                                        ? 'Add your field of study'
+                                        : 'أضف تخصصك الدراسي';
+                                  }
+                                  if (t.length < 2) {
+                                    return english
+                                        ? 'Enter at least 2 characters'
+                                        : 'أدخل حرفين على الأقل';
+                                  }
+                                  return null;
+                                },
+                                onBecameValid: (_) {
+                                  _booster.setFieldComplete('study', true);
+                                },
+                                onChanged: (v) {
+                                  if (v.trim().length < 2) {
+                                    _booster.setFieldComplete('study', false);
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.md),
+                          if (cards.isEmpty)
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: horizontalPadding),
+                              child: AppEmptyState(
+                                icon: Icons.school_outlined,
+                                title: english
+                                    ? 'No content in this tab'
+                                    : 'لا يوجد محتوى في هذا القسم',
+                                subtitle: english
+                                    ? 'Try another category or check back later.'
+                                    : 'جرّب قسماً آخر أو عد لاحقاً.',
+                                scrollable: false,
+                              ),
+                            )
+                          else
+                            for (var index = 0;
+                                index < cards.length;
+                                index++) ...[
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: horizontalPadding),
+                                child: MotionReveal(
+                                  order: index.clamp(0, 5),
+                                  child: _StudyCard(
+                                    id: _int(cards[index]['id']),
+                                    title: _text(cards[index]['title'], ''),
+                                    duration:
+                                        _text(cards[index]['duration'], ''),
+                                    badge: _text(
+                                      data['target_label'],
+                                      english
+                                          ? 'Based on your target job'
+                                          : 'حسب وظيفتك المستهدفة',
+                                    ),
+                                    english: english,
+                                    onTap: () {
+                                      _booster.setFieldComplete(
+                                          'content', true);
+                                      _openDetail(context, cards[index]);
+                                    },
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: AppSpacing.sm + 2),
+                            ],
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
           );
         },
       ),
@@ -123,51 +377,21 @@ class _EducationScreenState extends State<EducationScreen> {
   }
 }
 
+/// Chrome + empty lists only — no fake profile, role, or study items.
 Map<String, dynamic> _fallback(bool english) => {
-      'profile': {'name': english ? 'Ahmed' : 'أحمد'},
+      'profile': const <String, dynamic>{},
       'title': english ? 'Learning & Development' : 'التعلم والتطوير',
       'subtitle': english
           ? 'Content tailored to your target job'
           : 'محتوى مخصص حسب وظيفتك المستهدفة',
       'target_label':
           english ? 'Based on your target job' : 'حسب وظيفتك المستهدفة',
-      'target_role': english ? 'Data Analyst' : 'محلل بيانات',
       'tabs': [
         {'label': english ? 'News' : 'أخبار'},
         {'label': english ? 'Certificates' : 'شهادات'},
         {'label': english ? 'Study' : 'دراسة'},
       ],
-      'study_cards': [
-        {
-          'title': english
-              ? 'Big Data Analysis Basics'
-              : 'أساسيات تحليل البيانات الضخمة',
-          'body': english
-              ? 'Learn the essential tools and methods for working with large datasets.'
-              : 'تعرف على الأدوات والمنهجيات الأساسية للتعامل مع مجموعات البيانات الكبيرة.',
-          'duration':
-              english ? 'Reading time: 15 min' : 'مدة القراءة: ١٥ دقيقة',
-        },
-        {
-          'title': english
-              ? 'Analytical Thinking at Work'
-              : 'التفكير التحليلي في بيئة العمل',
-          'body': english
-              ? 'Turn raw data into effective strategic decisions.'
-              : 'كيفية تحويل البيانات الخام إلى قرارات استراتيجية فعالة ومدروسة.',
-          'duration':
-              english ? 'Reading time: 10 min' : 'مدة القراءة: ١٠ دقائق',
-        },
-      ],
-      'featured_course': {
-        'badge': english ? 'Recommended' : 'موصى به لك',
-        'title':
-            english ? 'SQL Mastery for Beginners' : 'رحلة احتراف SQL للمبتدئين',
-        'body': english
-            ? 'A complete learning path from zero to advanced queries.'
-            : 'مسار تعليمي متكامل يأخذك من الصفر حتى بناء استعلامات معقدة.',
-        'button_label': english ? 'Start Learning' : 'ابدأ التعلم الآن',
-      },
+      'study_cards': const <Map<String, dynamic>>[],
     };
 
 Map<String, dynamic> _map(dynamic value) =>
@@ -193,52 +417,6 @@ void _openDetail(BuildContext context, Map<String, dynamic> data) {
   );
 }
 
-class _EducationHeader extends StatelessWidget {
-  final bool english;
-  final String name;
-
-  const _EducationHeader({required this.english, required this.name});
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Row(
-        children: [
-          const Icon(Icons.notifications_outlined,
-              color: AppColors.primary, size: 28),
-          const SizedBox(width: 10),
-          const LanguageToggle(),
-          const Spacer(),
-          Directionality(
-            textDirection: english ? TextDirection.ltr : TextDirection.rtl,
-            child: Text(
-              english ? 'Hello, $name' : 'أهلاً، $name',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primary, width: 2),
-            ),
-            child: const Icon(Icons.person_rounded,
-                color: AppColors.primary, size: 31),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _EducationHero extends StatelessWidget {
   final bool english;
   final String title;
@@ -253,28 +431,23 @@ class _EducationHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment:
-          english ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          textAlign: english ? TextAlign.left : TextAlign.right,
-          style: const TextStyle(
-            fontSize: 22,
-            height: 1.4,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+          textAlign: TextAlign.start,
+          style: AppTextStyles.titleLg(context.sirati).copyWith(
+            fontSize: 21,
+            height: 1.35,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 6),
         Text(
           subtitle,
-          textAlign: english ? TextAlign.left : TextAlign.right,
-          style: const TextStyle(
-            fontSize: 20,
-            height: 1.55,
-            fontWeight: FontWeight.w400,
-            color: AppColors.textPrimary,
+          textAlign: TextAlign.start,
+          style: AppTextStyles.bodySm(context.sirati).copyWith(
+            fontSize: 13.5,
+            height: 1.5,
           ),
         ),
       ],
@@ -295,109 +468,53 @@ class _EducationTabs extends StatelessWidget {
     required this.english,
   });
 
+  static const _typeKeys = ['news', 'certificates', 'study'];
+
   @override
   Widget build(BuildContext context) {
-    final fallback = [
-      {'key': 'news', 'label': english ? 'News' : 'أخبار'},
-      {'key': 'certificates', 'label': english ? 'Certificates' : 'شهادات'},
-      {'key': 'study', 'label': english ? 'Study' : 'دراسة'},
-    ];
-    final source = tabs.isNotEmpty ? tabs : fallback;
+    final c = context.sirati;
+    final items = tabs.isEmpty
+        ? [
+            {'label': english ? 'News' : 'أخبار', 'type': 'news'},
+            {
+              'label': english ? 'Certificates' : 'شهادات',
+              'type': 'certificates'
+            },
+            {'label': english ? 'Study' : 'دراسة', 'type': 'study'},
+          ]
+        : [
+            for (var i = 0; i < tabs.length; i++)
+              {
+                'label': _text(tabs[i]['label'], ''),
+                'type': _text(
+                  tabs[i]['type'],
+                  i < _typeKeys.length ? _typeKeys[i] : 'study',
+                ),
+              },
+          ];
 
-    return Container(
-      height: 58,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceHigh,
-        borderRadius: BorderRadius.circular(999),
-      ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (final tab in source)
-            Expanded(
-              child: _TabPill(
-                label: _text(tab['label'], ''),
-                selected: _text(tab['key'], '') == selectedType,
-                onTap: () => onSelect(_text(tab['key'], 'study')),
+          for (final item in items) ...[
+            PressScale(
+              child: FilterChip(
+                selected: selectedType == item['type'],
+                label: Text(item['label'] as String),
+                onSelected: (_) => onSelect(item['type'] as String),
+                selectedColor: c.primaryLight,
+                checkmarkColor: c.primaryDark,
+                labelStyle: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: selectedType == item['type']
+                      ? c.primaryDark
+                      : c.textSecondary,
+                ),
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TabPill extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _TabPill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TargetRow extends StatelessWidget {
-  final String targetLabel;
-  final String targetRole;
-
-  const _TargetRow({required this.targetLabel, required this.targetRole});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(start: 0, end: 20),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-            decoration: BoxDecoration(
-              color: AppColors.primaryMid.withValues(alpha: .28),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              targetRole,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          const Spacer(),
-          Text(
-            targetLabel,
-            style: const TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w500,
-              color: AppColors.primary,
-            ),
-          ),
+            SizedBox(width: AppSpacing.xs),
+          ],
         ],
       ),
     );
@@ -406,286 +523,66 @@ class _TargetRow extends StatelessWidget {
 
 class _StudyCard extends StatelessWidget {
   final int? id;
-  final IconData icon;
-  final Color iconColor;
   final String title;
-  final String body;
   final String duration;
-  final bool haloTopRight;
+  final String badge;
   final bool english;
   final VoidCallback onTap;
 
   const _StudyCard({
     required this.id,
-    required this.icon,
-    required this.iconColor,
     required this.title,
-    required this.body,
     required this.duration,
-    required this.haloTopRight,
+    required this.badge,
     required this.english,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(26, 28, 26, 28),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border:
-              Border.all(color: AppColors.borderStrong.withValues(alpha: .42)),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: haloTopRight ? -58 : null,
-              right: haloTopRight ? -58 : null,
-              bottom: haloTopRight ? null : -62,
-              left: haloTopRight ? null : -62,
-              child: Container(
-                width: 104,
-                height: 104,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: .08),
-                  shape: BoxShape.circle,
+    final c = context.sirati;
+    return Material(
+      color: c.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: c.border),
+            boxShadow: c.softShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (badge.isNotEmpty)
+                Text(
+                  badge,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: c.primary,
+                  ),
                 ),
+              if (badge.isNotEmpty) SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.start,
+                style: AppTextStyles.titleMd(c).copyWith(height: 1.5),
               ),
-            ),
-            Column(
-              crossAxisAlignment:
-                  english ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-              children: [
-                Icon(icon, color: iconColor, size: 40),
-                const SizedBox(height: 32),
+              if (duration.isNotEmpty) ...[
+                SizedBox(height: 8),
                 Text(
-                  title,
-                  textAlign: english ? TextAlign.left : TextAlign.right,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    height: 1.45,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  body,
-                  textAlign: english ? TextAlign.left : TextAlign.right,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    height: 1.65,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 22),
-                Row(
-                  mainAxisAlignment:
-                      english ? MainAxisAlignment.start : MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      duration,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.schedule_rounded,
-                        color: AppColors.primary, size: 17),
-                  ],
+                  duration,
+                  style: AppTextStyles.bodySm(c),
                 ),
               ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-class _FeaturedSqlCourse extends StatelessWidget {
-  final int? id;
-  final bool english;
-  final String badge;
-  final String title;
-  final String body;
-  final String buttonLabel;
-  final VoidCallback onTap;
-
-  const _FeaturedSqlCourse({
-    required this.id,
-    required this.english,
-    required this.badge,
-    required this.title,
-    required this.body,
-    required this.buttonLabel,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        height: 280,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: const Color(0xFF102E2E),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            const _MonitorBackdrop(),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: .05),
-                    Colors.black.withValues(alpha: .62),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              top: english ? 48 : 64,
-              right: english ? null : 36,
-              left: english ? 28 : null,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMid.withValues(alpha: .92),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  badge,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryDark,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 30,
-              left: 30,
-              bottom: english ? 26 : 30,
-              child: Column(
-                crossAxisAlignment:
-                    english ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-                children: [
-                  if (english) const SizedBox(height: 28),
-                  Text(
-                    title,
-                    textAlign: english ? TextAlign.left : TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      height: 1.35,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    body,
-                    textAlign: english ? TextAlign.left : TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      height: 1.45,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Align(
-                    alignment:
-                        english ? Alignment.centerLeft : Alignment.centerRight,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 28, vertical: 13),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        buttonLabel,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MonitorBackdrop extends StatelessWidget {
-  const _MonitorBackdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(painter: _MonitorBackdropPainter());
-  }
-}
-
-class _MonitorBackdropPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final background = Paint()..color = const Color(0xFF143434);
-    canvas.drawRect(Offset.zero & size, background);
-
-    final screenPaint = Paint()..color = const Color(0xFF1C5551);
-    final linePaint = Paint()
-      ..color = AppColors.primaryMid.withValues(alpha: .55)
-      ..strokeWidth = 2;
-    final glowPaint = Paint()..color = Colors.black.withValues(alpha: .22);
-
-    for (final rect in [
-      Rect.fromLTWH(size.width * .08, 54, 120, 92),
-      Rect.fromLTWH(size.width * .38, 38, 136, 102),
-      Rect.fromLTWH(size.width * .68, 56, 120, 90),
-    ]) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-            rect.shift(const Offset(0, 6)), const Radius.circular(6)),
-        glowPaint,
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(6)),
-        screenPaint,
-      );
-
-      for (var index = 0; index < 5; index++) {
-        final y = rect.top + 18 + index * 13;
-        canvas.drawLine(
-          Offset(rect.left + 14, y),
-          Offset(rect.right - 18 - index * 7, y),
-          linePaint,
-        );
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

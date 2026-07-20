@@ -5,6 +5,7 @@ class JobNews {
   final String? company;
   final String? location;
   final String body;
+  final String category;
   final String? url;
   final String? applyUrl;
   final DateTime? validFrom;
@@ -20,6 +21,7 @@ class JobNews {
     required this.company,
     required this.location,
     required this.body,
+    required this.category,
     required this.url,
     required this.applyUrl,
     required this.validFrom,
@@ -37,6 +39,7 @@ class JobNews {
       company: _nullable(json['company']),
       location: _nullable(json['location']),
       body: json['body']?.toString() ?? '',
+      category: json['category']?.toString() ?? 'general',
       url: _nullable(json['url']),
       applyUrl: _nullable(json['apply_url']),
       validFrom: _date(json['valid_from']),
