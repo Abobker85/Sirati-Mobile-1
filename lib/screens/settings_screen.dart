@@ -451,7 +451,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 showChevron: false,
                 trailing: Switch.adaptive(
                   value: _notificationsEnabled,
-                  activeColor: context.sirati.primary,
+                  thumbColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return context.sirati.primary;
+                    }
+                    return null;
+                  }),
                   onChanged: _toggleNotifications,
                 ),
                 onTap: () => _toggleNotifications(!_notificationsEnabled),
