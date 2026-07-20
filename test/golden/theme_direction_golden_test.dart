@@ -3,11 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'harness.dart';
+import 'tolerant_golden.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
+    // Windows baselines vs Codemagic macOS: allow small rasterization noise.
+    // Installed here (not only flutter_test_config) so CI always picks it up.
+    installTolerantGoldenComparator(precisionTolerance: 0.02);
+
     // Load brand font so goldens match production typography.
     final loader = FontLoader('IBM Plex Sans Arabic')
       ..addFont(rootBundle.load('assets/fonts/IBMPlexSansArabic-Regular.ttf'))
@@ -24,49 +29,65 @@ void main() {
   ];
 
   for (final m in matrix) {
-    testWidgets('dashboard cluster ${m.tag}', (tester) async {
-      await _pumpGolden(
-        tester,
-        name: 'dashboard_cluster',
-        themeMode: m.theme,
-        direction: m.dir,
-        english: m.en,
-        child: GoldenDashboardCluster(english: m.en),
-      );
-    });
+    testWidgets(
+      'dashboard cluster ${m.tag}',
+      (tester) async {
+        await _pumpGolden(
+          tester,
+          name: 'dashboard_cluster',
+          themeMode: m.theme,
+          direction: m.dir,
+          english: m.en,
+          child: GoldenDashboardCluster(english: m.en),
+        );
+      },
+      tags: <String>['golden'],
+    );
 
-    testWidgets('submit button states ${m.tag}', (tester) async {
-      await _pumpGolden(
-        tester,
-        name: 'submit_button_states',
-        themeMode: m.theme,
-        direction: m.dir,
-        english: m.en,
-        child: GoldenSubmitButtonStates(english: m.en),
-      );
-    });
+    testWidgets(
+      'submit button states ${m.tag}',
+      (tester) async {
+        await _pumpGolden(
+          tester,
+          name: 'submit_button_states',
+          themeMode: m.theme,
+          direction: m.dir,
+          english: m.en,
+          child: GoldenSubmitButtonStates(english: m.en),
+        );
+      },
+      tags: <String>['golden'],
+    );
 
-    testWidgets('form field states ${m.tag}', (tester) async {
-      await _pumpGolden(
-        tester,
-        name: 'form_field_states',
-        themeMode: m.theme,
-        direction: m.dir,
-        english: m.en,
-        child: GoldenFormFieldStates(english: m.en),
-      );
-    });
+    testWidgets(
+      'form field states ${m.tag}',
+      (tester) async {
+        await _pumpGolden(
+          tester,
+          name: 'form_field_states',
+          themeMode: m.theme,
+          direction: m.dir,
+          english: m.en,
+          child: GoldenFormFieldStates(english: m.en),
+        );
+      },
+      tags: <String>['golden'],
+    );
 
-    testWidgets('score booster card ${m.tag}', (tester) async {
-      await _pumpGolden(
-        tester,
-        name: 'score_booster_card',
-        themeMode: m.theme,
-        direction: m.dir,
-        english: m.en,
-        child: GoldenScoreBooster(english: m.en),
-      );
-    });
+    testWidgets(
+      'score booster card ${m.tag}',
+      (tester) async {
+        await _pumpGolden(
+          tester,
+          name: 'score_booster_card',
+          themeMode: m.theme,
+          direction: m.dir,
+          english: m.en,
+          child: GoldenScoreBooster(english: m.en),
+        );
+      },
+      tags: <String>['golden'],
+    );
   }
 }
 

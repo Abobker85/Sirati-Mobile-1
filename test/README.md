@@ -35,4 +35,22 @@ Commit the updated PNGs under `test/golden/goldens/`.
 
 ### CI note
 
-Golden pixel comparison can be sensitive to OS font rasterization. Prefer running update-goldens on the same OS the CI uses, or pin a Linux runner for goldens.
+Golden pixel comparison is sensitive to OS/engine rasterization (Windows baselines vs Codemagic macOS).
+
+- Tests are tagged `golden`.
+- Codemagic runs `flutter test --exclude-tags golden` so preview builds stay green.
+- Locally, `test/golden/tolerant_golden.dart` allows ~2% pixel noise when you do run goldens.
+
+Run goldens (with tolerance):
+
+```bash
+flutter test test/golden
+```
+
+After intentional visual changes, regenerate on the **same OS family as production CI** when possible:
+
+```bash
+flutter test test/golden --update-goldens
+```
+
+Then commit the PNGs under `test/golden/goldens/`.

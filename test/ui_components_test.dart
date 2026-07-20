@@ -124,6 +124,7 @@ void main() {
         child: AiFieldLoadingOverlay(
           isLoading: true,
           semanticsLabel: 'Improving content',
+          statusMessages: const ['Working…'],
           child: ElevatedButton(
             onPressed: () => taps++,
             child: const Text('Edit'),
@@ -134,7 +135,8 @@ void main() {
 
     await tester.tap(find.text('Edit'), warnIfMissed: false);
     expect(taps, 0);
-    expect(find.bySemanticsLabel('Improving content'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('Working…'), findsOneWidget);
   });
 
   testWidgets('MotionTabStack preserves tab state while transitioning',

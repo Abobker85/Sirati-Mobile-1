@@ -1,5 +1,7 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 /// Thin, never-throwing Firebase Analytics wrapper.
 ///
@@ -14,11 +16,26 @@ class AnalyticsService {
   static FirebaseAnalytics get _analytics => FirebaseAnalytics.instance;
 
   /// Attach to [MaterialApp.navigatorObservers] for automatic screen views.
+  ///
+  /// Prefer [navigatorObservers] so tests / early boot without
+  /// [Firebase.initializeApp] do not throw.
   static FirebaseAnalyticsObserver get observer =>
       FirebaseAnalyticsObserver(analytics: _analytics);
 
+  /// Safe for [MaterialApp.navigatorObservers] when Firebase may be absent.
+  static List<NavigatorObserver> get navigatorObservers {
+    if (!_firebaseReady) return const <NavigatorObserver>[];
+    try {
+      return <NavigatorObserver>[observer];
+    } catch (e, st) {
+      _debugError('navigatorObservers', e, st);
+      return const <NavigatorObserver>[];
+    }
+  }
+
   /// Call once after [Firebase.initializeApp].
   static Future<void> initialize() async {
+    if (!_firebaseReady) return;
     try {
       await _analytics.setAnalyticsCollectionEnabled(true);
     } catch (e, st) {
@@ -37,12 +54,23 @@ class AnalyticsService {
       if (kDebugMode) {
         debugPrint('[Analytics] $name${safe.isEmpty ? '' : ' $safe'}');
       }
+      // Widget/golden tests (and early boot) may run without Firebase.initializeApp.
+      if (!_firebaseReady) return;
       await _analytics.logEvent(
         name: name,
         parameters: safe.isEmpty ? null : safe,
       );
     } catch (e, st) {
       _debugError(name, e, st);
+    }
+  }
+
+  /// True once [Firebase.initializeApp] has created the default app.
+  static bool get _firebaseReady {
+    try {
+      return Firebase.apps.isNotEmpty;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -54,6 +82,7 @@ class AnalyticsService {
       if (kDebugMode) {
         debugPrint('[Analytics] screen_view name=$screenName');
       }
+      if (!_firebaseReady) return;
       await _analytics.logScreenView(
         screenName: screenName,
         screenClass: screenClass ?? screenName,
@@ -66,6 +95,7 @@ class AnalyticsService {
   /// Opaque backend user id only — never email.
   static Future<void> setUserId(String? userId) async {
     try {
+      if (!_firebaseReady) return;
       final id = userId?.trim();
       if (id == null || id.isEmpty || id == '0') {
         await _analytics.setUserId(id: null);
@@ -84,6 +114,7 @@ class AnalyticsService {
     required String? value,
   }) async {
     try {
+      if (!_firebaseReady) return;
       await _analytics.setUserProperty(name: name, value: value);
       if (kDebugMode) {
         debugPrint('[Analytics] user_property $name=$value');

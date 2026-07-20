@@ -16,8 +16,10 @@ workflows:
       - name: Analyze
         script: flutter analyze
 
+      # Goldens are OS/engine-sensitive (Windows baselines vs macOS CI).
+      # Tagged `golden` — excluded here; run locally / on matching OS instead.
       - name: Run tests
-        script: flutter test
+        script: flutter test --exclude-tags golden
 
       - name: Build Android debug APK for App Preview
         script: |
@@ -46,7 +48,7 @@ workflows:
         script: flutter analyze
 
       - name: Run tests
-        script: flutter test
+        script: flutter test --exclude-tags golden
 
       - name: Build iOS simulator app for App Preview
         script: |

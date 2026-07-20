@@ -112,7 +112,7 @@ class SiratiApp extends StatelessWidget {
               darkTheme: AppTheme.dark,
               themeMode: themeMode,
               locale: AppLocale.locale,
-              navigatorObservers: [AnalyticsService.observer],
+              navigatorObservers: AnalyticsService.navigatorObservers,
               supportedLocales: const [
                 Locale('ar', 'SA'),
                 Locale('en', 'US'),
