@@ -25,7 +25,14 @@ import 'services/notification_service.dart';
 /// Top-level background message handler — MUST be a top-level function.
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+  } catch (e, st) {
+    debugPrint('[FCM] background init failed: $e\n$st');
+    return;
+  }
   debugPrint('[FCM] Background message: ${message.messageId}');
 }
 
@@ -34,60 +41,113 @@ final GlobalKey<NavigatorState> siratiNavigatorKey =
     GlobalKey<NavigatorState>();
 
 Future<void> main() async {
+  // Catch async errors without depending on Crashlytics (Firebase may be down).
   await runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    await AppLocale.bootstrap();
-    await AppThemeController.bootstrap();
+    // Local prefs first — never block the UI shell on Firebase.
+    try {
+      await AppLocale.bootstrap();
+    } catch (e, st) {
+      debugPrint('[Boot] AppLocale failed: $e\n$st');
+    }
+    try {
+      await AppThemeController.bootstrap();
+    } catch (e, st) {
+      debugPrint('[Boot] AppThemeController failed: $e\n$st');
+    }
 
-    // Initialize Firebase
-    await Firebase.initializeApp();
+    final firebaseReady = await _initFirebaseStack();
 
+    AuthSessionGuard.install(navigatorKey: siratiNavigatorKey);
+
+    try {
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
+      // Edge-to-edge on Android 15+; SafeArea on screens paints content insets.
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      SystemChrome.setSystemUIOverlayStyle(
+        AppTheme.systemUiOverlayStyle(SiratiColors.light, Brightness.light),
+      );
+    } catch (e, st) {
+      debugPrint('[Boot] SystemChrome failed: $e\n$st');
+    }
+
+    // Always launch UI — Codemagic previews and devices without Firebase config
+    // must still open SplashScreen instead of dying on a white/native shell.
+    runApp(const SiratiApp());
+
+    if (kDebugMode) {
+      debugPrint(
+        firebaseReady
+            ? '[Boot] Firebase ready'
+            : '[Boot] Running without Firebase (push/crashlytics/analytics limited)',
+      );
+    }
+  }, (error, stack) {
+    debugPrint('[Zone] uncaught: $error\n$stack');
+    _recordCrashlytics(error, stack, fatal: true);
+  });
+}
+
+/// Returns true when Firebase + messaging hooks initialized successfully.
+Future<bool> _initFirebaseStack() async {
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+  } catch (e, st) {
+    // Missing GoogleService-Info.plist (iOS) / google-services.json (Android)
+    // must not kill the process — App Preview would "open then close".
+    debugPrint('[Firebase] initializeApp failed: $e\n$st');
+    return false;
+  }
+
+  try {
     // Crashlytics — collect in release only so debug noise stays local.
     await FirebaseCrashlytics.instance
         .setCrashlyticsCollectionEnabled(!kDebugMode);
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    FlutterError.onError = (details) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    };
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
+  } catch (e, st) {
+    debugPrint('[Firebase] Crashlytics setup failed: $e\n$st');
+  }
 
-    // Analytics — never-throwing wrappers; user props from bootstrap prefs.
+  try {
     await AnalyticsService.initialize();
     unawaited(AnalyticsService.setAppLanguage(AppLocale.languageCode.value));
     unawaited(AnalyticsService.setThemeMode(
       AppThemeController.themeMode.value.name,
     ));
+  } catch (e, st) {
+    debugPrint('[Firebase] Analytics setup failed: $e\n$st');
+  }
 
-    // Register background message handler
+  try {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-    // Initialize notification service (channels, listeners)
     await NotificationService.instance.initialize();
-
-    // Handle notification tap that launched the app from terminated state
     await NotificationService.instance.handleTerminatedLaunchNotification();
-
-    // Re-register the FCM token on every launch for already-authenticated users.
     unawaited(NotificationService.instance.registerToken());
+  } catch (e, st) {
+    debugPrint('[Firebase] Messaging setup failed: $e\n$st');
+  }
 
-    // Central 401 → clear session and force re-login (debounced in AuthSessionGuard).
-    AuthSessionGuard.install(
-      navigatorKey: siratiNavigatorKey,
-    );
+  return true;
+}
 
-    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    // Edge-to-edge on Android 15+; SafeArea on screens paints content insets.
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    // Initial overlay before first frame (theme builder keeps it in sync).
-    SystemChrome.setSystemUIOverlayStyle(
-      AppTheme.systemUiOverlayStyle(SiratiColors.light, Brightness.light),
-    );
-
-    runApp(const SiratiApp());
-  }, (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-  });
+void _recordCrashlytics(Object error, StackTrace stack, {bool fatal = false}) {
+  try {
+    if (Firebase.apps.isEmpty) return;
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: fatal);
+  } catch (_) {
+    // Never rethrow from error reporters.
+  }
 }
 
 class SiratiApp extends StatelessWidget {

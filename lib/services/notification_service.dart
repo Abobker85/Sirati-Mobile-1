@@ -42,56 +42,72 @@ class NotificationService {
 
   /// Initialize local notifications and start listening to FCM streams.
   /// Call once at app startup after [Firebase.initializeApp].
+  ///
+  /// Safe when Firebase is not configured (missing plist / google-services).
   Future<void> initialize() async {
-    // Create Android notification channel
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(_androidChannel);
+    try {
+      // Create Android notification channel
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(_androidChannel);
 
-    // Initialize local notifications plugin
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
+      // Initialize local notifications plugin
+      const androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      );
 
-    await _localNotifications.initialize(
-      const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      ),
-      onDidReceiveNotificationResponse: _onLocalNotificationTap,
-    );
+      await _localNotifications.initialize(
+        const InitializationSettings(
+          android: androidSettings,
+          iOS: iosSettings,
+        ),
+        onDidReceiveNotificationResponse: _onLocalNotificationTap,
+      );
+    } catch (e, st) {
+      debugPrint('[FCM] local notifications init failed: $e\n$st');
+    }
 
-    // iOS: show notification banners even when app is in foreground
-    await _messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    // FCM requires a default Firebase app — skip cleanly in App Preview
+    // builds that ship without GoogleService-Info.plist / google-services.json.
+    try {
+      // iOS: show notification banners even when app is in foreground
+      await _messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-    // Foreground messages → show local notification
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      // Foreground messages → show local notification
+      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
-    // Notification tap when app was in background
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+      // Notification tap when app was in background
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
 
-    // Token refresh → re-register with backend
-    _messaging.onTokenRefresh.listen(_onTokenRefresh);
+      // Token refresh → re-register with backend
+      _messaging.onTokenRefresh.listen(_onTokenRefresh);
+    } catch (e, st) {
+      debugPrint('[FCM] messaging listeners skipped: $e\n$st');
+    }
   }
 
   /// Check if a notification launched the app from terminated state.
   /// Call after [initialize] in main.dart.
   Future<void> handleTerminatedLaunchNotification() async {
-    final message = await _messaging.getInitialMessage();
-    if (message != null) {
-      // Short delay to let the UI tree build before navigating
-      Future.delayed(const Duration(milliseconds: 600), () {
-        _navigateFromPayload(message.data);
-      });
+    try {
+      final message = await _messaging.getInitialMessage();
+      if (message != null) {
+        // Short delay to let the UI tree build before navigating
+        Future.delayed(const Duration(milliseconds: 600), () {
+          _navigateFromPayload(message.data);
+        });
+      }
+    } catch (e, st) {
+      debugPrint('[FCM] getInitialMessage skipped: $e\n$st');
     }
   }
 
