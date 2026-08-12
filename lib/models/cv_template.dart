@@ -52,5 +52,8 @@ String? _nullable(dynamic value) {
 
 List<String> _stringList(dynamic value) {
   if (value is! List) return const [];
-  return value.map((item) => item.toString()).where((item) => item.isNotEmpty).toList();
+  return value
+      .map((item) => item.toString())
+      .where((item) => item.isNotEmpty)
+      .toList();
 }

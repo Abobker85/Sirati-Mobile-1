@@ -1,3 +1,5 @@
+import 'ai_status.dart';
+
 class CvAnalysis {
   final int id;
   final String targetJobTitle;
@@ -53,7 +55,7 @@ class CvAnalysis {
       keywordsFound: _asStringList(json['keywords_found']),
       keywordsMissing: _asStringList(json['keywords_missing']),
       quickWins: _asStringList(json['quick_wins']),
-      aiStatus: json['ai_status']?.toString() ?? 'not_configured',
+      aiStatus: json['ai_status']?.toString() ?? AiStatus.notConfigured,
       aiFeedback: json['ai_feedback'] is Map<String, dynamic>
           ? json['ai_feedback'] as Map<String, dynamic>
           : null,

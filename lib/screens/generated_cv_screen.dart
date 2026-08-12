@@ -3,11 +3,14 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app_locale.dart';
 import '../models/cv_template.dart';
+import '../models/ai_status.dart';
 import '../models/generated_cv.dart';
 import '../services/cv_api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_snack_bar.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/motion.dart';
+import '../widgets/template_preview.dart';
 import 'cv_generator_screen.dart';
 
 class GeneratedCvScreen extends StatelessWidget {
@@ -19,11 +22,12 @@ class GeneratedCvScreen extends StatelessWidget {
     final english = AppLocale.isEnglish(context);
     final service = CvApiService();
     final selection = (generatedCv.templatePdfUrl?.isNotEmpty ?? false)
-      ? await _chooseTemplate(context, service, english)
-      : const _TemplateSelection.useDefault();
+        ? await _chooseTemplate(context, service, english)
+        : const _TemplateSelection.useDefault();
     if (!context.mounted || !selection.shouldDownload) return;
 
-    final pdfUrl = service.pdfUrlForTemplate(generatedCv, selection.template?.slug);
+    final pdfUrl =
+        service.pdfUrlForTemplate(generatedCv, selection.template?.slug);
     if (pdfUrl.isEmpty) {
       _showMessage(
           context,
@@ -71,7 +75,7 @@ class GeneratedCvScreen extends StatelessWidget {
               : 'تعذر تحميل التصاميم. سيتم استخدام التصميم الافتراضي.',
         );
       }
-          return const _TemplateSelection.useDefault();
+      return const _TemplateSelection.useDefault();
     }
   }
 
@@ -81,11 +85,7 @@ class GeneratedCvScreen extends StatelessWidget {
   }
 
   void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(message, textAlign: TextAlign.right),
-          behavior: SnackBarBehavior.floating),
-    );
+    AppSnackBar.warning(context, message);
   }
 
   @override
@@ -109,74 +109,77 @@ class GeneratedCvScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          if (generatedCv.aiStatus == 'completed' ||
-              generatedCv.aiStatus == 'not_configured')
+          if (generatedCv.aiStatus == AiStatus.completed ||
+              generatedCv.aiStatus == AiStatus.notConfigured)
             Container(
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.tealLight,
+                color: context.sirati.tealLight,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.auto_awesome,
-                      color: AppColors.teal, size: 18),
+                  Icon(Icons.auto_awesome,
+                      color: context.sirati.teal, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       english
                           ? 'CV generated · ATS score: '
                           : 'تم إنشاء السيرة · درجة ATS: ',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.tealDark,
+                          color: context.sirati.tealDark,
                           fontWeight: FontWeight.w500),
                     ),
                   ),
                   Text('${generatedCv.scoreTotal}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.tealDark,
+                          color: context.sirati.tealDark,
                           fontWeight: FontWeight.w700)),
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.tealLight,
+                      color: context.sirati.tealLight,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                          color: AppColors.teal.withValues(alpha: .4)),
+                          color: context.sirati.teal.withValues(alpha: .4)),
                     ),
                     child: Text(generatedCv.grade,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.tealDark)),
+                            color: context.sirati.tealDark)),
                   ),
                 ],
               ),
             ),
-          if (generatedCv.aiStatus == 'failed' && generatedCv.aiError != null)
+          if (generatedCv.aiStatus == AiStatus.failed &&
+              generatedCv.aiError != null)
             Container(
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                  color: AppColors.amberLight,
+                  color: context.sirati.amberLight,
                   borderRadius: BorderRadius.circular(12)),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline,
-                      color: AppColors.amber, size: 18),
+                  Icon(Icons.info_outline,
+                      color: context.sirati.amber, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       english
                           ? 'A local version was created because AI generation did not complete: ${generatedCv.aiError}'
                           : 'تم إنشاء نسخة محلية لأن الذكاء الاصطناعي لم يكتمل: ${generatedCv.aiError}',
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.amber, height: 1.4),
-                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: context.sirati.amber,
+                          height: 1.4),
+                      textAlign: TextAlign.start,
                     ),
                   ),
                 ],
@@ -188,38 +191,44 @@ class GeneratedCvScreen extends StatelessWidget {
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: context.sirati.surface,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.sirati.border),
                 ),
                 child: ListView(
                   children: [
                     Text(generatedCv.fullName,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primaryDark)),
+                            color: context.sirati.primaryDark)),
                     const SizedBox(height: 4),
                     Text(generatedCv.targetJobTitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 14,
-                            color: AppColors.primary,
+                            color: context.sirati.primary,
                             fontWeight: FontWeight.w500)),
                     const SizedBox(height: 4),
                     if (contact.isNotEmpty)
                       Text(contact,
-                          style: const TextStyle(
-                              fontSize: 12, color: AppColors.textSecondary)),
-                    const Divider(height: 24, color: AppColors.border),
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: context.sirati.textSecondary)),
+                    Divider(height: 24, color: context.sirati.border),
                     if (generatedCv.generatedMarkdown.trim().isEmpty)
                       Text(
                           english
                               ? 'No CV content is available yet.'
                               : 'لا يوجد محتوى للسيرة حالياً.',
-                          style: const TextStyle(
-                              fontSize: 13, color: AppColors.textSecondary))
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: context.sirati.textSecondary))
                     else
-                      ..._buildMarkdownSections(generatedCv.generatedMarkdown),
+                      ..._buildMarkdownSections(
+                        context,
+                        generatedCv.generatedMarkdown,
+                        english,
+                      ),
                   ],
                 ),
               ),
@@ -256,56 +265,87 @@ class GeneratedCvScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildMarkdownSections(String markdown) {
+  List<Widget> _buildMarkdownSections(
+    BuildContext context,
+    String markdown,
+    bool english,
+  ) {
+    final direction = Directionality.of(context);
     final widgets = <Widget>[];
     for (final line in markdown.trim().split('\n')) {
-      if (line.startsWith('## ')) {
+      final raw = line.trim();
+      if (raw.isEmpty || raw == '---') {
+        continue;
+      }
+
+      if (raw.startsWith('## ') ||
+          raw.startsWith('### ') ||
+          raw.startsWith('#### ')) {
+        final title = raw
+            .replaceFirst(RegExp(r'^#{2,4}\s*'), '')
+            .replaceAll('**', '')
+            .trim();
         widgets.add(Padding(
           padding: const EdgeInsets.only(top: 14, bottom: 6),
           child: Text(
-            line.replaceFirst('## ', ''),
-            style: const TextStyle(
+            title,
+            textAlign: TextAlign.start,
+            style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: context.sirati.textPrimary,
                 letterSpacing: 0.3),
           ),
         ));
-        widgets.add(const Divider(height: 1, color: AppColors.border));
+        widgets.add(Divider(height: 1, color: context.sirati.border));
         widgets.add(const SizedBox(height: 6));
-      } else if (line.startsWith('**') && line.contains('|')) {
-        final cleaned = line.replaceAll('**', '');
+      } else if (raw.startsWith('**') && raw.endsWith('**')) {
+        final cleaned = raw.replaceAll('**', '').trim();
         widgets.add(Padding(
           padding: const EdgeInsets.only(bottom: 3),
           child: Text(cleaned,
-              style: const TextStyle(
+              textAlign: TextAlign.start,
+              style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary)),
+                  color: context.sirati.textPrimary)),
         ));
-      } else if (line.startsWith('- ')) {
+      } else if (raw.startsWith('- ') || raw.startsWith('* ')) {
+        final bulletText = raw.replaceFirst(RegExp(r'^[-*]\s+'), '');
         widgets.add(Padding(
-          padding: const EdgeInsets.only(bottom: 3, right: 8),
+          padding: const EdgeInsets.only(bottom: 3),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
+            textDirection: direction,
             children: [
-              const Text('• ',
-                  style: TextStyle(fontSize: 12, color: AppColors.primary)),
+              Text('• ',
+                  style:
+                      TextStyle(fontSize: 12, color: context.sirati.primary)),
               Expanded(
-                  child: Text(line.replaceFirst('- ', ''),
-                      style: const TextStyle(
+                  child: Text(bulletText,
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textPrimary,
+                          color: context.sirati.textPrimary,
                           height: 1.5))),
             ],
           ),
         ));
-      } else if (line.trim().isNotEmpty) {
+      } else {
+        final cleaned = raw.replaceAll('**', '');
+        final isContactLine = cleaned.contains('@') ||
+            cleaned.contains('Email:') ||
+            cleaned.contains('Phone:') ||
+            cleaned.contains('|');
         widgets.add(Padding(
           padding: const EdgeInsets.only(bottom: 4),
-          child: Text(line,
-              style: const TextStyle(
-                  fontSize: 12, color: AppColors.textPrimary, height: 1.6)),
+          child: Text(
+            cleaned,
+            textDirection: isContactLine ? TextDirection.ltr : direction,
+            textAlign: TextAlign.start,
+            style: TextStyle(
+                fontSize: 12, color: context.sirati.textPrimary, height: 1.6),
+          ),
         ));
       }
     }
@@ -341,11 +381,11 @@ class _CvTemplatePicker extends StatelessWidget {
         children: [
           Text(
             english ? 'Choose CV design' : 'اختر تصميم السيرة',
-            textAlign: english ? TextAlign.left : TextAlign.right,
-            style: const TextStyle(
+            textAlign: TextAlign.start,
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: context.sirati.textPrimary,
             ),
           ),
           const SizedBox(height: 12),
@@ -359,19 +399,25 @@ class _CvTemplatePicker extends StatelessWidget {
                     onTap: () => Navigator.pop(context, entry.value),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
-                      side: const BorderSide(color: AppColors.border),
+                      side: BorderSide(color: context.sirati.border),
                     ),
-                    leading: _TemplatePreview(template: entry.value),
+                    leading: TemplatePreview(
+                      imageUrl: entry.value.previewImageUrl,
+                      errorFallback: Icon(
+                        Icons.description_outlined,
+                        color: context.sirati.primary,
+                      ),
+                    ),
                     title: Text(
                       entry.value.name,
-                      textAlign: english ? TextAlign.left : TextAlign.right,
+                      textAlign: TextAlign.start,
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                     subtitle: Text(
                       entry.value.isDefault
                           ? (english ? 'Default template' : 'القالب الافتراضي')
                           : entry.value.slug,
-                      textAlign: english ? TextAlign.left : TextAlign.right,
+                      textAlign: TextAlign.start,
                     ),
                     trailing: const Icon(Icons.download_rounded),
                   ),
@@ -379,39 +425,6 @@ class _CvTemplatePicker extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _TemplatePreview extends StatelessWidget {
-  final CvTemplate template;
-
-  const _TemplatePreview({required this.template});
-
-  @override
-  Widget build(BuildContext context) {
-    final url = template.previewImageUrl;
-    if (url == null) {
-      return Container(
-        width: 44,
-        height: 56,
-        decoration: BoxDecoration(
-          color: AppColors.tealLight,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(Icons.description_outlined, color: AppColors.primary),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        url,
-        width: 44,
-        height: 56,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.description_outlined),
       ),
     );
   }

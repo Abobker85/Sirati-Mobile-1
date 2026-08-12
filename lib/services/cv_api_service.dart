@@ -1,17 +1,24 @@
 import 'package:http/http.dart' as http;
 
 import '../models/cv_analysis.dart';
+import '../models/ai_status.dart';
 import '../models/cv_template.dart';
 import '../models/generated_cv.dart';
 import 'api_client.dart';
 import 'auth_token_store.dart';
 
 class CvApiService {
-  CvApiService({ApiClient? apiClient})
-      : _apiClient = apiClient ??
+  CvApiService({
+    ApiClient? apiClient,
+    Future<void> Function(Duration)? pollingDelay,
+    this.pollingTimeout = const Duration(minutes: 3),
+  })  : _pollingDelay = pollingDelay ?? Future<void>.delayed,
+        _apiClient = apiClient ??
             ApiClient(tokenProvider: const AuthTokenStore().readToken);
 
   final ApiClient _apiClient;
+  final Future<void> Function(Duration) _pollingDelay;
+  final Duration pollingTimeout;
 
   Future<CvAnalysis> submitAnalysis({
     required String targetJobTitle,
@@ -35,6 +42,20 @@ class CvApiService {
     return CvAnalysis.fromJson(response['data'] as Map<String, dynamic>);
   }
 
+  Future<AiPollResult<CvAnalysis>> pollAnalysis(
+    CvAnalysis initial, {
+    bool Function()? isCancelled,
+    bool Function()? isPaused,
+  }) {
+    return _poll<CvAnalysis>(
+      initial: initial,
+      statusOf: (value) => value.aiStatus,
+      refresh: () => getAnalysis(initial.id),
+      isCancelled: isCancelled,
+      isPaused: isPaused,
+    );
+  }
+
   Future<List<CvAnalysis>> listAnalyses() async {
     final response = await _apiClient.getJson('/cv-analyses');
     return (response['data'] as List? ?? [])
@@ -46,6 +67,34 @@ class CvApiService {
   Future<GeneratedCv> generateCv(Map<String, dynamic> payload) async {
     final response = await _apiClient.postJson('/generated-cvs', payload);
     return GeneratedCv.fromJson(response['data'] as Map<String, dynamic>);
+  }
+
+  Future<Map<String, dynamic>> enhanceCvField({
+    required String field,
+    required String draft,
+    required String jobTitle,
+    required String language,
+  }) async {
+    final response = await _apiClient.postJson(
+      '/generated-cvs/enhance-field',
+      {
+        'field': field,
+        'draft': draft,
+        'job_title': jobTitle,
+        'language': language,
+      },
+    );
+
+    final data = response['data'];
+    if (data is! Map<String, dynamic>) return const {};
+
+    return {
+      'enhanced_text': data['enhanced_text']?.toString() ?? '',
+      'changes_made': _stringList(data['changes_made']),
+      'missing_facts': _stringList(data['missing_facts']),
+      'ats_keywords_added': _stringList(data['ats_keywords_added']),
+      'unverified_claims': _unverifiedClaims(data['unverified_claims']),
+    };
   }
 
   Future<Map<String, dynamic>> enhanceJobDescription({
@@ -64,6 +113,28 @@ class CvApiService {
 
     final data = response['data'];
     return data is Map<String, dynamic> ? data : const {};
+  }
+
+  List<String> _stringList(dynamic value) => value is List
+      ? value
+          .map((item) => item.toString().trim())
+          .where((item) => item.isNotEmpty)
+          .toList()
+      : const [];
+
+  List<Map<String, String>> _unverifiedClaims(dynamic value) {
+    if (value is! List) return const [];
+
+    return value
+        .whereType<Map>()
+        .map((claim) => {
+              'text': claim['text']?.toString().trim() ?? '',
+              'kind': claim['kind']?.toString() ?? '',
+            })
+        .where((claim) =>
+            claim['text']!.isNotEmpty &&
+            (claim['kind'] == 'date' || claim['kind'] == 'employer'))
+        .toList();
   }
 
   Future<GeneratedCv> updateGeneratedCv(
@@ -95,6 +166,20 @@ class CvApiService {
     return GeneratedCv.fromJson(response['data'] as Map<String, dynamic>);
   }
 
+  Future<AiPollResult<GeneratedCv>> pollGeneratedCv(
+    GeneratedCv initial, {
+    bool Function()? isCancelled,
+    bool Function()? isPaused,
+  }) {
+    return _poll<GeneratedCv>(
+      initial: initial,
+      statusOf: (value) => value.aiStatus,
+      refresh: () => getGeneratedCv(initial.id),
+      isCancelled: isCancelled,
+      isPaused: isPaused,
+    );
+  }
+
   Future<List<GeneratedCv>> listGeneratedCvs() async {
     final response = await _apiClient.getJson('/generated-cvs');
     return (response['data'] as List? ?? [])
@@ -119,7 +204,9 @@ class CvApiService {
 
   String pdfUrlForTemplate(GeneratedCv cv, String? templateSlug) {
     final templateBaseUrl = cv.templatePdfUrl ?? '';
-    if (templateSlug == null || templateSlug.isEmpty || templateBaseUrl.isEmpty) {
+    if (templateSlug == null ||
+        templateSlug.isEmpty ||
+        templateBaseUrl.isEmpty) {
       return templateBaseUrl.isNotEmpty ? templateBaseUrl : cv.pdfUrl ?? '';
     }
 
@@ -129,4 +216,59 @@ class CvApiService {
       'template': templateSlug,
     }).toString();
   }
+
+  Future<AiPollResult<T>> _poll<T>({
+    required T initial,
+    required String Function(T value) statusOf,
+    required Future<T> Function() refresh,
+    bool Function()? isCancelled,
+    bool Function()? isPaused,
+  }) async {
+    var current = initial;
+    var elapsed = Duration.zero;
+
+    while (AiStatus.isPending(statusOf(current))) {
+      if (isCancelled?.call() ?? false) {
+        return AiPollResult(value: current, cancelled: true);
+      }
+
+      if (isPaused?.call() ?? false) {
+        await _pollingDelay(const Duration(milliseconds: 250));
+        continue;
+      }
+
+      if (elapsed >= pollingTimeout) {
+        return AiPollResult(value: current, timedOut: true);
+      }
+
+      final delay = elapsed < const Duration(seconds: 30)
+          ? const Duration(seconds: 2)
+          : const Duration(seconds: 5);
+      await _pollingDelay(delay);
+      elapsed += delay;
+
+      if (isCancelled?.call() ?? false) {
+        return AiPollResult(value: current, cancelled: true);
+      }
+      if (isPaused?.call() ?? false) {
+        continue;
+      }
+
+      current = await refresh();
+    }
+
+    return AiPollResult(value: current);
+  }
+}
+
+class AiPollResult<T> {
+  final T value;
+  final bool timedOut;
+  final bool cancelled;
+
+  const AiPollResult({
+    required this.value,
+    this.timedOut = false,
+    this.cancelled = false,
+  });
 }

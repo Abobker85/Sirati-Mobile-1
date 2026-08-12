@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../app_locale.dart';
+import '../services/api_exception.dart';
 import '../services/mobile_content_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_format.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/loading/app_async_body.dart';
+import '../widgets/loading/app_skeleton.dart';
+import '../widgets/motion.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -22,7 +28,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _refresh() {
-    setState(() => _future = _service.notifications());
+    setState(() => _future = _service.notifications(force: true));
   }
 
   Future<void> _markAllRead() async {
@@ -53,39 +59,54 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: FutureBuilder<Map<String, dynamic>>(
         future: _future,
         builder: (context, snapshot) {
-          final data = snapshot.data ?? const {};
-          final items = _list(data['items']);
-
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (items.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  english ? 'No notifications yet.' : 'لا توجد إشعارات حالياً.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 16,
-                  ),
+          return AppAsyncBody<Map<String, dynamic>>(
+            snapshot: snapshot,
+            english: english,
+            onRetry: _refresh,
+            fallbackOnEmptyError: const {},
+            errorMessage: (error) => error is ApiException
+                ? error.displayMessage
+                : (english
+                    ? 'Could not load notifications.'
+                    : 'تعذر تحميل الإشعارات.'),
+            loading: const ListScreenSkeleton(
+              itemCount: 5,
+              padding:
+                  EdgeInsets.fromLTRB(AppSpacing.lg, 18, AppSpacing.lg, 32),
+            ),
+            isEmpty: (data) => _list(data['items']).isEmpty,
+            empty: AppEmptyState(
+              icon: Icons.notifications_none_rounded,
+              title:
+                  english ? 'No notifications yet' : 'لا توجد إشعارات حالياً',
+              subtitle: english
+                  ? 'Updates about jobs and CV activity will show up here.'
+                  : 'ستظهر هنا التحديثات حول الوظائف ونشاط سيرتك.',
+              scrollable: true,
+            ),
+            builder: (data) {
+              final items = _list(data['items']);
+              return RefreshIndicator(
+                onRefresh: () async => _refresh(),
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg, 18, AppSpacing.lg, 32),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpacing.sm),
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return MotionReveal(
+                      order: index.clamp(0, 5),
+                      child: _NotificationCard(
+                        item: item,
+                        english: english,
+                        onTap: () => _markRead(_int(item['id'])),
+                      ),
+                    );
+                  },
                 ),
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _NotificationCard(
-                item: item,
-                english: english,
-                onTap: () => _markRead(_int(item['id'])),
               );
             },
           );
@@ -110,96 +131,70 @@ class _NotificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isRead = item['is_read'] == true;
 
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isRead
-                  ? AppColors.border.withValues(alpha: .65)
-                  : AppColors.primary.withValues(alpha: .5),
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!english) ...[
-                Expanded(child: _TextBlock(item: item, english: english)),
-                const SizedBox(width: 12),
-              ],
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: isRead
-                      ? AppColors.surfaceHigh
-                      : AppColors.primaryMid.withValues(alpha: .3),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isRead
-                      ? Icons.notifications_none_rounded
-                      : Icons.notifications_active_outlined,
-                  color: isRead ? AppColors.textHint : AppColors.primary,
-                  size: 22,
-                ),
+    return PressScale(
+      child: Material(
+        color: context.sirati.surface,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isRead
+                    ? context.sirati.border
+                    : context.sirati.primary.withValues(alpha: .28),
               ),
-              if (english) ...[
-                const SizedBox(width: 12),
-                Expanded(child: _TextBlock(item: item, english: english)),
+              boxShadow: context.sirati.softShadow,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _text(item['title'], ''),
+                        textAlign: TextAlign.start,
+                        style: AppTextStyles.titleSm().copyWith(
+                          fontWeight:
+                              isRead ? FontWeight.w600 : FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    if (!isRead)
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: context.sirati.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  _text(item['body'], ''),
+                  textAlign: TextAlign.start,
+                  style: AppTextStyles.bodySm(),
+                ),
+                if (_notificationTime(item, english: english).isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    _notificationTime(item, english: english),
+                    style: AppTextStyles.labelMd().copyWith(
+                      color: context.sirati.textHint,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _TextBlock extends StatelessWidget {
-  final Map<String, dynamic> item;
-  final bool english;
-
-  const _TextBlock({required this.item, required this.english});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment:
-          english ? CrossAxisAlignment.start : CrossAxisAlignment.end,
-      children: [
-        Text(
-          _text(item['title'], ''),
-          textAlign: english ? TextAlign.left : TextAlign.right,
-          style: const TextStyle(
-            fontSize: 16,
-            height: 1.35,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          _text(item['body'], ''),
-          textAlign: english ? TextAlign.left : TextAlign.right,
-          style: const TextStyle(
-            fontSize: 14,
-            height: 1.55,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _text(item['created_label'], ''),
-          style: const TextStyle(fontSize: 12, color: AppColors.textHint),
-        ),
-      ],
     );
   }
 }
@@ -212,3 +207,14 @@ String _text(dynamic value, String fallback) =>
     (value?.toString().isNotEmpty ?? false) ? value.toString() : fallback;
 int? _int(dynamic value) =>
     value is int ? value : int.tryParse(value?.toString() ?? '');
+
+String _notificationTime(Map<String, dynamic> item, {required bool english}) {
+  final raw = item['created_at'] ?? item['createdAt'];
+  final at = DateTime.tryParse(raw?.toString() ?? '');
+  if (at != null) {
+    return AppFormat.relativeTime(at, english: english);
+  }
+  final label = _text(item['created_label'], '');
+  if (label.isEmpty) return '';
+  return AppFormat.digits(label, english: english);
+}

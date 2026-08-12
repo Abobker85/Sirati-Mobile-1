@@ -13,21 +13,29 @@ class LanguageToggle extends StatelessWidget {
     return Tooltip(
       message: english ? 'Switch to Arabic' : 'Switch to English',
       child: Material(
-        color: AppColors.surfaceLow,
+        color: context.sirati.surfaceLow,
         shape: const CircleBorder(),
         child: InkWell(
-          onTap: () => AppLocale.toggle(context),
+          onTap: () {
+            AppLocale.toggle(context);
+          },
           customBorder: const CircleBorder(),
           child: SizedBox(
             width: 42,
             height: 42,
             child: Center(
-              child: Text(
-                english ? 'AR' : 'EN',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    english ? 'AR' : 'EN',
+                    style: TextStyle(
+                      color: context.sirati.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
               ),
             ),

@@ -1,14 +1,26 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../app_locale.dart';
+import '../services/api_exception.dart';
+import '../services/auth_api_service.dart';
 import '../services/auth_token_store.dart';
+import '../services/notification_service.dart';
+import '../services/preference_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/language_toggle.dart';
+import '../widgets/loading/branded_loader.dart';
 import '../widgets/motion.dart';
+import '../widgets/submit_button.dart';
+import 'email_verification_screen.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
+import 'onboarding_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'register_screen.dart';
+
+enum _SplashPhase { boot, onboarding, welcome }
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,22 +31,101 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   final _tokenStore = const AuthTokenStore();
+  final _auth = AuthApiService();
+  final _prefs = const PreferenceStore();
+
+  _SplashPhase _phase = _SplashPhase.boot;
+
+  @override
+  void initState() {
+    super.initState();
+    _bootstrapSession();
+  }
+
+  /// Token → check verification then home. Else onboarding (once) or welcome.
+  Future<void> _bootstrapSession() async {
+    try {
+      final token = await _tokenStore.readToken();
+      if (!mounted) return;
+
+      if (token != null && token.isNotEmpty) {
+        await _enterAuthenticatedSession();
+        return;
+      }
+    } catch (_) {
+      // Storage failure → treat as logged out.
+    }
+
+    var showOnboarding = true;
+    try {
+      showOnboarding = !(await _prefs.readOnboardingCompleted());
+    } catch (_) {
+      showOnboarding = true;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _phase = showOnboarding ? _SplashPhase.onboarding : _SplashPhase.welcome;
+    });
+  }
+
+  /// Validate session; gate unverified users on the OTP screen.
+  /// Offline: allow Home when we cannot reach the API (token still present).
+  Future<void> _enterAuthenticatedSession() async {
+    if (!mounted) return;
+
+    try {
+      final user = await _auth.me();
+      if (!mounted) return;
+
+      if (user != null && !user.emailVerified) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationScreen(email: user.email),
+          ),
+        );
+        return;
+      }
+
+      if (user != null && user.emailVerified) {
+        unawaited(NotificationService.instance.registerToken());
+      }
+    } on ApiException catch (e) {
+      // 401 already fired AuthSessionGuard from ApiClient.
+      if (e.type == ApiErrorType.auth) return;
+      // Network / timeout / server — continue to Home offline-friendly.
+    } catch (_) {
+      // Offline or unexpected — continue to Home.
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+  }
+
+  void _onOnboardingFinished() {
+    if (!mounted) return;
+    setState(() => _phase = _SplashPhase.welcome);
+  }
 
   Future<void> _goToLogin() async {
     final token = await _tokenStore.readToken();
     if (!mounted) return;
 
+    if (token != null && token.isNotEmpty) {
+      await _enterAuthenticatedSession();
+      return;
+    }
+
+    // Use pushReplacement so the SplashScreen is removed from the stack.
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => token == null || token.isEmpty
-            ? const LoginScreen()
-            : const HomeScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
   }
 
   void _goToRegister() {
-    Navigator.of(context).push(
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const RegisterScreen()),
     );
   }
@@ -47,156 +138,227 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: context.sirati.background,
+      body: MotionStateSwitcher(
+        stateKey: _phase.name,
+        child: switch (_phase) {
+          _SplashPhase.boot => const _BootstrapBody(),
+          _SplashPhase.onboarding => OnboardingScreen(
+              onFinished: _onOnboardingFinished,
+            ),
+          _SplashPhase.welcome => _WelcomeBody(
+              onRegister: _goToRegister,
+              onLogin: _goToLogin,
+              onPrivacy: _openPrivacyPolicy,
+            ),
+        },
+      ),
+    );
+  }
+}
+
+/// Brief branded hold while we check secure storage for an existing session.
+class _BootstrapBody extends StatelessWidget {
+  const _BootstrapBody();
+
+  @override
+  Widget build(BuildContext context) {
     final en = AppLocale.isEnglish(context);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topCenter,
-            radius: 1.15,
-            colors: [Color(0xFFE7F4EF), AppColors.background],
-          ),
-        ),
-        child: CustomPaint(
-          painter: _DottedBackgroundPainter(),
-          child: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isTall = constraints.maxHeight >= 760;
-                final topGap = isTall ? 86.0 : 36.0;
-                final titleGap = isTall ? 40.0 : 26.0;
-                final actionGap = isTall ? 74.0 : 34.0;
-                final bottomGap = isTall ? 78.0 : 28.0;
-
-                return SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints:
-                        BoxConstraints(minHeight: constraints.maxHeight),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(28, 26, 28, 18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Align(
-                            alignment: AlignmentDirectional.topStart,
-                            child: LanguageToggle(),
-                          ),
-                          SizedBox(height: topGap),
-                          const MotionReveal(
-                            child: Center(child: _SplashLogo()),
-                          ),
-                          const SizedBox(height: 18),
-                          MotionReveal(
-                            order: 1,
-                            child: Text(
-                              en ? 'Sirati' : 'سيرتي',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 42,
-                                height: 1.15,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: titleGap),
-                          MotionReveal(
-                            order: 2,
-                            child: Text(
-                              en
-                                  ? 'Build Your CV Professionally'
-                                  : 'اصنع سيرتك الذاتية باحترافية',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 28,
-                                height: 1.35,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          MotionReveal(
-                            order: 3,
-                            child: Text(
-                              en
-                                  ? 'Create an ATS-friendly CV, reach employers with confidence, and stand out with polished global templates.'
-                                  : 'أنشئ سيرة ذاتية تجتاز فلاتر ATS، وتصل لأصحاب العمل بسهولة وبأرقى التصاميم العالمية.',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 17,
-                                height: 1.75,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textHint,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: actionGap),
-                          MotionReveal(
-                            order: 4,
-                            child: PressScale(
-                              child: ElevatedButton.icon(
-                                onPressed: _goToRegister,
-                                icon: Icon(
-                                    en
-                                        ? Icons.arrow_forward_rounded
-                                        : Icons.arrow_back_rounded,
-                                    size: 28),
-                                label:
-                                    Text(en ? 'Create Account' : 'إنشاء حساب جديد'),
-                                style: ElevatedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(64),
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                  elevation: 8,
-                                  shadowColor:
-                                      AppColors.primary.withValues(alpha: .25),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  textStyle: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          TextButton(
-                            onPressed: _openPrivacyPolicy,
-                            child: Text(
-                              en ? 'Sign In' : 'تسجيل الدخول',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: bottomGap),
-                          TextButton(
-                            onPressed: _goToLogin,
-                            child: Text(
-                              en ? 'Privacy Policy' : 'سياسة الخصوصية',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textHint,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const BrandedLoader(size: 72),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            en ? 'Sirati' : 'سيرتي',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: context.sirati.primary,
             ),
           ),
-        ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            en ? 'Preparing your workspace…' : 'جارٍ تجهيز مساحتك…',
+            style: AppTextStyles.bodySm().copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WelcomeBody extends StatelessWidget {
+  final VoidCallback onRegister;
+  final VoidCallback onLogin;
+  final VoidCallback onPrivacy;
+
+  const _WelcomeBody({
+    required this.onRegister,
+    required this.onLogin,
+    required this.onPrivacy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final en = AppLocale.isEnglish(context);
+    final cardTitle =
+        en ? 'Build your CV professionally' : 'اصنع سيرتك الذاتية باحترافية';
+    final cardBody = en
+        ? 'Create an ATS-ready CV that reaches employers with world-class design, in minutes.'
+        : 'أنشئ سيرة ذاتية متوافقة مع أنظمة ATS وتصل لأصحاب العمل خلال دقائق.';
+
+    return SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl + 4,
+                  AppSpacing.lg - 2,
+                  AppSpacing.xl + 4,
+                  AppSpacing.xl,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const MotionReveal(
+                      order: 0,
+                      child: Align(
+                        alignment: AlignmentDirectional.topStart,
+                        child: LanguageToggle(),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxl + 4),
+                    const MotionReveal(
+                      order: 1,
+                      child: Center(child: _SplashLogo()),
+                    ),
+                    const SizedBox(height: AppSpacing.lg - 2),
+                    MotionReveal(
+                      order: 2,
+                      child: Text(
+                        en ? 'Sirati' : 'سيرتي',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: context.sirati.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm - 2),
+                    MotionReveal(
+                      order: 2,
+                      child: Text(
+                        en
+                            ? 'Your first step towards a better professional future'
+                            : 'خطوتك الأولى نحو مستقبل مهني أفضل',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.bodyMd().copyWith(
+                          height: 1.7,
+                          color: context.sirati.textSecondary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl + 4),
+                    MotionReveal(
+                      order: 3,
+                      child: _ValueCard(
+                        title: cardTitle,
+                        body: cardBody,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl + 4),
+                    MotionReveal(
+                      order: 4,
+                      child: SubmitButton(
+                        label: en ? 'Create New Account' : 'إنشاء حساب جديد',
+                        icon: Icons.arrow_forward,
+                        onPressed: onRegister,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    MotionReveal(
+                      order: 4,
+                      child: SubmitButton(
+                        label: en ? 'Sign In' : 'تسجيل الدخول',
+                        outlined: true,
+                        onPressed: onLogin,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg - 2),
+                    MotionReveal(
+                      order: 5,
+                      child: TextButton(
+                        onPressed: onPrivacy,
+                        child: Text(
+                          en ? 'Privacy Policy' : 'سياسة الخصوصية',
+                          style: AppTextStyles.labelMd().copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: context.sirati.textHint,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Elevated hero card — surface + border + soft shadow so it reads as content.
+class _ValueCard extends StatelessWidget {
+  final String title;
+  final String body;
+
+  const _ValueCard({required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl - 2),
+      decoration: BoxDecoration(
+        color: context.sirati.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.sirati.border),
+        boxShadow: context.sirati.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.start,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: context.sirati.textPrimary,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm - 2),
+          Text(
+            body,
+            textAlign: TextAlign.start,
+            style: AppTextStyles.bodySm().copyWith(
+              height: 1.75,
+              color: context.sirati.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -207,45 +369,6 @@ class _SplashLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: .035,
-      child: Container(
-        width: 118,
-        height: 118,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(34),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x26006A60),
-              blurRadius: 24,
-              offset: Offset(0, 12),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.description_outlined,
-          color: Colors.white,
-          size: 58,
-        ),
-      ),
-    );
+    return const SiratiMark(size: 88, elevated: true);
   }
-}
-
-class _DottedBackgroundPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = AppColors.primary.withValues(alpha: .12);
-    const spacing = 32.0;
-
-    for (double y = 18; y < size.height; y += spacing) {
-      for (double x = 18; x < size.width; x += spacing) {
-        canvas.drawCircle(Offset(x, y), 1.25, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

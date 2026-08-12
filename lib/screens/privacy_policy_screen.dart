@@ -27,14 +27,14 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _Section(
             title: english ? 'What We Collect' : 'ما البيانات التي نجمعها؟',
             body: english
-                ? 'We collect your account details and the CV content you enter or upload so Sirati can analyze, improve, and save your CVs.'
-                : 'نجمع بيانات الحساب الأساسية ومحتوى السيرة الذاتية الذي تدخله أو ترفعه حتى نتمكن من تحليلها وتحسينها وحفظها داخل حسابك.',
+                ? 'We collect account details (name, email, optional phone and location), the CV content you enter or upload, analysis results, and a device push-notification token (FCM) so Sirati can analyze, improve, save, and notify you about your CVs.'
+                : 'نجمع بيانات الحساب (الاسم، البريد، والجوال والموقع اختياريًا)، ومحتوى السيرة الذي تدخله أو ترفعه، ونتائج التحليل، ورمز إشعارات الجهاز (FCM) حتى نتمكن من تحليل سيرتك وتحسينها وحفظها وإرسال الإشعارات.',
           ),
           _Section(
             title: english ? 'How We Use It' : 'كيف نستخدم البيانات؟',
             body: english
-                ? 'Your data is used to calculate ATS scores, generate improved CVs, show your history, and personalize the dashboard.'
-                : 'نستخدم بياناتك لحساب درجة ATS، إنشاء سير ذاتية محسنة، عرض السجل، وتخصيص لوحة التحكم لك.',
+                ? 'Your data is used to calculate ATS scores, generate improved CVs, show your history, personalize the dashboard, and deliver optional push notifications. We do not use your data for advertising tracking.'
+                : 'نستخدم بياناتك لحساب درجة ATS، وإنشاء سير محسنة، وعرض السجل، وتخصيص لوحة التحكم، وإرسال إشعارات اختيارية. لا نستخدم بياناتك لتتبع الإعلانات.',
           ),
           _Section(
             title: english ? 'Sharing' : 'مشاركة البيانات',
@@ -45,8 +45,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _Section(
             title: english ? 'Deleting Data' : 'حذف البيانات',
             body: english
-                ? 'You can delete generated CVs from My CVs. For full account deletion, contact the Sirati team.'
-                : 'يمكنك حذف السير الذاتية المنشأة من شاشة سيراتي. لحذف الحساب بالكامل، تواصل مع فريق سيرتي.',
+                ? 'You can delete individual generated CVs from My CVs. You can permanently delete your entire account from Settings → Delete account. That removes your profile, CVs, analyses, notifications, and push tokens from our systems. This cannot be undone.'
+                : 'يمكنك حذف السير الفردية من شاشة سيراتي. ويمكنك حذف حسابك بالكامل من الإعدادات ← حذف الحساب. يزيل ذلك ملفك والسير والتحليلات والإشعارات ورموز الدفع من أنظمتنا. لا يمكن التراجع عن هذا الإجراء.',
           ),
         ],
       ),
@@ -62,38 +62,35 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.sirati.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: .7)),
+        border: Border.all(color: context.sirati.border.withValues(alpha: .7)),
       ),
       child: Column(
-        crossAxisAlignment:
-            english ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            textAlign: english ? TextAlign.left : TextAlign.right,
-            style: const TextStyle(
+            textAlign: TextAlign.start,
+            style: TextStyle(
               fontSize: 18,
               height: 1.3,
               fontWeight: FontWeight.w800,
-              color: AppColors.primary,
+              color: context.sirati.primary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             body,
-            textAlign: english ? TextAlign.left : TextAlign.right,
-            style: const TextStyle(
+            textAlign: TextAlign.start,
+            style: TextStyle(
               fontSize: 15,
               height: 1.7,
-              color: AppColors.textPrimary,
+              color: context.sirati.textPrimary,
             ),
           ),
         ],

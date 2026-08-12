@@ -1,3 +1,4 @@
+import 'ai_status.dart';
 import 'cv_analysis.dart';
 
 class GeneratedCv {
@@ -70,7 +71,7 @@ class GeneratedCv {
       educationInput: json['education_input']?.toString() ?? '',
       certificationsInput: json['certifications_input']?.toString(),
       generatedMarkdown: json['generated_markdown']?.toString() ?? '',
-      aiStatus: json['ai_status']?.toString() ?? 'not_configured',
+      aiStatus: json['ai_status']?.toString() ?? AiStatus.notConfigured,
       aiOutput: json['ai_output'] is Map<String, dynamic>
           ? json['ai_output'] as Map<String, dynamic>
           : null,
