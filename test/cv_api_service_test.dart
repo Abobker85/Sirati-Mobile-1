@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:sirati/models/ai_status.dart';
+import 'package:sirati/models/cv_analysis.dart';
 import 'package:sirati/services/api_client.dart';
 import 'package:sirati/services/api_exception.dart';
 import 'package:sirati/services/auth_api_service.dart';
@@ -17,6 +19,7 @@ void main() {
           httpClient: MockClient((request) async {
             expect(request.method, 'GET');
             expect(request.url.path, '/api/cv-analyses');
+            expect(request.headers['x-sirati-async'], '1');
 
             return _jsonResponse({
               'data': [
@@ -73,6 +76,7 @@ void main() {
           httpClient: MockClient((request) async {
             expect(request.method, 'POST');
             expect(request.url.path, '/api/generated-cvs');
+            expect(request.headers['x-sirati-async'], '1');
             expect(
                 request.headers['content-type'], contains('application/json'));
 
@@ -127,6 +131,97 @@ void main() {
         ),
       );
     });
+
+    test('polls every two seconds until queued work completes', () async {
+      var refreshes = 0;
+      final delays = <Duration>[];
+      final service = CvApiService(
+        pollingDelay: (delay) async => delays.add(delay),
+        apiClient: ApiClient(
+          httpClient: MockClient((request) async {
+            refreshes++;
+            final status =
+                refreshes == 1 ? AiStatus.processing : AiStatus.completed;
+            return _jsonResponse({
+              'data': {
+                ..._analysisJson(),
+                'ai_status': status,
+              },
+            });
+          }),
+        ),
+      );
+      final initial = CvAnalysis.fromJson({
+        ..._analysisJson(),
+        'ai_status': AiStatus.queued,
+      });
+
+      final result = await service.pollAnalysis(initial);
+
+      expect(result.value.aiStatus, AiStatus.completed);
+      expect(result.timedOut, isFalse);
+      expect(refreshes, 2);
+      expect(delays, const [Duration(seconds: 2), Duration(seconds: 2)]);
+    });
+
+    test('polling gives up at the configured timeout', () async {
+      var refreshes = 0;
+      final service = CvApiService(
+        pollingTimeout: const Duration(seconds: 4),
+        pollingDelay: (_) async {},
+        apiClient: ApiClient(
+          httpClient: MockClient((request) async {
+            refreshes++;
+            return _jsonResponse({
+              'data': {
+                ..._analysisJson(),
+                'ai_status': AiStatus.processing,
+              },
+            });
+          }),
+        ),
+      );
+      final initial = CvAnalysis.fromJson({
+        ..._analysisJson(),
+        'ai_status': AiStatus.queued,
+      });
+
+      final result = await service.pollAnalysis(initial);
+
+      expect(result.timedOut, isTrue);
+      expect(result.value.scoreTotal, 82);
+      expect(refreshes, 2);
+    });
+  });
+
+  test('preserves the Laravel message for HTTP 429 responses', () async {
+    const message =
+        'لقد وصلت إلى الحد المؤقت للطلبات. يرجى المحاولة مرة أخرى بعد قليل.';
+    final apiClient = ApiClient(
+      httpClient: MockClient((request) async {
+        return _jsonResponse({
+          'message': message,
+          'code': 'ai_rate_limit_short',
+        }, statusCode: 429);
+      }),
+    );
+
+    expect(
+      () => apiClient.postJson('/cv-analyses', const {}),
+      throwsA(
+        isA<ApiException>()
+            .having(
+              (exception) => exception.type,
+              'type',
+              ApiErrorType.rateLimited,
+            )
+            .having(
+              (exception) => exception.displayMessage,
+              'displayMessage',
+              message,
+            ),
+      ),
+    );
   });
 
   group('AuthApiService', () {

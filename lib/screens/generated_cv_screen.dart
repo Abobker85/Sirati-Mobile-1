@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app_locale.dart';
 import '../models/cv_template.dart';
+import '../models/ai_status.dart';
 import '../models/generated_cv.dart';
 import '../services/cv_api_service.dart';
 import '../theme/app_theme.dart';
@@ -108,8 +109,8 @@ class GeneratedCvScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          if (generatedCv.aiStatus == 'completed' ||
-              generatedCv.aiStatus == 'not_configured')
+          if (generatedCv.aiStatus == AiStatus.completed ||
+              generatedCv.aiStatus == AiStatus.notConfigured)
             Container(
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -156,7 +157,8 @@ class GeneratedCvScreen extends StatelessWidget {
                 ],
               ),
             ),
-          if (generatedCv.aiStatus == 'failed' && generatedCv.aiError != null)
+          if (generatedCv.aiStatus == AiStatus.failed &&
+              generatedCv.aiError != null)
             Container(
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),

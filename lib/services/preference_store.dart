@@ -66,9 +66,8 @@ class PreferenceStore {
       if (decoded is! Map) return null;
       final map = Map<String, dynamic>.from(decoded);
       final version = map['schemaVersion'];
-      final versionInt = version is int
-          ? version
-          : int.tryParse(version?.toString() ?? '');
+      final versionInt =
+          version is int ? version : int.tryParse(version?.toString() ?? '');
       if (versionInt != cvDraftSchemaVersion) {
         await clearCvDraft();
         return null;
@@ -100,8 +99,8 @@ class PreferenceStore {
     return int.tryParse(raw ?? '') ?? 0;
   }
 
-  Future<void> saveCvGenerationCount(int count) =>
-      _storage.write(key: cvGenerationCountKey, value: '${count < 0 ? 0 : count}');
+  Future<void> saveCvGenerationCount(int count) => _storage.write(
+      key: cvGenerationCountKey, value: '${count < 0 ? 0 : count}');
 
   /// Increments and returns the new generation count.
   Future<int> incrementCvGenerationCount() async {

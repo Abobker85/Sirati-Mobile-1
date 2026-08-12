@@ -237,8 +237,7 @@ class _AnalysisList extends StatelessWidget {
                           label: analysis.inputMethodLabel,
                           color: context.sirati.textSecondary),
                       const Spacer(),
-                      Text(
-                          _dateLabel(analysis.createdAt, english: english),
+                      Text(_dateLabel(analysis.createdAt, english: english),
                           style: TextStyle(
                               fontSize: 11,
                               color: context.sirati.textSecondary)),

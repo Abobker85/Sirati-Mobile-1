@@ -174,6 +174,8 @@ class AppErrorState extends StatelessWidget {
         return Icons.search_off_rounded;
       case ApiErrorType.server:
         return Icons.cloud_off_rounded;
+      case ApiErrorType.rateLimited:
+        return Icons.hourglass_top_rounded;
       case ApiErrorType.validation:
       case ApiErrorType.unknown:
         return Icons.error_outline_rounded;
@@ -192,6 +194,8 @@ class AppErrorState extends StatelessWidget {
         return english ? 'Not found' : 'غير موجود';
       case ApiErrorType.server:
         return english ? 'Server is unavailable' : 'الخادم غير متاح';
+      case ApiErrorType.rateLimited:
+        return english ? 'Usage limit reached' : 'تم الوصول إلى حد الاستخدام';
       case ApiErrorType.validation:
       case ApiErrorType.unknown:
         return english ? 'Could not load' : 'تعذر التحميل';

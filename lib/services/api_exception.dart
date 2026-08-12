@@ -15,6 +15,9 @@ enum ApiErrorType {
   /// 422 — validation failed. Use [ApiException.errors] for field-level info.
   validation,
 
+  /// 429 — a server-enforced request quota has been reached.
+  rateLimited,
+
   /// 404 — resource missing.
   notFound,
 
@@ -66,6 +69,7 @@ class ApiException implements Exception {
     if (status == 401 || status == 403) return ApiErrorType.auth;
     if (status == 404) return ApiErrorType.notFound;
     if (status == 422) return ApiErrorType.validation;
+    if (status == 429) return ApiErrorType.rateLimited;
     if (status >= 500 && status < 600) return ApiErrorType.server;
     return ApiErrorType.unknown;
   }
@@ -79,6 +83,7 @@ class ApiException implements Exception {
         return true;
       case ApiErrorType.auth:
       case ApiErrorType.validation:
+      case ApiErrorType.rateLimited:
       case ApiErrorType.notFound:
       case ApiErrorType.unknown:
         return false;

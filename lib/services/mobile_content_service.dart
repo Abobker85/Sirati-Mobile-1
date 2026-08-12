@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../app_locale.dart';
+import '../models/job_title.dart';
 import 'api_client.dart';
 import 'auth_token_store.dart';
 import 'disk_cache.dart';
@@ -28,6 +29,9 @@ class MobileContentService {
   static final Map<String, _CacheEntry> _cache = {};
 
   static const cacheTtl = Duration(seconds: 60);
+
+  /// Taxonomy list changes almost never — keep warm for a full day.
+  static const jobTitlesTtl = Duration(hours: 24);
 
   /// Marker keys attached when a payload is served after network failure.
   /// UI should read these and not treat them as API fields.
@@ -85,8 +89,7 @@ class MobileContentService {
       force: force,
       diskKey: DiskCache.cvsKey(lang),
       fetch: () async {
-        final response =
-            await _apiClient.getJson('/mobile/my-cvs?lang=$lang');
+        final response = await _apiClient.getJson('/mobile/my-cvs?lang=$lang');
         return _data(response);
       },
     );
@@ -113,6 +116,30 @@ class MobileContentService {
     final response = await _apiClient
         .getJson('/mobile/education/$id?lang=${_lang(english)}');
     return _data(response);
+  }
+
+  /// Public job-title taxonomy for registration / profile (pre-auth safe).
+  Future<List<JobTitle>> jobTitles({bool force = false}) async {
+    final payload = await _cached(
+      'job-titles',
+      force: force,
+      ttl: jobTitlesTtl,
+      diskKey: DiskCache.jobTitlesKey(),
+      fetch: () async {
+        final response = await _apiClient.getJson('/mobile/job-titles');
+        final data = response['data'];
+        final items = data is List ? data : const [];
+        return {'items': items};
+      },
+    );
+
+    final raw = payload['items'];
+    if (raw is! List) return const [];
+
+    return raw
+        .whereType<Map>()
+        .map((item) => JobTitle.fromJson(Map<String, dynamic>.from(item)))
+        .toList(growable: false);
   }
 
   Future<Map<String, dynamic>> jobNews(

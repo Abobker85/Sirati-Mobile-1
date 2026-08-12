@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:sirati/models/ai_status.dart';
+import 'package:sirati/models/cv_analysis.dart';
+import 'package:sirati/screens/analysis_result_screen.dart';
 import 'package:sirati/theme/app_theme.dart';
 import 'package:sirati/widgets/animated_ats_score_bar.dart';
 import 'package:sirati/widgets/empty_state.dart';
@@ -235,5 +238,64 @@ void main() {
     final decoration = container.decoration! as BoxDecoration;
     expect(decoration.color, AppColors.primaryLight);
     expect(find.byIcon(Icons.home_rounded), findsOneWidget);
+  });
+
+  testWidgets('AnalysisResultScreen caps and expands long keyword groups',
+      (tester) async {
+    final foundKeywords = List.generate(24, (index) => 'found-$index');
+    final missingKeywords = List.generate(2, (index) => 'missing-$index');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('en', 'US'),
+        home: AnalysisResultScreen(
+          analysis: CvAnalysis(
+            id: 1,
+            targetJobTitle: 'Product Designer',
+            originalFilename: null,
+            inputMethod: 'paste',
+            scoreTotal: 72,
+            grade: 'B',
+            jobMatch: 68,
+            criteria: const [
+              ScoreCriterion(label: 'Structure', score: 8, max: 10),
+            ],
+            strengths: const ['Clear summary'],
+            weaknesses: const [],
+            keywordsFound: foundKeywords,
+            keywordsMissing: missingKeywords,
+            quickWins: const ['Add measurable outcomes'],
+            aiStatus: AiStatus.completed,
+            aiFeedback: null,
+            aiError: null,
+            createdAt: null,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Keywords'),
+      400,
+      scrollable: find.descendant(
+        of: find.byKey(const ValueKey('analysis-score-tab-list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('found-0'), findsOneWidget);
+    expect(find.text('found-17'), findsOneWidget);
+    expect(find.text('found-18'), findsNothing);
+    expect(find.text('+6 more'), findsOneWidget);
+
+    await tester.tap(find.text('+6 more'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('found-18'), findsOneWidget);
+    expect(find.text('found-23'), findsOneWidget);
+    expect(find.text('Show less'), findsOneWidget);
   });
 }

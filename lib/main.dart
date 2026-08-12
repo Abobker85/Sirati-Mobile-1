@@ -1,13 +1,12 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'app_locale.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_theme_controller.dart';
@@ -41,54 +40,73 @@ final GlobalKey<NavigatorState> siratiNavigatorKey =
     GlobalKey<NavigatorState>();
 
 Future<void> main() async {
-  // Catch async errors without depending on Crashlytics (Firebase may be down).
-  await runZonedGuarded(() async {
-    WidgetsFlutterBinding.ensureInitialized();
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = const String.fromEnvironment('SENTRY_DSN');
+      options.sendDefaultPii = false;
+      options.maxRequestBodySize = MaxRequestBodySize.never;
+      options.attachScreenshot = false;
+      // View hierarchies can include text entered into CV fields.
+      // ignore: experimental_member_use
+      options.attachViewHierarchy = false;
+      options.recordHttpBreadcrumbs = false;
+      options.enablePrintBreadcrumbs = false;
 
-    // Local prefs first — never block the UI shell on Firebase.
-    try {
-      await AppLocale.bootstrap();
-    } catch (e, st) {
-      debugPrint('[Boot] AppLocale failed: $e\n$st');
-    }
-    try {
-      await AppThemeController.bootstrap();
-    } catch (e, st) {
-      debugPrint('[Boot] AppThemeController failed: $e\n$st');
-    }
+      const environment = String.fromEnvironment('SENTRY_ENVIRONMENT');
+      if (environment.isNotEmpty) {
+        options.environment = environment;
+      }
 
-    final firebaseReady = await _initFirebaseStack();
+      const release = String.fromEnvironment('SENTRY_RELEASE');
+      if (release.isNotEmpty) {
+        options.release = release;
+      }
+    },
+    appRunner: () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-    AuthSessionGuard.install(navigatorKey: siratiNavigatorKey);
+      // Local prefs first — never block the UI shell on Firebase.
+      try {
+        await AppLocale.bootstrap();
+      } catch (e, st) {
+        debugPrint('[Boot] AppLocale failed: $e\n$st');
+      }
+      try {
+        await AppThemeController.bootstrap();
+      } catch (e, st) {
+        debugPrint('[Boot] AppThemeController failed: $e\n$st');
+      }
 
-    try {
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-      ]);
-      // Edge-to-edge on Android 15+; SafeArea on screens paints content insets.
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      SystemChrome.setSystemUIOverlayStyle(
-        AppTheme.systemUiOverlayStyle(SiratiColors.light, Brightness.light),
-      );
-    } catch (e, st) {
-      debugPrint('[Boot] SystemChrome failed: $e\n$st');
-    }
+      final firebaseReady = await _initFirebaseStack();
 
-    // Always launch UI — Codemagic previews and devices without Firebase config
-    // must still open SplashScreen instead of dying on a white/native shell.
-    runApp(const SiratiApp());
+      AuthSessionGuard.install(navigatorKey: siratiNavigatorKey);
 
-    if (kDebugMode) {
-      debugPrint(
-        firebaseReady
-            ? '[Boot] Firebase ready'
-            : '[Boot] Running without Firebase (push/crashlytics/analytics limited)',
-      );
-    }
-  }, (error, stack) {
-    debugPrint('[Zone] uncaught: $error\n$stack');
-    _recordCrashlytics(error, stack, fatal: true);
-  });
+      try {
+        await SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+        ]);
+        // Edge-to-edge on Android 15+; SafeArea on screens paints content insets.
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        SystemChrome.setSystemUIOverlayStyle(
+          AppTheme.systemUiOverlayStyle(SiratiColors.light, Brightness.light),
+        );
+      } catch (e, st) {
+        debugPrint('[Boot] SystemChrome failed: $e\n$st');
+      }
+
+      // Always launch UI — Codemagic previews and devices without Firebase config
+      // must still open SplashScreen instead of dying on a white/native shell.
+      runApp(const SiratiApp());
+
+      if (kDebugMode) {
+        debugPrint(
+          firebaseReady
+              ? '[Boot] Firebase ready'
+              : '[Boot] Running without Firebase (push/analytics limited)',
+        );
+      }
+    },
+  );
 }
 
 /// Returns true when Firebase + messaging hooks initialized successfully.
@@ -102,21 +120,6 @@ Future<bool> _initFirebaseStack() async {
     // must not kill the process — App Preview would "open then close".
     debugPrint('[Firebase] initializeApp failed: $e\n$st');
     return false;
-  }
-
-  try {
-    // Crashlytics — collect in release only so debug noise stays local.
-    await FirebaseCrashlytics.instance
-        .setCrashlyticsCollectionEnabled(!kDebugMode);
-    FlutterError.onError = (details) {
-      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
-    };
-    PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      return true;
-    };
-  } catch (e, st) {
-    debugPrint('[Firebase] Crashlytics setup failed: $e\n$st');
   }
 
   try {
@@ -139,15 +142,6 @@ Future<bool> _initFirebaseStack() async {
   }
 
   return true;
-}
-
-void _recordCrashlytics(Object error, StackTrace stack, {bool fatal = false}) {
-  try {
-    if (Firebase.apps.isEmpty) return;
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: fatal);
-  } catch (_) {
-    // Never rethrow from error reporters.
-  }
 }
 
 class SiratiApp extends StatelessWidget {

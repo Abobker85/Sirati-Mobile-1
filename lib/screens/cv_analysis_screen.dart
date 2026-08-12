@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 
 import '../app_locale.dart';
+import '../models/ai_status.dart';
 import '../theme/app_theme.dart';
 import '../services/analytics_service.dart';
 import '../services/api_exception.dart';
@@ -16,26 +17,42 @@ import '../widgets/submit_button.dart';
 import 'analysis_result_screen.dart';
 
 class CvAnalysisScreen extends StatefulWidget {
-  const CvAnalysisScreen({super.key});
+  final CvApiService? apiService;
+
+  const CvAnalysisScreen({super.key, this.apiService});
 
   @override
   State<CvAnalysisScreen> createState() => _CvAnalysisScreenState();
 }
 
-class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
+class _CvAnalysisScreenState extends State<CvAnalysisScreen>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _jobTitleController = TextEditingController();
   final _resumeTextController = TextEditingController();
-  final _apiService = CvApiService();
+  late final CvApiService _apiService = widget.apiService ?? CvApiService();
   PlatformFile? _uploadedFile;
   bool _isLoading = false;
   bool _submitted = false;
 
   /// Bumped on each submit/cancel so a late AI response cannot apply.
   int _aiRequestGen = 0;
+  bool _pollingPaused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _pollingPaused = state != AppLifecycleState.resumed;
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _jobTitleController.dispose();
     _resumeTextController.dispose();
     super.dispose();
@@ -89,20 +106,27 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
     );
 
     try {
-      final analysis = await _apiService.submitAnalysis(
+      var analysis = await _apiService.submitAnalysis(
         targetJobTitle: _jobTitleController.text.trim(),
         resumeText: _resumeTextController.text,
         resumeFile: await _multipartFile(),
       );
 
+      final poll = await _apiService.pollAnalysis(
+        analysis,
+        isCancelled: () => progress.isCancelled || requestId != _aiRequestGen,
+        isPaused: () => _pollingPaused,
+      );
+      analysis = poll.value;
+
       if (!mounted ||
+          poll.cancelled ||
           progress.isCancelled ||
           requestId != _aiRequestGen) {
         return;
       }
 
-      final durationMs =
-          DateTime.now().difference(startedAt).inMilliseconds;
+      final durationMs = DateTime.now().difference(startedAt).inMilliseconds;
       // Bucket only — never the exact score.
       AnalyticsService.logAnalysisCompleted(
         score: analysis.scoreTotal,
@@ -110,6 +134,23 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
       );
       await progress.dismiss();
       if (!mounted || requestId != _aiRequestGen) return;
+      if (poll.timedOut) {
+        AppSnackBar.warning(
+          context,
+          english
+              ? 'AI is still working. Your ATS score is ready, and you can retry the AI suggestions later.'
+              : 'لا يزال الذكاء الاصطناعي يعمل. نتيجتك الأساسية جاهزة، ويمكنك إعادة محاولة التوصيات لاحقاً.',
+        );
+      } else if (analysis.aiStatus == AiStatus.failed) {
+        AppSnackBar.error(
+          context,
+          english
+              ? 'AI suggestions could not be completed: ${analysis.aiError ?? 'Please try again.'}'
+              : 'تعذر إكمال توصيات الذكاء الاصطناعي: ${analysis.aiError ?? 'يرجى المحاولة مرة أخرى.'}',
+          actionLabel: english ? 'Retry' : 'إعادة المحاولة',
+          onAction: _submit,
+        );
+      }
       HapticFeedback.lightImpact();
       // Fire-and-forget conversion for smart-notification measurement.
       NotificationEngagementService.instance
@@ -135,9 +176,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
       }
     } finally {
       await progress.dismiss();
-      if (mounted &&
-          requestId == _aiRequestGen &&
-          !progress.isCancelled) {
+      if (mounted && requestId == _aiRequestGen && !progress.isCancelled) {
         setState(() => _isLoading = false);
       }
     }
@@ -201,8 +240,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen> {
                         : AutovalidateMode.disabled,
                     textAlign: TextAlign.start,
                     textInputAction: TextInputAction.next,
-                    onFieldSubmitted: (_) =>
-                        FocusScope.of(context).nextFocus(),
+                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                     hintText: english
                         ? 'e.g. Laravel Backend Developer'
                         : 'مثال: مطوّر Laravel Backend',

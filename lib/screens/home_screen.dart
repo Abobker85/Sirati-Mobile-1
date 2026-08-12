@@ -10,7 +10,6 @@ import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../services/session_cache.dart';
 import '../utils/app_format.dart';
-import '../widgets/add_button.dart';
 import '../widgets/app_list_tile.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/empty_state.dart';
@@ -340,227 +339,191 @@ class _DashboardTabState extends State<_DashboardTab> {
                     : SessionCache.instance.unreadCount;
                 SessionCache.instance.unreadCount = unread;
                 final hasNews = _string(news['title']).isNotEmpty;
-                final offline =
-                    MobileContentService.isOfflinePayload(data);
+                final offline = MobileContentService.isOfflinePayload(data);
 
-                body = Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: maxContentWidth),
-                        child: RefreshIndicator(
-                          color: context.sirati.primary,
-                          onRefresh: () => _retry(english),
-                          child: ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.fromLTRB(horizontalPadding, 18,
-                                horizontalPadding, AppSpacing.scrollBottomNav),
-                            children: [
-                              MotionReveal(
-                                order: 0,
-                                child: ScreenHeader(
-                                  english: english,
-                                  title: AppLocale.greeting(name, context),
-                                  titleSize: 22,
-                                  avatarLabel: BidiText.avatarInitial(name),
-                                  status: status.isEmpty ? null : status,
-                                  unreadCount: unread,
-                                  onNotifications: () async {
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                          builder: (_) =>
-                                              const NotificationsScreen()),
-                                    );
-                                    if (mounted) _retry(english);
-                                  },
-                                  onAvatarTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) => const SettingsScreen()),
-                                  ),
-                                ),
-                              ),
-                              if (offline) ...[
-                                const SizedBox(height: AppSpacing.sm),
-                                OfflineCacheBanner(
-                                  english: english,
-                                  surface: 'dashboard',
-                                ),
-                              ],
-                              const SizedBox(height: AppSpacing.lg),
-                              MotionReveal(
-                                order: 1,
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: _DashboardStatCard(
-                                        label: english
-                                            ? 'My CVs'
-                                            : 'السير الذاتية',
-                                        count:
-                                            _countInt(stats['generated_cvs']),
-                                        icon: Icons.description_outlined,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _DashboardStatCard(
-                                        label:
-                                            english ? 'Analyses' : 'التحليلات',
-                                        count: _countInt(stats['analyses']),
-                                        icon: Icons.analytics_outlined,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.md),
-                              MotionReveal(
-                                order: 2,
-                                child: _DashboardActionCard(
-                                  title: LocaleFormat.mixedTitle(
-                                    _string(primary['title']),
-                                    english: english,
-                                  ),
-                                  subtitle: LocaleFormat.mixedBody(
-                                    _string(primary['subtitle']),
-                                    english: english,
-                                  ),
-                                  buttonLabel: _string(primary['button_label']),
-                                  backgroundColor: context.sirati.primary,
-                                  buttonColor: context.sirati.surface,
-                                  buttonTextColor: context.sirati.primary,
-                                  icon: Icons.description_outlined,
-                                  watermark: Icons.description_outlined,
-                                  onTap: () => _openCreateCv(context),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              MotionReveal(
-                                order: 3,
-                                child: _DashboardActionCard(
-                                  title: LocaleFormat.mixedTitle(
-                                    _string(analysis['title']),
-                                    english: english,
-                                  ),
-                                  subtitle: LocaleFormat.mixedBody(
-                                    _string(analysis['subtitle']),
-                                    english: english,
-                                  ),
-                                  buttonLabel:
-                                      _string(analysis['button_label']),
-                                  backgroundColor: context.sirati.amber,
-                                  buttonColor: context.sirati.amberLight,
-                                  buttonTextColor: context.sirati.textPrimary,
-                                  icon: Icons.analytics_outlined,
-                                  watermark: Icons.bar_chart_rounded,
-                                  onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const CvAnalysisScreen()),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              Align(
-                                alignment: AlignmentDirectional.centerStart,
-                                child: OutlinedButton.icon(
-                                  onPressed: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) => const HistoryScreen()),
-                                  ),
-                                  icon: const Icon(Icons.history_rounded,
-                                      size: 18),
-                                  label: Text(english ? 'History' : 'السجل'),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Text(
-                                    english
-                                        ? 'Recent Activity'
-                                        : 'النشاط الأخير',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w800,
-                                      color: context.sirati.textPrimary,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  TextButton(
-                                    onPressed: () => onNavigate(1),
-                                    style: TextButton.styleFrom(
-                                      minimumSize: const Size(48, 44),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 10),
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.padded,
-                                    ),
-                                    child: Text(
-                                      english ? 'View All' : 'عرض الكل',
-                                      style: const TextStyle(fontSize: 12.5),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              if (hasNews)
-                                MotionReveal(
-                                  order: 4,
-                                  child: _NewsCard(
-                                    title: LocaleFormat.mixedTitle(
-                                      _string(news['title']),
-                                      english: english,
-                                    ),
-                                    subtitle: _string(news['subtitle']),
-                                  ),
-                                )
-                              else
-                                MotionReveal(
-                                  order: 4,
-                                  child: AppEmptyState(
-                                    icon: Icons.history_toggle_off_rounded,
-                                    title: english
-                                        ? 'No recent activity yet'
-                                        : 'لا يوجد نشاط أخير بعد',
-                                    subtitle: english
-                                        ? 'Create a CV or run an analysis to see updates here.'
-                                        : 'أنشئ سيرة ذاتية أو نفّذ تحليلاً لتظهر التحديثات هنا.',
-                                    actionLabel:
-                                        english ? 'Create CV' : 'إنشاء سيرة',
-                                    onAction: () => _openCreateCv(context),
-                                    scrollable: false,
-                                    topInsetFactor: 0,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned.fill(
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: ConstrainedBox(
-                          constraints:
-                              BoxConstraints(maxWidth: maxContentWidth),
-                          child: Align(
-                            alignment: AlignmentDirectional.bottomEnd,
-                            child: Padding(
-                              padding: EdgeInsetsDirectional.only(
-                                  end: horizontalPadding + 2, bottom: 86),
-                              child: MotionReveal(
-                                order: 6,
-                                child: SiratiAddButton(
-                                    onTap: () => _openCreateCv(context)),
+                body = Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxContentWidth),
+                    child: RefreshIndicator(
+                      color: context.sirati.primary,
+                      onRefresh: () => _retry(english),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(horizontalPadding, 18,
+                            horizontalPadding, AppSpacing.scrollBottomNav),
+                        children: [
+                          MotionReveal(
+                            order: 0,
+                            child: ScreenHeader(
+                              english: english,
+                              title: AppLocale.greeting(name, context),
+                              titleSize: 22,
+                              avatarLabel: BidiText.avatarInitial(name),
+                              status: status.isEmpty ? null : status,
+                              unreadCount: unread,
+                              onNotifications: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const NotificationsScreen()),
+                                );
+                                if (mounted) _retry(english);
+                              },
+                              onAvatarTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) => const SettingsScreen()),
                               ),
                             ),
                           ),
-                        ),
+                          if (offline) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            OfflineCacheBanner(
+                              english: english,
+                              surface: 'dashboard',
+                            ),
+                          ],
+                          const SizedBox(height: AppSpacing.lg),
+                          MotionReveal(
+                            order: 1,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _DashboardStatCard(
+                                    label:
+                                        english ? 'My CVs' : 'السير الذاتية',
+                                    count: _countInt(stats['generated_cvs']),
+                                    icon: Icons.description_outlined,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _DashboardStatCard(
+                                    label: english ? 'Analyses' : 'التحليلات',
+                                    count: _countInt(stats['analyses']),
+                                    icon: Icons.analytics_outlined,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          MotionReveal(
+                            order: 2,
+                            child: _DashboardActionCard(
+                              title: LocaleFormat.mixedTitle(
+                                _string(primary['title']),
+                                english: english,
+                              ),
+                              subtitle: LocaleFormat.mixedBody(
+                                _string(primary['subtitle']),
+                                english: english,
+                              ),
+                              buttonLabel: _string(primary['button_label']),
+                              backgroundColor: context.sirati.primary,
+                              buttonColor: context.sirati.surface,
+                              buttonTextColor: context.sirati.primary,
+                              icon: Icons.description_outlined,
+                              watermark: Icons.description_outlined,
+                              onTap: () => _openCreateCv(context),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          MotionReveal(
+                            order: 3,
+                            child: _DashboardActionCard(
+                              title: LocaleFormat.mixedTitle(
+                                _string(analysis['title']),
+                                english: english,
+                              ),
+                              subtitle: LocaleFormat.mixedBody(
+                                _string(analysis['subtitle']),
+                                english: english,
+                              ),
+                              buttonLabel: _string(analysis['button_label']),
+                              backgroundColor: context.sirati.amber,
+                              buttonColor: context.sirati.amberLight,
+                              buttonTextColor: context.sirati.textPrimary,
+                              icon: Icons.analytics_outlined,
+                              watermark: Icons.bar_chart_rounded,
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) => const CvAnalysisScreen()),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: OutlinedButton.icon(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) => const HistoryScreen()),
+                              ),
+                              icon: const Icon(Icons.history_rounded, size: 18),
+                              label: Text(english ? 'History' : 'السجل'),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Text(
+                                english ? 'Recent Activity' : 'النشاط الأخير',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: context.sirati.textPrimary,
+                                ),
+                              ),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () => onNavigate(1),
+                                style: TextButton.styleFrom(
+                                  minimumSize: const Size(48, 44),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 10),
+                                  tapTargetSize: MaterialTapTargetSize.padded,
+                                ),
+                                child: Text(
+                                  english ? 'View All' : 'عرض الكل',
+                                  style: const TextStyle(fontSize: 12.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          if (hasNews)
+                            MotionReveal(
+                              order: 4,
+                              child: _NewsCard(
+                                title: LocaleFormat.mixedTitle(
+                                  _string(news['title']),
+                                  english: english,
+                                ),
+                                subtitle: _string(news['subtitle']),
+                              ),
+                            )
+                          else
+                            MotionReveal(
+                              order: 4,
+                              child: AppEmptyState(
+                                icon: Icons.history_toggle_off_rounded,
+                                title: english
+                                    ? 'No recent activity yet'
+                                    : 'لا يوجد نشاط أخير بعد',
+                                subtitle: english
+                                    ? 'Create a CV or run an analysis to see updates here.'
+                                    : 'أنشئ سيرة ذاتية أو نفّذ تحليلاً لتظهر التحديثات هنا.',
+                                actionLabel: english ? 'Create CV' : 'إنشاء سيرة',
+                                onAction: () => _openCreateCv(context),
+                                scrollable: false,
+                                topInsetFactor: 0,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 );
               }
 

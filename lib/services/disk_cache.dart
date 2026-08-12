@@ -39,6 +39,9 @@ class DiskCache {
 
   static String newsKey(String lang) => '${keyPrefix}news_${_normLang(lang)}';
 
+  /// Job title taxonomy is language-agnostic (payload includes AR + EN names).
+  static String jobTitlesKey() => '${keyPrefix}job_titles';
+
   static String _normLang(String lang) => lang == 'en' ? 'en' : 'ar';
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();

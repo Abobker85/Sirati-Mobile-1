@@ -13,6 +13,7 @@ import '../widgets/language_toggle.dart';
 import '../widgets/loading/branded_loader.dart';
 import '../widgets/motion.dart';
 import '../widgets/submit_button.dart';
+import 'email_verification_screen.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
 import 'onboarding_screen.dart';
@@ -41,14 +42,14 @@ class _SplashScreenState extends State<SplashScreen> {
     _bootstrapSession();
   }
 
-  /// Token → home immediately. Else onboarding (once) or welcome gate.
+  /// Token → check verification then home. Else onboarding (once) or welcome.
   Future<void> _bootstrapSession() async {
     try {
       final token = await _tokenStore.readToken();
       if (!mounted) return;
 
       if (token != null && token.isNotEmpty) {
-        _enterAuthenticatedSession();
+        await _enterAuthenticatedSession();
         return;
       }
     } catch (_) {
@@ -68,30 +69,39 @@ class _SplashScreenState extends State<SplashScreen> {
     });
   }
 
-  /// Navigate to Home without blocking on the network. Session validity is
-  /// checked in the background; HTTP 401 triggers [AuthSessionGuard] via
-  /// [ApiClient.onAuthExpired] (clear token + login with notice).
-  void _enterAuthenticatedSession() {
+  /// Validate session; gate unverified users on the OTP screen.
+  /// Offline: allow Home when we cannot reach the API (token still present).
+  Future<void> _enterAuthenticatedSession() async {
     if (!mounted) return;
-    NotificationService.instance.registerToken();
+
+    try {
+      final user = await _auth.me();
+      if (!mounted) return;
+
+      if (user != null && !user.emailVerified) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationScreen(email: user.email),
+          ),
+        );
+        return;
+      }
+
+      if (user != null && user.emailVerified) {
+        unawaited(NotificationService.instance.registerToken());
+      }
+    } on ApiException catch (e) {
+      // 401 already fired AuthSessionGuard from ApiClient.
+      if (e.type == ApiErrorType.auth) return;
+      // Network / timeout / server — continue to Home offline-friendly.
+    } catch (_) {
+      // Offline or unexpected — continue to Home.
+    }
+
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const HomeScreen()),
     );
-    unawaited(_validateSessionInBackground());
-  }
-
-  /// Warm [SessionCache] via `me()`. Auth expiry is handled by the guard.
-  /// Network / timeout / server errors are swallowed (offline-friendly Home).
-  Future<void> _validateSessionInBackground() async {
-    try {
-      await _auth.me();
-    } on ApiException catch (e) {
-      // 401 already fired AuthSessionGuard from ApiClient — no duplicate redirect.
-      if (e.type == ApiErrorType.auth) return;
-      // Network / timeout / server — stay on Home.
-    } catch (_) {
-      // Offline or unexpected — stay on Home.
-    }
   }
 
   void _onOnboardingFinished() {
@@ -104,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     if (token != null && token.isNotEmpty) {
-      _enterAuthenticatedSession();
+      await _enterAuthenticatedSession();
       return;
     }
 

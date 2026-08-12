@@ -146,7 +146,10 @@ class ApiClient {
   }
 
   Future<Map<String, String>> _headers({String? contentType}) async {
-    final headers = <String, String>{'Accept': 'application/json'};
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'X-Sirati-Async': '1',
+    };
     if (contentType != null) {
       headers['Content-Type'] = contentType;
     }
@@ -194,6 +197,7 @@ class ApiClient {
     if (status == 401 || status == 403) return ApiErrorType.auth;
     if (status == 404) return ApiErrorType.notFound;
     if (status == 422) return ApiErrorType.validation;
+    if (status == 429) return ApiErrorType.rateLimited;
     if (status >= 500 && status < 600) return ApiErrorType.server;
     return ApiErrorType.unknown;
   }

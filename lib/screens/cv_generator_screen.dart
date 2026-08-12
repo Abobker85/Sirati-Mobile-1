@@ -10,9 +10,11 @@ import '../services/in_app_review_service.dart';
 import '../services/mobile_content_service.dart';
 import '../services/preference_store.dart';
 import '../app_locale.dart';
+import '../models/ai_status.dart';
 import '../models/generated_cv.dart';
 import '../services/notification_engagement_service.dart';
 import '../widgets/app_snack_bar.dart';
+import '../widgets/ai_cv_field.dart';
 import '../widgets/form_fields.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/loading/ai_field_loading_overlay.dart';
@@ -24,26 +26,33 @@ import 'generated_cv_screen.dart';
 
 class CvGeneratorScreen extends StatefulWidget {
   final GeneratedCv? initialCv;
+  final CvApiService? apiService;
 
-  const CvGeneratorScreen({super.key, this.initialCv});
+  const CvGeneratorScreen({super.key, this.initialCv, this.apiService});
 
   @override
   State<CvGeneratorScreen> createState() => _CvGeneratorScreenState();
 }
 
-class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
+class _CvGeneratorScreenState extends State<CvGeneratorScreen>
+    with WidgetsBindingObserver {
   int _step = 0;
 
   /// +1 when advancing a step, -1 when going back (drives slide direction).
   int _stepDirection = 1;
   bool _isLoading = false;
   bool _isEnhancingJobDescription = false;
+  String? _enhancingCvField;
+  final Map<String, Map<String, dynamic>> _fieldResults = {};
+  bool _showExperienceShapeHint = false;
+  bool _experienceHintDismissed = false;
   String _language = 'ar';
-  final _apiService = CvApiService();
+  late final CvApiService _apiService = widget.apiService ?? CvApiService();
   final _prefs = const PreferenceStore();
 
   /// Bumped on each submit/cancel so a late AI response cannot apply.
   int _aiRequestGen = 0;
+  bool _pollingPaused = false;
 
   /// True after any user edit since last successful save/generate or restore.
   bool _isDirty = false;
@@ -78,10 +87,16 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
   final _experienceCtrl = TextEditingController();
   final _educationCtrl = TextEditingController();
   final _certsCtrl = TextEditingController();
+  final _experienceFocusNode = FocusNode();
 
   static const _steps = ['الشخصية', 'المهارات', 'الخبرات', 'التعليم'];
 
   bool get _isEditMode => widget.initialCv != null;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _pollingPaused = state != AppLifecycleState.resumed;
+  }
 
   List<TextEditingController> get _allControllers => [
         _nameCtrl,
@@ -101,6 +116,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final cv = widget.initialCv;
     if (cv != null) {
       _suppressDirtyTracking = true;
@@ -123,6 +139,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
     for (final c in _allControllers) {
       c.addListener(_onAnyFieldChanged);
     }
+    _experienceFocusNode.addListener(_onExperienceFocusChanged);
 
     AnalyticsService.logWizardStarted(
       mode: _isEditMode ? 'edit' : 'create',
@@ -136,6 +153,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _autosaveTimer?.cancel();
     // Flush pending create-mode draft so a background kill / pop still keeps data.
     if (!_isEditMode && _isDirty) {
@@ -145,7 +163,19 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
       c.removeListener(_onAnyFieldChanged);
       c.dispose();
     }
+    _experienceFocusNode.removeListener(_onExperienceFocusChanged);
+    _experienceFocusNode.dispose();
     super.dispose();
+  }
+
+  void _onExperienceFocusChanged() {
+    if (!_experienceFocusNode.hasFocus ||
+        _experienceCtrl.text.trim().isNotEmpty ||
+        _experienceHintDismissed ||
+        !mounted) {
+      return;
+    }
+    setState(() => _showExperienceShapeHint = true);
   }
 
   void _onAnyFieldChanged() {
@@ -290,9 +320,8 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
     }
 
     final stepRaw = draft['step'];
-    final step = stepRaw is int
-        ? stepRaw
-        : int.tryParse(stepRaw?.toString() ?? '') ?? 0;
+    final step =
+        stepRaw is int ? stepRaw : int.tryParse(stepRaw?.toString() ?? '') ?? 0;
     final clamped = step.clamp(0, _steps.length - 1);
 
     setState(() {
@@ -467,19 +496,26 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
         'certifications_input': _nullable(_certsCtrl.text),
       };
 
-      final generatedCv = _isEditMode
+      var generatedCv = _isEditMode
           ? await _apiService.updateGeneratedCv(widget.initialCv!.id, payload)
           : await _apiService.generateCv(payload);
 
+      final poll = await _apiService.pollGeneratedCv(
+        generatedCv,
+        isCancelled: () => progress.isCancelled || requestId != _aiRequestGen,
+        isPaused: () => _pollingPaused,
+      );
+      generatedCv = poll.value;
+
       // Cancelled or superseded — form stays intact (draft autosave covers create).
       if (!mounted ||
+          poll.cancelled ||
           progress.isCancelled ||
           requestId != _aiRequestGen) {
         return;
       }
 
-      final durationMs =
-          DateTime.now().difference(startedAt).inMilliseconds;
+      final durationMs = DateTime.now().difference(startedAt).inMilliseconds;
       AnalyticsService.logCvGenerated(
         templateId: 'default',
         durationMs: durationMs,
@@ -490,9 +526,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
         // Successful generate: drop local draft so reopen has no banner.
         _autosaveTimer?.cancel();
         await _clearStoredDraft();
-        if (!mounted ||
-            progress.isCancelled ||
-            requestId != _aiRequestGen) {
+        if (!mounted || progress.isCancelled || requestId != _aiRequestGen) {
           return;
         }
         _isDirty = false;
@@ -502,6 +536,23 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
       // Success check + haptic, then navigate (instant when reduced motion).
       await progress.dismiss();
       if (!mounted || requestId != _aiRequestGen) return;
+      if (poll.timedOut) {
+        AppSnackBar.warning(
+          context,
+          english
+              ? 'AI is still working. A usable local CV is ready, and you can retry generation later.'
+              : 'لا يزال الذكاء الاصطناعي يعمل. نسخة محلية من سيرتك جاهزة، ويمكنك إعادة محاولة التوليد لاحقاً.',
+        );
+      } else if (generatedCv.aiStatus == AiStatus.failed) {
+        AppSnackBar.error(
+          context,
+          english
+              ? 'AI generation could not be completed: ${generatedCv.aiError ?? 'Please try again.'}'
+              : 'تعذر إكمال توليد السيرة بالذكاء الاصطناعي: ${generatedCv.aiError ?? 'يرجى المحاولة مرة أخرى.'}',
+          actionLabel: english ? 'Retry' : 'إعادة المحاولة',
+          onAction: _submit,
+        );
+      }
       await SuccessBeat.play(context);
       if (!mounted || requestId != _aiRequestGen) return;
       // Peak satisfaction: OS review after SuccessBeat (create mode only).
@@ -536,9 +587,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
       }
     } finally {
       await progress.dismiss();
-      if (mounted &&
-          requestId == _aiRequestGen &&
-          !progress.isCancelled) {
+      if (mounted && requestId == _aiRequestGen && !progress.isCancelled) {
         setState(() => _isLoading = false);
       }
     }
@@ -547,6 +596,97 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
   String? _nullable(String value) {
     final trimmed = value.trim();
     return trimmed.isEmpty ? null : trimmed;
+  }
+
+  Future<void> _enhanceCvField(
+    String field,
+    TextEditingController controller,
+  ) async {
+    final english = AppLocale.isEnglish(context);
+    final draft = controller.text;
+    final jobTitle = _jobTitleCtrl.text.trim();
+
+    if (draft.trim().length < 10) return;
+    if (jobTitle.isEmpty) {
+      AppSnackBar.warning(
+        context,
+        english
+            ? 'Enter the target job title first.'
+            : 'أدخل المسمى الوظيفي المستهدف أولاً.',
+      );
+      return;
+    }
+
+    final requestId = ++_aiRequestGen;
+    setState(() {
+      _enhancingCvField = field;
+      _fieldResults.remove(field);
+    });
+
+    try {
+      final result = await _apiService.enhanceCvField(
+        field: field,
+        draft: draft.trim(),
+        jobTitle: jobTitle,
+        language: _language,
+      );
+      if (!mounted || requestId != _aiRequestGen) return;
+
+      final enhanced = result['enhanced_text']?.toString().trim() ?? '';
+      if (enhanced.isEmpty) {
+        throw const ApiException(
+          'لم يُرجع التحسين نصاً صالحاً.',
+          type: ApiErrorType.unknown,
+        );
+      }
+
+      _suppressDirtyTracking = true;
+      controller.text = enhanced;
+      controller.selection = TextSelection.collapsed(offset: enhanced.length);
+      _suppressDirtyTracking = false;
+      _markDirty();
+
+      setState(() {
+        _enhancingCvField = null;
+        _fieldResults[field] = result;
+      });
+
+      AppSnackBar.show(
+        context,
+        message: english
+            ? 'Field enhanced. Review the missing facts before continuing.'
+            : 'تم تحسين الحقل. راجع المعلومات الناقصة قبل المتابعة.',
+        variant: AppSnackBarVariant.success,
+        actionLabel: english ? 'Undo' : 'تراجع',
+        onAction: () {
+          if (!mounted) return;
+          _suppressDirtyTracking = true;
+          controller.text = draft;
+          controller.selection = TextSelection.collapsed(offset: draft.length);
+          _suppressDirtyTracking = false;
+          _markDirty();
+          setState(() => _fieldResults.remove(field));
+        },
+      );
+    } on ApiException catch (exception) {
+      if (!mounted || requestId != _aiRequestGen) return;
+      setState(() => _enhancingCvField = null);
+      AppSnackBar.fromException(
+        context,
+        exception,
+        retryLabel: english ? 'Retry' : 'إعادة',
+        onRetry: () => _enhanceCvField(field, controller),
+      );
+    } catch (_) {
+      if (!mounted || requestId != _aiRequestGen) return;
+      setState(() => _enhancingCvField = null);
+      AppSnackBar.error(
+        context,
+        english
+            ? 'Could not enhance this field. Try again.'
+            : 'تعذر تحسين هذا الحقل. حاول مرة أخرى.',
+      );
+    }
   }
 
   Future<void> _enhanceJobDescription() async {
@@ -773,111 +913,112 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
               );
             }),
 
-            if (_showDraftBanner && !_isEditMode) _buildDraftRestoreBanner(english),
+            if (_showDraftBanner && !_isEditMode)
+              _buildDraftRestoreBanner(english),
 
             // ── Step content (buttons live in the fixed footer below) ──
             Expanded(
               child: AnimatedSwitcher(
-              duration: MotionSettings.reduce(context)
-                  ? Duration.zero
-                  : MotionDurations.slow,
-              switchInCurve: MotionCurves.enter,
-              switchOutCurve: MotionCurves.exit,
-              transitionBuilder: (child, animation) {
-                if (MotionSettings.reduce(context)) return child;
-                final curved = CurvedAnimation(
-                  parent: animation,
-                  curve: MotionCurves.enter,
-                  reverseCurve: MotionCurves.exit,
-                );
+                duration: MotionSettings.reduce(context)
+                    ? Duration.zero
+                    : MotionDurations.slow,
+                switchInCurve: MotionCurves.enter,
+                switchOutCurve: MotionCurves.exit,
+                transitionBuilder: (child, animation) {
+                  if (MotionSettings.reduce(context)) return child;
+                  final curved = CurvedAnimation(
+                    parent: animation,
+                    curve: MotionCurves.enter,
+                    reverseCurve: MotionCurves.exit,
+                  );
 
-                return FadeTransition(
-                  opacity: curved,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: MotionAxis.slideIn(
-                        context: context,
-                        distance: 0.05,
-                        direction: _stepDirection,
-                      ),
-                      end: Offset.zero,
-                    ).animate(curved),
-                    child: child,
-                  ),
-                );
-              },
-              child: ListView(
-                key: ValueKey('cv-step-$_step'),
-                // Footer is outside the scroll view — modest bottom inset only.
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                children: [
-                  if (_step == 0) _buildStep0(english),
-                  if (_step == 1) _buildStep1(english),
-                  if (_step == 2) _buildStep2(english),
-                  if (_step == 3) _buildStep3(english),
-                ],
+                  return FadeTransition(
+                    opacity: curved,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: MotionAxis.slideIn(
+                          context: context,
+                          distance: 0.05,
+                          direction: _stepDirection,
+                        ),
+                        end: Offset.zero,
+                      ).animate(curved),
+                      child: child,
+                    ),
+                  );
+                },
+                child: ListView(
+                  key: ValueKey('cv-step-$_step'),
+                  // Footer is outside the scroll view — modest bottom inset only.
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                  children: [
+                    if (_step == 0) _buildStep0(english),
+                    if (_step == 1) _buildStep1(english),
+                    if (_step == 2) _buildStep2(english),
+                    if (_step == 3) _buildStep3(english),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // ── Fixed CTA bar (stable across step transitions) ──
-          SafeArea(
-            top: false,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-              decoration: BoxDecoration(
-                color: context.sirati.surface,
-                border: Border(
-                  top: BorderSide(color: context.sirati.border),
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x0D000000),
-                    blurRadius: 12,
-                    offset: Offset(0, -4),
+            // ── Fixed CTA bar (stable across step transitions) ──
+            SafeArea(
+              top: false,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                decoration: BoxDecoration(
+                  color: context.sirati.surface,
+                  border: Border(
+                    top: BorderSide(color: context.sirati.border),
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  if (_step > 0) ...[
-                    Expanded(
-                      child: PressScale(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _goToStep(_step - 1),
-                          icon: const Icon(
-                            Icons.arrow_back_rounded,
-                            size: 18,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x0D000000),
+                      blurRadius: 12,
+                      offset: Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    if (_step > 0) ...[
+                      Expanded(
+                        child: PressScale(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _goToStep(_step - 1),
+                            icon: const Icon(
+                              Icons.arrow_back_rounded,
+                              size: 18,
+                            ),
+                            label: Text(english ? 'Back' : 'السابق'),
                           ),
-                          label: Text(english ? 'Back' : 'السابق'),
                         ),
                       ),
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(
+                      flex: 2,
+                      child: SubmitButton(
+                        label: _step == _steps.length - 1
+                            ? (_isEditMode
+                                ? (english ? 'Update CV' : 'تحديث السيرة')
+                                : (english ? 'Generate CV' : 'توليد السيرة'))
+                            : (english ? 'Next' : 'التالي'),
+                        loadingLabel:
+                            english ? 'Generating...' : 'جارٍ التوليد...',
+                        isLoading: _isLoading,
+                        icon: _step == _steps.length - 1
+                            ? Icons.auto_awesome
+                            : Icons.arrow_forward_rounded,
+                        onPressed: _onPrimaryAction,
+                      ),
                     ),
-                    const SizedBox(width: 12),
                   ],
-                  Expanded(
-                    flex: 2,
-                    child: SubmitButton(
-                      label: _step == _steps.length - 1
-                          ? (_isEditMode
-                              ? (english ? 'Update CV' : 'تحديث السيرة')
-                              : (english ? 'Generate CV' : 'توليد السيرة'))
-                          : (english ? 'Next' : 'التالي'),
-                      loadingLabel:
-                          english ? 'Generating...' : 'جارٍ التوليد...',
-                      isLoading: _isLoading,
-                      icon: _step == _steps.length - 1
-                          ? Icons.auto_awesome
-                          : Icons.arrow_forward_rounded,
-                      onPressed: _onPrimaryAction,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -1115,8 +1256,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                 children: [
                   AiFieldLoadingOverlay(
                     isLoading: _isEnhancingJobDescription,
-                    statusMessages:
-                        AiFieldLoadingOverlay.defaultStatusMessages(
+                    statusMessages: AiFieldLoadingOverlay.defaultStatusMessages(
                       english: english,
                     ),
                     semanticsLabel: english
@@ -1201,13 +1341,6 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
             text: english ? 'Skills & Summary' : 'المهارات والملخص',
             english: english,
           ),
-          const SizedBox(height: 6),
-          _HelperText(
-            text: english
-                ? 'Enter skills separated by commas'
-                : 'أدخل مهاراتك مفصولة بفاصلة',
-            english: english,
-          ),
           const SizedBox(height: 18),
           if (_stepShowBanner[1])
             AppFormErrorBanner(
@@ -1215,13 +1348,26 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
               onDismiss: () => setState(() => _stepShowBanner[1] = false),
             ),
           _fieldGroup(
-              english ? 'Core Skills *' : 'المهارات الأساسية *',
-              AppTextFormField(
+            english ? 'Core Skills *' : 'المهارات الأساسية *',
+            AiCvField(
+              field: 'skills',
+              controller: _skillsCtrl,
+              english: english,
+              isLoading: _enhancingCvField == 'skills',
+              helperText: english
+                  ? 'Example: Laravel, PHP, REST APIs, SQL, Git, Docker.'
+                  : 'مثال: Laravel، PHP، REST APIs، SQL، Git، Docker.',
+              result: _fieldResults['skills'],
+              onEnhance: () => _enhanceCvField('skills', _skillsCtrl),
+              onDismissResult: () =>
+                  setState(() => _fieldResults.remove('skills')),
+              child: AppTextFormField(
                 controller: _skillsCtrl,
                 textAlign: TextAlign.start,
                 maxLines: 4,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) => _focusNext(),
+                enabled: _enhancingCvField != 'skills',
                 hintText: english
                     ? 'PHP, Laravel, API, SQL, Git, Agile, Docker'
                     : 'PHP، Laravel، API، SQL، Git، Agile، Docker',
@@ -1231,29 +1377,86 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                         : 'المهارات الأساسية مطلوبة.')
                     : null,
               ),
-              english),
-          const SizedBox(height: 14),
+            ),
+            english,
+          ),
+          const SizedBox(height: 18),
           _fieldGroup(
-              english
-                  ? 'Professional Summary (optional)'
-                  : 'الملخص المهني (اختياري، سيُولَّد تلقائياً)',
-              AppTextFormField(
+            english
+                ? 'Professional Summary (optional)'
+                : 'الملخص المهني (اختياري)',
+            AiCvField(
+              field: 'summary',
+              controller: _summaryCtrl,
+              english: english,
+              isLoading: _enhancingCvField == 'summary',
+              helperText: english
+                  ? 'Example: Backend developer focused on reliable APIs and measurable product outcomes.'
+                  : 'مثال: مطور Backend متخصص في بناء APIs موثوقة وتحقيق نتائج قابلة للقياس.',
+              result: _fieldResults['summary'],
+              onEnhance: () => _enhanceCvField('summary', _summaryCtrl),
+              onDismissResult: () =>
+                  setState(() => _fieldResults.remove('summary')),
+              child: AppTextFormField(
                 controller: _summaryCtrl,
                 textAlign: TextAlign.start,
                 maxLines: 4,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _onPrimaryAction(),
+                enabled: _enhancingCvField != 'summary',
                 hintText: english
                     ? 'Briefly describe your experience and achievements...'
                     : 'نبذة مختصرة عن خبرتك وإنجازاتك...',
               ),
-              english),
+            ),
+            english,
+          ),
         ],
       ),
     );
   }
 
   Widget _buildStep2(bool english) {
+    final hint = _showExperienceShapeHint
+        ? Container(
+            key: const Key('experience_shape_hint'),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: context.sirati.infoLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.lightbulb_outline_rounded,
+                    size: 19, color: context.sirati.info),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    english
+                        ? 'Target shape: role — company — period, then one or two achievements with numbers.'
+                        : 'الشكل المستهدف: المسمى — الشركة — الفترة، ثم إنجاز أو اثنان بأرقام.',
+                    style: TextStyle(
+                      color: context.sirati.textPrimary,
+                      fontSize: 12.5,
+                      height: 1.45,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: english ? 'Dismiss' : 'إخفاء',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => setState(() {
+                    _showExperienceShapeHint = false;
+                    _experienceHintDismissed = true;
+                  }),
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                ),
+              ],
+            ),
+          )
+        : null;
+
     return Form(
       key: _stepFormKeys[2],
       autovalidateMode: _autoValidateFor(2),
@@ -1264,59 +1467,51 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
             text: english ? 'Work Experience' : 'الخبرات العملية',
             english: english,
           ),
-          const SizedBox(height: 6),
-          _HelperText(
-            text: english
-                ? 'Include title, company, dates, and measurable achievements'
-                : 'اذكر المسمى، الشركة، التاريخ، والإنجازات بأرقام',
-            english: english,
-          ),
           const SizedBox(height: 18),
           if (_stepShowBanner[2])
             AppFormErrorBanner(
               message: _bannerCopy(english),
               onDismiss: () => setState(() => _stepShowBanner[2] = false),
             ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-                color: context.sirati.primaryLight,
-                borderRadius: BorderRadius.circular(12)),
-            child: Row(
-              children: [
-                Expanded(
-                    child: Text(
-                        english
-                            ? 'Numbers like 35% or 20 users improve your ATS score.'
-                            : 'كلما ذكرت أرقاماً (35%، 20 مستخدم)، زادت درجة ATS',
-                        style: TextStyle(
-                            fontSize: 12, color: context.sirati.primaryDark),
-                        textAlign: TextAlign.start)),
-                const SizedBox(width: 8),
-                Icon(Icons.tips_and_updates_outlined,
-                    color: context.sirati.primary, size: 20),
-              ],
+          _fieldGroup(
+            english ? 'Experience *' : 'الخبرة العملية *',
+            AiCvField(
+              field: 'experience',
+              controller: _experienceCtrl,
+              english: english,
+              isLoading: _enhancingCvField == 'experience',
+              minimumCharacters: 80,
+              leadingHint: hint,
+              helperText: english
+                  ? 'Example: Backend Developer — Company — 2022–present; improved API response time by 35%.'
+                  : 'مثال: مطور Backend — الشركة — 2022 حتى الآن؛ حسّنت سرعة API بنسبة 35%.',
+              result: _fieldResults['experience'],
+              onEnhance: () => _enhanceCvField('experience', _experienceCtrl),
+              onDismissResult: () =>
+                  setState(() => _fieldResults.remove('experience')),
+              child: AppTextFormField(
+                controller: _experienceCtrl,
+                focusNode: _experienceFocusNode,
+                textAlign: TextAlign.start,
+                maxLines: 10,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _onPrimaryAction(),
+                enabled: _enhancingCvField != 'experience',
+                hintText: english
+                    ? 'Role, company, period\n- Achievement with a measurable result'
+                    : 'المسمى، الشركة، الفترة\n- إنجاز بنتيجة قابلة للقياس',
+                validator: (value) {
+                  final valueText = value?.trim() ?? '';
+                  if (valueText.length < 80) {
+                    return english
+                        ? 'Write at least 80 characters about your experience.'
+                        : 'اكتب الخبرات العملية بتفاصيل لا تقل عن 80 حرفاً.';
+                  }
+                  return null;
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          AppTextFormField(
-            controller: _experienceCtrl,
-            textAlign: TextAlign.start,
-            maxLines: 10,
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _onPrimaryAction(),
-            hintText: english
-                ? 'Backend developer, Company X, 2021–2025\n- Built APIs used by 25 internal teams\n- Improved SQL performance by 35%\n- Integrated APIs that cut data entry by 20%'
-                : 'مطور Backend، شركة X، 2021–2025\n- طورت APIs تستخدمها 25 فرقة داخلية\n- حسّنت أداء SQL بنسبة 35%\n- بنيت تكاملات API خفّضت الإدخال 20%',
-            validator: (value) {
-              final text = value?.trim() ?? '';
-              if (text.length < 80) {
-                return english
-                    ? 'Write at least 80 characters about your experience.'
-                    : 'اكتب الخبرات العملية بتفاصيل لا تقل عن 80 حرفاً.';
-              }
-              return null;
-            },
+            english,
           ),
         ],
       ),
@@ -1341,13 +1536,26 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
               onDismiss: () => setState(() => _stepShowBanner[3] = false),
             ),
           _fieldGroup(
-              english ? 'Education *' : 'التعليم *',
-              AppTextFormField(
+            english ? 'Education *' : 'التعليم *',
+            AiCvField(
+              field: 'education',
+              controller: _educationCtrl,
+              english: english,
+              isLoading: _enhancingCvField == 'education',
+              helperText: english
+                  ? 'Example: BSc Computer Science — King Saud University — 2020.'
+                  : 'مثال: بكالوريوس علوم الحاسب — جامعة الملك سعود — 2020.',
+              result: _fieldResults['education'],
+              onEnhance: () => _enhanceCvField('education', _educationCtrl),
+              onDismissResult: () =>
+                  setState(() => _fieldResults.remove('education')),
+              child: AppTextFormField(
                 controller: _educationCtrl,
                 textAlign: TextAlign.start,
                 maxLines: 4,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) => _focusNext(),
+                enabled: _enhancingCvField != 'education',
                 hintText: english
                     ? 'BSc Computer Science, King Abdulaziz University, 2020'
                     : 'بكالوريوس علوم الحاسب، جامعة الملك عبدالعزيز، 2020',
@@ -1355,23 +1563,40 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen> {
                     ? (english ? 'Education is required.' : 'التعليم مطلوب.')
                     : null,
               ),
-              english),
-          const SizedBox(height: 14),
+            ),
+            english,
+          ),
+          const SizedBox(height: 18),
           _fieldGroup(
-              english
-                  ? 'Certifications & Courses (optional)'
-                  : 'الشهادات والدورات (اختياري)',
-              AppTextFormField(
+            english
+                ? 'Certifications & Courses (optional)'
+                : 'الشهادات والدورات (اختياري)',
+            AiCvField(
+              field: 'certifications',
+              controller: _certsCtrl,
+              english: english,
+              isLoading: _enhancingCvField == 'certifications',
+              helperText: english
+                  ? 'Example: AWS Certified Cloud Practitioner — Amazon Web Services — 2023.'
+                  : 'مثال: AWS Certified Cloud Practitioner — Amazon Web Services — 2023.',
+              result: _fieldResults['certifications'],
+              onEnhance: () => _enhanceCvField('certifications', _certsCtrl),
+              onDismissResult: () =>
+                  setState(() => _fieldResults.remove('certifications')),
+              child: AppTextFormField(
                 controller: _certsCtrl,
                 textAlign: TextAlign.start,
                 maxLines: 4,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _onPrimaryAction(),
+                enabled: _enhancingCvField != 'certifications',
                 hintText: english
-                    ? 'AWS Certified Cloud Practitioner, 2023\nGoogle Cloud Associate, 2022'
-                    : 'AWS Certified Cloud Practitioner، 2023\nGoogle Cloud Associate، 2022',
+                    ? 'Certification — issuer — year'
+                    : 'اسم الشهادة — الجهة المانحة — السنة',
               ),
-              english),
+            ),
+            english,
+          ),
         ],
       ),
     );
@@ -1481,25 +1706,6 @@ class _WizardProgressBarState extends State<_WizardProgressBar> {
                   builder: (context, value, _) => fill(value),
                 ),
         ),
-      ),
-    );
-  }
-}
-
-class _HelperText extends StatelessWidget {
-  final String text;
-  final bool english;
-
-  const _HelperText({required this.text, required this.english});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: Text(
-        text,
-        textAlign: TextAlign.start,
-        style: TextStyle(fontSize: 13, color: context.sirati.textSecondary),
       ),
     );
   }

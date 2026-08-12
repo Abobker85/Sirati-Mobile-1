@@ -24,7 +24,9 @@ workflows:
       - name: Build Android debug APK for App Preview
         script: |
           flutter build apk --debug \
-            --dart-define=SIRATI_API_BASE_URL=$SIRATI_API_BASE_URL
+            --dart-define=SIRATI_API_BASE_URL=$SIRATI_API_BASE_URL \
+            --dart-define=SENTRY_DSN=$SENTRY_DSN \
+            --dart-define=SENTRY_ENVIRONMENT=preview
 
     artifacts:
       - build/app/outputs/flutter-apk/app-debug.apk
@@ -53,7 +55,9 @@ workflows:
       - name: Build iOS simulator app for App Preview
         script: |
           flutter build ios --simulator --debug \
-            --dart-define=SIRATI_API_BASE_URL=$SIRATI_API_BASE_URL
+            --dart-define=SIRATI_API_BASE_URL=$SIRATI_API_BASE_URL \
+            --dart-define=SENTRY_DSN=$SENTRY_DSN \
+            --dart-define=SENTRY_ENVIRONMENT=preview
 
     artifacts:
       - build/ios/iphonesimulator/Runner.app

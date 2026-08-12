@@ -3,13 +3,16 @@ import 'package:flutter/services.dart';
 
 import '../app_locale.dart';
 import '../models/auth_session.dart';
+import '../models/job_title.dart';
 import '../services/api_exception.dart';
 import '../services/auth_api_service.dart';
+import '../services/mobile_content_service.dart';
 import '../services/session_cache.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/form_fields.dart';
+import '../widgets/job_title_picker_field.dart';
 import '../widgets/loading/app_skeleton.dart';
 import '../widgets/submit_button.dart';
 
@@ -23,32 +26,75 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
+  final _jobTitleOtherCtrl = TextEditingController();
   final _auth = AuthApiService();
+  final _content = MobileContentService();
   late Future<AuthUser?> _future;
   bool _loading = false;
   bool _submitted = false;
+  bool _jobTitlesLoading = true;
+  List<JobTitle> _jobTitles = const [];
+  JobTitle? _selectedJobTitle;
 
   @override
   void initState() {
     super.initState();
     _future = _load();
+    _loadJobTitles();
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _jobTitleOtherCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadJobTitles() async {
+    try {
+      final titles = await _content.jobTitles();
+      if (!mounted) return;
+      setState(() {
+        _jobTitles = titles;
+        _jobTitlesLoading = false;
+        _syncSelectionFromUser(SessionCache.instance.user.value);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _jobTitlesLoading = false);
+    }
+  }
+
+  void _syncSelectionFromUser(AuthUser? user) {
+    if (user == null) return;
+    if (_jobTitles.isEmpty) {
+      _jobTitleOtherCtrl.text = user.jobTitleOther ?? '';
+      return;
+    }
+    JobTitle? match;
+    if (user.jobTitleId != null) {
+      for (final t in _jobTitles) {
+        if (t.id == user.jobTitleId) {
+          match = t;
+          break;
+        }
+      }
+    }
+    _selectedJobTitle = match;
+    _jobTitleOtherCtrl.text = user.jobTitleOther ?? '';
   }
 
   Future<AuthUser?> _load() async {
     final cached = SessionCache.instance.user.value;
     if (cached != null) {
       _nameCtrl.text = cached.name;
+      _syncSelectionFromUser(cached);
     }
     try {
       final user = await _auth.me();
       if (user != null) {
         _nameCtrl.text = user.name;
+        _syncSelectionFromUser(user);
       }
       return user ?? cached;
     } on ApiException {
@@ -64,9 +110,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       HapticFeedback.selectionClick();
       return;
     }
+    if (_selectedJobTitle?.isOther == true &&
+        _jobTitleOtherCtrl.text.trim().isEmpty) {
+      HapticFeedback.selectionClick();
+      return;
+    }
+
     setState(() => _loading = true);
     try {
-      await _auth.updateProfile(name: _nameCtrl.text.trim());
+      await _auth.updateProfile(
+        name: _nameCtrl.text.trim(),
+        jobTitleId: _selectedJobTitle?.id,
+        jobTitleOther: _selectedJobTitle?.isOther == true
+            ? _jobTitleOtherCtrl.text.trim()
+            : null,
+        clearJobTitle: _selectedJobTitle == null,
+      );
       if (!mounted) return;
       HapticFeedback.lightImpact();
       AppSnackBar.success(
@@ -164,6 +223,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ? (en ? 'Name is required' : 'الاسم مطلوب')
                       : null,
                 ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  en ? 'Job title' : 'المسمى الوظيفي',
+                  textAlign: TextAlign.start,
+                  style: AppTextStyles.titleSm()
+                      .copyWith(color: context.sirati.textSecondary),
+                ),
+                const SizedBox(height: 6),
+                JobTitlePickerField(
+                  titles: _jobTitles,
+                  value: _selectedJobTitle,
+                  english: en,
+                  loading: _jobTitlesLoading,
+                  submitted: _submitted,
+                  onChanged: (title) {
+                    setState(() {
+                      _selectedJobTitle = title;
+                      if (title?.isOther != true) {
+                        _jobTitleOtherCtrl.clear();
+                      }
+                    });
+                  },
+                ),
+                if (_selectedJobTitle?.isOther == true) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    en ? 'Your job title' : 'المسمى الوظيفي الخاص بك',
+                    textAlign: TextAlign.start,
+                    style: AppTextStyles.titleSm()
+                        .copyWith(color: context.sirati.textSecondary),
+                  ),
+                  const SizedBox(height: 6),
+                  AppTextFormField(
+                    controller: _jobTitleOtherCtrl,
+                    showSuccessWhenValid: true,
+                    successMessage: en ? 'Looks good' : 'يبدو جيداً',
+                    autovalidateMode: _submitted
+                        ? AutovalidateMode.onUserInteraction
+                        : AutovalidateMode.disabled,
+                    textAlign: TextAlign.start,
+                    maxLength: 120,
+                    hintText: en
+                        ? 'e.g. Logistics Consultant'
+                        : 'مثال: مستشار لوجستي',
+                    prefixIcon: const Icon(Icons.edit_outlined),
+                    validator: (value) {
+                      if (_selectedJobTitle?.isOther != true) return null;
+                      if (value == null || value.trim().isEmpty) {
+                        return en
+                            ? 'Please enter your job title'
+                            : 'يرجى كتابة المسمى الوظيفي عند اختيار أخرى.';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   en ? 'Email' : 'البريد الإلكتروني',

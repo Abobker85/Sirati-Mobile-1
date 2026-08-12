@@ -211,47 +211,62 @@ class _OnboardingPageView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 112,
-            height: 112,
-            decoration: BoxDecoration(
-              color: page.accentSoft,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: page.accent.withValues(alpha: 0.14),
-              ),
-              boxShadow: context.sirati.softShadow,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxHeight < 280;
+        final iconSize = compact ? 92.0 : 112.0;
+        final iconRadius = compact ? 24.0 : 28.0;
+        final iconGlyphSize = compact ? 44.0 : 52.0;
+        final titleSize = compact ? 23.0 : 26.0;
+        final bodySize = compact ? 14.0 : 15.0;
+        final heroGap = compact ? AppSpacing.md : AppSpacing.xxl;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: iconSize,
+                  height: iconSize,
+                  decoration: BoxDecoration(
+                    color: page.accentSoft,
+                    borderRadius: BorderRadius.circular(iconRadius),
+                    border: Border.all(
+                      color: page.accent.withValues(alpha: 0.14),
+                    ),
+                    boxShadow: context.sirati.softShadow,
+                  ),
+                  child: Icon(page.icon, size: iconGlyphSize, color: page.accent),
+                ),
+                SizedBox(height: heroGap),
+                Text(
+                  page.title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: titleSize,
+                    fontWeight: FontWeight.w800,
+                    height: 1.25,
+                    color: context.sirati.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  page.body,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMd().copyWith(
+                    height: compact ? 1.55 : 1.7,
+                    color: context.sirati.textSecondary,
+                    fontSize: bodySize,
+                  ),
+                ),
+              ],
             ),
-            child: Icon(page.icon, size: 52, color: page.accent),
           ),
-          const SizedBox(height: AppSpacing.xxl),
-          Text(
-            page.title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              height: 1.25,
-              color: context.sirati.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            page.body,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMd().copyWith(
-              height: 1.7,
-              color: context.sirati.textSecondary,
-              fontSize: 15,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

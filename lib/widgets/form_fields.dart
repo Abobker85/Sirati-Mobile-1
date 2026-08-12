@@ -522,8 +522,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
     }
     // After first blur: re-validate as the user types (onUserInteraction).
     // Before first blur: stay quiet — no error flash while typing.
-    final forceAlways =
-        widget._autovalidateMode == AutovalidateMode.always;
+    final forceAlways = widget._autovalidateMode == AutovalidateMode.always;
     if (_blurredOnce || forceAlways) {
       final ok = validate();
       if (ok && !_wasValid) {
@@ -552,8 +551,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
   bool _isShowingSuccess() {
     if (!widget.showSuccessWhenValid) return false;
     // Never show success chrome before the first blur (unless always mode).
-    final forceAlways =
-        widget._autovalidateMode == AutovalidateMode.always;
+    final forceAlways = widget._autovalidateMode == AutovalidateMode.always;
     if (!_blurredOnce && !forceAlways) return false;
     final text = value?.trim() ?? '';
     if (text.isEmpty) return false;

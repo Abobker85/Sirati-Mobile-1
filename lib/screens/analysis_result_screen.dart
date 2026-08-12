@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../app_locale.dart';
+import '../models/ai_status.dart';
 import '../models/cv_analysis.dart';
 import '../services/api_exception.dart';
 import '../services/cv_api_service.dart';
@@ -9,33 +11,101 @@ import '../theme/app_theme.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/animated_ats_score_bar.dart';
 import '../widgets/language_toggle.dart';
+import '../widgets/loading/ai_progress_overlay.dart';
 import '../widgets/motion.dart';
 import '../widgets/submit_button.dart';
 import 'generated_cv_screen.dart';
 
 class AnalysisResultScreen extends StatefulWidget {
   final CvAnalysis analysis;
+  final CvApiService? apiService;
 
-  const AnalysisResultScreen({super.key, required this.analysis});
+  const AnalysisResultScreen({
+    super.key,
+    required this.analysis,
+    this.apiService,
+  });
 
   @override
   State<AnalysisResultScreen> createState() => _AnalysisResultScreenState();
 }
 
-class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
-  final _apiService = CvApiService();
-  bool _isGenerating = false;
+class _AnalysisResultScreenState extends State<AnalysisResultScreen>
+    with WidgetsBindingObserver {
+  late final CvApiService _apiService = widget.apiService ?? CvApiService();
+  final ValueNotifier<bool> _isGenerating = ValueNotifier<bool>(false);
+  bool _pollingPaused = false;
+  int _aiRequestGen = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _pollingPaused = state != AppLifecycleState.resumed;
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _isGenerating.dispose();
+    super.dispose();
+  }
 
   Future<void> _generateImprovedCv() async {
-    setState(() => _isGenerating = true);
+    final english = AppLocale.isEnglish(context);
+    final requestId = ++_aiRequestGen;
+    _isGenerating.value = true;
+    final progress = await AiProgressOverlay.show(
+      context,
+      kind: AiProgressKind.generation,
+      english: english,
+      onCancelled: () {
+        if (_aiRequestGen == requestId) _aiRequestGen++;
+        if (mounted) _isGenerating.value = false;
+      },
+    );
 
     try {
-      final generatedCv = await _apiService.generateCvFromAnalysis(
+      var generatedCv = await _apiService.generateCvFromAnalysis(
         analysisId: widget.analysis.id,
         overrides: const {},
       );
+      final poll = await _apiService.pollGeneratedCv(
+        generatedCv,
+        isCancelled: () => progress.isCancelled || requestId != _aiRequestGen,
+        isPaused: () => _pollingPaused,
+      );
+      generatedCv = poll.value;
 
+      if (!mounted ||
+          poll.cancelled ||
+          progress.isCancelled ||
+          requestId != _aiRequestGen) {
+        return;
+      }
+      await progress.dismiss();
       if (!mounted) return;
+      if (poll.timedOut) {
+        AppSnackBar.warning(
+          context,
+          english
+              ? 'AI is still working. A usable local CV is ready, and you can retry generation later.'
+              : 'لا يزال الذكاء الاصطناعي يعمل. نسخة محلية من سيرتك جاهزة، ويمكنك إعادة محاولة التوليد لاحقاً.',
+        );
+      } else if (generatedCv.aiStatus == AiStatus.failed) {
+        AppSnackBar.error(
+          context,
+          english
+              ? 'AI generation could not be completed: ${generatedCv.aiError ?? 'Please try again.'}'
+              : 'تعذر إكمال توليد السيرة بالذكاء الاصطناعي: ${generatedCv.aiError ?? 'يرجى المحاولة مرة أخرى.'}',
+          actionLabel: english ? 'Retry' : 'إعادة المحاولة',
+          onAction: _generateImprovedCv,
+        );
+      }
       MobileContentService.invalidateCvRelated();
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -54,7 +124,10 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isGenerating = false);
+      await progress.dismiss();
+      if (mounted && requestId == _aiRequestGen && !progress.isCancelled) {
+        _isGenerating.value = false;
+      }
     }
   }
 
@@ -176,7 +249,7 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
               _RecommendationsTab(
                 strengths: analysis.strengths,
                 quickWins: analysis.quickWins,
-                isGenerating: _isGenerating,
+                isGeneratingListenable: _isGenerating,
                 onGenerateCv: _generateImprovedCv,
                 english: english,
               ),
@@ -220,6 +293,7 @@ class _ScoreTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
+      key: const ValueKey('analysis-score-tab-list'),
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
       children: [
         // ── Score Hero ──────────────────────────────────────────────────────
@@ -453,12 +527,10 @@ class _ScoreTab extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: keywordsFound
-                    .map((k) => _KeywordChip(label: k, found: true))
-                    .toList(),
+              _KeywordGroup(
+                keywords: keywordsFound,
+                found: true,
+                english: english,
               ),
               const SizedBox(height: 16),
               const Divider(),
@@ -488,12 +560,10 @@ class _ScoreTab extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: keywordsMissing
-                    .map((k) => _KeywordChip(label: k, found: false))
-                    .toList(),
+              _KeywordGroup(
+                keywords: keywordsMissing,
+                found: false,
+                english: english,
               ),
             ],
           ),
@@ -508,14 +578,14 @@ class _ScoreTab extends StatelessWidget {
 class _RecommendationsTab extends StatelessWidget {
   final List<String> strengths;
   final List<String> quickWins;
-  final bool isGenerating;
+  final ValueListenable<bool> isGeneratingListenable;
   final VoidCallback onGenerateCv;
   final bool english;
 
   const _RecommendationsTab({
     required this.strengths,
     required this.quickWins,
-    required this.isGenerating,
+    required this.isGeneratingListenable,
     required this.onGenerateCv,
     required this.english,
   });
@@ -717,12 +787,17 @@ class _RecommendationsTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        SubmitButton(
-          label: english ? 'Generate Improved CV' : 'توليد سيرة محسّنة',
-          loadingLabel: english ? 'Generating...' : 'جارٍ التوليد...',
-          isLoading: isGenerating,
-          icon: Icons.auto_awesome_rounded,
-          onPressed: isGenerating ? null : onGenerateCv,
+        ValueListenableBuilder<bool>(
+          valueListenable: isGeneratingListenable,
+          builder: (context, isGenerating, _) {
+            return SubmitButton(
+              label: english ? 'Generate Improved CV' : 'توليد سيرة محسّنة',
+              loadingLabel: english ? 'Generating...' : 'جارٍ التوليد...',
+              isLoading: isGenerating,
+              icon: Icons.auto_awesome_rounded,
+              onPressed: isGenerating ? null : onGenerateCv,
+            );
+          },
         ),
       ],
     );
@@ -795,6 +870,95 @@ class _KeywordChip extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: found ? context.sirati.tealDark : context.sirati.red,
+        ),
+      ),
+    );
+  }
+}
+
+class _KeywordGroup extends StatefulWidget {
+  final List<String> keywords;
+  final bool found;
+  final bool english;
+
+  static const initialVisibleCount = 18;
+
+  const _KeywordGroup({
+    required this.keywords,
+    required this.found,
+    required this.english,
+  });
+
+  @override
+  State<_KeywordGroup> createState() => _KeywordGroupState();
+}
+
+class _KeywordGroupState extends State<_KeywordGroup> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.keywords.isEmpty) {
+      return Text(
+        widget.english ? 'No keywords yet.' : 'لا توجد كلمات مفتاحية حالياً',
+        style: TextStyle(fontSize: 12, color: context.sirati.textSecondary),
+      );
+    }
+
+    final overflowCount =
+        widget.keywords.length - _KeywordGroup.initialVisibleCount;
+    final visibleKeywords = _expanded || overflowCount <= 0
+        ? widget.keywords
+        : widget.keywords.take(_KeywordGroup.initialVisibleCount);
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (final keyword in visibleKeywords)
+          _KeywordChip(label: keyword, found: widget.found),
+        if (overflowCount > 0)
+          _KeywordOverflowButton(
+            expanded: _expanded,
+            remainingCount: overflowCount,
+            english: widget.english,
+            onPressed: () => setState(() => _expanded = !_expanded),
+          ),
+      ],
+    );
+  }
+}
+
+class _KeywordOverflowButton extends StatelessWidget {
+  final bool expanded;
+  final int remainingCount;
+  final bool english;
+  final VoidCallback onPressed;
+
+  const _KeywordOverflowButton({
+    required this.expanded,
+    required this.remainingCount,
+    required this.english,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      style: TextButton.styleFrom(
+        minimumSize: const Size(48, 36),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      ),
+      onPressed: onPressed,
+      child: Text(
+        expanded
+            ? (english ? 'Show less' : 'عرض أقل')
+            : (english ? '+$remainingCount more' : '+$remainingCount أخرى'),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: context.sirati.primary,
         ),
       ),
     );

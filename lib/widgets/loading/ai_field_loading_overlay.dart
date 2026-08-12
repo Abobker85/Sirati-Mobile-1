@@ -61,14 +61,15 @@ class AiFieldLoadingOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!isLoading) return child;
 
-    final english =
-        Localizations.localeOf(context).languageCode != 'ar';
+    final english = Localizations.localeOf(context).languageCode != 'ar';
     final messages = statusMessages ??
         (statusStream == null
             ? defaultStatusMessages(english: english)
             : const <String>[]);
     final label = semanticsLabel ??
-        (english ? 'AI is working on this field' : 'الذكاء الاصطناعي يعمل على هذا الحقل');
+        (english
+            ? 'AI is working on this field'
+            : 'الذكاء الاصطناعي يعمل على هذا الحقل');
 
     return Semantics(
       container: true,
@@ -199,12 +200,10 @@ class _AiCoPilotVeilState extends State<_AiCoPilotVeil> {
                 ),
               ),
               if (_current.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.sm - 2),
                 // Only this node animates on message change.
                 AnimatedSwitcher(
-                  duration: reduce
-                      ? Duration.zero
-                      : MotionDurations.slow,
+                  duration: reduce ? Duration.zero : MotionDurations.slow,
                   switchInCurve: MotionCurves.enter,
                   switchOutCurve: MotionCurves.exit,
                   layoutBuilder: (current, previous) => Stack(

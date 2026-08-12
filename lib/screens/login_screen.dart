@@ -11,6 +11,7 @@ import '../widgets/form_fields.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/motion.dart';
 import '../widgets/submit_button.dart';
+import 'email_verification_screen.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
@@ -73,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.login(
+      final session = await _authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -81,6 +82,18 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       AnalyticsService.logLoginSuccess(method: 'email');
       HapticFeedback.lightImpact();
+      // Unverified accounts must complete email OTP before using the app.
+      if (!session.user.emailVerified) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationScreen(
+              email: session.user.email,
+            ),
+          ),
+          (route) => false,
+        );
+        return;
+      }
       // Use pushAndRemoveUntil so HomeScreen becomes the root route.
       // This prevents the back button from popping back to the SplashScreen
       // (welcome/login UI) after the user is already authenticated.
@@ -129,6 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
+    final compactHeader = MediaQuery.sizeOf(context).height < 520;
 
     return Scaffold(
       backgroundColor: context.sirati.background,
@@ -144,10 +158,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             padding: EdgeInsetsDirectional.only(
-              top: MediaQuery.of(context).padding.top + 16,
+              top: MediaQuery.of(context).padding.top + (compactHeader ? 10 : 16),
               start: 20,
               end: 12,
-              bottom: 24,
+              bottom: compactHeader ? 14 : 24,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,18 +172,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     LanguageToggle(),
                   ],
                 ),
-                const SizedBox(height: 8),
-                const SiratiMark(size: 56, elevated: true),
-                const SizedBox(height: 14),
+                SizedBox(height: compactHeader ? 4 : 8),
+                SiratiMark(size: compactHeader ? 44 : 56, elevated: true),
+                SizedBox(height: compactHeader ? 8 : 14),
                 Text(
                   english ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
                   textAlign: TextAlign.start,
                   style: TextStyle(
-                      fontSize: 22,
+                      fontSize: compactHeader ? 20 : 22,
                       fontWeight: FontWeight.w800,
                       color: context.sirati.primary),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: compactHeader ? 4 : 6),
                 Text(
                   english ? 'Sign in to continue' : 'سجّل دخولك للمتابعة',
                   textAlign: TextAlign.start,
@@ -184,171 +198,176 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
               child: AutofillGroup(
                 child: Form(
-                key: _formKey,
-                autovalidateMode: _submitted
-                    ? AutovalidateMode.onUserInteraction
-                    : AutovalidateMode.disabled,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (_showFormBanner)
-                      AppFormErrorBanner(
-                        message: english
-                            ? 'Please fix the highlighted fields to continue.'
-                            : 'يرجى تصحيح الحقول المحددة للمتابعة.',
-                        onDismiss: () =>
-                            setState(() => _showFormBanner = false),
+                  key: _formKey,
+                  autovalidateMode: _submitted
+                      ? AutovalidateMode.onUserInteraction
+                      : AutovalidateMode.disabled,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_showFormBanner)
+                        AppFormErrorBanner(
+                          message: english
+                              ? 'Please fix the highlighted fields to continue.'
+                              : 'يرجى تصحيح الحقول المحددة للمتابعة.',
+                          onDismiss: () =>
+                              setState(() => _showFormBanner = false),
+                        ),
+                      _AuthLabel(text: english ? 'Email' : 'البريد الإلكتروني'),
+                      const SizedBox(height: 6),
+                      AppTextFormField(
+                        controller: _emailController,
+                        showSuccessWhenValid: true,
+                        successMessage: english ? 'Looks good' : 'يبدو جيداً',
+                        autovalidateMode: _submitted
+                            ? AutovalidateMode.onUserInteraction
+                            : AutovalidateMode.disabled,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        textDirection: TextDirection.ltr,
+                        textAlign: TextAlign.left,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).nextFocus(),
+                        hintText: 'name@example.com',
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return english
+                                ? 'Please enter your email'
+                                : 'يرجى إدخال البريد الإلكتروني';
+                          }
+                          if (!v.contains('@')) {
+                            return english
+                                ? 'Email address is invalid'
+                                : 'البريد الإلكتروني غير صحيح';
+                          }
+                          return null;
+                        },
                       ),
-                    _AuthLabel(text: english ? 'Email' : 'البريد الإلكتروني'),
-                    const SizedBox(height: 6),
-                    AppTextFormField(
-                      controller: _emailController,
-                      showSuccessWhenValid: true,
-                      successMessage: english ? 'Looks good' : 'يبدو جيداً',
-                      autovalidateMode: _submitted
-                          ? AutovalidateMode.onUserInteraction
-                          : AutovalidateMode.disabled,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      textDirection: TextDirection.ltr,
-                      textAlign: TextAlign.left,
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) =>
-                          FocusScope.of(context).nextFocus(),
-                      hintText: 'name@example.com',
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return english
-                              ? 'Please enter your email'
-                              : 'يرجى إدخال البريد الإلكتروني';
-                        }
-                        if (!v.contains('@')) {
-                          return english
-                              ? 'Email address is invalid'
-                              : 'البريد الإلكتروني غير صحيح';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _AuthLabel(text: english ? 'Password' : 'كلمة المرور'),
-                    const SizedBox(height: 6),
-                    AppTextFormField(
-                      controller: _passwordController,
-                      showSuccessWhenValid: true,
-                      autovalidateMode: _submitted
-                          ? AutovalidateMode.onUserInteraction
-                          : AutovalidateMode.disabled,
-                      obscureText: _obscurePassword,
-                      autofillHints: const [AutofillHints.password],
-                      textDirection: TextDirection.ltr,
-                      textAlign: TextAlign.left,
-                      textInputAction: TextInputAction.send,
-                      onFieldSubmitted: (_) => _login(),
-                      hintText: '••••••••',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined),
-                        onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword),
+                      const SizedBox(height: AppSpacing.md),
+                      _AuthLabel(text: english ? 'Password' : 'كلمة المرور'),
+                      const SizedBox(height: 6),
+                      AppTextFormField(
+                        controller: _passwordController,
+                        showSuccessWhenValid: true,
+                        autovalidateMode: _submitted
+                            ? AutovalidateMode.onUserInteraction
+                            : AutovalidateMode.disabled,
+                        obscureText: _obscurePassword,
+                        autofillHints: const [AutofillHints.password],
+                        textDirection: TextDirection.ltr,
+                        textAlign: TextAlign.left,
+                        textInputAction: TextInputAction.send,
+                        onFieldSubmitted: (_) => _login(),
+                        hintText: '••••••••',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(_obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return english
+                                ? 'Please enter your password'
+                                : 'يرجى إدخال كلمة المرور';
+                          }
+                          if (v.length < 6) {
+                            return english
+                                ? 'Password must be at least 6 characters'
+                                : 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+                          }
+                          return null;
+                        },
                       ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) {
-                          return english
-                              ? 'Please enter your password'
-                              : 'يرجى إدخال كلمة المرور';
-                        }
-                        if (v.length < 6) {
-                          return english
-                              ? 'Password must be at least 6 characters'
-                              : 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const ForgotPasswordScreen()),
-                        ),
-                        child: Text(
-                            english ? 'Forgot password?' : 'نسيت كلمة المرور؟'),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    SubmitButton(
-                      label: english ? 'Sign in' : 'تسجيل الدخول',
-                      loadingLabel:
-                          english ? 'Signing in...' : 'جارٍ تسجيل الدخول...',
-                      isLoading: _isLoading,
-                      onPressed: _login,
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    Row(
-                      children: [
-                        Expanded(child: Divider(color: context.sirati.border)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Text(
-                            english ? 'Or continue with' : 'أو تابع بـ',
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: context.sirati.textSecondary),
-                          ),
-                        ),
-                        Expanded(child: Divider(color: context.sirati.border)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _SocialButton(
-                            icon: Icons.g_mobiledata_rounded,
-                            label: 'Google',
-                            onTap: _loginWithGoogle,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _SocialButton(
-                            icon: Icons.apple,
-                            label: 'Apple',
-                            onTap: _loginWithApple,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 28),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          english ? "Don't have an account?" : 'ليس لديك حساب؟',
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: context.sirati.textSecondary),
-                        ),
-                        TextButton(
+                      const SizedBox(height: AppSpacing.xs),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(
-                                builder: (_) => const RegisterScreen()),
+                                builder: (_) => const ForgotPasswordScreen()),
                           ),
-                          child:
-                              Text(english ? 'Create account' : 'أنشئ حساباً'),
+                          child: Text(english
+                              ? 'Forgot password?'
+                              : 'نسيت كلمة المرور؟'),
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      SubmitButton(
+                        label: english ? 'Sign in' : 'تسجيل الدخول',
+                        loadingLabel:
+                            english ? 'Signing in...' : 'جارٍ تسجيل الدخول...',
+                        isLoading: _isLoading,
+                        onPressed: _login,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      Row(
+                        children: [
+                          Expanded(
+                              child: Divider(color: context.sirati.border)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Text(
+                              english ? 'Or continue with' : 'أو تابع بـ',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: context.sirati.textSecondary),
+                            ),
+                          ),
+                          Expanded(
+                              child: Divider(color: context.sirati.border)),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SocialButton(
+                              icon: Icons.g_mobiledata_rounded,
+                              label: 'Google',
+                              onTap: _loginWithGoogle,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _SocialButton(
+                              icon: Icons.apple,
+                              label: 'Apple',
+                              onTap: _loginWithApple,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            english
+                                ? "Don't have an account?"
+                                : 'ليس لديك حساب؟',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: context.sirati.textSecondary),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => const RegisterScreen()),
+                            ),
+                            child: Text(
+                                english ? 'Create account' : 'أنشئ حساباً'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               ),
             ),
           ),

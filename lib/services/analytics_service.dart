@@ -128,8 +128,9 @@ class AnalyticsService {
       setUserProperty(name: 'app_language', value: lang == 'en' ? 'en' : 'ar');
 
   static Future<void> setThemeMode(String mode) {
-    final normalized =
-        (mode == 'light' || mode == 'dark' || mode == 'system') ? mode : 'system';
+    final normalized = (mode == 'light' || mode == 'dark' || mode == 'system')
+        ? mode
+        : 'system';
     return setUserProperty(name: 'theme_mode', value: normalized);
   }
 
@@ -176,9 +177,8 @@ class AnalyticsService {
     required int durationMs,
   }) =>
       logEvent('cv_generated', {
-        'template_id': (templateId == null || templateId.isEmpty)
-            ? 'default'
-            : templateId,
+        'template_id':
+            (templateId == null || templateId.isEmpty) ? 'default' : templateId,
         'duration_ms': durationMs < 0 ? 0 : durationMs,
       });
 

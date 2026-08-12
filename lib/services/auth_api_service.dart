@@ -30,9 +30,10 @@ class AuthApiService {
     SessionCache.instance.setUser(session.user);
     await _bindAnalyticsUser(session.user);
 
-    // Register FCM token after successful login
-    await NotificationService.instance.requestPermission();
-    await NotificationService.instance.registerToken();
+    if (session.user.emailVerified) {
+      await NotificationService.instance.requestPermission();
+      await NotificationService.instance.registerToken();
+    }
 
     return session;
   }
@@ -44,6 +45,8 @@ class AuthApiService {
     required String passwordConfirmation,
     String? phone,
     String? location,
+    int? jobTitleId,
+    String? jobTitleOther,
   }) async {
     final body = <String, dynamic>{
       'name': name,
@@ -58,6 +61,12 @@ class AuthApiService {
     if (location != null && location.trim().isNotEmpty) {
       body['location'] = location.trim();
     }
+    if (jobTitleId != null) {
+      body['job_title_id'] = jobTitleId;
+    }
+    if (jobTitleOther != null && jobTitleOther.trim().isNotEmpty) {
+      body['job_title_other'] = jobTitleOther.trim();
+    }
 
     final response = await _apiClient.postJson('/auth/register', body);
 
@@ -66,10 +75,7 @@ class AuthApiService {
     SessionCache.instance.setUser(session.user);
     await _bindAnalyticsUser(session.user);
 
-    // Register FCM token after successful registration
-    await NotificationService.instance.requestPermission();
-    await NotificationService.instance.registerToken();
-
+    // FCM requires a verified email — deferred until after OTP success.
     return session;
   }
 
@@ -80,13 +86,55 @@ class AuthApiService {
     }
   }
 
+  Future<AuthUser> verifyEmail({required String code}) async {
+    final response = await _apiClient.postJson('/auth/email/verify', {
+      'code': code.trim(),
+    });
+    final data = response['data'];
+    final user = AuthUser.fromJson(
+      data is Map<String, dynamic> ? data : const {},
+    );
+    SessionCache.instance.setUser(user);
+    await _bindAnalyticsUser(user);
+
+    if (user.emailVerified) {
+      await NotificationService.instance.requestPermission();
+      await NotificationService.instance.registerToken();
+    }
+
+    return user;
+  }
+
+  Future<String> resendVerification() async {
+    final response = await _apiClient.postJson('/auth/email/resend', const {});
+    return response['message']?.toString() ??
+        'تم إرسال رمز التحقق إلى بريدك الإلكتروني.';
+  }
+
   Future<String> forgotPassword({required String email}) async {
     final response = await _apiClient.postJson('/auth/forgot-password', {
       'email': email,
     });
 
     return response['message']?.toString() ??
-        'تم إرسال رابط استعادة كلمة المرور إذا كان البريد مسجلاً لدينا.';
+        'تم إرسال رمز استعادة كلمة المرور إذا كان البريد مسجلاً لدينا.';
+  }
+
+  Future<String> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final response = await _apiClient.postJson('/auth/reset-password', {
+      'email': email.trim(),
+      'code': code.trim(),
+      'password': password,
+      'password_confirmation': passwordConfirmation,
+    });
+
+    return response['message']?.toString() ??
+        'تم تعيين كلمة المرور الجديدة بنجاح. يمكنك تسجيل الدخول الآن.';
   }
 
   Future<void> logout() async {
@@ -139,10 +187,29 @@ class AuthApiService {
     }
   }
 
-  Future<AuthUser> updateProfile({required String name}) async {
-    final response = await _apiClient.putJson('/auth/profile', {
+  Future<AuthUser> updateProfile({
+    required String name,
+    int? jobTitleId,
+    String? jobTitleOther,
+    bool clearJobTitle = false,
+  }) async {
+    final body = <String, dynamic>{
       'name': name.trim(),
-    });
+    };
+    if (clearJobTitle) {
+      body['job_title_id'] = null;
+      body['job_title_other'] = null;
+    } else {
+      if (jobTitleId != null) {
+        body['job_title_id'] = jobTitleId;
+      }
+      if (jobTitleOther != null) {
+        body['job_title_other'] =
+            jobTitleOther.trim().isEmpty ? null : jobTitleOther.trim();
+      }
+    }
+
+    final response = await _apiClient.putJson('/auth/profile', body);
     final data = response['data'];
     final user = AuthUser.fromJson(
       data is Map<String, dynamic> ? data : const {},

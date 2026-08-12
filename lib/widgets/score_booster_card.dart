@@ -53,8 +53,7 @@ class ScoreBoosterController extends ChangeNotifier {
 
   double get progress => _progress;
   ScoreBoosterTip? get tip => _tip;
-  int get totalWeight =>
-      _weights.values.fold<int>(0, (sum, w) => sum + w);
+  int get totalWeight => _weights.values.fold<int>(0, (sum, w) => sum + w);
   int get completedWeight {
     var sum = 0;
     _weights.forEach((id, w) {
@@ -164,8 +163,7 @@ class ScoreBoosterCard extends StatelessWidget {
         }
 
         final c = context.sirati;
-        final english =
-            Localizations.localeOf(context).languageCode != 'ar';
+        final english = Localizations.localeOf(context).languageCode != 'ar';
         final pct = (progress * 100).round();
 
         return Padding(
@@ -203,9 +201,7 @@ class ScoreBoosterCard extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          english
-                              ? 'Career readiness'
-                              : 'جاهزية المسار المهني',
+                          english ? 'Career readiness' : 'جاهزية المسار المهني',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
@@ -315,9 +311,8 @@ class ScoreBoosterScaffold extends StatelessWidget {
           child: MediaQuery(
             data: MediaQuery.of(context).copyWith(
               padding: MediaQuery.paddingOf(context).copyWith(
-                bottom: MediaQuery.paddingOf(context).bottom +
-                    108 +
-                    bottomInset,
+                bottom:
+                    MediaQuery.paddingOf(context).bottom + 108 + bottomInset,
               ),
             ),
             child: body,

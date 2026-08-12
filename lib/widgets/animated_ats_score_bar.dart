@@ -142,7 +142,9 @@ class _AnimatedAtsScoreBarState extends State<AnimatedAtsScoreBar>
       return;
     }
 
-    if (!force && _playedTarget >= 0 && (target - _playedTarget).abs() < 0.001) {
+    if (!force &&
+        _playedTarget >= 0 &&
+        (target - _playedTarget).abs() < 0.001) {
       // Same score: keep existing animation / settled value.
       return;
     }

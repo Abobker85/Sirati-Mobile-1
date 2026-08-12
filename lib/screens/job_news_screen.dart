@@ -383,8 +383,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                       if (_jobPublishedText(item, english: english).isNotEmpty)
                         _MetaChip(
                             text: _jobPublishedText(item, english: english)),
-                      if (_jobValidUntilText(item, english: english)
-                          .isNotEmpty)
+                      if (_jobValidUntilText(item, english: english).isNotEmpty)
                         _MetaChip(
                           text: _jobValidUntilText(item, english: english),
                           highlight: true,
@@ -590,37 +589,42 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      textAlign: TextAlign.start,
-      decoration: InputDecoration(
-        hintText: english
-            ? 'Search for a job or company...'
-            : 'ابحث عن وظيفة أو شركة...',
-        // Keep the search affordance on the physical leading edge of the field
-        // (left) in both locales — matches the current product screenshots.
-        prefixIcon: english ? const Icon(Icons.search_rounded, size: 18) : null,
-        suffixIcon: english ? null : const Icon(Icons.search_rounded, size: 18),
-        filled: true,
-        fillColor: context.sirati.surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: context.sirati.border),
+    return Material(
+      type: MaterialType.transparency,
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        textAlign: TextAlign.start,
+        decoration: InputDecoration(
+          hintText: english
+              ? 'Search for a job or company...'
+              : 'ابحث عن وظيفة أو شركة...',
+          // Keep the search affordance on the physical leading edge of the field
+          // (left) in both locales — matches the current product screenshots.
+          prefixIcon:
+              english ? const Icon(Icons.search_rounded, size: 18) : null,
+          suffixIcon:
+              english ? null : const Icon(Icons.search_rounded, size: 18),
+          filled: true,
+          fillColor: context.sirati.surface,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: context.sirati.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: context.sirati.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: context.sirati.primary, width: 1.4),
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: context.sirati.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: context.sirati.primary, width: 1.4),
-        ),
+        style: TextStyle(
+            fontSize: 13.5, height: 1.3, color: context.sirati.textPrimary),
       ),
-      style: TextStyle(
-          fontSize: 13.5, height: 1.3, color: context.sirati.textPrimary),
     );
   }
 }
@@ -645,34 +649,37 @@ class _CategoryChips extends StatelessWidget {
       _CategoryOption('health', english ? 'Health' : 'صحة'),
     ];
 
-    return Wrap(
-      spacing: AppSpacing.xs,
-      runSpacing: AppSpacing.xs,
-      children: [
-        for (final option in options)
-          PressScale(
-            pressedScale: .98,
-            child: ChoiceChip(
-              label: Text(option.label),
-              selected: selectedCategory == option.key,
-              onSelected: (_) => onSelected(option.key),
-              showCheckmark: false,
-              labelStyle: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: selectedCategory == option.key
-                    ? Colors.white
-                    : context.sirati.textSecondary,
+    return Material(
+      type: MaterialType.transparency,
+      child: Wrap(
+        spacing: AppSpacing.xs,
+        runSpacing: AppSpacing.xs,
+        children: [
+          for (final option in options)
+            PressScale(
+              pressedScale: .98,
+              child: ChoiceChip(
+                label: Text(option.label),
+                selected: selectedCategory == option.key,
+                onSelected: (_) => onSelected(option.key),
+                showCheckmark: false,
+                labelStyle: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: selectedCategory == option.key
+                      ? Colors.white
+                      : context.sirati.textSecondary,
+                ),
+                selectedColor: context.sirati.primary,
+                backgroundColor: context.sirati.primaryLight,
+                side: BorderSide.none,
+                shape: const StadiumBorder(),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
               ),
-              selectedColor: context.sirati.primary,
-              backgroundColor: context.sirati.primaryLight,
-              side: BorderSide.none,
-              shape: const StadiumBorder(),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

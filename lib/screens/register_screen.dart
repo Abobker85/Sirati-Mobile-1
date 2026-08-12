@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app_locale.dart';
+import '../models/job_title.dart';
 import '../services/analytics_service.dart';
 import '../services/api_exception.dart';
 import '../services/auth_api_service.dart';
+import '../services/mobile_content_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/form_fields.dart';
+import '../widgets/job_title_picker_field.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/motion.dart';
 import '../widgets/password_strength_meter.dart';
 import '../widgets/submit_button.dart';
+import 'email_verification_screen.dart';
 import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -28,13 +32,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _locationController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _jobTitleOtherController = TextEditingController();
   final _authService = AuthApiService();
+  final _contentService = MobileContentService();
 
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _agreedToTerms = false;
   bool _submitted = false;
   bool _showFormBanner = false;
+  bool _jobTitlesLoading = true;
+  List<JobTitle> _jobTitles = const [];
+  JobTitle? _selectedJobTitle;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadJobTitles();
+  }
 
   @override
   void dispose() {
@@ -43,7 +58,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _phoneController.dispose();
     _locationController.dispose();
     _passwordController.dispose();
+    _jobTitleOtherController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadJobTitles() async {
+    try {
+      final titles = await _contentService.jobTitles();
+      if (!mounted) return;
+      setState(() {
+        _jobTitles = titles;
+        _jobTitlesLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _jobTitlesLoading = false);
+    }
   }
 
   Future<void> _register() async {
@@ -54,7 +84,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     final valid = _formKey.currentState!.validate();
-    if (!valid || !_agreedToTerms) {
+    final otherMissing = _selectedJobTitle?.isOther == true &&
+        _jobTitleOtherController.text.trim().isEmpty;
+    if (!valid || !_agreedToTerms || otherMissing) {
       setState(() => _showFormBanner = true);
       HapticFeedback.selectionClick();
       if (!_agreedToTerms) {
@@ -71,23 +103,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.register(
+      final session = await _authService.register(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
         passwordConfirmation: _passwordController.text,
         phone: _phoneController.text.trim(),
         location: _locationController.text.trim(),
+        jobTitleId: _selectedJobTitle?.id,
+        jobTitleOther: _selectedJobTitle?.isOther == true
+            ? _jobTitleOtherController.text.trim()
+            : null,
       );
 
       if (!mounted) return;
       AnalyticsService.logRegisterSuccess();
       HapticFeedback.lightImpact();
-      // Use pushAndRemoveUntil so HomeScreen becomes the root route.
-      // This prevents the back button from popping back to the SplashScreen
-      // (welcome/login UI) after the user is already authenticated.
+      // Always confirm email after register before entering the app.
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(
+          builder: (_) => EmailVerificationScreen(
+            email: session.user.email.isNotEmpty
+                ? session.user.email
+                : _emailController.text.trim(),
+          ),
+        ),
         (route) => false,
       );
     } on ApiException catch (exception) {
@@ -175,8 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textAlign: TextAlign.start,
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) =>
-                      FocusScope.of(context).nextFocus(),
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   hintText: en ? 'Enter your full name' : 'اكتب اسمك الكامل',
                   prefixIcon: const Icon(Icons.person_outline_rounded),
                   validator: (value) => value == null || value.trim().isEmpty
@@ -199,8 +238,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textDirection: TextDirection.ltr,
                   textAlign: TextAlign.left,
                   textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) =>
-                      FocusScope.of(context).nextFocus(),
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   hintText: 'example@mail.com',
                   prefixIcon: const Icon(Icons.mail_outline_rounded),
                   validator: (value) {
@@ -231,8 +269,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textDirection: TextDirection.ltr,
                   textAlign: TextAlign.left,
                   textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) =>
-                      FocusScope.of(context).nextFocus(),
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   hintText: '05XXXXXXXX',
                   prefixIcon: const Icon(Icons.phone_iphone_outlined),
                   validator: (value) {
@@ -264,8 +301,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       : AutovalidateMode.disabled,
                   textAlign: TextAlign.start,
                   textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) =>
-                      FocusScope.of(context).nextFocus(),
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   hintText: en ? 'Riyadh, Saudi Arabia' : 'الرياض، السعودية',
                   prefixIcon: const Icon(Icons.place_outlined),
                   validator: (value) {
@@ -277,6 +313,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: AppSpacing.md),
+                _FieldLabel(
+                    text: en
+                        ? 'Job title (optional)'
+                        : 'المسمى الوظيفي (اختياري)'),
+                const SizedBox(height: 6),
+                JobTitlePickerField(
+                  titles: _jobTitles,
+                  value: _selectedJobTitle,
+                  english: en,
+                  loading: _jobTitlesLoading,
+                  submitted: _submitted,
+                  errorText: _selectedJobTitle?.isOther == true &&
+                          _submitted &&
+                          _jobTitleOtherController.text.trim().isEmpty
+                      ? (en
+                          ? 'Please enter your job title'
+                          : 'يرجى كتابة المسمى الوظيفي عند اختيار أخرى.')
+                      : null,
+                  onChanged: (title) {
+                    setState(() {
+                      _selectedJobTitle = title;
+                      if (title?.isOther != true) {
+                        _jobTitleOtherController.clear();
+                      }
+                    });
+                  },
+                ),
+                if (_selectedJobTitle?.isOther == true) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _FieldLabel(
+                      text: en ? 'Your job title' : 'المسمى الوظيفي الخاص بك'),
+                  const SizedBox(height: 6),
+                  AppTextFormField(
+                    controller: _jobTitleOtherController,
+                    showSuccessWhenValid: true,
+                    successMessage: en ? 'Looks good' : 'يبدو جيداً',
+                    autovalidateMode: _submitted
+                        ? AutovalidateMode.onUserInteraction
+                        : AutovalidateMode.disabled,
+                    textAlign: TextAlign.start,
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                    maxLength: 120,
+                    hintText: en
+                        ? 'e.g. Logistics Consultant'
+                        : 'مثال: مستشار لوجستي',
+                    prefixIcon: const Icon(Icons.edit_outlined),
+                    validator: (value) {
+                      if (_selectedJobTitle?.isOther != true) return null;
+                      if (value == null || value.trim().isEmpty) {
+                        return en
+                            ? 'Please enter your job title'
+                            : 'يرجى كتابة المسمى الوظيفي عند اختيار أخرى.';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 _FieldLabel(text: en ? 'Password' : 'كلمة المرور'),
                 const SizedBox(height: 6),

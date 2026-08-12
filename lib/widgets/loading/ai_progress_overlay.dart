@@ -250,9 +250,7 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
                       children: [
                         Semantics(
                           liveRegion: true,
-                          label: en
-                              ? 'AI is working'
-                              : 'الذكاء الاصطناعي يعمل',
+                          label: en ? 'AI is working' : 'الذكاء الاصطناعي يعمل',
                           child: BrandedLoader(size: 64, halo: !reduce),
                         ),
                         const SizedBox(height: AppSpacing.lg),
@@ -286,9 +284,8 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
                         const SizedBox(height: AppSpacing.lg),
                         AnimatedOpacity(
                           opacity: _cancelEnabled ? 1 : 0.35,
-                          duration: reduce
-                              ? Duration.zero
-                              : MotionDurations.medium,
+                          duration:
+                              reduce ? Duration.zero : MotionDurations.medium,
                           child: TextButton(
                             onPressed: _cancelEnabled ? widget.onCancel : null,
                             style: TextButton.styleFrom(

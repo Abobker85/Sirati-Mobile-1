@@ -96,7 +96,9 @@ class AppSnackBar {
     show(
       context,
       message: exception.displayMessage,
-      variant: AppSnackBarVariant.error,
+      variant: exception.type == ApiErrorType.rateLimited
+          ? AppSnackBarVariant.warning
+          : AppSnackBarVariant.error,
       icon: _iconForApiType(exception.type),
       actionLabel: exception.isRetryable && onRetry != null ? retryLabel : null,
       onAction: onRetry,
@@ -171,6 +173,8 @@ class AppSnackBar {
         return Icons.search_off_rounded;
       case ApiErrorType.server:
         return Icons.cloud_off_rounded;
+      case ApiErrorType.rateLimited:
+        return Icons.hourglass_top_rounded;
       case ApiErrorType.validation:
       case ApiErrorType.unknown:
         return Icons.error_outline_rounded;

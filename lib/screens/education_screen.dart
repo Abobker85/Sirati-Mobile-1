@@ -285,8 +285,7 @@ class _EducationScreenState extends State<EducationScreen> {
                                 textInputAction: TextInputAction.done,
                                 onFieldSubmitted: (_) =>
                                     FocusScope.of(context).unfocus(),
-                                prefixIcon:
-                                    const Icon(Icons.school_outlined),
+                                prefixIcon: const Icon(Icons.school_outlined),
                                 showSuccessWhenValid: true,
                                 successMessage: english
                                     ? 'Nice — ATS loves clear majors'
