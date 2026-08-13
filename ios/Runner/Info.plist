@@ -53,5 +53,13 @@
 	</array>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Sirati needs access to your photo library so you can select a profile photo or attach images to your CV.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Sirati needs access to your camera so you can take a profile photo directly within the app.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Sirati uses your location to show job opportunities and CV templates relevant to your area.</string>
+	<key>MinimumOSVersion</key>
+	<string>15.0</string>
 </dict>
 </plist>
