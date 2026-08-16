@@ -1,47 +1,20 @@
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
-/// Thin, never-throwing Firebase Analytics wrapper.
+/// Thin, never-throwing analytics facade.
 ///
-/// Mirrors [NotificationService] style: singleton access, static helpers, and
-/// hard privacy rules — no CV text, names, emails, phones, free text, or exact
-/// scores. Only buckets, ids, enums, and durations.
+/// Firebase Analytics is temporarily disabled on iOS due to a launch-time
+/// plugin registration crash. Keep this facade in place so call sites stay
+/// stable while analytics events become no-ops.
 class AnalyticsService {
   AnalyticsService._();
 
   static final AnalyticsService instance = AnalyticsService._();
 
-  static FirebaseAnalytics get _analytics => FirebaseAnalytics.instance;
+  static List<NavigatorObserver> get navigatorObservers =>
+      const <NavigatorObserver>[];
 
-  /// Attach to [MaterialApp.navigatorObservers] for automatic screen views.
-  ///
-  /// Prefer [navigatorObservers] so tests / early boot without
-  /// [Firebase.initializeApp] do not throw.
-  static FirebaseAnalyticsObserver get observer =>
-      FirebaseAnalyticsObserver(analytics: _analytics);
-
-  /// Safe for [MaterialApp.navigatorObservers] when Firebase may be absent.
-  static List<NavigatorObserver> get navigatorObservers {
-    if (!_firebaseReady) return const <NavigatorObserver>[];
-    try {
-      return <NavigatorObserver>[observer];
-    } catch (e, st) {
-      _debugError('navigatorObservers', e, st);
-      return const <NavigatorObserver>[];
-    }
-  }
-
-  /// Call once after [Firebase.initializeApp].
-  static Future<void> initialize() async {
-    if (!_firebaseReady) return;
-    try {
-      await _analytics.setAnalyticsCollectionEnabled(true);
-    } catch (e, st) {
-      _debugError('initialize', e, st);
-    }
-  }
+  static Future<void> initialize() async {}
 
   // ── Core plumbing ────────────────────────────────────────────────────
 
@@ -49,28 +22,9 @@ class AnalyticsService {
     String name, [
     Map<String, Object>? parameters,
   ]) async {
-    try {
-      final safe = _sanitize(parameters);
-      if (kDebugMode) {
-        debugPrint('[Analytics] $name${safe.isEmpty ? '' : ' $safe'}');
-      }
-      // Widget/golden tests (and early boot) may run without Firebase.initializeApp.
-      if (!_firebaseReady) return;
-      await _analytics.logEvent(
-        name: name,
-        parameters: safe.isEmpty ? null : safe,
-      );
-    } catch (e, st) {
-      _debugError(name, e, st);
-    }
-  }
-
-  /// True once [Firebase.initializeApp] has created the default app.
-  static bool get _firebaseReady {
-    try {
-      return Firebase.apps.isNotEmpty;
-    } catch (_) {
-      return false;
+    final safe = _sanitize(parameters);
+    if (kDebugMode) {
+      debugPrint('[Analytics disabled] $name${safe.isEmpty ? '' : ' $safe'}');
     }
   }
 
@@ -78,34 +32,18 @@ class AnalyticsService {
     required String screenName,
     String? screenClass,
   }) async {
-    try {
-      if (kDebugMode) {
-        debugPrint('[Analytics] screen_view name=$screenName');
-      }
-      if (!_firebaseReady) return;
-      await _analytics.logScreenView(
-        screenName: screenName,
-        screenClass: screenClass ?? screenName,
-      );
-    } catch (e, st) {
-      _debugError('screen_view', e, st);
+    if (kDebugMode) {
+      debugPrint('[Analytics disabled] screen_view name=$screenName');
     }
   }
 
   /// Opaque backend user id only — never email.
   static Future<void> setUserId(String? userId) async {
-    try {
-      if (!_firebaseReady) return;
+    if (kDebugMode) {
       final id = userId?.trim();
-      if (id == null || id.isEmpty || id == '0') {
-        await _analytics.setUserId(id: null);
-        if (kDebugMode) debugPrint('[Analytics] setUserId=null');
-        return;
-      }
-      await _analytics.setUserId(id: id);
-      if (kDebugMode) debugPrint('[Analytics] setUserId=$id');
-    } catch (e, st) {
-      _debugError('setUserId', e, st);
+      debugPrint(
+        '[Analytics disabled] setUserId=${id == null || id.isEmpty || id == '0' ? 'null' : id}',
+      );
     }
   }
 
@@ -113,14 +51,8 @@ class AnalyticsService {
     required String name,
     required String? value,
   }) async {
-    try {
-      if (!_firebaseReady) return;
-      await _analytics.setUserProperty(name: name, value: value);
-      if (kDebugMode) {
-        debugPrint('[Analytics] user_property $name=$value');
-      }
-    } catch (e, st) {
-      _debugError('setUserProperty:$name', e, st);
+    if (kDebugMode) {
+      debugPrint('[Analytics disabled] user_property $name=$value');
     }
   }
 
@@ -278,11 +210,5 @@ class AnalyticsService {
       // Skip lists, maps, objects.
     });
     return out;
-  }
-
-  static void _debugError(String where, Object e, StackTrace st) {
-    if (kDebugMode) {
-      debugPrint('[Analytics] suppressed error at $where: $e');
-    }
   }
 }
