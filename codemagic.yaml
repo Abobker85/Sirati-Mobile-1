@@ -70,7 +70,7 @@ workflows:
       app_store_connect: Codemagic Sirati CI
     environment:
       flutter: stable
-      xcode: latest
+      xcode: 16.4
       cocoapods: default
       ios_signing:
         distribution_type: app_store
