@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'app_locale.dart';
@@ -123,6 +125,12 @@ Future<bool> _initFirebaseStack() async {
   }
 
   try {
+    _installCrashlyticsErrorHandlers();
+  } catch (e, st) {
+    debugPrint('[Firebase] Crashlytics setup failed: $e\n$st');
+  }
+
+  try {
     await AnalyticsService.initialize();
     unawaited(AnalyticsService.setAppLanguage(AppLocale.languageCode.value));
     unawaited(AnalyticsService.setThemeMode(
@@ -142,6 +150,24 @@ Future<bool> _initFirebaseStack() async {
   }
 
   return true;
+}
+
+void _installCrashlyticsErrorHandlers() {
+  unawaited(FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true));
+
+  final previousFlutterOnError = FlutterError.onError;
+  FlutterError.onError = (details) {
+    unawaited(FirebaseCrashlytics.instance.recordFlutterFatalError(details));
+    previousFlutterOnError?.call(details);
+  };
+
+  final previousPlatformOnError = PlatformDispatcher.instance.onError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    unawaited(
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true),
+    );
+    return previousPlatformOnError?.call(error, stack) ?? false;
+  };
 }
 
 class SiratiApp extends StatelessWidget {
