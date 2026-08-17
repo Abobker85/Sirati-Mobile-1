@@ -112,50 +112,67 @@ class MotionTabStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Reduced-motion users get the stable, zero-motion IndexedStack. Phone
-    // and tablet layouts with animations enabled use a short directional
-    // transition while every tab remains mounted, preserving scroll/form state.
+    // IndexedStack is always the base so only the active tab is ever painted.
+    // This guarantees inactive tabs can never leak/overlap content (a known
+    // iOS compositing issue when hiding tabs with opacity alone), while every
+    // tab stays mounted to preserve scroll/form state.
+    //
+    // When animations are enabled we additionally animate the active tab's
+    // enter transition. The transition is applied to the active child only,
+    // never to inactive children, so there is no risk of mixed content.
     if (MotionSettings.reduce(context)) {
       return IndexedStack(index: currentIndex, children: children);
     }
 
     final directionSign = MotionAxis.endSign(context);
-    return Stack(
-      fit: StackFit.expand,
+    final activeChild = children[currentIndex];
+
+    return IndexedStack(
+      index: currentIndex,
       children: [
         for (var index = 0; index < children.length; index++)
-          IgnorePointer(
-            ignoring: index != currentIndex,
-            child: ExcludeSemantics(
-              excluding: index != currentIndex,
-              child: TickerMode(
-                enabled: index == currentIndex,
-                child: AnimatedOpacity(
-                  opacity: index == currentIndex ? 1 : 0,
-                  duration: index == currentIndex
-                      ? MotionDurations.medium
-                      : MotionDurations.fast,
-                  curve: index == currentIndex
-                      ? MotionCurves.enter
-                      : MotionCurves.exit,
-                  child: AnimatedSlide(
-                    offset: index == currentIndex
-                        ? Offset.zero
-                        : Offset(
-                            index < currentIndex
-                                ? -directionSign * .035
-                                : directionSign * .035,
-                            0,
-                          ),
-                    duration: MotionDurations.medium,
-                    curve: MotionCurves.enter,
-                    child: children[index],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          if (index == currentIndex)
+            _TabEnterTransition(
+              key: ValueKey('tab-$index'),
+              directionSign: directionSign,
+              child: activeChild,
+            )
+          else
+            children[index],
       ],
+    );
+  }
+}
+
+/// Animates the active tab's enter transition (fade + slight directional
+/// slide). Used only for the currently active child inside [MotionTabStack];
+/// inactive tabs are never wrapped, so they can never overlap the active tab.
+class _TabEnterTransition extends StatelessWidget {
+  final double directionSign;
+  final Widget child;
+
+  const _TabEnterTransition({
+    super.key,
+    required this.directionSign,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: MotionDurations.medium,
+      curve: MotionCurves.enter,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(directionSign * .035 * (1 - value), 0),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
