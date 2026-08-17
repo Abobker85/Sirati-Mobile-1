@@ -52,7 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadJobTitles() async {
     try {
-      final titles = await _content.jobTitles();
+      final titles = await _content.jobTitles(force: true);
       if (!mounted) return;
       setState(() {
         _jobTitles = titles;
