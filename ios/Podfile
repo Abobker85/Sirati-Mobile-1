@@ -24,6 +24,7 @@ def flutter_root
 end
 
 require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+require 'xcodeproj'
 
 flutter_ios_podfile_setup
 
@@ -47,6 +48,25 @@ post_install do |installer|
       ldflags = ldflags.split(' ') if ldflags.is_a?(String)
       ldflags << '-ObjC' unless ldflags.include?('-ObjC')
       config.build_settings['OTHER_LDFLAGS'] = ldflags
+    end
+  end
+
+  runner_project_path = File.expand_path('Runner.xcodeproj', __dir__)
+  runner_project = Xcodeproj::Project.open(runner_project_path)
+  runner_target = runner_project.targets.find { |target| target.name == 'Runner' }
+
+  if runner_target
+    phase_name = 'Upload Crashlytics dSYMs'
+    existing_phase = runner_target.shell_script_build_phases.find { |phase| phase.name == phase_name }
+
+    unless existing_phase
+      crashlytics_phase = runner_target.new_shell_script_build_phase(phase_name)
+      crashlytics_phase.shell_script = '"${PODS_ROOT}/FirebaseCrashlytics/run"'
+      crashlytics_phase.input_paths = [
+        '${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}',
+        '$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)',
+      ]
+      runner_project.save
     end
   end
 end

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -48,6 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(FirebaseCrashlytics.instance.log('RegisterScreen opened'));
     _loadJobTitles();
   }
 
@@ -64,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _loadJobTitles() async {
     try {
-      final titles = await _contentService.jobTitles();
+      final titles = await _contentService.jobTitles(force: true);
       if (!mounted) return;
       setState(() {
         _jobTitles = titles;
