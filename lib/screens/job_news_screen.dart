@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../app_locale.dart';
 import '../models/job_news.dart';
 import '../services/mobile_content_service.dart';
@@ -10,6 +8,7 @@ import '../theme/app_theme.dart';
 import '../services/api_exception.dart';
 import '../services/session_cache.dart';
 import '../utils/app_format.dart';
+import '../utils/safe_url.dart';
 import '../widgets/loading/app_async_body.dart';
 import '../widgets/loading/app_skeleton.dart';
 import '../widgets/motion.dart';
@@ -403,8 +402,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                   if (actionUrl != null) ...[
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
-                      onPressed: () => launchUrl(Uri.parse(actionUrl),
-                          mode: LaunchMode.externalApplication),
+                      onPressed: () => launchSafeExternalUrl(actionUrl),
                       icon: const Icon(Icons.send_rounded),
                       label: Text(english ? 'Apply Now' : 'تقدّم الآن'),
                     ),

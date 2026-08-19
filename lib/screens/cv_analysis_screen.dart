@@ -10,6 +10,7 @@ import '../services/analytics_service.dart';
 import '../services/api_exception.dart';
 import '../services/cv_api_service.dart';
 import '../services/notification_engagement_service.dart';
+import '../utils/idempotency_key.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/form_fields.dart';
 import '../widgets/loading/ai_progress_overlay.dart';
@@ -38,6 +39,8 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
   /// Bumped on each submit/cancel so a late AI response cannot apply.
   int _aiRequestGen = 0;
   bool _pollingPaused = false;
+  String? _submitIdempotencyKey;
+  static const _maxUploadBytes = 5 * 1024 * 1024;
 
   @override
   void initState() {
@@ -59,15 +62,27 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
   }
 
   Future<void> _pickFile() async {
+    final english = AppLocale.isEnglish(context);
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'txt'],
-      withData: true,
+      withData: false,
     );
-
+    if (!mounted) return;
     if (result == null || result.files.isEmpty) return;
 
-    setState(() => _uploadedFile = result.files.single);
+    final file = result.files.single;
+    if (file.size > _maxUploadBytes) {
+      AppSnackBar.error(
+        context,
+        english
+            ? 'File must be 5 MB or smaller.'
+            : 'يجب أن يكون حجم الملف 5 ميغابايت أو أقل.',
+      );
+      return;
+    }
+
+    setState(() => _uploadedFile = file);
   }
 
   void _clearFile() => setState(() => _uploadedFile = null);
@@ -86,6 +101,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
       return;
     }
     final requestId = ++_aiRequestGen;
+    _submitIdempotencyKey ??= newIdempotencyKey();
     setState(() => _isLoading = true);
     final startedAt = DateTime.now();
     AnalyticsService.logAnalysisStarted();
@@ -106,10 +122,14 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
     );
 
     try {
+      final resumeFile = await _multipartFile();
+      if (!mounted || requestId != _aiRequestGen) return;
+
       var analysis = await _apiService.submitAnalysis(
         targetJobTitle: _jobTitleController.text.trim(),
         resumeText: _resumeTextController.text,
-        resumeFile: await _multipartFile(),
+        resumeFile: resumeFile,
+        idempotencyKey: _submitIdempotencyKey,
       );
 
       final poll = await _apiService.pollAnalysis(
@@ -155,6 +175,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
       // Fire-and-forget conversion for smart-notification measurement.
       NotificationEngagementService.instance
           .reportConversion('analysis_completed');
+      _submitIdempotencyKey = null;
       Navigator.of(context).push(
         MaterialPageRoute(
             builder: (_) => AnalysisResultScreen(analysis: analysis)),
@@ -186,7 +207,10 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
     final file = _uploadedFile;
     if (file == null) return null;
 
+    if (file.size > _maxUploadBytes) return null;
+
     if (file.bytes != null) {
+      if (file.bytes!.length > _maxUploadBytes) return null;
       return http.MultipartFile.fromBytes(
         'resume_file',
         file.bytes!,

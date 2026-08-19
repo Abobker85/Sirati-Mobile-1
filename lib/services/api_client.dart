@@ -16,34 +16,46 @@ class ApiClient {
   final Future<String?> Function()? _tokenProvider;
   static const _timeout = Duration(seconds: 45);
 
-  /// Invoked once when an authenticated call returns 401/403.
+  /// Invoked once when an authenticated call returns 401.
   /// Set from app bootstrap (see [AuthSessionGuard]).
-  static Future<void> Function()? onAuthExpired;
+  ///
+  /// [requestToken] is the bearer token sent with the failed request so a
+  /// delayed 401 cannot clear a newer session.
+  static Future<void> Function({String? requestToken})? onAuthExpired;
 
   Future<Map<String, dynamic>> getJson(String path) async {
-    final headers = await _headers();
-    final response = await _send(() {
-      return _httpClient.get(
-        ApiConfig.uri(path),
-        headers: headers,
-      );
-    });
+    final authorized = await _authorizedHeaders();
+    final response = await _send(
+      () {
+        return _httpClient.get(
+          ApiConfig.uri(path),
+          headers: authorized.headers,
+        );
+      },
+      requestToken: authorized.token,
+    );
 
     return _decodeObject(response);
   }
 
   Future<Map<String, dynamic>> postJson(
     String path,
-    Map<String, dynamic> body,
-  ) async {
-    final headers = await _headers(contentType: 'application/json');
-    final response = await _send(() {
-      return _httpClient.post(
-        ApiConfig.uri(path),
-        headers: headers,
-        body: jsonEncode(body),
-      );
-    });
+    Map<String, dynamic> body, {
+    Map<String, String>? extraHeaders,
+  }) async {
+    final authorized =
+        await _authorizedHeaders(contentType: 'application/json');
+    final headers = {...authorized.headers, ...?extraHeaders};
+    final response = await _send(
+      () {
+        return _httpClient.post(
+          ApiConfig.uri(path),
+          headers: headers,
+          body: jsonEncode(body),
+        );
+      },
+      requestToken: authorized.token,
+    );
 
     return _decodeObject(response);
   }
@@ -52,29 +64,36 @@ class ApiClient {
     String path,
     Map<String, dynamic> body,
   ) async {
-    final headers = await _headers(contentType: 'application/json');
-    final response = await _send(() {
-      return _httpClient.put(
-        ApiConfig.uri(path),
-        headers: headers,
-        body: jsonEncode(body),
-      );
-    });
+    final authorized =
+        await _authorizedHeaders(contentType: 'application/json');
+    final response = await _send(
+      () {
+        return _httpClient.put(
+          ApiConfig.uri(path),
+          headers: authorized.headers,
+          body: jsonEncode(body),
+        );
+      },
+      requestToken: authorized.token,
+    );
 
     return _decodeObject(response);
   }
 
   Future<Map<String, dynamic>> deleteJson(String path,
       {Map<String, dynamic>? body}) async {
-    final headers =
-        await _headers(contentType: body != null ? 'application/json' : null);
-    final response = await _send(() {
-      return _httpClient.delete(
-        ApiConfig.uri(path),
-        headers: headers,
-        body: body != null ? jsonEncode(body) : null,
-      );
-    });
+    final authorized = await _authorizedHeaders(
+        contentType: body != null ? 'application/json' : null);
+    final response = await _send(
+      () {
+        return _httpClient.delete(
+          ApiConfig.uri(path),
+          headers: authorized.headers,
+          body: body != null ? jsonEncode(body) : null,
+        );
+      },
+      requestToken: authorized.token,
+    );
 
     return _decodeObject(response);
   }
@@ -83,26 +102,34 @@ class ApiClient {
     String path, {
     required Map<String, String> fields,
     http.MultipartFile? file,
+    Map<String, String>? extraHeaders,
   }) async {
-    final headers = await _headers();
-    final response = await _send(() async {
-      final request = http.MultipartRequest('POST', ApiConfig.uri(path))
-        ..headers.addAll(headers)
-        ..fields.addAll(fields);
+    final authorized = await _authorizedHeaders();
+    final headers = {...authorized.headers, ...?extraHeaders};
+    final response = await _send(
+      () async {
+        final request = http.MultipartRequest('POST', ApiConfig.uri(path))
+          ..headers.addAll(headers)
+          ..fields.addAll(fields);
 
-      if (file != null) {
-        request.files.add(file);
-      }
+        if (file != null) {
+          request.files.add(file);
+        }
 
-      final streamedResponse =
-          await _httpClient.send(request).timeout(_timeout);
-      return http.Response.fromStream(streamedResponse);
-    });
+        final streamedResponse =
+            await _httpClient.send(request).timeout(_timeout);
+        return http.Response.fromStream(streamedResponse);
+      },
+      requestToken: authorized.token,
+    );
 
     return _decodeObject(response);
   }
 
-  Future<http.Response> _send(Future<http.Response> Function() request) async {
+  Future<http.Response> _send(
+    Future<http.Response> Function() request, {
+    String? requestToken,
+  }) async {
     try {
       final response = await request().timeout(_timeout);
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -117,7 +144,7 @@ class ApiClient {
           onAuthExpired != null) {
         // Fire-and-forget; do not block the throw path.
         // ignore: unawaited_futures
-        onAuthExpired!();
+        onAuthExpired!(requestToken: requestToken);
       }
       throw exception;
     } on ApiException {
@@ -125,6 +152,11 @@ class ApiClient {
     } on TimeoutException {
       throw const ApiException.timeout(
           'انتهت مهلة الاتصال بالخادم. حاول مرة أخرى.');
+    } on FormatException {
+      throw const ApiException(
+        'تعذر قراءة استجابة الخادم.',
+        type: ApiErrorType.unknown,
+      );
     } on http.ClientException {
       throw const ApiException.network(
           'تعذر الاتصال بالخادم. تأكد من تشغيل Laravel وصحة رابط API.');
@@ -136,16 +168,32 @@ class ApiClient {
   }
 
   Map<String, dynamic> _decodeObject(http.Response response) {
-    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-    if (decoded is Map<String, dynamic>) {
-      return decoded;
+    final body = utf8.decode(response.bodyBytes);
+    if (body.trim().isEmpty) {
+      throw const ApiException(
+        'استجابة الخادم فارغة.',
+        type: ApiErrorType.unknown,
+      );
+    }
+
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    } on FormatException {
+      throw const ApiException(
+        'تعذر قراءة استجابة الخادم.',
+        type: ApiErrorType.unknown,
+      );
     }
 
     throw const ApiException('استجابة الخادم غير متوقعة.',
         type: ApiErrorType.unknown);
   }
 
-  Future<Map<String, String>> _headers({String? contentType}) async {
+  Future<({Map<String, String> headers, String? token})> _authorizedHeaders(
+      {String? contentType}) async {
     final headers = <String, String>{
       'Accept': 'application/json',
       'X-Sirati-Async': '1',
@@ -159,7 +207,7 @@ class ApiClient {
       headers['Authorization'] = 'Bearer $token';
     }
 
-    return headers;
+    return (headers: headers, token: token);
   }
 
   ApiException _exceptionFromResponse(http.Response response) {
@@ -184,6 +232,13 @@ class ApiClient {
           statusCode: response.statusCode,
           errors: errors,
           type: _typeFromStatus(response.statusCode));
+    } on ApiException catch (exception) {
+      if (exception.statusCode != null) rethrow;
+      return ApiException(
+        'فشل الطلب برمز ${response.statusCode}.',
+        statusCode: response.statusCode,
+        type: _typeFromStatus(response.statusCode),
+      );
     } catch (_) {
       return ApiException(
         'فشل الطلب برمز ${response.statusCode}.',

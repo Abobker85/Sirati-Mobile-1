@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../app_locale.dart';
 import '../services/analytics_service.dart';
@@ -10,6 +11,7 @@ import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../services/session_cache.dart';
 import '../utils/app_format.dart';
+import '../utils/safe_url.dart';
 import '../widgets/app_list_tile.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/empty_state.dart';
@@ -56,6 +58,18 @@ class _HomeScreenState extends State<HomeScreen> {
     NotificationEngagementService.instance.reportActivity(event: 'app_open');
     // Home is one route — log the active tab manually.
     _logTabScreen(_currentIndex);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_activatePushAfterVisible());
+    });
+  }
+
+  Future<void> _activatePushAfterVisible() async {
+    try {
+      await NotificationService.instance.requestPermission();
+      await NotificationService.instance.registerToken();
+    } catch (e, st) {
+      debugPrint('[FCM] post-home registration skipped: $e\n$st');
+    }
   }
 
   void _setTab(int index) {
@@ -106,10 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       switch (actionType) {
         case 'url':
-          if (actionUrl != null && actionUrl.isNotEmpty) {
-            launchUrl(Uri.parse(actionUrl),
-                mode: LaunchMode.externalApplication);
-          }
+          unawaited(launchSafeExternalUrl(actionUrl));
           break;
         case 'screen':
           _navigateToScreen(actionUrl);

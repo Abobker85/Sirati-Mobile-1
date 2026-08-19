@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:sirati/app_locale.dart';
 import 'package:sirati/models/ai_status.dart';
 import 'package:sirati/models/cv_analysis.dart';
@@ -127,7 +128,8 @@ class _PollingCvApiService extends CvApiService {
   Future<CvAnalysis> submitAnalysis({
     required String targetJobTitle,
     required String resumeText,
-    dynamic resumeFile,
+    http.MultipartFile? resumeFile,
+    String? idempotencyKey,
   }) async {
     statuses.add(AiStatus.queued);
     return _analysis(AiStatus.queued);

@@ -24,6 +24,7 @@ class CvApiService {
     required String targetJobTitle,
     required String resumeText,
     http.MultipartFile? resumeFile,
+    String? idempotencyKey,
   }) async {
     final response = await _apiClient.postMultipart(
       '/cv-analyses',
@@ -32,6 +33,7 @@ class CvApiService {
         if (resumeText.trim().isNotEmpty) 'resume_text': resumeText.trim(),
       },
       file: resumeFile,
+      extraHeaders: _idempotencyHeaders(idempotencyKey),
     );
 
     return CvAnalysis.fromJson(response['data'] as Map<String, dynamic>);
@@ -57,15 +59,32 @@ class CvApiService {
   }
 
   Future<List<CvAnalysis>> listAnalyses() async {
-    final response = await _apiClient.getJson('/cv-analyses');
-    return (response['data'] as List? ?? [])
-        .whereType<Map<String, dynamic>>()
-        .map(CvAnalysis.fromJson)
-        .toList();
+    final page = await listAnalysesPage();
+    return page.items;
   }
 
-  Future<GeneratedCv> generateCv(Map<String, dynamic> payload) async {
-    final response = await _apiClient.postJson('/generated-cvs', payload);
+  Future<PagedList<CvAnalysis>> listAnalysesPage({int page = 1}) async {
+    final response =
+        await _apiClient.getJson('/cv-analyses?page=$page&per_page=20');
+    return PagedList(
+      items: (response['data'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(CvAnalysis.fromJson)
+          .toList(),
+      currentPage: _intMeta(response, 'current_page', page),
+      lastPage: _intMeta(response, 'last_page', 1),
+    );
+  }
+
+  Future<GeneratedCv> generateCv(
+    Map<String, dynamic> payload, {
+    String? idempotencyKey,
+  }) async {
+    final response = await _apiClient.postJson(
+      '/generated-cvs',
+      payload,
+      extraHeaders: _idempotencyHeaders(idempotencyKey),
+    );
     return GeneratedCv.fromJson(response['data'] as Map<String, dynamic>);
   }
 
@@ -152,10 +171,12 @@ class CvApiService {
   Future<GeneratedCv> generateCvFromAnalysis({
     required int analysisId,
     required Map<String, dynamic> overrides,
+    String? idempotencyKey,
   }) async {
     final response = await _apiClient.postJson(
       '/cv-analyses/$analysisId/generated-cv',
       overrides,
+      extraHeaders: _idempotencyHeaders(idempotencyKey),
     );
 
     return GeneratedCv.fromJson(response['data'] as Map<String, dynamic>);
@@ -181,11 +202,34 @@ class CvApiService {
   }
 
   Future<List<GeneratedCv>> listGeneratedCvs() async {
-    final response = await _apiClient.getJson('/generated-cvs');
-    return (response['data'] as List? ?? [])
-        .whereType<Map<String, dynamic>>()
-        .map(GeneratedCv.fromJson)
-        .toList();
+    final page = await listGeneratedCvsPage();
+    return page.items;
+  }
+
+  Future<PagedList<GeneratedCv>> listGeneratedCvsPage({int page = 1}) async {
+    final response =
+        await _apiClient.getJson('/generated-cvs?page=$page&per_page=20');
+    return PagedList(
+      items: (response['data'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(GeneratedCv.fromJson)
+          .toList(),
+      currentPage: _intMeta(response, 'current_page', page),
+      lastPage: _intMeta(response, 'last_page', 1),
+    );
+  }
+
+  Map<String, String> _idempotencyHeaders(String? key) {
+    if (key == null || key.isEmpty) return const {};
+    return {'Idempotency-Key': key};
+  }
+
+  int _intMeta(Map<String, dynamic> response, String key, int fallback) {
+    final meta = response['meta'];
+    if (meta is! Map) return fallback;
+    final value = meta[key];
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
   }
 
   Future<List<CvTemplate>> listCvTemplates({required bool english}) async {
@@ -259,6 +303,20 @@ class CvApiService {
 
     return AiPollResult(value: current);
   }
+}
+
+class PagedList<T> {
+  final List<T> items;
+  final int currentPage;
+  final int lastPage;
+
+  const PagedList({
+    required this.items,
+    required this.currentPage,
+    required this.lastPage,
+  });
+
+  bool get hasMore => currentPage < lastPage;
 }
 
 class AiPollResult<T> {

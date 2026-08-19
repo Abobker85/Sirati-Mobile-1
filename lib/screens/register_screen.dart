@@ -11,7 +11,9 @@ import '../services/api_exception.dart';
 import '../services/auth_api_service.dart';
 import '../services/mobile_content_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/root_navigation.dart';
 import '../widgets/app_snack_bar.dart';
+import '../widgets/auth_form_constraint.dart';
 import '../widgets/form_fields.dart';
 import '../widgets/job_title_picker_field.dart';
 import '../widgets/language_toggle.dart';
@@ -123,16 +125,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       AnalyticsService.logRegisterSuccess();
       HapticFeedback.lightImpact();
-      // Always confirm email after register before entering the app.
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => EmailVerificationScreen(
-            email: session.user.email.isNotEmpty
-                ? session.user.email
-                : _emailController.text.trim(),
-          ),
+      replaceRoot(
+        context,
+        EmailVerificationScreen(
+          email: session.user.email.isNotEmpty
+              ? session.user.email
+              : _emailController.text.trim(),
         ),
-        (route) => false,
       );
     } on ApiException catch (exception) {
       if (mounted) {
@@ -161,10 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _continueAsPreview() {
     // Use pushAndRemoveUntil so HomeScreen becomes the root route,
     // preventing the back button from returning to the welcome/auth screens.
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-      (route) => false,
-    );
+    replaceRoot(context, const HomeScreen());
   }
 
   @override
@@ -174,7 +170,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: context.sirati.background,
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: AuthFormConstraint(
+          child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 14, 24, 28),
           child: Form(
             key: _formKey,
@@ -546,6 +543,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

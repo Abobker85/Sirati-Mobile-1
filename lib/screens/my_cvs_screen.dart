@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../app_locale.dart';
 import '../models/cv_template.dart';
 import '../services/api_exception.dart';
@@ -8,6 +6,7 @@ import '../services/cv_api_service.dart';
 import '../services/mobile_content_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_format.dart';
+import '../utils/safe_url.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/loading/app_async_body.dart';
@@ -273,8 +272,7 @@ class _MyCvsScreenState extends State<MyCvsScreen> {
         : const _TemplateSelection.useDefault();
     if (!mounted || !selection.shouldDownload) return;
     final launchUrlText = _urlForTemplate(url, selection.template?.slug);
-    final launched = await launchUrl(Uri.parse(launchUrlText),
-        mode: LaunchMode.externalApplication);
+    final launched = await launchSafeExternalUrl(launchUrlText);
     if (!mounted) return;
     if (!launched) {
       _message(english ? 'Could not open PDF.' : 'تعذر فتح ملف PDF.');

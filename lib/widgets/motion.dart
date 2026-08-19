@@ -100,7 +100,7 @@ class SiratiPageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
-class MotionTabStack extends StatelessWidget {
+class MotionTabStack extends StatefulWidget {
   final int currentIndex;
   final List<Widget> children;
 
@@ -111,68 +111,118 @@ class MotionTabStack extends StatelessWidget {
   });
 
   @override
+  State<MotionTabStack> createState() => _MotionTabStackState();
+}
+
+class _MotionTabStackState extends State<MotionTabStack> {
+  late int _renderedIndex = widget.currentIndex;
+  bool _animateTabChanges = false;
+
+  @override
+  void didUpdateWidget(covariant MotionTabStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentIndex != widget.currentIndex) {
+      _renderedIndex = widget.currentIndex;
+      _animateTabChanges = true;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     // IndexedStack is always the base so only the active tab is ever painted.
     // This guarantees inactive tabs can never leak/overlap content (a known
     // iOS compositing issue when hiding tabs with opacity alone), while every
     // tab stays mounted to preserve scroll/form state.
     //
-    // When animations are enabled we additionally animate the active tab's
-    // enter transition. The transition is applied to the active child only,
-    // never to inactive children, so there is no risk of mixed content.
+    // Each slot keeps a stable pane widget so form state survives tab changes.
+    // The first painted Home frame is fully visible; enter motion runs only
+    // when the user actually changes tabs.
     if (MotionSettings.reduce(context)) {
-      return IndexedStack(index: currentIndex, children: children);
+      return IndexedStack(index: _renderedIndex, children: widget.children);
     }
 
     final directionSign = MotionAxis.endSign(context);
-    final activeChild = children[currentIndex];
 
     return IndexedStack(
-      index: currentIndex,
+      index: _renderedIndex,
       children: [
-        for (var index = 0; index < children.length; index++)
-          if (index == currentIndex)
-            _TabEnterTransition(
-              key: ValueKey('tab-$index'),
-              directionSign: directionSign,
-              child: activeChild,
-            )
-          else
-            children[index],
+        for (var index = 0; index < widget.children.length; index++)
+          _TabEnterTransition(
+            key: ValueKey('tab-$index'),
+            active: index == _renderedIndex,
+            animateOnActivate: _animateTabChanges,
+            directionSign: directionSign,
+            child: widget.children[index],
+          ),
       ],
     );
   }
 }
 
-/// Animates the active tab's enter transition (fade + slight directional
-/// slide). Used only for the currently active child inside [MotionTabStack];
-/// inactive tabs are never wrapped, so they can never overlap the active tab.
-class _TabEnterTransition extends StatelessWidget {
+/// Keeps one stable pane per tab. The first frame is fully visible; later
+/// activations fade/slide in without rebuilding the tab's child state.
+class _TabEnterTransition extends StatefulWidget {
+  final bool active;
+  final bool animateOnActivate;
   final double directionSign;
   final Widget child;
 
   const _TabEnterTransition({
     super.key,
+    required this.active,
+    required this.animateOnActivate,
     required this.directionSign,
     required this.child,
   });
 
   @override
+  State<_TabEnterTransition> createState() => _TabEnterTransitionState();
+}
+
+class _TabEnterTransitionState extends State<_TabEnterTransition>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    value: 1,
+    duration: MotionDurations.medium,
+  );
+  late final Animation<double> _curved = CurvedAnimation(
+    parent: _controller,
+    curve: MotionCurves.enter,
+  );
+
+  @override
+  void didUpdateWidget(covariant _TabEnterTransition oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active &&
+        !oldWidget.active &&
+        widget.animateOnActivate &&
+        _controller.value == 1) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: MotionDurations.medium,
-      curve: MotionCurves.enter,
-      builder: (context, value, child) {
+    return AnimatedBuilder(
+      animation: _curved,
+      builder: (context, child) {
+        final value = _curved.value;
         return Opacity(
           opacity: value,
           child: Transform.translate(
-            offset: Offset(directionSign * .035 * (1 - value), 0),
+            offset: Offset(widget.directionSign * .035 * (1 - value), 0),
             child: child,
           ),
         );
       },
-      child: child,
+      child: widget.child,
     );
   }
 }

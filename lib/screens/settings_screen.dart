@@ -11,6 +11,7 @@ import '../services/preference_store.dart';
 import '../services/session_cache.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_theme_controller.dart';
+import '../utils/root_navigation.dart';
 import '../widgets/app_list_tile.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/empty_state.dart';
@@ -156,7 +157,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await _auth.logout();
     } catch (_) {
       serverFailed = true;
-      // Token is cleared in AuthApiService.finally
     }
     if (!mounted) return;
 
@@ -169,10 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
+    replaceRoot(context, const LoginScreen());
   }
 
   @override

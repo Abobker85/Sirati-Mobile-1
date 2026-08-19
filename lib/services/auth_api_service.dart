@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../models/auth_session.dart';
 import 'analytics_service.dart';
 import 'api_client.dart';
@@ -7,34 +9,29 @@ import 'notification_service.dart';
 import 'session_cache.dart';
 
 class AuthApiService {
-  AuthApiService(
-      {ApiClient? apiClient,
-      AuthTokenStore tokenStore = const AuthTokenStore()})
-      : _apiClient =
+  AuthApiService({
+    ApiClient? apiClient,
+    ApiClient? publicApiClient,
+    AuthTokenStore tokenStore = const AuthTokenStore(),
+  })  : _tokenStore = tokenStore,
+        _apiClient =
             apiClient ?? ApiClient(tokenProvider: tokenStore.readToken),
-        _tokenStore = tokenStore;
+        _publicClient = publicApiClient ?? apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
+  final ApiClient _publicClient;
   final AuthTokenStore _tokenStore;
 
   Future<AuthSession> login(
       {required String email, required String password}) async {
-    final response = await _apiClient.postJson('/auth/login', {
+    final response = await _publicClient.postJson('/auth/login', {
       'email': email,
       'password': password,
       'device_name': 'sirati-mobile',
     });
 
     final session = AuthSession.fromJson(response);
-    await _tokenStore.saveToken(session.token);
-    SessionCache.instance.setUser(session.user);
-    await _bindAnalyticsUser(session.user);
-
-    if (session.user.emailVerified) {
-      await NotificationService.instance.requestPermission();
-      await NotificationService.instance.registerToken();
-    }
-
+    await _saveSession(session);
     return session;
   }
 
@@ -68,15 +65,17 @@ class AuthApiService {
       body['job_title_other'] = jobTitleOther.trim();
     }
 
-    final response = await _apiClient.postJson('/auth/register', body);
+    final response = await _publicClient.postJson('/auth/register', body);
 
     final session = AuthSession.fromJson(response);
+    await _saveSession(session);
+    return session;
+  }
+
+  Future<void> _saveSession(AuthSession session) async {
     await _tokenStore.saveToken(session.token);
     SessionCache.instance.setUser(session.user);
     await _bindAnalyticsUser(session.user);
-
-    // FCM requires a verified email — deferred until after OTP success.
-    return session;
   }
 
   /// Opaque backend id only — never email/name.
@@ -96,12 +95,6 @@ class AuthApiService {
     );
     SessionCache.instance.setUser(user);
     await _bindAnalyticsUser(user);
-
-    if (user.emailVerified) {
-      await NotificationService.instance.requestPermission();
-      await NotificationService.instance.registerToken();
-    }
-
     return user;
   }
 
@@ -112,7 +105,7 @@ class AuthApiService {
   }
 
   Future<String> forgotPassword({required String email}) async {
-    final response = await _apiClient.postJson('/auth/forgot-password', {
+    final response = await _publicClient.postJson('/auth/forgot-password', {
       'email': email,
     });
 
@@ -126,7 +119,7 @@ class AuthApiService {
     required String password,
     required String passwordConfirmation,
   }) async {
-    final response = await _apiClient.postJson('/auth/reset-password', {
+    final response = await _publicClient.postJson('/auth/reset-password', {
       'email': email.trim(),
       'code': code.trim(),
       'password': password,
@@ -138,16 +131,24 @@ class AuthApiService {
   }
 
   Future<void> logout() async {
+    final token = await _tokenStore.readToken();
+    await _clearLocalSession();
+
+    if (token == null || token.isEmpty) return;
+    unawaited(_remoteLogoutCleanup(token));
+  }
+
+  Future<void> _remoteLogoutCleanup(String token) async {
+    final remote = ApiClient(tokenProvider: () async => token);
     try {
-      // Unregister FCM token before logout
-      await NotificationService.instance.unregisterToken();
-      await _apiClient.postJson('/auth/logout', const {});
-    } finally {
-      await _tokenStore.clearToken();
-      SessionCache.instance.clear();
-      await MobileContentService.clearAllCaches();
-      await AnalyticsService.clearUser();
-    }
+      final fcmToken = await NotificationService.instance.getToken();
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        await remote.deleteJson('/fcm-tokens', body: {'token': fcmToken});
+      }
+    } catch (_) {}
+    try {
+      await remote.postJson('/auth/logout', const {});
+    } catch (_) {}
   }
 
   Future<AuthUser?> me() async {
@@ -176,15 +177,18 @@ class AuthApiService {
   Future<void> deleteAccount({required String password}) async {
     try {
       await NotificationService.instance.unregisterToken();
-      await _apiClient.deleteJson('/auth/account', body: {
-        'password': password,
-      });
-    } finally {
-      await _tokenStore.clearToken();
-      SessionCache.instance.clear();
-      await MobileContentService.clearAllCaches();
-      await AnalyticsService.clearUser();
-    }
+    } catch (_) {}
+    await _apiClient.deleteJson('/auth/account', body: {
+      'password': password,
+    });
+    await _clearLocalSession();
+  }
+
+  Future<void> _clearLocalSession() async {
+    await _tokenStore.clearToken();
+    SessionCache.instance.clear();
+    await MobileContentService.clearAllCaches();
+    await AnalyticsService.clearUser();
   }
 
   Future<AuthUser> updateProfile({

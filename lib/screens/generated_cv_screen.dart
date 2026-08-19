@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../app_locale.dart';
 import '../models/cv_template.dart';
 import '../models/ai_status.dart';
 import '../models/generated_cv.dart';
 import '../services/cv_api_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/safe_url.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/motion.dart';
@@ -37,8 +37,7 @@ class GeneratedCvScreen extends StatelessWidget {
       return;
     }
 
-    final launched = await launchUrl(Uri.parse(pdfUrl),
-        mode: LaunchMode.externalApplication);
+    final launched = await launchSafeExternalUrl(pdfUrl);
     if (!launched && context.mounted) {
       _showMessage(context,
           english ? 'Could not open the PDF link.' : 'تعذر فتح رابط PDF.');

@@ -14,3 +14,23 @@ class AuthTokenStore {
 
   Future<void> clearToken() => _storage.delete(key: _tokenKey);
 }
+
+/// In-memory token store for unit tests.
+class MemoryAuthTokenStore extends AuthTokenStore {
+  MemoryAuthTokenStore([this.value]);
+
+  String? value;
+
+  @override
+  Future<String?> readToken() async => value;
+
+  @override
+  Future<void> saveToken(String token) async {
+    value = token;
+  }
+
+  @override
+  Future<void> clearToken() async {
+    value = null;
+  }
+}

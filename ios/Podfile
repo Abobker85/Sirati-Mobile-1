@@ -57,16 +57,25 @@ post_install do |installer|
 
   if runner_target
     phase_name = 'Upload Crashlytics dSYMs'
+    crashlytics_input_paths = [
+      '${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}',
+      '${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}',
+      '${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}',
+      '${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist',
+      '$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist',
+      '$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)',
+      '${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}.debug.dylib',
+    ]
     existing_phase = runner_target.shell_script_build_phases.find { |phase| phase.name == phase_name }
 
-    unless existing_phase
+    if existing_phase
+      existing_phase.shell_script = '"${PODS_ROOT}/FirebaseCrashlytics/run"'
+      existing_phase.input_paths = crashlytics_input_paths
+    else
       crashlytics_phase = runner_target.new_shell_script_build_phase(phase_name)
       crashlytics_phase.shell_script = '"${PODS_ROOT}/FirebaseCrashlytics/run"'
-      crashlytics_phase.input_paths = [
-        '${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}',
-        '$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)',
-      ]
-      runner_project.save
+      crashlytics_phase.input_paths = crashlytics_input_paths
     end
+    runner_project.save
   end
 end

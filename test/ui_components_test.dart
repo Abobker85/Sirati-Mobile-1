@@ -10,6 +10,7 @@ import 'package:sirati/widgets/empty_state.dart';
 import 'package:sirati/widgets/form_fields.dart';
 import 'package:sirati/widgets/loading/ai_field_loading_overlay.dart';
 import 'package:sirati/widgets/loading/app_skeleton.dart';
+import 'package:sirati/widgets/auth_form_constraint.dart';
 import 'package:sirati/widgets/motion.dart';
 import 'package:sirati/widgets/password_strength_meter.dart';
 import 'package:sirati/widgets/submit_button.dart';
@@ -140,6 +141,49 @@ void main() {
     expect(taps, 0);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.text('Working…'), findsOneWidget);
+  });
+
+  testWidgets('MotionTabStack first frame is fully visible', (tester) async {
+    await tester.pumpWidget(wrap(
+      const SizedBox(
+        height: 220,
+        child: MotionTabStack(
+          currentIndex: 0,
+          children: [Text('Dashboard tab'), Text('Second tab')],
+        ),
+      ),
+    ));
+
+    expect(find.text('Dashboard tab'), findsOneWidget);
+    final opacity = tester.widget<Opacity>(
+      find
+          .ancestor(
+            of: find.text('Dashboard tab'),
+            matching: find.byType(Opacity),
+          )
+          .first,
+    );
+    expect(opacity.opacity, 1,
+        reason: 'the first Home frame must not start at opacity zero');
+  });
+
+  testWidgets('AuthFormConstraint caps width on wide screens', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 1024,
+            child: AuthFormConstraint(
+              child: SizedBox(key: ValueKey('auth-form'), width: double.infinity),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final box = tester.getSize(find.byKey(const ValueKey('auth-form')));
+    expect(box.width, AuthFormConstraint.maxWidth);
+    expect(box.width, inInclusiveRange(430, 480));
   });
 
   testWidgets('MotionTabStack preserves tab state while transitioning',

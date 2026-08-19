@@ -8,27 +8,50 @@ import 'mobile_content_service.dart';
 import 'notification_service.dart';
 import 'session_cache.dart';
 
-/// Handles mid-session auth expiry (401/403) with a single redirect.
+/// Handles mid-session auth expiry (401) with a single redirect.
 class AuthSessionGuard {
   AuthSessionGuard._();
 
   static bool _handling = false;
   static GlobalKey<NavigatorState>? _navigatorKey;
+  static AuthTokenStore tokenStore = const AuthTokenStore();
 
-  static void install({required GlobalKey<NavigatorState> navigatorKey}) {
+  static void install({
+    required GlobalKey<NavigatorState> navigatorKey,
+    AuthTokenStore? store,
+  }) {
     _navigatorKey = navigatorKey;
-    ApiClient.onAuthExpired = handleAuthExpired;
+    if (store != null) tokenStore = store;
+    ApiClient.onAuthExpired = ({String? requestToken}) {
+      return handleAuthExpired(requestToken: requestToken);
+    };
+  }
+
+  /// Test hook — restores debounce and the default token store.
+  static void resetForTest({AuthTokenStore? store}) {
+    _handling = false;
+    _navigatorKey = null;
+    tokenStore = store ?? const AuthTokenStore();
+    ApiClient.onAuthExpired = null;
   }
 
   /// Clear local session and push Login once (parallel 401s debounce).
-  static Future<void> handleAuthExpired({bool showMessage = true}) async {
+  ///
+  /// [requestToken] is the bearer token that received the 401. A delayed
+  /// 401 for an older token is ignored when a newer session is already saved.
+  static Future<void> handleAuthExpired({
+    String? requestToken,
+    bool showMessage = true,
+  }) async {
+    final current = await tokenStore.readToken();
+    if (_isStaleRequest(requestToken, current)) return;
     if (_handling) return;
     _handling = true;
     try {
       try {
         await NotificationService.instance.unregisterToken();
       } catch (_) {}
-      await const AuthTokenStore().clearToken();
+      await tokenStore.clearToken();
       SessionCache.instance.clear();
       // Drop offline content so the next account never sees prior user data.
       await MobileContentService.clearAllCaches();
@@ -51,5 +74,28 @@ class AuthSessionGuard {
         _handling = false;
       });
     }
+  }
+
+  static bool _isStaleRequest(String? requestToken, String? currentToken) {
+    final request = _bareToken(requestToken);
+    final current = _bareToken(currentToken);
+
+    if (request == null || request.isEmpty) {
+      // No snapshot of the failing request. Do not kill a token that was
+      // saved after this call started (login racing a startup 401).
+      return current != null && current.isNotEmpty;
+    }
+    if (current == null || current.isEmpty) return false;
+    return request != current;
+  }
+
+  static String? _bareToken(String? value) {
+    if (value == null) return null;
+    final trimmed = value.trim();
+    const prefix = 'Bearer ';
+    if (trimmed.startsWith(prefix)) {
+      return trimmed.substring(prefix.length).trim();
+    }
+    return trimmed;
   }
 }

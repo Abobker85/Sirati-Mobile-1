@@ -7,7 +7,9 @@ import '../app_locale.dart';
 import '../services/api_exception.dart';
 import '../services/auth_api_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/root_navigation.dart';
 import '../widgets/app_snack_bar.dart';
+import '../widgets/auth_form_constraint.dart';
 import '../widgets/form_fields.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/submit_button.dart';
@@ -90,10 +92,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         context,
         english ? 'Email verified successfully.' : 'تم تأكيد البريد بنجاح.',
       );
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
+      replaceRoot(context, const HomeScreen());
     } on ApiException catch (exception) {
       if (mounted) {
         AppSnackBar.fromException(
@@ -147,10 +146,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   Future<void> _leave() async {
     await _auth.logout();
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
+    replaceRoot(context, const LoginScreen());
   }
 
   @override
@@ -161,7 +157,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     return Scaffold(
       backgroundColor: context.sirati.background,
       body: SafeArea(
-        child: Column(
+        child: AuthFormConstraint(
+          child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 12, 0),
@@ -321,6 +318,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

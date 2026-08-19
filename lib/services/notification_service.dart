@@ -23,13 +23,27 @@ class NotificationService {
   bool _registeringToken = false;
   String? _lastRegisteredToken;
   DateTime? _lastRegisterAttemptAt;
+  final List<Map<String, dynamic>> _pendingTaps = [];
+  void Function(Map<String, dynamic> data)? _onNotificationTap;
 
   FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
   /// Set this from the UI layer to handle notification-triggered navigation.
-  void Function(Map<String, dynamic> data)? onNotificationTap;
+  /// Pending taps received before the handler is ready are flushed immediately.
+  set onNotificationTap(void Function(Map<String, dynamic> data)? handler) {
+    _onNotificationTap = handler;
+    if (handler == null || _pendingTaps.isEmpty) return;
+    final pending = List<Map<String, dynamic>>.from(_pendingTaps);
+    _pendingTaps.clear();
+    for (final data in pending) {
+      handler(data);
+    }
+  }
+
+  void Function(Map<String, dynamic> data)? get onNotificationTap =>
+      _onNotificationTap;
 
   /// Android notification channel — must match backend's channel_id.
   static const _androidChannel = AndroidNotificationChannel(
@@ -101,10 +115,7 @@ class NotificationService {
     try {
       final message = await _messaging.getInitialMessage();
       if (message != null) {
-        // Short delay to let the UI tree build before navigating
-        Future.delayed(const Duration(milliseconds: 600), () {
-          _navigateFromPayload(message.data);
-        });
+        _navigateFromPayload(message.data);
       }
     } catch (e, st) {
       debugPrint('[FCM] getInitialMessage skipped: $e\n$st');
@@ -271,10 +282,12 @@ class NotificationService {
       NotificationEngagementService.instance.markOpened(notificationId),
     );
 
-    if (onNotificationTap != null) {
-      onNotificationTap!(data);
+    final handler = _onNotificationTap;
+    if (handler != null) {
+      handler(data);
     } else {
-      debugPrint('[FCM] onNotificationTap not set, payload ignored: $data');
+      _pendingTaps.add(data);
+      debugPrint('[FCM] buffering notification tap until navigation is ready');
     }
   }
 

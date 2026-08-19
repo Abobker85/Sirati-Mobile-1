@@ -5,6 +5,7 @@ import '../app_locale.dart';
 import '../services/api_exception.dart';
 import '../services/auth_api_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/root_navigation.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/form_fields.dart';
 import '../widgets/submit_button.dart';
@@ -71,10 +72,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         context,
         en ? 'Account deleted.' : 'تم حذف الحساب.',
       );
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const SplashScreen()),
-        (route) => false,
-      );
+      replaceRoot(context, const SplashScreen());
     } on ApiException catch (e) {
       if (!mounted) return;
       final pwd = e.errors['password'];

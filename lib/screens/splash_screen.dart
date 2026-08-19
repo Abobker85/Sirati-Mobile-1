@@ -1,14 +1,12 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../app_locale.dart';
 import '../services/api_exception.dart';
 import '../services/auth_api_service.dart';
 import '../services/auth_token_store.dart';
-import '../services/notification_service.dart';
 import '../services/preference_store.dart';
 import '../theme/app_theme.dart';
+import '../utils/root_navigation.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/loading/branded_loader.dart';
 import '../widgets/motion.dart';
@@ -79,16 +77,8 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
 
       if (user != null && !user.emailVerified) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => EmailVerificationScreen(email: user.email),
-          ),
-        );
+        replaceRoot(context, EmailVerificationScreen(email: user.email));
         return;
-      }
-
-      if (user != null && user.emailVerified) {
-        unawaited(NotificationService.instance.registerToken());
       }
     } on ApiException catch (e) {
       // 401 already fired AuthSessionGuard from ApiClient.
@@ -99,9 +89,7 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-    );
+    replaceRoot(context, const HomeScreen());
   }
 
   void _onOnboardingFinished() {
@@ -118,16 +106,11 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    // Use pushReplacement so the SplashScreen is removed from the stack.
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+    replaceRoot(context, const LoginScreen());
   }
 
   void _goToRegister() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-    );
+    replaceRoot(context, const RegisterScreen());
   }
 
   void _openPrivacyPolicy() {

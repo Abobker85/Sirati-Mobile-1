@@ -29,6 +29,8 @@ class _HistoryScreenState extends State<HistoryScreen>
   late TabController _tabController;
   final _apiService = CvApiService();
   late Future<_HistoryData> _historyFuture;
+  bool _loadingMoreAnalyses = false;
+  bool _loadingMoreCvs = false;
 
   @override
   void initState() {
@@ -44,15 +46,66 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Future<_HistoryData> _loadHistory() async {
-    final analyses = await _apiService.listAnalyses();
-    final generatedCvs = await _apiService.listGeneratedCvs();
-    return _HistoryData(analyses: analyses, generatedCvs: generatedCvs);
+    final analyses = await _apiService.listAnalysesPage();
+    final generatedCvs = await _apiService.listGeneratedCvsPage();
+    return _HistoryData(
+      analyses: analyses.items,
+      generatedCvs: generatedCvs.items,
+      analysesPage: analyses.currentPage,
+      analysesHasMore: analyses.hasMore,
+      cvsPage: generatedCvs.currentPage,
+      cvsHasMore: generatedCvs.hasMore,
+    );
   }
 
   Future<void> _refresh() async {
     final nextFuture = _loadHistory();
     setState(() => _historyFuture = nextFuture);
     await nextFuture;
+  }
+
+  Future<void> _loadMoreAnalyses(_HistoryData current) async {
+    if (_loadingMoreAnalyses || !current.analysesHasMore) return;
+    setState(() => _loadingMoreAnalyses = true);
+    try {
+      final next =
+          await _apiService.listAnalysesPage(page: current.analysesPage + 1);
+      if (!mounted) return;
+      setState(() {
+        _historyFuture = Future.value(_HistoryData(
+          analyses: [...current.analyses, ...next.items],
+          generatedCvs: current.generatedCvs,
+          analysesPage: next.currentPage,
+          analysesHasMore: next.hasMore,
+          cvsPage: current.cvsPage,
+          cvsHasMore: current.cvsHasMore,
+        ));
+      });
+    } finally {
+      if (mounted) setState(() => _loadingMoreAnalyses = false);
+    }
+  }
+
+  Future<void> _loadMoreCvs(_HistoryData current) async {
+    if (_loadingMoreCvs || !current.cvsHasMore) return;
+    setState(() => _loadingMoreCvs = true);
+    try {
+      final next = await _apiService.listGeneratedCvsPage(
+          page: current.cvsPage + 1);
+      if (!mounted) return;
+      setState(() {
+        _historyFuture = Future.value(_HistoryData(
+          analyses: current.analyses,
+          generatedCvs: [...current.generatedCvs, ...next.items],
+          analysesPage: current.analysesPage,
+          analysesHasMore: current.analysesHasMore,
+          cvsPage: next.currentPage,
+          cvsHasMore: next.hasMore,
+        ));
+      });
+    } finally {
+      if (mounted) setState(() => _loadingMoreCvs = false);
+    }
   }
 
   Color _scoreColor(int score) {
@@ -117,11 +170,17 @@ class _HistoryScreenState extends State<HistoryScreen>
                     analyses: data.analyses,
                     scoreColor: _scoreColor,
                     english: english,
+                    hasMore: data.analysesHasMore,
+                    loadingMore: _loadingMoreAnalyses,
+                    onLoadMore: () => _loadMoreAnalyses(data),
                   ),
                   _GeneratedCvList(
                     cvs: data.generatedCvs,
                     scoreColor: _scoreColor,
                     english: english,
+                    hasMore: data.cvsHasMore,
+                    loadingMore: _loadingMoreCvs,
+                    onLoadMore: () => _loadMoreCvs(data),
                   ),
                 ],
               ),
@@ -136,19 +195,36 @@ class _HistoryScreenState extends State<HistoryScreen>
 class _HistoryData {
   final List<CvAnalysis> analyses;
   final List<GeneratedCv> generatedCvs;
+  final int analysesPage;
+  final bool analysesHasMore;
+  final int cvsPage;
+  final bool cvsHasMore;
 
-  const _HistoryData({required this.analyses, required this.generatedCvs});
+  const _HistoryData({
+    required this.analyses,
+    required this.generatedCvs,
+    this.analysesPage = 1,
+    this.analysesHasMore = false,
+    this.cvsPage = 1,
+    this.cvsHasMore = false,
+  });
 }
 
 class _AnalysisList extends StatelessWidget {
   final List<CvAnalysis> analyses;
   final Color Function(int) scoreColor;
   final bool english;
+  final bool hasMore;
+  final bool loadingMore;
+  final VoidCallback? onLoadMore;
 
   const _AnalysisList({
     required this.analyses,
     required this.scoreColor,
     required this.english,
+    this.hasMore = false,
+    this.loadingMore = false,
+    this.onLoadMore,
   });
 
   @override
@@ -169,9 +245,17 @@ class _AnalysisList extends StatelessWidget {
 
     return ListView.separated(
       padding: const EdgeInsets.all(16),
-      itemCount: analyses.length,
+      itemCount: analyses.length + (hasMore ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) {
+        if (i >= analyses.length) {
+          return TextButton(
+            onPressed: loadingMore ? null : onLoadMore,
+            child: Text(loadingMore
+                ? (english ? 'Loading…' : 'جارٍ التحميل...')
+                : (english ? 'Load more' : 'تحميل المزيد')),
+          );
+        }
         final analysis = analyses[i];
         final color = scoreColor(analysis.scoreTotal);
 
@@ -257,11 +341,17 @@ class _GeneratedCvList extends StatelessWidget {
   final List<GeneratedCv> cvs;
   final Color Function(int) scoreColor;
   final bool english;
+  final bool hasMore;
+  final bool loadingMore;
+  final VoidCallback? onLoadMore;
 
   const _GeneratedCvList({
     required this.cvs,
     required this.scoreColor,
     required this.english,
+    this.hasMore = false,
+    this.loadingMore = false,
+    this.onLoadMore,
   });
 
   @override
@@ -282,9 +372,17 @@ class _GeneratedCvList extends StatelessWidget {
 
     return ListView.separated(
       padding: const EdgeInsets.all(16),
-      itemCount: cvs.length,
+      itemCount: cvs.length + (hasMore ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) {
+        if (i >= cvs.length) {
+          return TextButton(
+            onPressed: loadingMore ? null : onLoadMore,
+            child: Text(loadingMore
+                ? (english ? 'Loading…' : 'جارٍ التحميل...')
+                : (english ? 'Load more' : 'تحميل المزيد')),
+          );
+        }
         final cv = cvs[i];
         final color = scoreColor(cv.scoreTotal);
 

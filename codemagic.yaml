@@ -70,7 +70,8 @@ workflows:
       app_store_connect: Codemagic Sirati CI
     environment:
       flutter: stable
-      xcode: 16.4
+      # App Store uploads require the iOS 26 SDK (Xcode 26).
+      xcode: 26
       cocoapods: default
       ios_signing:
         distribution_type: app_store
@@ -81,18 +82,23 @@ workflows:
       - name: Get Flutter packages
         script: flutter pub get
       - name: Install CocoaPods
-        script: cd ios && pod install && cd ..
+        script: |
+          cd ios
+          if [ -f Podfile.lock ]; then
+            pod install --deployment
+          else
+            echo "Podfile.lock is missing; commit it after the next macOS pod install."
+            pod install
+          fi
+          cd ..
       - name: Analyze
         script: flutter analyze
       - name: Run tests
         script: flutter test --exclude-tags golden
       - name: Set up code signing
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE --create
-          keychain add-certificates
-          xcode-project use-profiles
+        script: xcode-project use-profiles
+      - name: Validate privacy manifest
+        script: plutil -lint ios/Runner/PrivacyInfo.xcprivacy
       - name: Build iOS IPA
         script: |
           flutter build ipa --release \

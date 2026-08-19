@@ -144,7 +144,6 @@ Future<bool> _initFirebaseStack() async {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     await NotificationService.instance.initialize();
     await NotificationService.instance.handleTerminatedLaunchNotification();
-    unawaited(NotificationService.instance.registerToken());
   } catch (e, st) {
     debugPrint('[Firebase] Messaging setup failed: $e\n$st');
   }

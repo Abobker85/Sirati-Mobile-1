@@ -10,6 +10,7 @@ import '../services/in_app_review_service.dart';
 import '../services/mobile_content_service.dart';
 import '../services/preference_store.dart';
 import '../app_locale.dart';
+import '../utils/idempotency_key.dart';
 import '../models/ai_status.dart';
 import '../models/generated_cv.dart';
 import '../services/notification_engagement_service.dart';
@@ -53,6 +54,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
   /// Bumped on each submit/cancel so a late AI response cannot apply.
   int _aiRequestGen = 0;
   bool _pollingPaused = false;
+  String? _submitIdempotencyKey;
 
   /// True after any user edit since last successful save/generate or restore.
   bool _isDirty = false;
@@ -460,6 +462,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
   Future<void> _submit() async {
     final english = AppLocale.isEnglish(context);
     final requestId = ++_aiRequestGen;
+    _submitIdempotencyKey ??= newIdempotencyKey();
     setState(() => _isLoading = true);
     final startedAt = DateTime.now();
 
@@ -498,7 +501,10 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
 
       var generatedCv = _isEditMode
           ? await _apiService.updateGeneratedCv(widget.initialCv!.id, payload)
-          : await _apiService.generateCv(payload);
+          : await _apiService.generateCv(
+              payload,
+              idempotencyKey: _submitIdempotencyKey,
+            );
 
       final poll = await _apiService.pollGeneratedCv(
         generatedCv,
@@ -521,6 +527,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
         durationMs: durationMs,
       );
       MobileContentService.invalidateCvRelated();
+      _submitIdempotencyKey = null;
       if (!_isEditMode) {
         NotificationEngagementService.instance.reportConversion('cv_generated');
         // Successful generate: drop local draft so reopen has no banner.

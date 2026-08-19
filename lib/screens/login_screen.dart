@@ -6,7 +6,9 @@ import '../services/analytics_service.dart';
 import '../services/api_exception.dart';
 import '../services/auth_api_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/root_navigation.dart';
 import '../widgets/app_snack_bar.dart';
+import '../widgets/auth_form_constraint.dart';
 import '../widgets/form_fields.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/motion.dart';
@@ -84,23 +86,13 @@ class _LoginScreenState extends State<LoginScreen> {
       HapticFeedback.lightImpact();
       // Unverified accounts must complete email OTP before using the app.
       if (!session.user.emailVerified) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => EmailVerificationScreen(
-              email: session.user.email,
-            ),
-          ),
-          (route) => false,
+        replaceRoot(
+          context,
+          EmailVerificationScreen(email: session.user.email),
         );
         return;
       }
-      // Use pushAndRemoveUntil so HomeScreen becomes the root route.
-      // This prevents the back button from popping back to the SplashScreen
-      // (welcome/login UI) after the user is already authenticated.
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
+      replaceRoot(context, const HomeScreen());
     } on ApiException catch (exception) {
       if (mounted) {
         AppSnackBar.fromException(
@@ -146,57 +138,59 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: context.sirati.background,
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: context.sirati.surface,
-              border: Border(
-                bottom: BorderSide(
-                    color: context.sirati.border.withValues(alpha: .5)),
+      body: AuthFormConstraint(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: context.sirati.surface,
+                border: Border(
+                  bottom: BorderSide(
+                      color: context.sirati.border.withValues(alpha: .5)),
+                ),
+              ),
+              padding: EdgeInsetsDirectional.only(
+                top: MediaQuery.of(context).padding.top +
+                    (compactHeader ? 10 : 16),
+                start: 20,
+                end: 12,
+                bottom: compactHeader ? 14 : 24,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Row(
+                    children: [
+                      Spacer(),
+                      LanguageToggle(),
+                    ],
+                  ),
+                  SizedBox(height: compactHeader ? 4 : 8),
+                  SiratiMark(size: compactHeader ? 44 : 56, elevated: true),
+                  SizedBox(height: compactHeader ? 8 : 14),
+                  Text(
+                    english ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: compactHeader ? 20 : 22,
+                        fontWeight: FontWeight.w800,
+                        color: context.sirati.primary),
+                  ),
+                  SizedBox(height: compactHeader ? 4 : 6),
+                  Text(
+                    english ? 'Sign in to continue' : 'سجّل دخولك للمتابعة',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14, color: context.sirati.textSecondary),
+                  ),
+                ],
               ),
             ),
-            padding: EdgeInsetsDirectional.only(
-              top: MediaQuery.of(context).padding.top + (compactHeader ? 10 : 16),
-              start: 20,
-              end: 12,
-              bottom: compactHeader ? 14 : 24,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Spacer(),
-                    LanguageToggle(),
-                  ],
-                ),
-                SizedBox(height: compactHeader ? 4 : 8),
-                SiratiMark(size: compactHeader ? 44 : 56, elevated: true),
-                SizedBox(height: compactHeader ? 8 : 14),
-                Text(
-                  english ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                      fontSize: compactHeader ? 20 : 22,
-                      fontWeight: FontWeight.w800,
-                      color: context.sirati.primary),
-                ),
-                SizedBox(height: compactHeader ? 4 : 6),
-                Text(
-                  english ? 'Sign in to continue' : 'سجّل دخولك للمتابعة',
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                      fontSize: 14, color: context.sirati.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-              child: AutofillGroup(
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                child: AutofillGroup(
                 child: Form(
                   key: _formKey,
                   autovalidateMode: _submitted
@@ -372,6 +366,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
