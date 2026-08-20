@@ -231,6 +231,30 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen>
               ],
             ),
           ),
+          bottomNavigationBar: SafeArea(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+              decoration: BoxDecoration(
+                color: context.sirati.surface,
+                border: Border(top: BorderSide(color: context.sirati.border)),
+                boxShadow: context.sirati.softShadow,
+              ),
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _isGenerating,
+                builder: (context, isGenerating, _) {
+                  return SubmitButton(
+                    label: english
+                        ? 'Generate Improved CV'
+                        : 'توليد سيرة محسّنة بالذكاء الاصطناعي',
+                    loadingLabel: english ? 'Generating...' : 'جارٍ التوليد...',
+                    isLoading: isGenerating,
+                    icon: Icons.auto_awesome_rounded,
+                    onPressed: isGenerating ? null : _generateImprovedCv,
+                  );
+                },
+              ),
+            ),
+          ),
           body: TabBarView(
             children: [
               _ScoreTab(
@@ -845,15 +869,97 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+void _showKeywordAdvice(
+  BuildContext context,
+  String keyword,
+  bool english,
+) {
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    backgroundColor: context.sirati.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      final c = context.sirati;
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: c.primaryLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.lightbulb_outline_rounded,
+                      color: c.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      english
+                          ? 'ATS Keyword: $keyword'
+                          : 'كلمة مفتاحية: $keyword',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: c.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                english
+                    ? 'Applicant Tracking Systems (ATS) scan for "$keyword" in your work experience and skills. Adding it in context with measurable results will increase your resume ranking.'
+                    : 'تبحث أنظمة فرز السير الذاتية (ATS) عن كلمة "$keyword" في قسم الخبرات والمهارات. إضافتها ضمن سياق إنجازاتك المقاسة يرفع نسبة تطابق سيرتك بشكل ملحوظ.',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  height: 1.55,
+                  color: c.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(english ? 'Got it' : 'فهمت ذلك'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 class _KeywordChip extends StatelessWidget {
   final String label;
   final bool found;
+  final VoidCallback? onTap;
 
-  const _KeywordChip({required this.label, required this.found});
+  const _KeywordChip({
+    required this.label,
+    required this.found,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: found ? context.sirati.tealLight : context.sirati.redLight,
@@ -872,6 +978,14 @@ class _KeywordChip extends StatelessWidget {
           color: found ? context.sirati.tealDark : context.sirati.red,
         ),
       ),
+    );
+
+    if (onTap == null) return chip;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: chip,
     );
   }
 }
@@ -917,7 +1031,13 @@ class _KeywordGroupState extends State<_KeywordGroup> {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         for (final keyword in visibleKeywords)
-          _KeywordChip(label: keyword, found: widget.found),
+          _KeywordChip(
+            label: keyword,
+            found: widget.found,
+            onTap: widget.found
+                ? null
+                : () => _showKeywordAdvice(context, keyword, widget.english),
+          ),
         if (overflowCount > 0)
           _KeywordOverflowButton(
             expanded: _expanded,

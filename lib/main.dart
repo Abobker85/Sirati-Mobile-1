@@ -204,46 +204,45 @@ class SiratiApp extends StatelessWidget {
               builder: (context, child) {
                 final sirati = context.sirati;
                 final brightness = Theme.of(context).brightness;
-                // Global status / nav bar styling (also set on AppBarTheme).
-                SystemChrome.setSystemUIOverlayStyle(
-                  AppTheme.systemUiOverlayStyle(sirati, brightness),
-                );
+                final overlayStyle = AppTheme.systemUiOverlayStyle(sirati, brightness);
+                return AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: overlayStyle,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final platform = Theme.of(context).platform;
+                      final isNativeMobile = !kIsWeb &&
+                          (platform == TargetPlatform.android ||
+                              platform == TargetPlatform.iOS);
+                      final width = isNativeMobile
+                          ? constraints.maxWidth
+                          : (constraints.maxWidth > 480
+                              ? 430.0
+                              : constraints.maxWidth);
 
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final platform = Theme.of(context).platform;
-                    final isNativeMobile = !kIsWeb &&
-                        (platform == TargetPlatform.android ||
-                            platform == TargetPlatform.iOS);
-                    final width = isNativeMobile
-                        ? constraints.maxWidth
-                        : (constraints.maxWidth > 480
-                            ? 430.0
-                            : constraints.maxWidth);
+                      final mq = MediaQuery.of(context);
+                      final scale = mq.textScaler.scale(1.0).clamp(1.0, 1.3);
 
-                    final mq = MediaQuery.of(context);
-                    final scale = mq.textScaler.scale(1.0).clamp(1.0, 1.3);
-
-                    return ColoredBox(
-                      color: sirati.background,
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: SizedBox(
-                          width: width,
-                          height: constraints.maxHeight,
-                          child: MediaQuery(
-                            data: mq.copyWith(
-                              textScaler: TextScaler.linear(scale),
-                            ),
-                            child: Directionality(
-                              textDirection: AppLocale.direction(context),
-                              child: child ?? const SizedBox.shrink(),
+                      return ColoredBox(
+                        color: sirati.background,
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: SizedBox(
+                            width: width,
+                            height: constraints.maxHeight,
+                            child: MediaQuery(
+                              data: mq.copyWith(
+                                textScaler: TextScaler.linear(scale),
+                              ),
+                              child: Directionality(
+                                textDirection: AppLocale.direction(context),
+                                child: child ?? const SizedBox.shrink(),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               },
               home: switch (previewScreen) {

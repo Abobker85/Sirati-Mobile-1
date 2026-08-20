@@ -31,11 +31,16 @@ class _MyCvsScreenState extends State<MyCvsScreen> {
   final _contentService = MobileContentService();
   final _cvService = CvApiService();
   late Future<Map<String, dynamic>> _future;
+  bool? _loadedEnglish;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _future = _contentService.myCvs(AppLocale.isEnglish(context));
+    final english = AppLocale.isEnglish(context);
+    if (_loadedEnglish != english) {
+      _loadedEnglish = english;
+      _future = _contentService.myCvs(english);
+    }
   }
 
   Future<void> _refresh() async {

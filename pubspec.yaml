@@ -1,7 +1,7 @@
 name: sirati
 description: CV analysis and generation app powered by Sirati backend.
 publish_to: 'none'
-version: 1.0.0+11
+version: 1.0.0+12
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

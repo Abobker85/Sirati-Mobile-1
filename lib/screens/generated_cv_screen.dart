@@ -13,21 +13,30 @@ import '../widgets/motion.dart';
 import '../widgets/template_preview.dart';
 import 'cv_generator_screen.dart';
 
-class GeneratedCvScreen extends StatelessWidget {
+class GeneratedCvScreen extends StatefulWidget {
   final GeneratedCv generatedCv;
 
   const GeneratedCvScreen({super.key, required this.generatedCv});
 
+  @override
+  State<GeneratedCvScreen> createState() => _GeneratedCvScreenState();
+}
+
+class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
+  String? _cachedMarkdown;
+  bool? _cachedRtl;
+  List<Widget>? _cachedMarkdownSections;
+
   Future<void> _downloadPdf(BuildContext context) async {
     final english = AppLocale.isEnglish(context);
     final service = CvApiService();
-    final selection = (generatedCv.templatePdfUrl?.isNotEmpty ?? false)
+    final selection = (widget.generatedCv.templatePdfUrl?.isNotEmpty ?? false)
         ? await _chooseTemplate(context, service, english)
         : const _TemplateSelection.useDefault();
     if (!context.mounted || !selection.shouldDownload) return;
 
     final pdfUrl =
-        service.pdfUrlForTemplate(generatedCv, selection.template?.slug);
+        service.pdfUrlForTemplate(widget.generatedCv, selection.template?.slug);
     if (pdfUrl.isEmpty) {
       _showMessage(
           context,
@@ -80,7 +89,7 @@ class GeneratedCvScreen extends StatelessWidget {
 
   void _shareCv() {
     Share.share(
-        '${generatedCv.fullName}\n${generatedCv.targetJobTitle}\n\n${generatedCv.generatedMarkdown}');
+        '${widget.generatedCv.fullName}\n${widget.generatedCv.targetJobTitle}\n\n${widget.generatedCv.generatedMarkdown}');
   }
 
   void _showMessage(BuildContext context, String message) {
@@ -89,7 +98,7 @@ class GeneratedCvScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final contact = [generatedCv.email, generatedCv.phone]
+    final contact = [widget.generatedCv.email, widget.generatedCv.phone]
         .whereType<String>()
         .where((value) => value.trim().isNotEmpty)
         .join(' · ');
@@ -103,13 +112,13 @@ class GeneratedCvScreen extends StatelessWidget {
           IconButton(
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => CvGeneratorScreen(initialCv: generatedCv)))),
+                   builder: (_) => CvGeneratorScreen(initialCv: widget.generatedCv)))),
         ],
       ),
       body: Column(
         children: [
-          if (generatedCv.aiStatus == AiStatus.completed ||
-              generatedCv.aiStatus == AiStatus.notConfigured)
+          if (widget.generatedCv.aiStatus == AiStatus.completed ||
+              widget.generatedCv.aiStatus == AiStatus.notConfigured)
             Container(
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -133,7 +142,7 @@ class GeneratedCvScreen extends StatelessWidget {
                           fontWeight: FontWeight.w500),
                     ),
                   ),
-                  Text('${generatedCv.scoreTotal}',
+                   Text('${widget.generatedCv.scoreTotal}',
                       style: TextStyle(
                           fontSize: 13,
                           color: context.sirati.tealDark,
@@ -147,7 +156,7 @@ class GeneratedCvScreen extends StatelessWidget {
                       border: Border.all(
                           color: context.sirati.teal.withValues(alpha: .4)),
                     ),
-                    child: Text(generatedCv.grade,
+                     child: Text(widget.generatedCv.grade,
                         style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -156,8 +165,8 @@ class GeneratedCvScreen extends StatelessWidget {
                 ],
               ),
             ),
-          if (generatedCv.aiStatus == AiStatus.failed &&
-              generatedCv.aiError != null)
+          if (widget.generatedCv.aiStatus == AiStatus.failed &&
+              widget.generatedCv.aiError != null)
             Container(
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -172,8 +181,8 @@ class GeneratedCvScreen extends StatelessWidget {
                   Expanded(
                     child: Text(
                       english
-                          ? 'A local version was created because AI generation did not complete: ${generatedCv.aiError}'
-                          : 'تم إنشاء نسخة محلية لأن الذكاء الاصطناعي لم يكتمل: ${generatedCv.aiError}',
+                           ? 'A local version was created because AI generation did not complete: ${widget.generatedCv.aiError}'
+                          : 'تم إنشاء نسخة محلية لأن الذكاء الاصطناعي لم يكتمل: ${widget.generatedCv.aiError}',
                       style: TextStyle(
                           fontSize: 12,
                           color: context.sirati.amber,
@@ -196,13 +205,13 @@ class GeneratedCvScreen extends StatelessWidget {
                 ),
                 child: ListView(
                   children: [
-                    Text(generatedCv.fullName,
+                     Text(widget.generatedCv.fullName,
                         style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: context.sirati.primaryDark)),
                     const SizedBox(height: 4),
-                    Text(generatedCv.targetJobTitle,
+                     Text(widget.generatedCv.targetJobTitle,
                         style: TextStyle(
                             fontSize: 14,
                             color: context.sirati.primary,
@@ -214,7 +223,7 @@ class GeneratedCvScreen extends StatelessWidget {
                               fontSize: 12,
                               color: context.sirati.textSecondary)),
                     Divider(height: 24, color: context.sirati.border),
-                    if (generatedCv.generatedMarkdown.trim().isEmpty)
+                    if (widget.generatedCv.generatedMarkdown.trim().isEmpty)
                       Text(
                           english
                               ? 'No CV content is available yet.'
@@ -223,11 +232,7 @@ class GeneratedCvScreen extends StatelessWidget {
                               fontSize: 13,
                               color: context.sirati.textSecondary))
                     else
-                      ..._buildMarkdownSections(
-                        context,
-                        generatedCv.generatedMarkdown,
-                        english,
-                      ),
+                       ..._buildMarkdownSectionsCached(context, english),
                   ],
                 ),
               ),
@@ -350,6 +355,40 @@ class GeneratedCvScreen extends StatelessWidget {
     }
     return widgets;
   }
+
+  List<Widget> _buildMarkdownSectionsCached(
+    BuildContext context,
+    bool english,
+  ) {
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final markdown = widget.generatedCv.generatedMarkdown;
+    if (_cachedMarkdown == markdown &&
+        _cachedRtl == isRtl &&
+        _cachedMarkdownSections != null) {
+      return _cachedMarkdownSections!;
+    }
+
+    final sections = _buildMarkdownSections(
+      context,
+      markdown,
+      english,
+    );
+    _cachedMarkdown = markdown;
+    _cachedRtl = isRtl;
+    _cachedMarkdownSections = sections;
+    return sections;
+  }
+
+  @override
+  void didUpdateWidget(covariant GeneratedCvScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.generatedCv.generatedMarkdown !=
+        widget.generatedCv.generatedMarkdown) {
+      _cachedMarkdown = null;
+      _cachedRtl = null;
+      _cachedMarkdownSections = null;
+    }
+  }
 }
 
 class _TemplateSelection {
@@ -428,3 +467,4 @@ class _CvTemplatePicker extends StatelessWidget {
     );
   }
 }
+

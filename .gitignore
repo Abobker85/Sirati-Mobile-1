@@ -27,3 +27,4 @@ windows/flutter/ephemeral/
 new_design/
 new_stitch_design/
 *_context__*.zip
+test/golden/failures/

@@ -115,16 +115,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _loginWithGoogle() async {
     final english = AppLocale.isEnglish(context);
-    _showError(english
-        ? 'Google sign-in is not enabled yet.'
-        : 'تسجيل الدخول عبر Google غير مفعّل حالياً.');
+    AppSnackBar.info(
+      context,
+      english
+          ? 'Google sign-in will be available in an upcoming update.'
+          : 'تسجيل الدخول عبر Google سيتوفر قريباً في التحديث القادم.',
+    );
   }
 
   Future<void> _loginWithApple() async {
     final english = AppLocale.isEnglish(context);
-    _showError(english
-        ? 'Apple sign-in is not enabled yet.'
-        : 'تسجيل الدخول عبر Apple غير مفعّل حالياً.');
+    AppSnackBar.info(
+      context,
+      english
+          ? 'Apple sign-in will be available in an upcoming update.'
+          : 'تسجيل الدخول عبر Apple سيتوفر قريباً في التحديث القادم.',
+    );
   }
 
   void _showError(String message) {

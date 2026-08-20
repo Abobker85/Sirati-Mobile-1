@@ -432,6 +432,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                               ),
                               buttonLabel: _string(primary['button_label']),
                               backgroundColor: context.sirati.primary,
+                              gradient: context.sirati.primaryGradient,
                               buttonColor: context.sirati.surface,
                               buttonTextColor: context.sirati.primary,
                               icon: Icons.description_outlined,
@@ -452,9 +453,13 @@ class _DashboardTabState extends State<_DashboardTab> {
                                 english: english,
                               ),
                               buttonLabel: _string(analysis['button_label']),
-                              backgroundColor: context.sirati.amber,
+                              backgroundColor: context.sirati.surface,
+                              border: Border.all(color: context.sirati.border),
+                              textColor: context.sirati.textPrimary,
+                              subtitleColor: context.sirati.textSecondary,
+                              iconColor: context.sirati.amber,
                               buttonColor: context.sirati.amberLight,
-                              buttonTextColor: context.sirati.textPrimary,
+                              buttonTextColor: context.sirati.amber,
                               icon: Icons.analytics_outlined,
                               watermark: Icons.bar_chart_rounded,
                               onTap: () => Navigator.of(context).push(
@@ -464,18 +469,6 @@ class _DashboardTabState extends State<_DashboardTab> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: OutlinedButton.icon(
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                    builder: (_) => const HistoryScreen()),
-                              ),
-                              icon: const Icon(Icons.history_rounded, size: 18),
-                              label: Text(english ? 'History' : 'السجل'),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
                           Row(
                             children: [
                               Text(
@@ -487,12 +480,27 @@ class _DashboardTabState extends State<_DashboardTab> {
                                 ),
                               ),
                               const Spacer(),
+                              TextButton.icon(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) => const HistoryScreen()),
+                                ),
+                                icon: const Icon(Icons.history_rounded, size: 16),
+                                label: Text(english ? 'History' : 'السجل'),
+                                style: TextButton.styleFrom(
+                                  minimumSize: const Size(48, 36),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 6),
+                                  tapTargetSize: MaterialTapTargetSize.padded,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
                               TextButton(
                                 onPressed: () => onNavigate(1),
                                 style: TextButton.styleFrom(
-                                  minimumSize: const Size(48, 44),
+                                  minimumSize: const Size(48, 36),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 10),
+                                      horizontal: 8, vertical: 6),
                                   tapTargetSize: MaterialTapTargetSize.padded,
                                 ),
                                 child: Text(
@@ -730,6 +738,11 @@ class _DashboardActionCard extends StatelessWidget {
   final String subtitle;
   final String buttonLabel;
   final Color backgroundColor;
+  final Gradient? gradient;
+  final Border? border;
+  final Color? textColor;
+  final Color? subtitleColor;
+  final Color? iconColor;
   final Color buttonColor;
   final Color buttonTextColor;
   final IconData icon;
@@ -741,6 +754,11 @@ class _DashboardActionCard extends StatelessWidget {
     required this.subtitle,
     required this.buttonLabel,
     required this.backgroundColor,
+    this.gradient,
+    this.border,
+    this.textColor,
+    this.subtitleColor,
+    this.iconColor,
     required this.buttonColor,
     required this.buttonTextColor,
     required this.icon,
@@ -750,110 +768,128 @@ class _DashboardActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final darkText = backgroundColor == context.sirati.amber;
-    final ink = darkText ? context.sirati.textPrimary : Colors.white;
+    final darkText = textColor != null || backgroundColor == context.sirati.amber;
+    final ink = textColor ?? (darkText ? context.sirati.textPrimary : Colors.white);
+    final subInk = subtitleColor ??
+        (darkText
+            ? context.sirati.textSecondary
+            : Colors.white.withValues(alpha: .82));
+    final resolvedIconColor = iconColor ??
+        (darkText
+            ? context.sirati.textPrimary
+            : Colors.white.withValues(alpha: .94));
 
     return PressScale(
-      child: Material(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: gradient == null ? backgroundColor : null,
+          gradient: gradient,
           borderRadius: BorderRadius.circular(20),
-          // minHeight preserves default card density; content grows with scale.
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 174),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Stack(
-                children: [
-                  PositionedDirectional(
-                    end: -36,
-                    bottom: -40,
-                    child: Icon(
-                      watermark,
-                      size: 114,
-                      color: ink.withValues(alpha: .12),
+          border: border,
+          boxShadow: context.sirati.softShadow,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            // minHeight preserves default card density; content grows with scale.
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 174),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
+                  children: [
+                    PositionedDirectional(
+                      end: -36,
+                      bottom: -40,
+                      child: Icon(
+                        watermark,
+                        size: 114,
+                        color: ink.withValues(alpha: .10),
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(22),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          icon,
-                          color: darkText
-                              ? context.sirati.textPrimary
-                              : Colors.white.withValues(alpha: .94),
-                          size: 22,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.start,
-                          style: TextStyle(
-                            fontSize: 17,
-                            height: 1.35,
-                            fontWeight: FontWeight.w800,
-                            color: ink,
+                    Padding(
+                      padding: const EdgeInsets.all(22),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            icon,
+                            color: resolvedIconColor,
+                            size: 22,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          subtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.start,
-                          style: TextStyle(
-                            fontSize: 13,
-                            height: 1.55,
-                            fontWeight: FontWeight.w500,
-                            color: ink.withValues(alpha: .82),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 18, vertical: 9),
-                            decoration: BoxDecoration(
-                              color: buttonColor,
-                              borderRadius: BorderRadius.circular(999),
+                          const SizedBox(height: 12),
+                          Text(
+                            title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.start,
+                            style: TextStyle(
+                              fontSize: 17,
+                              height: 1.35,
+                              fontWeight: FontWeight.w800,
+                              color: ink,
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    buttonLabel,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: buttonTextColor,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.start,
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.55,
+                              fontWeight: FontWeight.w500,
+                              color: subInk,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 18, vertical: 9),
+                              decoration: BoxDecoration(
+                                color: buttonColor,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      buttonLabel,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: buttonTextColor,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: 14,
-                                  color: buttonTextColor,
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    AppLocale.direction(context) ==
+                                            TextDirection.rtl
+                                        ? Icons.arrow_back_rounded
+                                        : Icons.arrow_forward_rounded,
+                                    size: 14,
+                                    color: buttonTextColor,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
