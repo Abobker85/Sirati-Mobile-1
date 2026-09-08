@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/models/ai_status.dart';
 import 'package:sirati/models/cv_analysis.dart';
 import 'package:sirati/screens/analysis_result_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/theme/app_theme.dart';
 import 'package:sirati/widgets/animated_ats_score_bar.dart';
 import 'package:sirati/widgets/empty_state.dart';
@@ -174,7 +175,8 @@ void main() {
           body: SizedBox(
             width: 1024,
             child: AuthFormConstraint(
-              child: SizedBox(key: ValueKey('auth-form'), width: double.infinity),
+              child:
+                  SizedBox(key: ValueKey('auth-form'), width: double.infinity),
             ),
           ),
         ),
@@ -262,7 +264,7 @@ void main() {
     expect(decoration.border!.top.color, AppColors.primary);
   });
 
-  testWidgets('MotionNavIcon shows the selected capsule and icon',
+  testWidgets('MotionNavIcon shows selected icon without opaque background overlay (SIRATI-60)',
       (tester) async {
     await tester.pumpWidget(wrap(
       const MotionNavIcon(
@@ -273,15 +275,14 @@ void main() {
       ),
     ));
 
-    final container = tester.widget<AnimatedContainer>(
+    expect(find.byIcon(Icons.home_rounded), findsOneWidget);
+    expect(
       find.descendant(
         of: find.byType(MotionNavIcon),
         matching: find.byType(AnimatedContainer),
       ),
+      findsNothing,
     );
-    final decoration = container.decoration! as BoxDecoration;
-    expect(decoration.color, AppColors.primaryLight);
-    expect(find.byIcon(Icons.home_rounded), findsOneWidget);
   });
 
   testWidgets('AnalysisResultScreen caps and expands long keyword groups',
@@ -293,6 +294,8 @@ void main() {
       MaterialApp(
         theme: AppTheme.light,
         locale: const Locale('en', 'US'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: AnalysisResultScreen(
           analysis: CvAnalysis(
             id: 1,

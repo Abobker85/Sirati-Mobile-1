@@ -6,6 +6,7 @@ import 'golden/tolerant_golden.dart';
 ///
 /// Also installed from golden test [setUpAll] — see [installTolerantGoldenComparator].
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
-  installTolerantGoldenComparator(precisionTolerance: 0.02);
+  installTolerantGoldenComparator(
+      precisionTolerance: defaultGoldenPrecisionTolerance);
   await testMain();
 }

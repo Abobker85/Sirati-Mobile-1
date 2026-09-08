@@ -58,6 +58,22 @@ void main() {
       expect(controller.state, isA<AsyncSuccess<List<GeneratedCv>>>());
       expect(controller.state.dataOrNull!.single.id, 2);
     });
+
+    test('does not throw or notify if disposed while load is in flight',
+        () async {
+      final releaseLoader = Completer<void>();
+      final controller = CvListController(
+        loader: () async {
+          await releaseLoader.future;
+          return [_cv(id: 1)];
+        },
+      );
+
+      final loadFuture = controller.load();
+      controller.dispose();
+      releaseLoader.complete();
+      await expectLater(loadFuture, completes);
+    });
   });
 }
 

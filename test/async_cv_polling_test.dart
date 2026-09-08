@@ -7,6 +7,7 @@ import 'package:sirati/models/cv_analysis.dart';
 import 'package:sirati/screens/analysis_result_screen.dart';
 import 'package:sirati/screens/cv_analysis_screen.dart';
 import 'package:sirati/services/cv_api_service.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/theme/app_theme.dart';
 import 'package:sirati/widgets/submit_button.dart';
 
@@ -88,6 +89,8 @@ Future<void> _submitAnalysis(
     MaterialApp(
       locale: const Locale('en'),
       theme: AppTheme.light,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: CvAnalysisScreen(apiService: service),
     ),
   );

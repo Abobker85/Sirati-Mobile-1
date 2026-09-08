@@ -5,7 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 ///
 /// Install once in [setUpAll] so it does not depend on [flutter_test_config]
 /// being present in the clone.
-void installTolerantGoldenComparator({double precisionTolerance = 0.02}) {
+/// Default 0.5% of pixels. Same-OS engine noise is typically far below this;
+/// cross-OS text rasterization is documented as well under 0.5%. A 2% budget
+/// (~19k pixels on these baselines) could hide a footer line.
+const defaultGoldenPrecisionTolerance = 0.005;
+
+void installTolerantGoldenComparator(
+    {double precisionTolerance = defaultGoldenPrecisionTolerance}) {
   final current = goldenFileComparator;
   if (current is! LocalFileComparator) return;
   if (current is _TolerantGoldenFileComparator) return;
@@ -17,7 +23,7 @@ void installTolerantGoldenComparator({double precisionTolerance = 0.02}) {
 }
 
 /// Passes if images match exactly **or** differ by at most [precisionTolerance]
-/// (0–1 fraction of pixels). Default 2% covers typical font/engine noise.
+/// (0–1 fraction of pixels). Default is [defaultGoldenPrecisionTolerance].
 class _TolerantGoldenFileComparator extends LocalFileComparator {
   _TolerantGoldenFileComparator(
     super.testFile, {
@@ -37,8 +43,7 @@ class _TolerantGoldenFileComparator extends LocalFileComparator {
       await getGoldenBytes(golden),
     );
 
-    final passed =
-        result.passed || result.diffPercent <= _precisionTolerance;
+    final passed = result.passed || result.diffPercent <= _precisionTolerance;
     if (passed) {
       result.dispose();
       return true;

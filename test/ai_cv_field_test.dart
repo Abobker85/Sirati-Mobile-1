@@ -6,6 +6,7 @@ import 'package:sirati/app_locale.dart';
 import 'package:sirati/screens/cv_generator_screen.dart';
 import 'package:sirati/services/api_exception.dart';
 import 'package:sirati/services/cv_api_service.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/theme/app_theme.dart';
 import 'package:sirati/widgets/ai_cv_field.dart';
 import 'package:sirati/widgets/form_fields.dart';
@@ -137,6 +138,8 @@ void main() {
 Widget _testApp(Widget home) => MaterialApp(
       locale: const Locale('en'),
       theme: AppTheme.light,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: home is CvGeneratorScreen
           ? home
           : Scaffold(body: SingleChildScrollView(child: home)),

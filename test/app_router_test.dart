@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/features/app/sirati_route_table.dart';
 import 'package:sirati/routing/app_router.dart';
 import 'package:sirati/routing/app_routes.dart';
 import 'package:sirati/routing/entitlement_store.dart';
+import 'package:sirati/screens/cv_analysis_loader_screen.dart';
 import 'package:sirati/screens/not_found_screen.dart';
 import 'package:sirati/screens/premium_gate_screen.dart';
 import 'package:sirati/theme/app_theme.dart';
 
 void main() {
+  setUpAll(registerSiratiRouteWidgets);
+
   tearDown(() {
     AppRouter.pendingLocation = null;
     EntitlementStore.hasPremium = false;
@@ -110,6 +114,24 @@ void main() {
 
       expect(find.byType(PremiumGateScreen), findsOneWidget);
       expect(find.text('Premium required'), findsOneWidget);
+    });
+
+    testWidgets('analysis deep link routes to CvAnalysisLoaderScreen with id',
+        (tester) async {
+      late Widget built;
+      await tester.pumpWidget(
+        Builder(
+          builder: (context) {
+            final route = AppRouter.onGenerateRoute(
+              const RouteSettings(name: '/analysis/42'),
+            ) as MaterialPageRoute;
+            built = route.builder(context);
+            return const SizedBox();
+          },
+        ),
+      );
+      expect(built, isA<CvAnalysisLoaderScreen>());
+      expect((built as CvAnalysisLoaderScreen).analysisId, 42);
     });
   });
 }

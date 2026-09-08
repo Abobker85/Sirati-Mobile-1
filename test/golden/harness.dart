@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:sirati/features/cv_builder/cv_builder_controller.dart';
+import 'package:sirati/features/cv_builder/cv_live_preview_pane.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/models/cv_document.dart';
+import 'package:sirati/models/cv_template.dart';
+import 'package:sirati/services/cv_repository.dart';
 import 'package:sirati/theme/app_theme.dart';
+import 'package:sirati/widgets/animated_ats_score_bar.dart';
 import 'package:sirati/widgets/form_fields.dart';
 import 'package:sirati/widgets/score_booster_card.dart';
 import 'package:sirati/widgets/submit_button.dart';
@@ -15,8 +22,9 @@ Widget goldenShell({
   required Widget child,
   bool english = true,
 }) {
-  final locale =
-      textDirection == TextDirection.rtl ? const Locale('ar') : const Locale('en');
+  final locale = textDirection == TextDirection.rtl
+      ? const Locale('ar')
+      : const Locale('en');
 
   return MaterialApp(
     debugShowCheckedModeBanner: false,
@@ -26,6 +34,7 @@ Widget goldenShell({
     locale: locale,
     supportedLocales: const [Locale('en'), Locale('ar')],
     localizationsDelegates: const [
+      AppLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,
       GlobalWidgetsLocalizations.delegate,
       GlobalCupertinoLocalizations.delegate,
@@ -112,7 +121,7 @@ class GoldenDashboardCluster extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Material(
-          color: c.primary,
+          color: c.primaryDark,
           borderRadius: BorderRadius.circular(20),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 174),
@@ -346,8 +355,7 @@ class _GoldenFormFieldStatesState extends State<GoldenFormFieldStates> {
             hintText: english ? 'Email' : 'البريد',
             prefixIcon: const Icon(Icons.email_outlined),
             autovalidateMode: AutovalidateMode.always,
-            validator: (_) =>
-                english ? 'Email is required' : 'البريد مطلوب',
+            validator: (_) => english ? 'Email is required' : 'البريد مطلوب',
           ),
           const SizedBox(height: 16),
           AppTextFormField(
@@ -358,8 +366,7 @@ class _GoldenFormFieldStatesState extends State<GoldenFormFieldStates> {
             showSuccessWhenValid: true,
             successMessage: english ? 'Looks good' : 'يبدو جيداً',
             autovalidateMode: AutovalidateMode.always,
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'x' : null,
+            validator: (v) => (v == null || v.trim().isEmpty) ? 'x' : null,
           ),
         ],
       ),
@@ -421,6 +428,173 @@ class _GoldenScoreBoosterState extends State<GoldenScoreBooster> {
     return ScoreBoosterCard(
       controller: _controller,
       margin: EdgeInsets.zero,
+    );
+  }
+}
+
+class _GoldenCvRepository implements CvRepository {
+  @override
+  Future<List<CvMetadata>> listCvs() async => const [];
+
+  @override
+  Future<CvDocument?> getCv(String id) async => null;
+
+  @override
+  Future<void> saveCv(CvDocument document,
+      {bool touchUpdatedAt = true}) async {}
+
+  @override
+  Future<CvDocument> duplicateCv(String id, {String? newTitle}) async {
+    throw UnsupportedError('golden');
+  }
+
+  @override
+  Future<void> renameCv(String id, String newTitle) async {}
+
+  @override
+  Future<void> deleteCv(String id) async {}
+
+  @override
+  Future<void> restoreCv(String id) async {}
+}
+
+const _goldenTemplate = CvTemplate(
+  id: 1,
+  slug: 'ats-classic-professional',
+  name: 'كلاسيكي احترافي',
+  nameAr: 'كلاسيكي احترافي',
+  nameEn: 'ATS Classic Professional',
+  previewImageUrl: null,
+  languageDirection: 'both',
+  supportedLanguages: ['ar', 'en'],
+  supportedSections: [],
+  isDefault: true,
+  isPremium: false,
+);
+
+const _goldenDocument = CvDocument(
+  id: 'golden',
+  exportLanguage: 'ar',
+  personal: PersonalDetails(
+    fullName: LocalizedText(ar: 'سارة التميمي', en: 'Sara Al-Tamimi'),
+    headline: LocalizedText(ar: 'مهندسة برمجيات', en: 'Software Engineer'),
+    email: 'sara@example.com',
+    location: LocalizedText(ar: 'الرياض', en: 'Riyadh'),
+  ),
+  summary: LocalizedText(ar: 'ملخص احترافي', en: 'Professional summary'),
+  skills: [
+    Skill(name: LocalizedText(ar: 'فلاتر', en: 'Flutter')),
+    Skill(name: LocalizedText(ar: 'دارت', en: 'Dart')),
+  ],
+);
+
+/// CV builder section list chrome (theme + direction sensitive).
+class GoldenCvBuilderScreen extends StatelessWidget {
+  final bool english;
+
+  const GoldenCvBuilderScreen({super.key, this.english = true});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          english ? 'CV builder' : 'منشئ السيرة',
+          style: AppTextStyles.titleMd().copyWith(color: c.textPrimary),
+        ),
+        const SizedBox(height: 12),
+        AppTextFormField(
+          initialValue: english ? 'Sara Al-Tamimi' : 'سارة التميمي',
+          hintText: english ? 'Full name' : 'الاسم الكامل',
+          prefixIcon: const Icon(Icons.person_outline),
+        ),
+        const SizedBox(height: 12),
+        AppTextFormField(
+          initialValue: english ? 'Software Engineer' : 'مهندسة برمجيات',
+          hintText: english ? 'Headline' : 'المسمى',
+          prefixIcon: const Icon(Icons.work_outline),
+        ),
+        const SizedBox(height: 16),
+        SubmitButton(
+          label: english ? 'Save draft' : 'حفظ المسودة',
+          icon: Icons.arrow_forward_rounded,
+          onPressed: () {},
+        ),
+      ],
+    );
+  }
+}
+
+/// Live A4 preview pane used on the builder screen.
+class GoldenCvLivePreviewScreen extends StatelessWidget {
+  final bool english;
+
+  const GoldenCvLivePreviewScreen({super.key, this.english = true});
+
+  @override
+  Widget build(BuildContext context) {
+    final document = _goldenDocument.copyWith(
+      exportLanguage: english ? 'en' : 'ar',
+    );
+    final controller = CvBuilderController(
+      initialDocument: document,
+      repository: _GoldenCvRepository(),
+    );
+    return CvLivePreviewPane(
+      controller: controller,
+      template: _goldenTemplate,
+      languageOverride: english ? 'en' : 'ar',
+      scale: 0.72,
+    );
+  }
+}
+
+/// ATS scanner / analysis chrome.
+class GoldenAtsScannerScreen extends StatelessWidget {
+  final bool english;
+
+  const GoldenAtsScannerScreen({super.key, this.english = true});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          english ? 'ATS analysis' : 'تحليل ATS',
+          style: AppTextStyles.titleMd().copyWith(color: c.textPrimary),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          english ? 'Match score 87' : 'درجة التوافق 87',
+          style: AppTextStyles.bodyMd().copyWith(color: c.textSecondary),
+        ),
+        const SizedBox(height: 16),
+        AnimatedAtsScoreBar(
+          value: 0.87,
+          color: c.primary,
+          height: 12,
+          celebrateOnComplete: false,
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: c.border),
+          ),
+          child: Text(
+            english
+                ? 'Add a quantified achievement to the latest role.'
+                : 'أضف إنجازاً قابلاً للقياس في آخر منصب.',
+            style: AppTextStyles.bodyMd(),
+          ),
+        ),
+      ],
     );
   }
 }

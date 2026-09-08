@@ -9,15 +9,20 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'app_locale.dart';
-import 'theme/app_theme.dart';
-import 'theme/app_theme_controller.dart';
-import 'logging/app_log.dart';
-import 'routing/app_router.dart';
-import 'screens/app_crash_view.dart';
-import 'services/analytics_service.dart';
-import 'services/auth_session_guard.dart';
-import 'services/notification_service.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/flavors/app_flavor.dart';
+import 'package:sirati/core/flavors/flavor_banner.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/theme/app_theme_controller.dart';
+import 'package:sirati/core/logging/app_log.dart';
+import 'package:sirati/core/routing/app_router.dart';
+import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/features/app/sirati_route_table.dart';
+import 'package:sirati/core/errors/app_crash_view.dart';
+import 'package:sirati/core/network/analytics_service.dart';
+import 'package:sirati/features/auth/data/auth_session_guard.dart';
+import 'package:sirati/shared/services/notification_service.dart';
 
 /// Top-level background message handler — MUST be a top-level function.
 @pragma('vm:entry-point')
@@ -33,7 +38,11 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('[FCM] Background message: ${message.messageId}');
 }
 
-Future<void> main() async {
+Future<void> main() => startSiratiApp();
+
+/// Shared bootstrap used by [main] and flavor entrypoints.
+Future<void> startSiratiApp() async {
+  AppFlavor.ensureInitialized();
   await SentryFlutter.init(
     (options) {
       options.dsn = const String.fromEnvironment('SENTRY_DSN');
@@ -55,13 +64,33 @@ Future<void> main() async {
       if (release.isNotEmpty) {
         options.release = release;
       }
+
+      options.beforeSend = (event, hint) {
+        if (event.exceptions != null) {
+          for (final ex in event.exceptions!) {
+            if (ex.value != null) {
+              ex.value = AppLog.redact(ex.value!);
+            }
+          }
+        }
+        if (event.message?.formatted != null) {
+          event.message =
+              SentryMessage(AppLog.redact(event.message!.formatted));
+        }
+        return event;
+      };
     },
     appRunner: () async {
       WidgetsFlutterBinding.ensureInitialized();
+      registerSiratiRouteWidgets();
       AppRouter.install();
       _installAppLogErrorHandlers();
       ErrorWidget.builder = (details) {
-        AppLog.error('Uncaught widget error', error: details.exception);
+        AppLog.event(
+          AppLogEvent.uncaughtWidgetError,
+          level: AppLogLevel.error,
+          error: details.exception,
+        );
         return const AppCrashView();
       };
 
@@ -96,7 +125,8 @@ Future<void> main() async {
 
       // Always launch UI — Codemagic previews and devices without Firebase config
       // must still open SplashScreen instead of dying on a white/native shell.
-      runApp(const SiratiApp());
+      final initialRoute = AppRouter.resolveInitialRoute();
+      runApp(SiratiApp(initialRoute: initialRoute));
 
       if (kDebugMode) {
         debugPrint(
@@ -152,18 +182,37 @@ Future<bool> _initFirebaseStack() async {
 void _installAppLogErrorHandlers() {
   final previousFlutterOnError = FlutterError.onError;
   FlutterError.onError = (details) {
-    AppLog.error(
-      'FlutterError',
-      error: details.exception,
+    final sanitizedException = AppLog.sanitizeError(details.exception);
+    final sanitizedMessage = AppLog.redact(details.exceptionAsString());
+    final sanitizedDetails = FlutterErrorDetails(
+      exception: sanitizedException,
+      stack: details.stack,
+      library: details.library,
+      context: details.context,
+      informationCollector: () => [
+        DiagnosticsNode.message(sanitizedMessage),
+      ],
+      silent: details.silent,
+    );
+    AppLog.event(
+      AppLogEvent.uncaughtWidgetError,
+      level: AppLogLevel.error,
+      error: sanitizedException,
       stackTrace: details.stack,
     );
-    previousFlutterOnError?.call(details);
+    previousFlutterOnError?.call(sanitizedDetails);
   };
 
   final previousPlatformOnError = PlatformDispatcher.instance.onError;
   PlatformDispatcher.instance.onError = (error, stack) {
-    AppLog.error('PlatformError', error: error, stackTrace: stack);
-    return previousPlatformOnError?.call(error, stack) ?? false;
+    final sanitizedError = AppLog.sanitizeError(error);
+    AppLog.event(
+      AppLogEvent.platformError,
+      level: AppLogLevel.error,
+      error: sanitizedError,
+      stackTrace: stack,
+    );
+    return previousPlatformOnError?.call(sanitizedError, stack) ?? false;
   };
 }
 
@@ -172,24 +221,42 @@ void _installCrashlyticsErrorHandlers() {
 
   final previousFlutterOnError = FlutterError.onError;
   FlutterError.onError = (details) {
-    unawaited(FirebaseCrashlytics.instance.recordFlutterFatalError(details));
-    previousFlutterOnError?.call(details);
+    final sanitizedException = AppLog.sanitizeError(details.exception);
+    final sanitizedMessage = AppLog.redact(details.exceptionAsString());
+    final sanitizedDetails = FlutterErrorDetails(
+      exception: sanitizedException,
+      stack: details.stack,
+      library: details.library,
+      context: details.context,
+      informationCollector: () => [
+        DiagnosticsNode.message(sanitizedMessage),
+      ],
+      silent: details.silent,
+    );
+    unawaited(
+        FirebaseCrashlytics.instance.recordFlutterFatalError(sanitizedDetails));
+    previousFlutterOnError?.call(sanitizedDetails);
   };
 
   final previousPlatformOnError = PlatformDispatcher.instance.onError;
   PlatformDispatcher.instance.onError = (error, stack) {
+    final sanitizedError = AppLog.sanitizeError(error);
     unawaited(
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true),
+      FirebaseCrashlytics.instance
+          .recordError(sanitizedError, stack, fatal: true),
     );
-    return previousPlatformOnError?.call(error, stack) ?? false;
+    return previousPlatformOnError?.call(sanitizedError, stack) ?? false;
   };
 }
 
 class SiratiApp extends StatelessWidget {
-  const SiratiApp({super.key});
+  const SiratiApp({super.key, this.initialRoute});
+
+  final String? initialRoute;
 
   @override
   Widget build(BuildContext context) {
+    registerSiratiRouteWidgets();
     return ValueListenableBuilder<String>(
       valueListenable: AppLocale.languageCode,
       builder: (context, language, _) {
@@ -200,6 +267,10 @@ class SiratiApp extends StatelessWidget {
               navigatorKey: siratiNavigatorKey,
               title: language == 'en' ? 'Sirati' : 'سيرتي',
               debugShowCheckedModeBanner: false,
+              onGenerateTitle: (context) {
+                final l10n = AppLocalizations.of(context);
+                return l10n.appTitle;
+              },
               theme: AppTheme.lightFor(arabic: language != 'en'),
               darkTheme: AppTheme.darkFor(arabic: language != 'en'),
               themeMode: themeMode,
@@ -210,6 +281,7 @@ class SiratiApp extends StatelessWidget {
                 Locale('en', 'US'),
               ],
               localizationsDelegates: const [
+                AppLocalizations.delegate,
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
@@ -217,48 +289,47 @@ class SiratiApp extends StatelessWidget {
               builder: (context, child) {
                 final sirati = context.sirati;
                 final brightness = Theme.of(context).brightness;
-                final overlayStyle = AppTheme.systemUiOverlayStyle(sirati, brightness);
+                final overlayStyle =
+                    AppTheme.systemUiOverlayStyle(sirati, brightness);
                 return AnnotatedRegion<SystemUiOverlayStyle>(
                   value: overlayStyle,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final platform = Theme.of(context).platform;
-                      final isNativeMobile = !kIsWeb &&
-                          (platform == TargetPlatform.android ||
-                              platform == TargetPlatform.iOS);
-                      final width = isNativeMobile
-                          ? constraints.maxWidth
-                          : (constraints.maxWidth > 480
-                              ? 430.0
-                              : constraints.maxWidth);
+                  child: FlavorBanner(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final platform = Theme.of(context).platform;
+                        final isNativeMobile = !kIsWeb &&
+                            (platform == TargetPlatform.android ||
+                                platform == TargetPlatform.iOS);
+                        final width = isNativeMobile
+                            ? constraints.maxWidth
+                            : (constraints.maxWidth > 480
+                                ? 430.0
+                                : constraints.maxWidth);
 
-                      final mq = MediaQuery.of(context);
-                      final scale = mq.textScaler.scale(1.0).clamp(1.0, 1.3);
-
-                      return ColoredBox(
-                        color: sirati.background,
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: SizedBox(
-                            width: width,
-                            height: constraints.maxHeight,
-                            child: MediaQuery(
-                              data: mq.copyWith(
-                                textScaler: TextScaler.linear(scale),
-                              ),
-                              child: Directionality(
-                                textDirection: AppLocale.direction(context),
-                                child: child ?? const SizedBox.shrink(),
+                        return ColoredBox(
+                          color: sirati.background,
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: SizedBox(
+                              width: width,
+                              height: constraints.maxHeight,
+                              child: MediaQuery.withClampedTextScaling(
+                                minScaleFactor: 0.8,
+                                maxScaleFactor: 2.0,
+                                child: Directionality(
+                                  textDirection: AppLocale.direction(context),
+                                  child: child ?? const SizedBox.shrink(),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 );
               },
-              initialRoute: AppRouter.resolveInitialRoute(),
+              initialRoute: initialRoute ?? AppRoutes.splash,
               onGenerateInitialRoutes: AppRouter.onGenerateInitialRoutes,
               onGenerateRoute: AppRouter.onGenerateRoute,
               onUnknownRoute: AppRouter.onUnknownRoute,

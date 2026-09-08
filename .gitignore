@@ -1,30 +1,26 @@
+# Flutter & Dart build / tool artifacts
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
-.metadata
-.idea/
-
+.packages
+.pub-cache/
+.pub/
 build/
-coverage/
+.metadata
 
-android/.gradle/
-android/app/debug
-android/app/profile
-android/app/release
-
-ios/Flutter/Flutter.framework
-ios/Flutter/Flutter.podspec
-ios/Pods/
-
-macos/Flutter/ephemeral/
-linux/flutter/ephemeral/
-windows/flutter/ephemeral/
-
-*.iml
+# Logs & archives
 *.log
-.DS_Store
+*.zip
 
+# IDE & editors
+.idea/
+*.iml
+.vscode/
+
+# Local design mockups
 new_design/
 new_stitch_design/
-*_context__*.zip
+
+# Golden tests & generated l10n
+lib/l10n/generated/
 test/golden/failures/

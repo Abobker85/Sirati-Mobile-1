@@ -11,7 +11,8 @@ void main() {
   setUpAll(() async {
     // Windows baselines vs Codemagic macOS: allow small rasterization noise.
     // Installed here (not only flutter_test_config) so CI always picks it up.
-    installTolerantGoldenComparator(precisionTolerance: 0.02);
+    installTolerantGoldenComparator(
+        precisionTolerance: defaultGoldenPrecisionTolerance);
 
     // Load brand font so goldens match production typography.
     final loader = FontLoader('IBM Plex Sans Arabic')
@@ -22,8 +23,18 @@ void main() {
   });
 
   const matrix = <({String tag, ThemeMode theme, TextDirection dir, bool en})>[
-    (tag: 'light_ltr', theme: ThemeMode.light, dir: TextDirection.ltr, en: true),
-    (tag: 'light_rtl', theme: ThemeMode.light, dir: TextDirection.rtl, en: false),
+    (
+      tag: 'light_ltr',
+      theme: ThemeMode.light,
+      dir: TextDirection.ltr,
+      en: true
+    ),
+    (
+      tag: 'light_rtl',
+      theme: ThemeMode.light,
+      dir: TextDirection.rtl,
+      en: false
+    ),
     (tag: 'dark_ltr', theme: ThemeMode.dark, dir: TextDirection.ltr, en: true),
     (tag: 'dark_rtl', theme: ThemeMode.dark, dir: TextDirection.rtl, en: false),
   ];
@@ -84,6 +95,54 @@ void main() {
           direction: m.dir,
           english: m.en,
           child: GoldenScoreBooster(english: m.en),
+        );
+      },
+      tags: <String>['golden'],
+    );
+
+    testWidgets(
+      'cv builder screen ${m.tag}',
+      (tester) async {
+        await _pumpGolden(
+          tester,
+          name: 'cv_builder_screen',
+          themeMode: m.theme,
+          direction: m.dir,
+          english: m.en,
+          child: GoldenCvBuilderScreen(english: m.en),
+        );
+      },
+      tags: <String>['golden'],
+    );
+
+    testWidgets(
+      'cv live preview screen ${m.tag}',
+      (tester) async {
+        await _pumpGolden(
+          tester,
+          name: 'cv_live_preview_screen',
+          themeMode: m.theme,
+          direction: m.dir,
+          english: m.en,
+          child: SizedBox(
+            height: 640,
+            child: GoldenCvLivePreviewScreen(english: m.en),
+          ),
+        );
+      },
+      tags: <String>['golden'],
+    );
+
+    testWidgets(
+      'ats scanner screen ${m.tag}',
+      (tester) async {
+        await _pumpGolden(
+          tester,
+          name: 'ats_scanner_screen',
+          themeMode: m.theme,
+          direction: m.dir,
+          english: m.en,
+          child: GoldenAtsScannerScreen(english: m.en),
         );
       },
       tags: <String>['golden'],
