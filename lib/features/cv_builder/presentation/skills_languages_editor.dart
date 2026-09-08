@@ -456,7 +456,8 @@ class _SkillQuickAddBarState extends State<_SkillQuickAddBar> {
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
-                initialValue: _level,
+                // ignore: deprecated_member_use
+                value: _level,
                 isExpanded: true,
                 decoration: InputDecoration(
                   labelText: l10n.proficiencyLevel,
@@ -480,7 +481,8 @@ class _SkillQuickAddBarState extends State<_SkillQuickAddBar> {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: DropdownButtonFormField<String>(
-                initialValue: _category,
+                // ignore: deprecated_member_use
+                value: _category,
                 isExpanded: true,
                 decoration: InputDecoration(
                   labelText: l10n.skillCategory,
@@ -552,7 +554,8 @@ class _LanguageQuickAddBarState extends State<_LanguageQuickAddBar> {
         Expanded(
           flex: 2,
           child: DropdownButtonFormField<String>(
-            initialValue: _level,
+            // ignore: deprecated_member_use
+            value: _level,
             isExpanded: true,
             decoration: const InputDecoration(isDense: true),
             items: [

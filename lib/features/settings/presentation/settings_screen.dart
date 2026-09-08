@@ -15,14 +15,12 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/theme/app_theme_controller.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/shared/widgets/app_list_tile.dart';
-import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
 import 'package:sirati/features/settings/presentation/change_password_screen.dart';
 import 'package:sirati/features/settings/presentation/delete_account_screen.dart';
-import 'package:sirati/features/settings/presentation/onboarding_screen.dart';
 import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
 import 'package:sirati/features/settings/presentation/profile_screen.dart';
 

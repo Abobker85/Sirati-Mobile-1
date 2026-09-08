@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
@@ -126,46 +125,6 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen>
         _isGenerating.value = false;
       }
     }
-  }
-
-  void _shareAnalysis(bool english) {
-    final analysis = widget.analysis;
-    Share.share(_shareText(analysis, english));
-  }
-
-  String _shareText(CvAnalysis analysis, bool english) {
-    final foundKeywords = analysis.keywordsFound.take(8).join(', ');
-    final missingKeywords = analysis.keywordsMissing.take(8).join(', ');
-    final strengths =
-        analysis.strengths.take(3).map((item) => '- $item').join('\n');
-    final quickWins =
-        analysis.quickWins.take(3).map((item) => '- $item').join('\n');
-
-    if (english) {
-      return [
-        'Sirati CV Analysis',
-        '',
-        'Target role: ${analysis.targetJobTitle}',
-        'ATS score: ${analysis.scoreTotal}/100 (${analysis.grade})',
-        'Job match: ${analysis.jobMatch}%',
-        if (foundKeywords.isNotEmpty) 'Keywords found: $foundKeywords',
-        if (missingKeywords.isNotEmpty) 'Missing keywords: $missingKeywords',
-        if (strengths.isNotEmpty) ...['', 'Strengths:', strengths],
-        if (quickWins.isNotEmpty) ...['', 'Quick wins:', quickWins],
-      ].join('\n');
-    }
-
-    return [
-      'تحليل السيرة من سيرتي',
-      '',
-      'الوظيفة المستهدفة: ${analysis.targetJobTitle}',
-      'درجة ATS: ${analysis.scoreTotal}/100 (${analysis.grade})',
-      'نسبة التطابق: ${analysis.jobMatch}%',
-      if (foundKeywords.isNotEmpty) 'الكلمات الموجودة: $foundKeywords',
-      if (missingKeywords.isNotEmpty) 'الكلمات الناقصة: $missingKeywords',
-      if (strengths.isNotEmpty) ...['', 'نقاط القوة:', strengths],
-      if (quickWins.isNotEmpty) ...['', 'تحسينات سريعة:', quickWins],
-    ].join('\n');
   }
 
   Color _scoreColor(int s) {

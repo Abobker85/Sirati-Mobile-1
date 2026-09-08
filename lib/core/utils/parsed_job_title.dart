@@ -59,10 +59,7 @@ class ParsedJobTitle {
       final insideEn = hasLatin(inside);
 
       if (insideEn && !insideAr) {
-        final outside = (trimmed.substring(0, match.start) +
-                ' ' +
-                trimmed.substring(match.end))
-            .trim();
+        final outside = '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'.trim();
         if (hasArabic(outside)) {
           return ParsedJobTitle(
             arabic: _cleanDelimiters(outside),
@@ -72,10 +69,7 @@ class ParsedJobTitle {
       }
 
       if (insideAr && !insideEn) {
-        final outside = (trimmed.substring(0, match.start) +
-                ' ' +
-                trimmed.substring(match.end))
-            .trim();
+        final outside = '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'.trim();
         if (hasLatin(outside)) {
           return ParsedJobTitle(
             arabic: _cleanDelimiters(inside),
@@ -94,10 +88,7 @@ class ParsedJobTitle {
       final insideEn = hasLatin(inside);
 
       if (insideEn && !insideAr) {
-        final outside = (trimmed.substring(0, match.start) +
-                ' ' +
-                trimmed.substring(match.end))
-            .trim();
+        final outside = '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'.trim();
         if (hasArabic(outside)) {
           return ParsedJobTitle(
             arabic: _cleanDelimiters(outside),
@@ -107,10 +98,7 @@ class ParsedJobTitle {
       }
 
       if (insideAr && !insideEn) {
-        final outside = (trimmed.substring(0, match.start) +
-                ' ' +
-                trimmed.substring(match.end))
-            .trim();
+        final outside = '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'.trim();
         if (hasLatin(outside)) {
           return ParsedJobTitle(
             arabic: _cleanDelimiters(inside),
