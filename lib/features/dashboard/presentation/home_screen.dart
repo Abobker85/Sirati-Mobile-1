@@ -643,7 +643,7 @@ class _DashboardStatCard extends StatelessWidget {
                 textAlign: TextAlign.start,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.labelMd(),
+                style: AppTextStyles.labelMd(context.sirati),
               ),
               const SizedBox(height: 6),
               _CountUpValue(count: count),

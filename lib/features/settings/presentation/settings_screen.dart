@@ -530,7 +530,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       text,
       textAlign: TextAlign.start,
-      style: AppTextStyles.labelMd().copyWith(
+      style: AppTextStyles.labelMd(context.sirati).copyWith(
         color: context.sirati.textHint,
         letterSpacing: 0.2,
       ),

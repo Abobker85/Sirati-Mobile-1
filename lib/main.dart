@@ -117,7 +117,7 @@ Future<void> startSiratiApp() async {
         // Edge-to-edge on Android 15+; SafeArea on screens paints content insets.
         await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
         SystemChrome.setSystemUIOverlayStyle(
-          AppTheme.systemUiOverlayStyle(SiratiColors.light, Brightness.light),
+          AppTheme.bootstrapSystemUiOverlayStyle(),
         );
       } catch (e, st) {
         debugPrint('[Boot] SystemChrome failed: $e\n$st');

@@ -9,6 +9,7 @@ import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/in_app_review_service.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/core/storage/preference_store.dart';
+import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/idempotency_key.dart';
 import 'package:sirati/shared/models/ai_status.dart';
@@ -98,7 +99,9 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _pollingPaused = state != AppLifecycleState.resumed;
+    // Keep polling while backgrounded. Pausing here is what forced the
+    // "keep the app open" instruction; the job keeps running on the server.
+    _pollingPaused = false;
   }
 
   List<TextEditingController> get _allControllers => [
@@ -559,15 +562,14 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
         AppSnackBar.warning(
           context,
           english
-              ? 'AI is still working. A usable local CV is ready, and you can retry generation later.'
-              : 'لا يزال الذكاء الاصطناعي يعمل. نسخة محلية من سيرتك جاهزة، ويمكنك إعادة محاولة التوليد لاحقاً.',
+              ? 'AI is still working in the background. We will notify you when it finishes — this draft is not ready to send to an employer.'
+              : 'لا يزال الذكاء الاصطناعي يعمل في الخلفية. سنُعلمك عند الانتهاء — هذه المسودة غير جاهزة للإرسال إلى جهة التوظيف.',
         );
+        return;
       } else if (generatedCv.aiStatus == AiStatus.failed) {
         AppSnackBar.error(
           context,
-          english
-              ? 'AI generation could not be completed: ${generatedCv.aiError ?? 'Please try again.'}'
-              : 'تعذر إكمال توليد السيرة بالذكاء الاصطناعي: ${generatedCv.aiError ?? 'يرجى المحاولة مرة أخرى.'}',
+          AiErrorMessage.generationFailed(generatedCv.aiError, english: english),
           actionLabel: english ? 'Retry' : 'إعادة المحاولة',
           onAction: _submit,
         );
@@ -1208,7 +1210,11 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
                 prefixIcon: const Icon(Icons.email_outlined),
                 validator: (value) {
                   final email = value?.trim() ?? '';
-                  if (email.isEmpty) return null; // optional
+                  if (email.isEmpty) {
+                    return english
+                        ? 'Email is required so an employer can reply.'
+                        : 'البريد الإلكتروني مطلوب حتى يتمكن صاحب العمل من الرد.';
+                  }
                   if (!email.contains('@')) {
                     return english
                         ? 'Enter a valid email address.'
@@ -1230,6 +1236,15 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
                 textAlign: TextAlign.start,
                 hintText: '+966 5X XXX XXXX',
                 prefixIcon: const Icon(Icons.phone_outlined),
+                validator: (value) {
+                  final phone = value?.trim() ?? '';
+                  if (phone.isEmpty) {
+                    return english
+                        ? 'Phone is required so an employer can reply.'
+                        : 'رقم الهاتف مطلوب حتى يتمكن صاحب العمل من الرد.';
+                  }
+                  return null;
+                },
               ),
               english),
           const SizedBox(height: 14),

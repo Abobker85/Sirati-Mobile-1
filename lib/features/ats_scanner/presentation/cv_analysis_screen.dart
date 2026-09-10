@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -50,7 +51,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _pollingPaused = state != AppLifecycleState.resumed;
+    _pollingPaused = false;
   }
 
   @override
@@ -171,9 +172,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
       } else if (analysis.aiStatus == AiStatus.failed) {
         AppSnackBar.error(
           context,
-          english
-              ? 'AI suggestions could not be completed: ${analysis.aiError ?? 'Please try again.'}'
-              : 'تعذر إكمال توصيات الذكاء الاصطناعي: ${analysis.aiError ?? 'يرجى المحاولة مرة أخرى.'}',
+          AiErrorMessage.suggestionsFailed(analysis.aiError, english: english),
           actionLabel: english ? 'Retry' : 'إعادة المحاولة',
           onAction: _submit,
         );
@@ -261,7 +260,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
                   Text(
                     english ? 'Target job title' : 'المسمى الوظيفي المستهدف',
                     textAlign: TextAlign.start,
-                    style: AppTextStyles.titleSm(),
+                    style: AppTextStyles.titleSm(context.sirati),
                   ),
                   const SizedBox(height: 10),
                   AppTextFormField(
@@ -294,7 +293,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
                   Text(
                     english ? 'Upload resume file' : 'رفع ملف السيرة الذاتية',
                     textAlign: TextAlign.start,
-                    style: AppTextStyles.titleSm(),
+                    style: AppTextStyles.titleSm(context.sirati),
                   ),
                   const SizedBox(height: 12),
                   if (_uploadedFile == null)
@@ -416,7 +415,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
                   Text(
                     english ? 'Paste resume text' : 'لصق نص السيرة الذاتية',
                     textAlign: TextAlign.start,
-                    style: AppTextStyles.titleSm(),
+                    style: AppTextStyles.titleSm(context.sirati),
                   ),
                   const SizedBox(height: 10),
                   AppTextFormField(

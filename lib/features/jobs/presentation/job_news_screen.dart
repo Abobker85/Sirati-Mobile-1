@@ -286,7 +286,7 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
                                               ? 'Latest Postings'
                                               : 'آخر الإعلانات',
                                           textAlign: TextAlign.start,
-                                          style: AppTextStyles.titleMd(),
+                                          style: AppTextStyles.titleMd(context.sirati),
                                         ),
                                         const SizedBox(height: AppSpacing.sm),
                                         if (latest.isEmpty)
@@ -479,7 +479,7 @@ class _JobNewsCard extends StatelessWidget {
                     children: [
                       JobTitleDisplay(
                         title: item.title,
-                        primaryStyle: AppTextStyles.titleMd(),
+                        primaryStyle: AppTextStyles.titleMd(context.sirati),
                         secondaryStyle: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,

@@ -93,7 +93,7 @@ class PasswordStrengthMeter extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.start,
-              style: AppTextStyles.labelMd().copyWith(color: labelColor),
+              style: AppTextStyles.labelMd(context.sirati).copyWith(color: labelColor),
             ),
           ],
         ),

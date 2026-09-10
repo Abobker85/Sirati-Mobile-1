@@ -126,7 +126,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     ? 'Deleting your account permanently removes your profile, CVs, analyses, and notification history. This action cannot be undone.'
                     : 'حذف الحساب يزيل نهائياً ملفك والسير والتحليلات وسجل الإشعارات. لا يمكن التراجع عن هذا الإجراء.',
                 textAlign: TextAlign.start,
-                style: AppTextStyles.bodySm().copyWith(
+                style: AppTextStyles.bodySm(context.sirati).copyWith(
                   color: context.sirati.error,
                   fontWeight: FontWeight.w600,
                   height: 1.5,
@@ -137,7 +137,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             Text(
               en ? 'Confirm with password' : 'أكد بكلمة المرور',
               textAlign: TextAlign.start,
-              style: AppTextStyles.titleSm()
+              style: AppTextStyles.titleSm(context.sirati)
                   .copyWith(color: context.sirati.textSecondary),
             ),
             const SizedBox(height: 6),

@@ -207,7 +207,7 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                       child: Text(
                         en ? 'Job title' : 'المسمى الوظيفي',
                         textAlign: TextAlign.start,
-                        style: AppTextStyles.titleMd().copyWith(
+                        style: AppTextStyles.titleMd(context.sirati).copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                       ),

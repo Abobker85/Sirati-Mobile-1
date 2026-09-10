@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
@@ -31,6 +33,16 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
   Future<void> _downloadPdf(BuildContext context) async {
     if (_isDownloading) return;
     final english = AppLocale.isEnglish(context);
+    if (AiStatus.isPending(widget.generatedCv.aiStatus) ||
+        widget.generatedCv.aiStatus == AiStatus.failed) {
+      _showMessage(
+        context,
+        english
+            ? 'This CV is not ready to send to an employer yet.'
+            : 'هذه السيرة غير جاهزة للإرسال إلى جهة التوظيف بعد.',
+      );
+      return;
+    }
     final service = CvApiService();
 
     setState(() => _isDownloading = true);
@@ -194,9 +206,8 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      english
-                          ? 'A local version was created because AI generation did not complete: ${widget.generatedCv.aiError}'
-                          : 'تم إنشاء نسخة محلية لأن الذكاء الاصطناعي لم يكتمل: ${widget.generatedCv.aiError}',
+                      AiErrorMessage.localFallback(widget.generatedCv.aiError,
+                          english: english),
                       style: TextStyle(
                           fontSize: 12,
                           color: context.sirati.amber,
@@ -217,7 +228,9 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: context.sirati.border),
                 ),
-                child: ListView(
+                child: Directionality(
+                  textDirection: _contentDirection(),
+                  child: ListView(
                   children: [
                     Text(widget.generatedCv.fullName,
                         style: TextStyle(
@@ -225,7 +238,7 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
                             fontWeight: FontWeight.w700,
                             color: context.sirati.primaryDark)),
                     const SizedBox(height: 4),
-                    Text(widget.generatedCv.targetJobTitle,
+                    Text(_displayHeadline(widget.generatedCv.targetJobTitle),
                         style: TextStyle(
                             fontSize: 14,
                             color: context.sirati.primary,
@@ -249,10 +262,13 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
                       ..._buildMarkdownSectionsCached(context, english),
                   ],
                 ),
+                ),
               ),
             ),
           ),
-          Padding(
+          SafeArea(
+            top: false,
+            child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
             child: Row(
               children: [
@@ -292,9 +308,33 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
               ],
             ),
           ),
+          ),
         ],
       ),
     );
+  }
+
+  TextDirection _contentDirection() {
+    final language = widget.generatedCv.language;
+    if (language == 'en') return TextDirection.ltr;
+    if (language == 'ar') return TextDirection.rtl;
+    return BidiTextUtils.detectBaseDirection(
+      widget.generatedCv.generatedMarkdown,
+      fallback: TextDirection.rtl,
+    );
+  }
+
+  String _displayHeadline(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty || widget.generatedCv.language != 'en') {
+      return trimmed;
+    }
+    return trimmed
+        .split(RegExp(r'\s+'))
+        .map((word) => word.isEmpty
+            ? word
+            : '${word[0].toUpperCase()}${word.substring(1)}')
+        .join(' ');
   }
 
   List<Widget> _buildMarkdownSections(

@@ -502,7 +502,7 @@ class GoldenCvBuilderScreen extends StatelessWidget {
       children: [
         Text(
           english ? 'CV builder' : 'منشئ السيرة',
-          style: AppTextStyles.titleMd().copyWith(color: c.textPrimary),
+          style: AppTextStyles.titleMd(c).copyWith(color: c.textPrimary),
         ),
         const SizedBox(height: 12),
         AppTextFormField(
@@ -565,12 +565,12 @@ class GoldenAtsScannerScreen extends StatelessWidget {
       children: [
         Text(
           english ? 'ATS analysis' : 'تحليل ATS',
-          style: AppTextStyles.titleMd().copyWith(color: c.textPrimary),
+          style: AppTextStyles.titleMd(c).copyWith(color: c.textPrimary),
         ),
         const SizedBox(height: 8),
         Text(
           english ? 'Match score 87' : 'درجة التوافق 87',
-          style: AppTextStyles.bodyMd().copyWith(color: c.textSecondary),
+          style: AppTextStyles.bodyMd(c).copyWith(color: c.textSecondary),
         ),
         const SizedBox(height: 16),
         AnimatedAtsScoreBar(
@@ -591,7 +591,7 @@ class GoldenAtsScannerScreen extends StatelessWidget {
             english
                 ? 'Add a quantified achievement to the latest role.'
                 : 'أضف إنجازاً قابلاً للقياس في آخر منصب.',
-            style: AppTextStyles.bodyMd(),
+            style: AppTextStyles.bodyMd(c),
           ),
         ),
       ],

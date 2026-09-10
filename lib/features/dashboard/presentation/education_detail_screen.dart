@@ -128,7 +128,7 @@ class _DetailBody extends StatelessWidget {
         Text(
           title.isEmpty ? (english ? 'Untitled' : 'بدون عنوان') : title,
           textAlign: TextAlign.start,
-          style: AppTextStyles.titleLg().copyWith(fontSize: 26, height: 1.35),
+          style: AppTextStyles.titleLg(context.sirati).copyWith(fontSize: 26, height: 1.35),
         ),
         const SizedBox(height: AppSpacing.md),
         Container(
@@ -146,7 +146,7 @@ class _DetailBody extends StatelessWidget {
                     : 'لا يوجد محتوى لهذا العنصر.')
                 : body,
             textAlign: TextAlign.start,
-            style: AppTextStyles.bodyMd().copyWith(
+            style: AppTextStyles.bodyMd(context.sirati).copyWith(
               fontSize: 16.5,
               height: 1.75,
             ),

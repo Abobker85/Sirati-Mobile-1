@@ -143,7 +143,7 @@ class _MyCvsScreenState extends State<MyCvsScreen> {
                                   AppLocalizations.of(context)
                                       .cvCount(items.length),
                                   textAlign: TextAlign.start,
-                                  style: AppTextStyles.bodySm(),
+                                  style: AppTextStyles.bodySm(context.sirati),
                                 ),
                                 const SizedBox(height: AppSpacing.md),
                               ],
@@ -459,14 +459,14 @@ class _CvDocumentCard extends StatelessWidget {
                         textAlign: TextAlign.start,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.titleMd(),
+                        style: AppTextStyles.titleMd(context.sirati),
                       ),
                       if (updatedAt.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
                           updatedAt,
                           textAlign: TextAlign.start,
-                          style: AppTextStyles.bodySm().copyWith(
+                          style: AppTextStyles.bodySm(context.sirati).copyWith(
                             color: context.sirati.textHint,
                             fontSize: 12,
                           ),

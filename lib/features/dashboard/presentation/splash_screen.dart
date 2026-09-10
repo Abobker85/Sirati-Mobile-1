@@ -248,7 +248,7 @@ class _BootstrapBodyState extends State<_BootstrapBody>
             const SizedBox(height: 4),
             Text(
               en ? 'Preparing workspace…' : 'جارٍ تجهيز مساحتك…',
-              style: AppTextStyles.bodySm().copyWith(
+              style: AppTextStyles.bodySm(context.sirati).copyWith(
                 color: context.sirati.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
@@ -350,7 +350,7 @@ class _WelcomeBody extends StatelessWidget {
                             ? 'Your first step towards a better professional future'
                             : 'خطوتك الأولى نحو مستقبل مهني أفضل',
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.bodyMd().copyWith(
+                        style: AppTextStyles.bodyMd(context.sirati).copyWith(
                           height: 1.7,
                           color: context.sirati.textSecondary,
                         ),
@@ -389,7 +389,7 @@ class _WelcomeBody extends StatelessWidget {
                         onPressed: onPrivacy,
                         child: Text(
                           en ? 'Privacy Policy' : 'سياسة الخصوصية',
-                          style: AppTextStyles.labelMd().copyWith(
+                          style: AppTextStyles.labelMd(context.sirati).copyWith(
                             fontWeight: FontWeight.w700,
                             color: context.sirati.textHint,
                           ),
@@ -441,7 +441,7 @@ class _ValueCard extends StatelessWidget {
           Text(
             body,
             textAlign: TextAlign.start,
-            style: AppTextStyles.bodySm().copyWith(
+            style: AppTextStyles.bodySm(context.sirati).copyWith(
               height: 1.75,
               color: context.sirati.textSecondary,
             ),

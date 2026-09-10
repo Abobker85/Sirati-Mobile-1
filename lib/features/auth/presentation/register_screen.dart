@@ -590,7 +590,7 @@ class _FieldLabel extends StatelessWidget {
       child: Text(
         text,
         textAlign: TextAlign.start,
-        style: AppTextStyles.labelMd().copyWith(
+        style: AppTextStyles.labelMd(context.sirati).copyWith(
           fontWeight: FontWeight.w700,
           color: context.sirati.textSecondary,
         ),

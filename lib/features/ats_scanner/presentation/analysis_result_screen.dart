@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
@@ -44,7 +45,7 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _pollingPaused = state != AppLifecycleState.resumed;
+    _pollingPaused = false;
   }
 
   @override
@@ -98,9 +99,7 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen>
       } else if (generatedCv.aiStatus == AiStatus.failed) {
         AppSnackBar.error(
           context,
-          english
-              ? 'AI generation could not be completed: ${generatedCv.aiError ?? 'Please try again.'}'
-              : 'تعذر إكمال توليد السيرة بالذكاء الاصطناعي: ${generatedCv.aiError ?? 'يرجى المحاولة مرة أخرى.'}',
+          AiErrorMessage.generationFailed(generatedCv.aiError, english: english),
           actionLabel: english ? 'Retry' : 'إعادة المحاولة',
           onAction: _generateImprovedCv,
         );
@@ -214,6 +213,7 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen>
                 grade: analysis.grade,
                 jobMatch: analysis.jobMatch,
                 jobTitle: analysis.targetJobTitle,
+                categoryLabel: analysis.displayCategoryLabel(english: english),
                 criteria: analysis.criteria,
                 keywordsFound: analysis.keywordsFound,
                 keywordsMissing: analysis.keywordsMissing,
@@ -244,6 +244,7 @@ class _ScoreTab extends StatelessWidget {
   final String grade;
   final int jobMatch;
   final String jobTitle;
+  final String categoryLabel;
   final List<ScoreCriterion> criteria;
   final List<String> keywordsFound;
   final List<String> keywordsMissing;
@@ -257,6 +258,7 @@ class _ScoreTab extends StatelessWidget {
     required this.grade,
     required this.jobMatch,
     required this.jobTitle,
+    required this.categoryLabel,
     required this.criteria,
     required this.keywordsFound,
     required this.keywordsMissing,
@@ -380,6 +382,36 @@ class _ScoreTab extends StatelessWidget {
                     fontSize: 11,
                     color: context.sirati.textHint,
                   ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: context.sirati.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: context.sirati.border),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.tune_rounded,
+                      size: 14,
+                      color: context.sirati.textSecondary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${english ? "Benchmark: " : "معيار التقييم: "}$categoryLabel',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: context.sirati.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

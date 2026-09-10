@@ -162,6 +162,8 @@ Future<void> _openSkillsStep(
   await tester.pumpWidget(_testApp(CvGeneratorScreen(apiService: api)));
   await tester.pump();
   await tester.enterText(_fieldWithHint('Salem Sayer'), 'Salem Sayer');
+  await tester.enterText(_fieldWithHint('salem@example.com'), 'salem@example.com');
+  await tester.enterText(_fieldWithHint('+966 5X XXX XXXX'), '+966 59 189 0300');
   await tester.enterText(
       _fieldWithHint('Laravel Backend Developer'), 'Backend Developer');
   await tester.tap(find.text('Next'));

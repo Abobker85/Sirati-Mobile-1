@@ -119,66 +119,59 @@ class AppShadows {
   }
 }
 
-/// Shared type ramp. Pass [colors] (e.g. `context.sirati`) for theme-aware text.
-/// Defaults to light palette when omitted (safe for unmigrated call sites).
+/// Shared type ramp. [colors] is required so dark-mode text cannot silently
+/// fall back to the light palette (SIRATI-80).
 ///
 /// All styles come from [AppTypography] tokens (SIRATI-18).
 class AppTextStyles {
   static bool _arabicDefault() => AppLocale.languageCode.value != 'en';
 
-  static TextStyle titleLg([SiratiColors? colors, bool? arabic]) {
-    final c = colors ?? SiratiColors.light;
+  static TextStyle titleLg(SiratiColors colors, {bool? arabic}) {
     return AppTypography.titleLg.resolve(
       arabic: arabic ?? _arabicDefault(),
-      color: c.textPrimary,
+      color: colors.textPrimary,
     );
   }
 
-  static TextStyle titleMd([SiratiColors? colors, bool? arabic]) {
-    final c = colors ?? SiratiColors.light;
+  static TextStyle titleMd(SiratiColors colors, {bool? arabic}) {
     return AppTypography.titleMd.resolve(
       arabic: arabic ?? _arabicDefault(),
-      color: c.textPrimary,
+      color: colors.textPrimary,
     );
   }
 
-  static TextStyle titleSm([SiratiColors? colors, bool? arabic]) {
-    final c = colors ?? SiratiColors.light;
+  static TextStyle titleSm(SiratiColors colors, {bool? arabic}) {
     return AppTypography.titleSm.resolve(
       arabic: arabic ?? _arabicDefault(),
-      color: c.textPrimary,
+      color: colors.textPrimary,
     );
   }
 
-  static TextStyle bodyMd([SiratiColors? colors, bool? arabic]) {
-    final c = colors ?? SiratiColors.light;
+  static TextStyle bodyMd(SiratiColors colors, {bool? arabic}) {
     return AppTypography.bodyMd.resolve(
       arabic: arabic ?? _arabicDefault(),
-      color: c.textPrimary,
+      color: colors.textPrimary,
     );
   }
 
-  static TextStyle bodySm([SiratiColors? colors, bool? arabic]) {
-    final c = colors ?? SiratiColors.light;
+  static TextStyle bodySm(SiratiColors colors, {bool? arabic}) {
     return AppTypography.bodySm.resolve(
       arabic: arabic ?? _arabicDefault(),
-      color: c.textSecondary,
+      color: colors.textSecondary,
     );
   }
 
-  static TextStyle labelMd([SiratiColors? colors, bool? arabic]) {
-    final c = colors ?? SiratiColors.light;
+  static TextStyle labelMd(SiratiColors colors, {bool? arabic}) {
     return AppTypography.labelMd.resolve(
       arabic: arabic ?? _arabicDefault(),
-      color: c.textSecondary,
+      color: colors.textSecondary,
     );
   }
 
-  static TextStyle displayStat([SiratiColors? colors, bool? arabic]) {
-    final c = colors ?? SiratiColors.light;
+  static TextStyle displayStat(SiratiColors colors, {bool? arabic}) {
     return AppTypography.displayMd.resolve(
       arabic: arabic ?? _arabicDefault(),
-      color: c.textPrimary,
+      color: colors.textPrimary,
     );
   }
 }
@@ -339,6 +332,10 @@ class AppTheme {
   /// Global status / navigation bar styling for every route (also on
   /// [AppBarTheme.systemOverlayStyle]). Transparent bars support edge-to-edge;
   /// icon brightness follows theme.
+  /// Pre-theme overlay used at process start, before [SiratiApp] mounts.
+  static SystemUiOverlayStyle bootstrapSystemUiOverlayStyle() =>
+      systemUiOverlayStyle(SiratiColors.light, Brightness.light);
+
   static SystemUiOverlayStyle systemUiOverlayStyle(
     SiratiColors c,
     Brightness brightness,

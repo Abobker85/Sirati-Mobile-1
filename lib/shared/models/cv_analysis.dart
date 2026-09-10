@@ -17,6 +17,10 @@ class CvAnalysis {
   final String aiStatus;
   final Map<String, dynamic>? aiFeedback;
   final String? aiError;
+  final String? category;
+  final String? categoryLabel;
+  final String? categoryLabelEn;
+  final bool isGeneralProfile;
   final DateTime? createdAt;
 
   const CvAnalysis({
@@ -27,6 +31,10 @@ class CvAnalysis {
     required this.scoreTotal,
     required this.grade,
     required this.jobMatch,
+    this.category = 'general',
+    this.categoryLabel,
+    this.categoryLabelEn,
+    this.isGeneralProfile = false,
     required this.criteria,
     required this.strengths,
     required this.weaknesses,
@@ -48,6 +56,10 @@ class CvAnalysis {
       scoreTotal: _asInt(json['score_total']),
       grade: json['grade']?.toString() ?? '-',
       jobMatch: _asInt(json['job_match']),
+      category: json['category']?.toString() ?? 'general',
+      categoryLabel: json['category_label']?.toString(),
+      categoryLabelEn: json['category_label_en']?.toString(),
+      isGeneralProfile: json['is_general_profile'] == true || (json['category'] == 'general'),
       criteria: _asList(json['criteria']).map(ScoreCriterion.fromJson).toList(),
       strengths: _asStringList(json['strengths']),
       weaknesses:
@@ -62,6 +74,19 @@ class CvAnalysis {
       aiError: json['ai_error']?.toString(),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
     );
+  }
+
+  String displayCategoryLabel({required bool english}) {
+    if (english) {
+      return categoryLabelEn ??
+          (category == 'general'
+              ? 'General Profile (Transferable Skills)'
+              : (category ?? 'General'));
+    }
+    return categoryLabel ??
+        (category == 'general'
+            ? 'تقييم عام (مهارات مهنية مشتركة)'
+            : (category ?? 'عام'));
   }
 
   String get inputMethodLabel {

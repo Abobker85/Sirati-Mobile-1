@@ -310,7 +310,7 @@ class _AnalysisList extends StatelessWidget {
                                 LocaleFormat.mixedTitle(analysis.targetJobTitle,
                                     english: english),
                                 textAlign: TextAlign.start,
-                                style: AppTextStyles.titleSm(),
+                                style: AppTextStyles.titleSm(context.sirati),
                               ),
                             ),
                             Text('${analysis.scoreTotal}',
@@ -457,13 +457,13 @@ class _GeneratedCvList extends StatelessWidget {
                             LocaleFormat.mixedTitle(cv.fullName,
                                 english: english),
                             textAlign: TextAlign.start,
-                            style: AppTextStyles.titleSm()),
+                            style: AppTextStyles.titleSm(context.sirati)),
                         const SizedBox(height: 3),
                         Text(
                             LocaleFormat.mixedTitle(cv.targetJobTitle,
                                 english: english),
                             textAlign: TextAlign.start,
-                            style: AppTextStyles.bodySm()),
+                            style: AppTextStyles.bodySm(context.sirati)),
                         const SizedBox(height: 4),
                         Row(
                           children: [

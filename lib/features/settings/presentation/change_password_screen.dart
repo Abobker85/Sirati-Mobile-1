@@ -258,7 +258,7 @@ class _Label extends StatelessWidget {
       text,
       textAlign: TextAlign.start,
       style:
-          AppTextStyles.titleSm().copyWith(color: context.sirati.textSecondary),
+          AppTextStyles.titleSm(context.sirati).copyWith(color: context.sirati.textSecondary),
     );
   }
 }

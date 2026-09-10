@@ -97,7 +97,7 @@ class _EducationScreenState extends State<EducationScreen> {
                     child: Text(
                       english ? 'What is coming?' : 'ماذا ينتظرك قريباً؟',
                       textAlign: TextAlign.start,
-                      style: AppTextStyles.titleMd(),
+                      style: AppTextStyles.titleMd(context.sirati),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -236,7 +236,7 @@ class _ComingSoonHero extends StatelessWidget {
                 ? 'Educational Hub & Courses'
                 : 'القسم التعليمي والدورات المهنية',
             textAlign: TextAlign.center,
-            style: AppTextStyles.titleLg(),
+            style: AppTextStyles.titleLg(context.sirati),
           ),
           const SizedBox(height: 8),
           Text(
@@ -244,8 +244,8 @@ class _ComingSoonHero extends StatelessWidget {
                 ? 'We are building interactive courses, interview guides, and certifications to accelerate your career.'
                 : 'نعمل حالياً على تجهيز دورات تفاعلية وأدلة لاجتياز المقابلات الوظيفية وتطوير مسارك المهني.',
             textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMd().copyWith(
-              color: context.sirati.textHint,
+            style: AppTextStyles.bodyMd(context.sirati).copyWith(
+              color: context.sirati.textSecondary,
               height: 1.5,
             ),
           ),
@@ -327,14 +327,14 @@ class _UpcomingFeatureCard extends StatelessWidget {
                 Text(
                   title,
                   textAlign: TextAlign.start,
-                  style: AppTextStyles.titleSm(),
+                  style: AppTextStyles.titleSm(context.sirati),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
                   textAlign: TextAlign.start,
-                  style: AppTextStyles.bodySm().copyWith(
-                    color: context.sirati.textHint,
+                  style: AppTextStyles.bodySm(context.sirati).copyWith(
+                    color: context.sirati.textSecondary,
                     height: 1.45,
                   ),
                 ),
@@ -374,7 +374,7 @@ class _CvCtaCard extends StatelessWidget {
                       ? 'Ready to build your CV now?'
                       : 'جاهز لإنشاء سيرتك الذاتية الآن؟',
                   textAlign: TextAlign.start,
-                  style: AppTextStyles.titleSm(),
+                  style: AppTextStyles.titleSm(context.sirati),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -382,8 +382,8 @@ class _CvCtaCard extends StatelessWidget {
                       ? 'Create an ATS-optimized CV in simple steps.'
                       : 'أنشئ سيرة احترافية متوافقة مع ATS بخطوات بسيطة.',
                   textAlign: TextAlign.start,
-                  style: AppTextStyles.bodySm().copyWith(
-                    color: context.sirati.textHint,
+                  style: AppTextStyles.bodySm(context.sirati).copyWith(
+                    color: context.sirati.textSecondary,
                   ),
                 ),
               ],
@@ -400,6 +400,7 @@ class _CvCtaCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.sirati.primary,
                 foregroundColor: Colors.white,
+                minimumSize: const Size(0, 44),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),

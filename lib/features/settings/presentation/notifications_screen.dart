@@ -158,7 +158,7 @@ class _NotificationCard extends StatelessWidget {
                       child: Text(
                         _text(item['title'], ''),
                         textAlign: TextAlign.start,
-                        style: AppTextStyles.titleSm().copyWith(
+                        style: AppTextStyles.titleSm(context.sirati).copyWith(
                           fontWeight:
                               isRead ? FontWeight.w600 : FontWeight.w800,
                         ),
@@ -179,14 +179,14 @@ class _NotificationCard extends StatelessWidget {
                 Text(
                   _text(item['body'], ''),
                   textAlign: TextAlign.start,
-                  style: AppTextStyles.bodySm(),
+                  style: AppTextStyles.bodySm(context.sirati),
                 ),
                 if (_notificationTime(item, english: english).isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     _notificationTime(item, english: english),
-                    style: AppTextStyles.labelMd().copyWith(
-                      color: context.sirati.textHint,
+                    style: AppTextStyles.labelMd(context.sirati).copyWith(
+                      color: context.sirati.textSecondary,
                     ),
                   ),
                 ],

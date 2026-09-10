@@ -208,14 +208,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         ? 'Enter your email and we will send a 6-digit reset code.'
                         : 'أدخل بريدك الإلكتروني وسنرسل لك رمزاً من 6 أرقام لاستعادة كلمة المرور.'),
                 textAlign: TextAlign.start,
-                style: AppTextStyles.titleMd()
+                style: AppTextStyles.titleMd(context.sirati)
                     .copyWith(fontSize: 17, height: 1.55),
               ),
               const SizedBox(height: AppSpacing.xl),
               Text(
                 english ? 'Email Address' : 'البريد الإلكتروني',
                 textAlign: TextAlign.start,
-                style: AppTextStyles.labelMd()
+                style: AppTextStyles.labelMd(context.sirati)
                     .copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 6),
@@ -265,7 +265,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Text(
                   english ? 'Verification code' : 'رمز التحقق',
                   textAlign: TextAlign.start,
-                  style: AppTextStyles.labelMd()
+                  style: AppTextStyles.labelMd(context.sirati)
                       .copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
@@ -299,7 +299,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Text(
                   english ? 'New password' : 'كلمة المرور الجديدة',
                   textAlign: TextAlign.start,
-                  style: AppTextStyles.labelMd()
+                  style: AppTextStyles.labelMd(context.sirati)
                       .copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
@@ -345,7 +345,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Text(
                   english ? 'Confirm password' : 'تأكيد كلمة المرور',
                   textAlign: TextAlign.start,
-                  style: AppTextStyles.labelMd()
+                  style: AppTextStyles.labelMd(context.sirati)
                       .copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),

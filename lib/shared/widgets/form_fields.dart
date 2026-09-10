@@ -63,9 +63,6 @@ class AppFormStyles {
         color: AppColors.success,
       );
 
-  static InputDecorationTheme get inputTheme =>
-      inputThemeFor(SiratiColors.light);
-
   static InputDecorationTheme inputThemeFor(SiratiColors c) {
     OutlineInputBorder o(Color color, double width) => OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),

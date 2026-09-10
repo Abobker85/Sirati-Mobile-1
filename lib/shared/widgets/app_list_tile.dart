@@ -74,7 +74,7 @@ class AppListTile extends StatelessWidget {
                   textAlign: TextAlign.start,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.titleMd().copyWith(
+                  style: AppTextStyles.titleMd(context.sirati).copyWith(
                     color: titleColor ?? context.sirati.textPrimary,
                   ),
                 ),
@@ -85,7 +85,7 @@ class AppListTile extends StatelessWidget {
                     textAlign: TextAlign.start,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodySm(),
+                    style: AppTextStyles.bodySm(context.sirati),
                   ),
                 ],
               ],

@@ -11,7 +11,9 @@ class CvApiService {
   CvApiService({
     ApiClient? apiClient,
     Future<void> Function(Duration)? pollingDelay,
-    this.pollingTimeout = const Duration(seconds: 60),
+    // Must stay in sync with App\Services\Ai\AiTimeouts::CLIENT_POLL_SECONDS
+    // and remain strictly greater than JOB_SECONDS (180).
+    this.pollingTimeout = const Duration(seconds: 210),
   })  : _pollingDelay = pollingDelay ?? Future<void>.delayed,
         _apiClient = apiClient ??
             ApiClient(tokenProvider: const AuthTokenStore().readToken);

@@ -135,7 +135,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           _finishing ? null : () => _finish(skipped: true),
                       child: Text(
                         en ? 'Skip' : 'تخطي',
-                        style: AppTextStyles.labelMd().copyWith(
+                        style: AppTextStyles.labelMd(context.sirati).copyWith(
                           fontWeight: FontWeight.w700,
                           color: context.sirati.textHint,
                         ),
@@ -257,7 +257,7 @@ class _OnboardingPageView extends StatelessWidget {
                 Text(
                   page.body,
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.bodyMd().copyWith(
+                  style: AppTextStyles.bodyMd(context.sirati).copyWith(
                     height: compact ? 1.55 : 1.7,
                     color: context.sirati.textSecondary,
                     fontSize: bodySize,

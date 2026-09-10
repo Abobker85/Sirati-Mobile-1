@@ -176,14 +176,14 @@ class AiProgressOverlay {
       case AiProgressKind.generation:
         return english
             ? const [
-                'Structuring your information',
+                'Queued — waiting for a worker',
                 'Writing your CV',
-                'Scoring ATS compatibility',
+                'Saving your CV',
               ]
             : const [
-                'تنظيم معلوماتك',
+                'في قائمة الانتظار',
                 'كتابة سيرتك الذاتية',
-                'تقييم التوافق مع ATS',
+                'حفظ سيرتك الذاتية',
               ];
       case AiProgressKind.analysis:
         return english
@@ -422,7 +422,9 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
             ],
             const SizedBox(height: AppSpacing.sm),
             Text(
-              en ? 'Please keep the app open' : 'يرجى إبقاء التطبيق مفتوحاً',
+              en
+                  ? 'You can switch away — generation keeps running'
+                  : 'يمكنك مغادرة التطبيق — التوليد يستمر في الخلفية',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,

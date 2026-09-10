@@ -47,7 +47,7 @@ class JobTitleDisplay extends StatelessWidget {
                 maxLines: primaryMaxLines,
                 overflow:
                     primaryMaxLines != null ? TextOverflow.ellipsis : null,
-                style: primaryStyle ?? AppTextStyles.titleMd(),
+                style: primaryStyle ?? AppTextStyles.titleMd(context.sirati),
               ),
             ),
             if (trailingBadge != null) ...[
