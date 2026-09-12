@@ -169,7 +169,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-/// Two-beat splash: wordmark first, then the brand mark on the second beat.
+/// Two-beat splash: wordmark first, then the brand mark on the second beat with fluid motion.
 class _BootstrapBody extends StatefulWidget {
   const _BootstrapBody({super.key});
 
@@ -182,9 +182,17 @@ class _BootstrapBodyState extends State<_BootstrapBody>
   late final AnimationController _controller;
   late final Animation<double> _wordmarkOpacity;
   late final Animation<Offset> _wordmarkSlide;
+  late final Animation<double> _wordmarkScale;
   late final Animation<double> _markOpacity;
   late final Animation<double> _markScale;
+  late final Animation<double> _auraScale;
+  late final Animation<double> _auraOpacity;
+  late final Animation<double> _logoScale;
+  late final Animation<Offset> _brandTextSlide;
+  late final Animation<double> _brandTextOpacity;
   late final Animation<double> _statusOpacity;
+  late final Animation<Offset> _statusSlide;
+  late final Animation<double> _dotsProgress;
 
   @override
   void initState() {
@@ -193,31 +201,88 @@ class _BootstrapBodyState extends State<_BootstrapBody>
       vsync: this,
       duration: const Duration(milliseconds: 860),
     );
+
     _wordmarkOpacity = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0, end: 1), weight: 28),
-      TweenSequenceItem(tween: ConstantTween(1), weight: 16),
-      TweenSequenceItem(tween: Tween(begin: 1, end: 0), weight: 18),
-      TweenSequenceItem(tween: ConstantTween(0), weight: 38),
-    ]).animate(CurvedAnimation(parent: _controller, curve: MotionCurves.enter));
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 24),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 14),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 14),
+      TweenSequenceItem(tween: ConstantTween(0.0), weight: 48),
+    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
     _wordmarkSlide = Tween<Offset>(
-      begin: const Offset(0, 0.045),
+      begin: const Offset(0, 0.08),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0, 0.32, curve: MotionCurves.enter),
+      curve: const Interval(0, 0.32, curve: Curves.easeOutCubic),
     ));
-    _markOpacity = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
+
+    _wordmarkScale = Tween<double>(
+      begin: 0.92,
+      end: 1.0,
+    ).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.42, 0.78, curve: MotionCurves.enter),
+      curve: const Interval(0, 0.32, curve: Curves.easeOutCubic),
     ));
-    _markScale = Tween<double>(begin: 0.84, end: 1).animate(CurvedAnimation(
+
+    // Brand mark circle blooms with spring physics overshoot
+    _markOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.42, 0.86, curve: MotionCurves.enter),
+      curve: const Interval(0.38, 0.70, curve: Curves.easeOut),
     ));
-    _statusOpacity = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
+    _markScale = Tween<double>(begin: 0.76, end: 1.0).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.68, 1, curve: MotionCurves.enter),
+      curve: const Interval(0.38, 0.82, curve: Curves.easeOutBack),
     ));
+
+    // Outer aura ripple ring expanding outward behind the mark circle
+    _auraScale = Tween<double>(begin: 0.92, end: 1.34).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.48, 0.92, curve: Curves.easeOutQuad),
+    ));
+    _auraOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween(0.0), weight: 48),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.40), weight: 18),
+      TweenSequenceItem(tween: Tween(begin: 0.40, end: 0.0), weight: 34),
+    ]).animate(_controller);
+
+    // Inner logo micro-spring
+    _logoScale = Tween<double>(begin: 0.68, end: 1.0).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.46, 0.84, curve: Curves.easeOutBack),
+    ));
+
+    // Brand name text glides up
+    _brandTextSlide = Tween<Offset>(
+      begin: const Offset(0, 0.28),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.54, 0.86, curve: Curves.easeOutCubic),
+    ));
+    _brandTextOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.52, 0.78, curve: Curves.easeOut),
+    ));
+
+    // Status message and wave dots
+    _statusOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.66, 0.92, curve: Curves.easeOut),
+    ));
+    _statusSlide = Tween<Offset>(
+      begin: const Offset(0, 0.16),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.66, 0.92, curve: Curves.easeOutCubic),
+    ));
+
+    _dotsProgress = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.70, 1.0, curve: Curves.easeInOut),
+    );
+
     _controller.forward();
   }
 
@@ -235,7 +300,7 @@ class _BootstrapBodyState extends State<_BootstrapBody>
       en ? 'Sirati' : 'سيرتي',
       textAlign: TextAlign.center,
       style: TextStyle(
-        fontSize: 32,
+        fontSize: 34,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.4,
         color: context.sirati.primary,
@@ -249,32 +314,38 @@ class _BootstrapBodyState extends State<_BootstrapBody>
         fontWeight: FontWeight.w500,
       ),
     );
-    final circle = _SplashMarkCircle(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SiratiMark(size: 64, elevated: true),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            en ? 'Sirati' : 'سيرتي',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: context.sirati.primary,
-            ),
-          ),
-        ],
-      ),
-    );
 
     if (reduceMotion) {
+      final staticCircle = _SplashMarkCircle(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SiratiMark(size: 64, elevated: true),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              en ? 'Sirati' : 'سيرتي',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: context.sirati.primary,
+              ),
+            ),
+          ],
+        ),
+      );
+
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            circle,
+            staticCircle,
             const SizedBox(height: AppSpacing.md),
             status,
+            const SizedBox(height: 8),
+            _SplashDotsWave(
+              animationValue: 1.0,
+              color: context.sirati.primary,
+            ),
           ],
         ),
       );
@@ -283,17 +354,76 @@ class _BootstrapBodyState extends State<_BootstrapBody>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
+        final animatedCircle = _SplashMarkCircle(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Transform.scale(
+                scale: _logoScale.value,
+                child: const SiratiMark(size: 64, elevated: true),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              SlideTransition(
+                position: _brandTextSlide,
+                child: Opacity(
+                  opacity: _brandTextOpacity.value,
+                  child: Text(
+                    en ? 'Sirati' : 'سيرتي',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
+                      color: context.sirati.primary,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
         return Center(
           child: Stack(
             alignment: Alignment.center,
             children: [
+              // Beat 1: Initial wordmark entrance
               FadeTransition(
                 opacity: _wordmarkOpacity,
                 child: SlideTransition(
                   position: _wordmarkSlide,
-                  child: wordmark,
+                  child: ScaleTransition(
+                    scale: _wordmarkScale,
+                    child: wordmark,
+                  ),
                 ),
               ),
+              // Beat 2: Aura ripple ring expanding outward behind the mark circle
+              if (_auraOpacity.value > 0.001)
+                Opacity(
+                  opacity: _auraOpacity.value,
+                  child: Transform.scale(
+                    scale: _auraScale.value,
+                    child: Container(
+                      width: 220,
+                      height: 220,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: context.sirati.primaryLight,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: context.sirati.primary.withValues(alpha: 0.18),
+                            blurRadius: 28,
+                            spreadRadius: 3,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              // Beat 2: Brand mark circle and status
               Opacity(
                 opacity: _markOpacity.value,
                 child: Transform.scale(
@@ -301,9 +431,25 @@ class _BootstrapBodyState extends State<_BootstrapBody>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      circle,
+                      animatedCircle,
                       const SizedBox(height: AppSpacing.md),
-                      Opacity(opacity: _statusOpacity.value, child: status),
+                      Opacity(
+                        opacity: _statusOpacity.value,
+                        child: SlideTransition(
+                          position: _statusSlide,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              status,
+                              const SizedBox(height: 8),
+                              _SplashDotsWave(
+                                animationValue: _dotsProgress.value,
+                                color: context.sirati.primary,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -312,6 +458,42 @@ class _BootstrapBodyState extends State<_BootstrapBody>
           ),
         );
       },
+    );
+  }
+}
+
+class _SplashDotsWave extends StatelessWidget {
+  final double animationValue;
+  final Color color;
+
+  const _SplashDotsWave({
+    required this.animationValue,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (i) {
+        final phase = ((animationValue * 2.5) - (i * 0.4)).clamp(0.0, 1.0);
+        final scale = 0.75 + (0.35 * phase);
+        final alpha = 0.25 + (0.75 * phase);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3.5),
+          child: Transform.scale(
+            scale: scale,
+            child: Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: alpha),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

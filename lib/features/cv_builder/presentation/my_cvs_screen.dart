@@ -119,7 +119,7 @@ class _MyCvsScreenState extends State<MyCvsScreen> {
                                   english: english,
                                   title: _text(data['title'],
                                       english ? 'My CVs' : 'سيرتي الذاتية'),
-                                  avatarLabel: english ? 'M' : 'س',
+                                  icon: Icons.description_rounded,
                                   unreadCount:
                                       SessionCache.instance.unreadCount,
                                   onNotifications: () =>

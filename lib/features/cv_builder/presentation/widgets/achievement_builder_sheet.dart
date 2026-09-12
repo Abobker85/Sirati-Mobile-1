@@ -440,7 +440,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(
                         backgroundColor: c.primary,
-                        foregroundColor: Colors.white,
+                        foregroundColor: c.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       onPressed: canInsert ? _insert : null,

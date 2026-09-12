@@ -32,6 +32,7 @@ class ScreenHeader extends StatelessWidget {
 
   final double titleSize;
   final String? avatarLabel;
+  final IconData? icon;
 
   const ScreenHeader({
     super.key,
@@ -43,6 +44,7 @@ class ScreenHeader extends StatelessWidget {
     this.unreadCount = 0,
     this.titleSize = 21,
     this.avatarLabel,
+    this.icon,
     this.onAvatarTap,
   });
 
@@ -58,7 +60,8 @@ class ScreenHeader extends StatelessWidget {
             compact ? titleSize.clamp(18.0, 19.0) : titleSize;
 
         final avatar = ProfileAvatar(
-          label: avatarLabel ?? _initialFromTitle(title),
+          icon: icon,
+          label: avatarLabel ?? (icon == null ? _initialFromTitle(title) : null),
           onTap: onAvatarTap,
           english: english,
         );
@@ -220,21 +223,49 @@ class NotificationBellButton extends StatelessWidget {
 
 /// Consistent profile avatar used in every tab header.
 class ProfileAvatar extends StatelessWidget {
-  final String label;
+  final String? label;
+  final IconData? icon;
   final VoidCallback? onTap;
   final double size;
   final bool english;
+  final String? semanticLabel;
 
   const ProfileAvatar({
     super.key,
-    required this.label,
+    this.label,
+    this.icon,
     this.onTap,
     this.size = 46,
     this.english = true,
+    this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
+    final Widget content;
+    if (icon != null) {
+      content = Icon(
+        icon,
+        size: size * 0.52,
+        color: context.sirati.onPrimary,
+      );
+    } else {
+      content = FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Padding(
+          padding: EdgeInsets.all(size * 0.12),
+          child: Text(
+            label ?? 'S',
+            style: TextStyle(
+              fontSize: size * 0.35,
+              fontWeight: FontWeight.w800,
+              color: context.sirati.onPrimary,
+            ),
+          ),
+        ),
+      );
+    }
+
     final face = ExcludeSemantics(
       child: Container(
         width: size,
@@ -247,33 +278,18 @@ class ProfileAvatar extends StatelessWidget {
             colors: [context.sirati.primary, context.sirati.primaryDark],
           ),
         ),
-        child: Center(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Padding(
-              padding: EdgeInsets.all(size * 0.12),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: size * 0.35,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ),
+        child: Center(child: content),
       ),
     );
 
     if (onTap == null) {
       return Semantics(
-        label: english ? 'Profile' : 'الملف الشخصي',
+        label: semanticLabel ?? (english ? 'Profile' : 'الملف الشخصي'),
         child: face,
       );
     }
 
-    final actionLabel = english ? 'Settings' : 'الإعدادات';
+    final actionLabel = semanticLabel ?? (english ? 'Settings' : 'الإعدادات');
     return Tooltip(
       message: actionLabel,
       child: Semantics(

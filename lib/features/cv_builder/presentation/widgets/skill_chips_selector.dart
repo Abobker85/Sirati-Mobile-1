@@ -504,7 +504,7 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(
                         backgroundColor: c.primary,
-                        foregroundColor: Colors.white,
+                        foregroundColor: c.onPrimary,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),

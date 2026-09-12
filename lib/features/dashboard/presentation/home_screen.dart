@@ -371,7 +371,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                               english: english,
                               title: AppLocale.greeting(name, context),
                               titleSize: 22,
-                              avatarLabel: BidiText.avatarInitial(name),
+                              icon: Icons.person_rounded,
                               status: status.isEmpty ? null : status,
                               unreadCount: unread,
                               onNotifications: () async {

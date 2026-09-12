@@ -69,7 +69,7 @@ class _EducationScreenState extends State<EducationScreen> {
                     subtitle: english
                         ? 'Career development & professional courses'
                         : 'تطوير المسار المهني والدورات التدريبية',
-                    avatarLabel: english ? 'E' : 'ت',
+                    icon: Icons.school_rounded,
                     unreadCount: SessionCache.instance.unreadCount,
                     onNotifications: () => Navigator.of(context).push(
                       MaterialPageRoute(

@@ -202,7 +202,7 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
                                     english: english,
                                     title: _text(data['title'],
                                         english ? 'Job News' : 'أخبار الوظائف'),
-                                    avatarLabel: english ? 'J' : 'و',
+                                    icon: Icons.work_rounded,
                                     unreadCount:
                                         SessionCache.instance.unreadCount,
                                     onNotifications: () =>
