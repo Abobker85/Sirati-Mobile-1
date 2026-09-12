@@ -61,6 +61,7 @@ class AiProgressHandle {
   BuildContext? _dialogContext;
   bool _cancelled = false;
   bool _closed = false;
+  bool _pendingDismiss = false;
 
   bool get isCancelled => _cancelled;
 
@@ -83,15 +84,18 @@ class AiProgressHandle {
 
   /// Close the overlay if it is still open. Safe to call multiple times.
   Future<void> dismiss() async {
-    if (_closed) return;
+    if (_closed && !_pendingDismiss) return;
     _closed = true;
     final ctx = _dialogContext;
     _dialogContext = null;
     if (ctx != null && ctx.mounted) {
+      _pendingDismiss = false;
       final nav = Navigator.of(ctx, rootNavigator: true);
       if (nav.canPop()) {
         nav.pop();
       }
+    } else {
+      _pendingDismiss = true;
     }
   }
 
@@ -100,14 +104,12 @@ class AiProgressHandle {
   }
 }
 
-/// Full-screen, non-dismissible-by-tap AI progress overlay.
+/// Full-screen, dismissible-by-back AI progress overlay.
 ///
 /// Shows a three-step checklist plus a progress bar. The bar is honest about
 /// what it is: it eases toward 92% over the expected duration and only reaches
 /// 100% when the caller reports completion, so it never stalls at a fixed
-/// number and never lies about being finished. Cancel is enabled after 3s;
-/// after 30s the copy switches to a soft "taking longer" message while the
-/// request continues.
+/// number and never lies about being finished.
 class AiProgressOverlay {
   AiProgressOverlay._();
 
@@ -132,19 +134,33 @@ class AiProgressOverlay {
         transitionDuration: reduce ? Duration.zero : MotionDurations.medium,
         pageBuilder: (dialogContext, animation, secondaryAnimation) {
           handle._dialogContext = dialogContext;
+          if (handle._pendingDismiss) {
+            handle._pendingDismiss = false;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (dialogContext.mounted) {
+                final nav = Navigator.of(dialogContext, rootNavigator: true);
+                if (nav.canPop()) nav.pop();
+              }
+            });
+          }
           return _AiProgressOverlayBody(
             kind: kind,
             english: english,
             phase: handle._phase,
             finished: handle._finished,
             onCancel: () {
-              if (handle.isCancelled || handle._closed) return;
+              final alreadyCancelled = handle.isCancelled;
               handle._markCancelled();
               handle._closed = true;
+              final ctx = handle._dialogContext ?? dialogContext;
               handle._dialogContext = null;
-              final nav = Navigator.of(dialogContext, rootNavigator: true);
-              if (nav.canPop()) nav.pop();
-              onCancelled?.call();
+              if (ctx.mounted) {
+                final nav = Navigator.of(ctx, rootNavigator: true);
+                if (nav.canPop()) nav.pop();
+              }
+              if (!alreadyCancelled) {
+                onCancelled?.call();
+              }
             },
           );
         },
@@ -240,7 +256,6 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
     Duration(seconds: 4),
     Duration(seconds: 11),
   ];
-  static const _cancelAfter = Duration(seconds: 3);
   static const _longWaitAfter = Duration(seconds: 30);
 
   /// How long the bar takes to drift from 0 to [_ceiling]. Longer than a
@@ -251,7 +266,6 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
   late final List<String> _steps;
 
   int _timerStep = 0;
-  bool _cancelEnabled = false;
   bool _longWait = false;
 
   final List<Timer> _timers = [];
@@ -268,11 +282,6 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
         setState(() => _timerStep = index);
       }));
     }
-
-    _timers.add(Timer(_cancelAfter, () {
-      if (!mounted) return;
-      setState(() => _cancelEnabled = true);
-    }));
 
     _timers.add(Timer(_longWaitAfter, () {
       if (!mounted) return;
@@ -295,12 +304,12 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
     final en = widget.english;
     final reduce = MotionSettings.reduce(context);
 
-    // Block system back until Cancel is available; then back == cancel.
+    // System back always cancels and dismisses the overlay immediately.
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        if (_cancelEnabled) widget.onCancel();
+        widget.onCancel();
       },
       child: Material(
         type: MaterialType.transparency,
@@ -438,24 +447,17 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
               child: finished
                   ? null
                   : Center(
-                      child: AnimatedOpacity(
-                        opacity: _cancelEnabled ? 1 : 0.35,
-                        duration:
-                            reduce ? Duration.zero : MotionDurations.medium,
-                        child: TextButton(
-                          onPressed: _cancelEnabled ? widget.onCancel : null,
-                          style: TextButton.styleFrom(
-                            foregroundColor: c.textSecondary,
-                            disabledForegroundColor:
-                                c.textHint.withValues(alpha: .5),
-                            minimumSize: const Size(88, 40),
-                          ),
-                          child: Text(
-                            en ? 'Cancel' : 'إلغاء',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                            ),
+                      child: TextButton(
+                        onPressed: widget.onCancel,
+                        style: TextButton.styleFrom(
+                          foregroundColor: c.textSecondary,
+                          minimumSize: const Size(88, 40),
+                        ),
+                        child: Text(
+                          en ? 'Cancel' : 'إلغاء',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
                           ),
                         ),
                       ),

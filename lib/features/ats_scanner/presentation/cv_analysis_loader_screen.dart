@@ -66,8 +66,13 @@ class _CvAnalysisLoaderScreenState extends State<CvAnalysisLoaderScreen> {
             ),
           );
         }
-        return const Scaffold(
-          body: Center(child: BrandedLoader()),
+        return Scaffold(
+          backgroundColor: context.sirati.background,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+          ),
+          body: const Center(child: BrandedLoader()),
         );
       },
     );
