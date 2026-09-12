@@ -47,6 +47,7 @@ void main() {
             expect(request.url.path, '/api/cv-analyses');
             expect(request.headers['content-type'],
                 contains('multipart/form-data'));
+            expect(request.headers['x-sirati-async'], '1');
 
             final body = request.body;
             expect(body, contains('name="target_job_title"'));

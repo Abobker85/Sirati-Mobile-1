@@ -9,7 +9,6 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/utils/root_navigation.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
-import 'package:sirati/shared/widgets/loading/branded_loader.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
@@ -170,7 +169,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-/// Centered circular element displaying the branded splash intro with scale/fade reveal.
+/// Two-beat splash: wordmark first, then the brand mark on the second beat.
 class _BootstrapBody extends StatefulWidget {
   const _BootstrapBody({super.key});
 
@@ -181,22 +180,44 @@ class _BootstrapBody extends StatefulWidget {
 class _BootstrapBodyState extends State<_BootstrapBody>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _fadeAnimation;
+  late final Animation<double> _wordmarkOpacity;
+  late final Animation<Offset> _wordmarkSlide;
+  late final Animation<double> _markOpacity;
+  late final Animation<double> _markScale;
+  late final Animation<double> _statusOpacity;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: MotionDurations.medium,
+      duration: const Duration(milliseconds: 860),
     );
-    _scaleAnimation = Tween<double>(begin: 1.12, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: MotionCurves.enter),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    _wordmarkOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0, end: 1), weight: 28),
+      TweenSequenceItem(tween: ConstantTween(1), weight: 16),
+      TweenSequenceItem(tween: Tween(begin: 1, end: 0), weight: 18),
+      TweenSequenceItem(tween: ConstantTween(0), weight: 38),
+    ]).animate(CurvedAnimation(parent: _controller, curve: MotionCurves.enter));
+    _wordmarkSlide = Tween<Offset>(
+      begin: const Offset(0, 0.045),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0, 0.32, curve: MotionCurves.enter),
+    ));
+    _markOpacity = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.42, 0.78, curve: MotionCurves.enter),
+    ));
+    _markScale = Tween<double>(begin: 0.84, end: 1).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.42, 0.86, curve: MotionCurves.enter),
+    ));
+    _statusOpacity = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.68, 1, curve: MotionCurves.enter),
+    ));
     _controller.forward();
   }
 
@@ -209,9 +230,100 @@ class _BootstrapBodyState extends State<_BootstrapBody>
   @override
   Widget build(BuildContext context) {
     final en = AppLocale.isEnglish(context);
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final reduceMotion = MotionSettings.reduce(context);
+    final wordmark = Text(
+      en ? 'Sirati' : 'سيرتي',
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.4,
+        color: context.sirati.primary,
+      ),
+    );
+    final status = Text(
+      en ? 'Preparing workspace…' : 'جارٍ تجهيز مساحتك…',
+      textAlign: TextAlign.center,
+      style: AppTextStyles.bodySm(context.sirati).copyWith(
+        color: context.sirati.textSecondary,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+    final circle = _SplashMarkCircle(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SiratiMark(size: 64, elevated: true),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            en ? 'Sirati' : 'سيرتي',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: context.sirati.primary,
+            ),
+          ),
+        ],
+      ),
+    );
 
-    Widget circle = Container(
+    if (reduceMotion) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            circle,
+            const SizedBox(height: AppSpacing.md),
+            status,
+          ],
+        ),
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Center(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              FadeTransition(
+                opacity: _wordmarkOpacity,
+                child: SlideTransition(
+                  position: _wordmarkSlide,
+                  child: wordmark,
+                ),
+              ),
+              Opacity(
+                opacity: _markOpacity.value,
+                child: Transform.scale(
+                  scale: _markScale.value,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      circle,
+                      const SizedBox(height: AppSpacing.md),
+                      Opacity(opacity: _statusOpacity.value, child: status),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SplashMarkCircle extends StatelessWidget {
+  final Widget child;
+
+  const _SplashMarkCircle({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
       key: const ValueKey('splash_circle'),
       width: 220,
       height: 220,
@@ -231,51 +343,7 @@ class _BootstrapBodyState extends State<_BootstrapBody>
           ),
         ],
       ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const BrandedLoader(size: 52),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              en ? 'Sirati' : 'سيرتي',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: context.sirati.primary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              en ? 'Preparing workspace…' : 'جارٍ تجهيز مساحتك…',
-              style: AppTextStyles.bodySm(context.sirati).copyWith(
-                color: context.sirati.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (reduceMotion) {
-      return Center(child: circle);
-    }
-
-    return Center(
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Opacity(
-            opacity: _fadeAnimation.value,
-            child: Transform.scale(
-              scale: _scaleAnimation.value,
-              child: child,
-            ),
-          );
-        },
-        child: circle,
-      ),
+      child: Center(child: child),
     );
   }
 }
@@ -327,6 +395,8 @@ class _WelcomeBody extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xxl + 4),
                     const MotionReveal(
                       order: 1,
+                      offset: Offset(0, 0.04),
+                      duration: MotionDurations.slow,
                       child: Center(child: _SplashLogo()),
                     ),
                     const SizedBox(height: AppSpacing.lg - 2),
@@ -457,6 +527,22 @@ class _SplashLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SiratiMark(size: 88, elevated: true);
+    return Container(
+      width: 112,
+      height: 112,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: context.sirati.surface,
+        border: Border.all(color: context.sirati.primaryLight, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: context.sirati.primary.withValues(alpha: 0.12),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: const Center(child: SiratiMark(size: 64, elevated: true)),
+    );
   }
 }

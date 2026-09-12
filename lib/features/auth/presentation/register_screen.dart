@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -56,7 +58,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(FirebaseCrashlytics.instance.log('RegisterScreen opened'));
+    if (!kIsWeb && Firebase.apps.isNotEmpty) {
+      unawaited(FirebaseCrashlytics.instance.log('RegisterScreen opened'));
+    }
     _loadJobTitles();
   }
 

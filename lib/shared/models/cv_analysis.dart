@@ -21,6 +21,7 @@ class CvAnalysis {
   final String? categoryLabel;
   final String? categoryLabelEn;
   final bool isGeneralProfile;
+  final String? classificationWarning;
   final DateTime? createdAt;
 
   const CvAnalysis({
@@ -35,6 +36,7 @@ class CvAnalysis {
     this.categoryLabel,
     this.categoryLabelEn,
     this.isGeneralProfile = false,
+    this.classificationWarning,
     required this.criteria,
     required this.strengths,
     required this.weaknesses,
@@ -60,6 +62,7 @@ class CvAnalysis {
       categoryLabel: json['category_label']?.toString(),
       categoryLabelEn: json['category_label_en']?.toString(),
       isGeneralProfile: json['is_general_profile'] == true || (json['category'] == 'general'),
+      classificationWarning: json['classification_warning']?.toString(),
       criteria: _asList(json['criteria']).map(ScoreCriterion.fromJson).toList(),
       strengths: _asStringList(json['strengths']),
       weaknesses:

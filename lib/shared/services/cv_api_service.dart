@@ -35,7 +35,10 @@ class CvApiService {
         if (resumeText.trim().isNotEmpty) 'resume_text': resumeText.trim(),
       },
       file: resumeFile,
-      extraHeaders: _idempotencyHeaders(idempotencyKey),
+      extraHeaders: {
+        ..._idempotencyHeaders(idempotencyKey),
+        ...asyncAiHeaders,
+      },
     );
 
     return CvAnalysis.fromJson(response['data'] as Map<String, dynamic>);

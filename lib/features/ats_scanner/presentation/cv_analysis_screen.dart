@@ -182,6 +182,14 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
       NotificationEngagementService.instance
           .reportConversion('analysis_completed');
       _submitIdempotencyKey = null;
+      if (analysis.classificationWarning != null && mounted) {
+        AppSnackBar.warning(
+          context,
+          english
+              ? 'This file may not be a resume. Analysis results may not be accurate.'
+              : analysis.classificationWarning!,
+        );
+      }
       Navigator.of(context).push(
         MaterialPageRoute(
             builder: (_) => AnalysisResultScreen(analysis: analysis)),

@@ -685,7 +685,7 @@ class _CountUpValueState extends State<_CountUpValue> {
   IntTween? _tween;
 
   String _format(int n, {required bool english}) =>
-      AppFormat.digits(n.toString().padLeft(2, '0'), english: english);
+      AppFormat.digits(n.toString(), english: english);
 
   @override
   Widget build(BuildContext context) {

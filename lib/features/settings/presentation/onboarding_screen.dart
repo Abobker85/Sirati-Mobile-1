@@ -44,6 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           icon: Icons.speed_rounded,
           accent: context.sirati.primaryDark,
           accentSoft: context.sirati.tealLight,
+          useBrandMark: true,
           title: en ? 'Instant ATS analysis' : 'تحليل ATS فوري',
           body: en
               ? 'Get a clear score, missing keywords, and strengths and gaps — so you know what to improve before you apply.'
@@ -151,7 +152,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 itemCount: _pageCount,
                 onPageChanged: _onPageChanged,
                 itemBuilder: (context, i) {
-                  return _OnboardingPageView(page: pages[i]);
+                  return _OnboardingPageView(
+                    page: pages[i],
+                    active: i == _index,
+                  );
                 },
               ),
             ),
@@ -194,6 +198,7 @@ class _OnboardingPage {
   final Color accentSoft;
   final String title;
   final String body;
+  final bool useBrandMark;
 
   const _OnboardingPage({
     required this.icon,
@@ -201,13 +206,18 @@ class _OnboardingPage {
     required this.accentSoft,
     required this.title,
     required this.body,
+    this.useBrandMark = false,
   });
 }
 
 class _OnboardingPageView extends StatelessWidget {
   final _OnboardingPage page;
+  final bool active;
 
-  const _OnboardingPageView({required this.page});
+  const _OnboardingPageView({
+    required this.page,
+    required this.active,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -228,19 +238,12 @@ class _OnboardingPageView extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: iconSize,
-                  height: iconSize,
-                  decoration: BoxDecoration(
-                    color: page.accentSoft,
-                    borderRadius: BorderRadius.circular(iconRadius),
-                    border: Border.all(
-                      color: page.accent.withValues(alpha: 0.14),
-                    ),
-                    boxShadow: context.sirati.softShadow,
-                  ),
-                  child:
-                      Icon(page.icon, size: iconGlyphSize, color: page.accent),
+                _OnboardingHero(
+                  page: page,
+                  active: active,
+                  size: iconSize,
+                  radius: iconRadius,
+                  glyphSize: iconGlyphSize,
                 ),
                 SizedBox(height: heroGap),
                 Text(
@@ -268,6 +271,118 @@ class _OnboardingPageView extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _OnboardingHero extends StatefulWidget {
+  final _OnboardingPage page;
+  final bool active;
+  final double size;
+  final double radius;
+  final double glyphSize;
+
+  const _OnboardingHero({
+    required this.page,
+    required this.active,
+    required this.size,
+    required this.radius,
+    required this.glyphSize,
+  });
+
+  @override
+  State<_OnboardingHero> createState() => _OnboardingHeroState();
+}
+
+class _OnboardingHeroState extends State<_OnboardingHero>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 520),
+    value: 1,
+  );
+  late final Animation<double> _opacity = CurvedAnimation(
+    parent: _controller,
+    curve: MotionCurves.enter,
+  );
+  late final Animation<double> _scale = Tween<double>(begin: 0.86, end: 1)
+      .animate(CurvedAnimation(parent: _controller, curve: MotionCurves.enter));
+  bool _playedInitial = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionSettings.reduce(context)) {
+      _controller.value = 1;
+      _playedInitial = true;
+      return;
+    }
+    if (widget.active && !_playedInitial) {
+      _playedInitial = true;
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _OnboardingHero oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !oldWidget.active) {
+      if (MotionSettings.reduce(context)) {
+        _controller.value = 1;
+        return;
+      }
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hero = widget.page.useBrandMark
+        ? Container(
+            key: const ValueKey('onboarding_brand_mark'),
+            width: widget.size,
+            height: widget.size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: context.sirati.surface,
+              border: Border.all(
+                color: widget.page.accent.withValues(alpha: 0.18),
+              ),
+              boxShadow: context.sirati.softShadow,
+            ),
+            child: const Center(
+              child: SiratiMark(size: 56, elevated: true),
+            ),
+          )
+        : Container(
+            width: widget.size,
+            height: widget.size,
+            decoration: BoxDecoration(
+              color: widget.page.accentSoft,
+              borderRadius: BorderRadius.circular(widget.radius),
+              border: Border.all(
+                color: widget.page.accent.withValues(alpha: 0.14),
+              ),
+              boxShadow: context.sirati.softShadow,
+            ),
+            child: Icon(
+              widget.page.icon,
+              size: widget.glyphSize,
+              color: widget.page.accent,
+            ),
+          );
+
+    if (MotionSettings.reduce(context)) return hero;
+
+    return FadeTransition(
+      opacity: _opacity,
+      child: ScaleTransition(scale: _scale, child: hero),
     );
   }
 }

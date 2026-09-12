@@ -101,7 +101,7 @@ workflows:
         script: plutil -lint ios/Runner/PrivacyInfo.xcprivacy
       - name: Build iOS IPA
         script: |
-          BUILD_NUM=${BUILD_NUMBER:-18}
+          BUILD_NUM=${BUILD_NUMBER:-21}
           flutter build ipa --release \
             --build-number=$BUILD_NUM \
             --dart-define=SIRATI_API_BASE_URL=$SIRATI_API_BASE_URL
