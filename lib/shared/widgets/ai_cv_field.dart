@@ -33,6 +33,33 @@ class AiCvField extends StatelessWidget {
   final int? minimumCharacters;
   final Widget? leadingHint;
 
+  /// Default character threshold representing more than a single text line on mobile screens.
+  static const int defaultMinimumCharacters = 40;
+
+  /// Determines whether the input text contains sufficient context (more than a line)
+  /// so the AI can generate accurate, grounded enhancements rather than guessing.
+  static bool isSufficientForEnhancement(String text, {int? customMinimum}) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return false;
+
+    if (customMinimum != null) {
+      return trimmed.length >= customMinimum;
+    }
+
+    if (trimmed.length >= defaultMinimumCharacters) {
+      return true;
+    }
+
+    // Check if the user entered multiple lines with line breaks.
+    final lines = trimmed
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    return lines.length >= 2 && trimmed.length >= 20;
+  }
+
   @override
   Widget build(BuildContext context) {
     final displayHelper =
@@ -107,16 +134,54 @@ class AiCvField extends StatelessWidget {
         ValueListenableBuilder<TextEditingValue>(
           valueListenable: controller,
           builder: (context, value, _) {
-            final enabled = value.text.trim().length >= 10 && !isLoading;
-            return SubmitButton(
-              key: Key('enhance_$field'),
-              label: english ? 'Enhance' : 'تحسين',
-              loadingLabel: english ? 'Enhancing...' : 'جارٍ التحسين...',
-              isLoading: isLoading,
-              outlined: true,
-              height: 44,
-              icon: Icons.auto_fix_high_rounded,
-              onPressed: enabled ? onEnhance : null,
+            final enabled = isSufficientForEnhancement(
+                  value.text,
+                  customMinimum: minimumCharacters,
+                ) &&
+                !isLoading;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SubmitButton(
+                  key: Key('enhance_$field'),
+                  label: english ? 'Enhance' : 'تحسين',
+                  loadingLabel: english ? 'Enhancing...' : 'جارٍ التحسين...',
+                  isLoading: isLoading,
+                  outlined: true,
+                  height: 44,
+                  icon: Icons.auto_fix_high_rounded,
+                  onPressed: enabled ? onEnhance : null,
+                ),
+                if (value.text.trim().isNotEmpty && !enabled && !isLoading) ...[
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 13,
+                        color: context.sirati.textHint,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          minimumCharacters != null
+                              ? (english
+                                  ? 'Enter at least $minimumCharacters characters to enable enhancement'
+                                  : 'اكتب $minimumCharacters حرفاً كحد أدنى لتفعيل التحسين')
+                              : (english
+                                  ? 'Write more than a line for accurate AI enhancement'
+                                  : 'اكتب أكثر من سطر لتوجيه الذكاء الاصطناعي بدقة'),
+                          style: TextStyle(
+                            color: context.sirati.textHint,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             );
           },
         ),

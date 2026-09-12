@@ -670,7 +670,10 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
     final draft = controller.text;
     final jobTitle = _jobTitleCtrl.text.trim();
 
-    if (draft.trim().length < 10) return;
+    final customMin = field == 'experience' ? 80 : null;
+    if (!AiCvField.isSufficientForEnhancement(draft, customMinimum: customMin)) {
+      return;
+    }
     if (jobTitle.isEmpty) {
       AppSnackBar.warning(
         context,
@@ -763,6 +766,16 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
         english
             ? 'Enter the target job title first.'
             : 'أدخل المسمى الوظيفي المستهدف أولاً.',
+      );
+      return;
+    }
+
+    if (!AiCvField.isSufficientForEnhancement(_jobDescriptionCtrl.text)) {
+      AppSnackBar.warning(
+        context,
+        english
+            ? 'Enter more than a line of job description for accurate AI enhancement.'
+            : 'اكتب أكثر من سطر في الوصف الوظيفي لتوجيه الذكاء الاصطناعي بدقة.',
       );
       return;
     }
@@ -1351,16 +1364,54 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
                     ),
                   ),
                   const SizedBox(height: 10),
-                  SubmitButton(
-                    label: english ? 'Enhance' : 'تحسين',
-                    loadingLabel: english ? 'Enhancing...' : 'جارٍ التحسين...',
-                    isLoading: _isEnhancingJobDescription,
-                    outlined: true,
-                    height: 44,
-                    icon: Icons.auto_fix_high_rounded,
-                    onPressed: _isEnhancingJobDescription
-                        ? null
-                        : _enhanceJobDescription,
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _jobDescriptionCtrl,
+                    builder: (context, value, _) {
+                      final enabled = !_isEnhancingJobDescription &&
+                          AiCvField.isSufficientForEnhancement(value.text);
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SubmitButton(
+                            label: english ? 'Enhance' : 'تحسين',
+                            loadingLabel:
+                                english ? 'Enhancing...' : 'جارٍ التحسين...',
+                            isLoading: _isEnhancingJobDescription,
+                            outlined: true,
+                            height: 44,
+                            icon: Icons.auto_fix_high_rounded,
+                            onPressed: enabled ? _enhanceJobDescription : null,
+                          ),
+                          if (value.text.trim().isNotEmpty &&
+                              !enabled &&
+                              !_isEnhancingJobDescription) ...[
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 13,
+                                  color: context.sirati.textHint,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    english
+                                        ? 'Write more than a line for accurate AI enhancement'
+                                        : 'اكتب أكثر من سطر لتوجيه الذكاء الاصطناعي بدقة',
+                                    style: TextStyle(
+                                      color: context.sirati.textHint,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

@@ -13,7 +13,8 @@ import 'package:sirati/widgets/form_fields.dart';
 import 'package:sirati/widgets/submit_button.dart';
 
 void main() {
-  testWidgets('enhance action is disabled under ten characters',
+  testWidgets(
+      'enhance action is disabled when text is under more than a line (single short line)',
       (tester) async {
     final controller = TextEditingController(text: 'short');
     addTearDown(controller.dispose);
@@ -35,11 +36,33 @@ void main() {
         tester.widget<SubmitButton>(find.byKey(const Key('enhance_skills')));
     expect(button.onPressed, isNull);
 
+    // 11 characters - still single short line -> disabled
     controller.text = 'Laravel PHP';
+    await tester.pump();
+    final stillDisabled =
+        tester.widget<SubmitButton>(find.byKey(const Key('enhance_skills')));
+    expect(stillDisabled.onPressed, isNull);
+
+    // 26 characters - still a single line -> disabled
+    controller.text = 'Software Engineer at Corp';
+    await tester.pump();
+    final alsoDisabled =
+        tester.widget<SubmitButton>(find.byKey(const Key('enhance_skills')));
+    expect(alsoDisabled.onPressed, isNull);
+
+    // 51 characters - exceeds line threshold -> enabled
+    controller.text = 'Laravel, PHP, MySQL, REST APIs, Docker, Git, CI/CD';
     await tester.pump();
     final enabled =
         tester.widget<SubmitButton>(find.byKey(const Key('enhance_skills')));
     expect(enabled.onPressed, isNotNull);
+
+    // Multi-line text with newline and meaningful length -> enabled
+    controller.text = 'Flutter Developer\nBuilding iOS and Android apps';
+    await tester.pump();
+    final multilineEnabled =
+        tester.widget<SubmitButton>(find.byKey(const Key('enhance_skills')));
+    expect(multilineEnabled.onPressed, isNotNull);
   });
 
   testWidgets('loading overlay appears and missing facts render prominently',
@@ -79,19 +102,19 @@ void main() {
     final api = _FakeCvApiService();
     await _openSkillsStep(tester, api);
     final skills = _fieldWithHint('PHP, Laravel, API, SQL, Git, Agile, Docker');
-    const original = 'Laravel PHP APIs';
+    const original = 'Laravel, PHP, MySQL, REST APIs, Docker, Git, CI/CD';
     await tester.enterText(skills, original);
     await _tapEnhance(tester, 'skills');
 
     api.complete('skills', {
-      'enhanced_text': 'Laravel, PHP, REST APIs',
+      'enhanced_text': 'Laravel, PHP, REST APIs, Docker, Git, PostgreSQL',
       'changes_made': ['Improved structure'],
       'missing_facts': ['Add years of experience'],
       'ats_keywords_added': ['REST API'],
     });
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(skills).controller!.text,
-        'Laravel, PHP, REST APIs');
+        'Laravel, PHP, REST APIs, Docker, Git, PostgreSQL');
 
     await tester.tap(find.text('Undo'));
     await tester.pump();
@@ -104,8 +127,11 @@ void main() {
     final skills = _fieldWithHint('PHP, Laravel, API, SQL, Git, Agile, Docker');
     final summary =
         _fieldWithHint('Briefly describe your experience and achievements...');
-    await tester.enterText(skills, 'Laravel PHP APIs');
-    await tester.enterText(summary, 'Backend developer draft');
+    const skillsText = 'Laravel, PHP, MySQL, REST APIs, Docker, Git, CI/CD';
+    const summaryText =
+        'Experienced backend developer focused on building scalable REST APIs and microservices architecture';
+    await tester.enterText(skills, skillsText);
+    await tester.enterText(summary, summaryText);
 
     await _tapEnhance(tester, 'skills');
     await _tapEnhance(tester, 'summary');
@@ -113,7 +139,7 @@ void main() {
     api.complete('skills', _result('stale skills response'));
     await tester.pump();
     expect(
-        tester.widget<TextField>(skills).controller!.text, 'Laravel PHP APIs');
+        tester.widget<TextField>(skills).controller!.text, skillsText);
 
     api.complete('summary', _result('current summary response'));
     await tester.pumpAndSettle();
@@ -125,13 +151,81 @@ void main() {
     final api = _FakeCvApiService();
     await _openSkillsStep(tester, api);
     final skills = _fieldWithHint('PHP, Laravel, API, SQL, Git, Agile, Docker');
-    await tester.enterText(skills, 'Laravel PHP APIs');
+    await tester.enterText(
+        skills, 'Laravel, PHP, MySQL, REST APIs, Docker, Git, CI/CD');
     await _tapEnhance(tester, 'skills');
     expect(find.byType(CircularProgressIndicator), findsWidgets);
 
     api.fail('skills');
     await tester.pumpAndSettle();
     expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  group('AiCvField.isSufficientForEnhancement invariant tests', () {
+    test('returns false for empty, blank or whitespace-only text', () {
+      expect(AiCvField.isSufficientForEnhancement(''), isFalse);
+      expect(AiCvField.isSufficientForEnhancement('   '), isFalse);
+      expect(AiCvField.isSufficientForEnhancement('\n\n\t '), isFalse);
+    });
+
+    test('returns false for single short words or phrases under a line', () {
+      expect(AiCvField.isSufficientForEnhancement('Developer'), isFalse);
+      expect(AiCvField.isSufficientForEnhancement('مبرمج'), isFalse);
+      expect(AiCvField.isSufficientForEnhancement('Laravel PHP'), isFalse);
+      expect(AiCvField.isSufficientForEnhancement('مطور تطبيقات فلاتر'), isFalse);
+      expect(
+          AiCvField.isSufficientForEnhancement('Senior Software Engineer'), isFalse);
+      expect(
+          AiCvField.isSufficientForEnhancement(
+              '123456789012345678901234567890123456789'),
+          isFalse); // 39 chars
+    });
+
+    test('returns true for text that spans more than a single line (>= 40 chars)', () {
+      expect(
+          AiCvField.isSufficientForEnhancement(
+              '1234567890123456789012345678901234567890'),
+          isTrue); // 40 chars
+      expect(
+          AiCvField.isSufficientForEnhancement(
+              'Laravel, PHP, MySQL, REST APIs, Docker, Git, CI/CD'),
+          isTrue);
+      expect(
+          AiCvField.isSufficientForEnhancement(
+              'مطور واجهات وتطبيقات بخبرة تزيد عن 3 سنوات في بناء الأنظمة السحابية'),
+          isTrue);
+    });
+
+    test('returns true for multi-line text with explicit line breaks', () {
+      expect(
+          AiCvField.isSufficientForEnhancement(
+              'Backend Developer\nBuilding cloud APIs with high throughput'),
+          isTrue);
+      expect(
+          AiCvField.isSufficientForEnhancement(
+              'مطور فلاتر\nبناء وتطوير تطبيقات الهواتف الذكية'),
+          isTrue);
+    });
+
+    test('rejects adversarial newlines with insufficient text', () {
+      expect(AiCvField.isSufficientForEnhancement('a\nb'), isFalse);
+      expect(AiCvField.isSufficientForEnhancement('dev\nphp'), isFalse);
+      expect(AiCvField.isSufficientForEnhancement(' \n \n '), isFalse);
+    });
+
+    test('strictly obeys customMinimum when specified', () {
+      const expMin = 80;
+      expect(
+          AiCvField.isSufficientForEnhancement(
+              'Laravel, PHP, MySQL, REST APIs, Docker, Git, CI/CD',
+              customMinimum: expMin),
+          isFalse);
+      expect(
+          AiCvField.isSufficientForEnhancement(
+              'Backend Developer at Global Tech (2021-2024): Designed and built resilient microservices handling over 5M daily requests.',
+              customMinimum: expMin),
+          isTrue);
+    });
   });
 }
 
