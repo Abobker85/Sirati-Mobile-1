@@ -23,6 +23,9 @@ class AppColors {
   static const primaryContainer = Color(0xFF00A898);
   static const onPrimary = Color(0xFF00332D);
 
+  /// Foreground-safe brand ink (see SiratiColors.primaryInk).
+  static const primaryInk = Color(0xFF006A60);
+
   static const teal = Color(0xFF00A898);
   static const tealLight = Color(0xFFE1F5F2);
   static const tealDark = Color(0xFF006A60);
@@ -215,7 +218,7 @@ class AppTheme {
         tertiary: c.tertiary,
         onTertiary: isDark ? c.onPrimary : Colors.white,
         error: c.error,
-        onError: isDark ? c.textPrimary : Colors.white,
+        onError: c.onError,
         surface: c.surface,
         onSurface: c.textPrimary,
       ),
@@ -247,8 +250,8 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: c.primary,
-          side: BorderSide(color: c.primary, width: 1.5),
+          foregroundColor: c.primaryInk,
+          side: BorderSide(color: c.primaryInk, width: 1.5),
           minimumSize: const Size.fromHeight(54),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -257,7 +260,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: c.primary,
+          foregroundColor: c.primaryInk,
           textStyle: AppTypography.labelMd.resolve(arabic: arabic),
         ),
       ),
@@ -275,7 +278,7 @@ class AppTheme {
         backgroundColor: c.primaryLight,
         labelStyle: AppTypography.labelMd.resolve(
           arabic: arabic,
-          color: c.primaryDark,
+          color: c.primaryInk,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -288,7 +291,7 @@ class AppTheme {
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: c.surface,
-        selectedItemColor: c.primary,
+        selectedItemColor: c.primaryInk,
         unselectedItemColor: c.textHint,
         selectedLabelStyle: AppTypography.labelSm.resolve(arabic: arabic),
         unselectedLabelStyle: AppTypography.labelSm.resolve(arabic: arabic),
@@ -296,14 +299,14 @@ class AppTheme {
         type: BottomNavigationBarType.fixed,
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: c.primary,
+        labelColor: c.primaryInk,
         unselectedLabelColor: c.textHint,
-        indicatorColor: c.primary,
+        indicatorColor: c.primaryInk,
         labelStyle: AppTypography.labelLg.resolve(arabic: arabic),
         unselectedLabelStyle: AppTypography.labelLg.resolve(arabic: arabic),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: c.primary,
+        color: c.primaryInk,
         linearTrackColor: c.border,
       ),
       dialogTheme: DialogThemeData(

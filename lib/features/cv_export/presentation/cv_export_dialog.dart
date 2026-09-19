@@ -233,14 +233,16 @@ class _CvExportDialogState extends State<CvExportDialog> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: c.warning, size: 18),
+                      Icon(Icons.info_outline,
+                          color: c.onWarningContainer, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           isArabic
                               ? 'هذا قالب مميز. ستظهر علامة مائية للمعاينة حتى تقوم بالترقية.'
                               : 'This is a premium template. Previews will display a watermark until upgraded.',
-                          style: TextStyle(fontSize: 11, color: c.warning),
+                          style: TextStyle(
+                              fontSize: 11, color: c.onWarningContainer),
                         ),
                       ),
                     ],
@@ -263,7 +265,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.lock, color: c.error, size: 18),
+                          Icon(Icons.lock, color: c.onErrorContainer, size: 18),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -273,7 +275,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
-                                color: c.error,
+                                color: c.onErrorContainer,
                               ),
                             ),
                           ),
@@ -283,7 +285,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: c.error,
-                          foregroundColor: c.onPrimary,
+                          foregroundColor: c.onError,
                         ),
                         onPressed: widget.onUpgradeRequested,
                         child: Text(isArabic

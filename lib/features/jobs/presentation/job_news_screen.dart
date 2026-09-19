@@ -16,6 +16,7 @@ import 'package:sirati/shared/widgets/offline_cache_banner.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_title_display.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 
 /// Prefer computed relative time from [JobNews.publishedAt]; fall back to API label digits.
 String _jobPublishedText(JobNews item, {required bool english}) {
@@ -50,6 +51,7 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
   Timer? _searchDebounce;
   Future<Map<String, dynamic>>? _jobNewsFuture;
   bool? _loadedEnglish;
+  String _selectedPreset = 'all';
   String _selectedCategory = 'all';
   String _selectedCity = 'all';
   String _searchQuery = '';
@@ -77,8 +79,9 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
     _jobNewsFuture = MobileContentService().jobNews(
       english,
       category: _selectedCategory == 'all' ? null : _selectedCategory,
+      preset: _selectedPreset == 'all' ? null : _selectedPreset,
       city: _selectedCity == 'all' ? null : _selectedCity,
-      isRemote: _selectedCity == 'remote',
+      isRemote: _selectedCity == 'remote' || _selectedPreset == 'remote',
       query: _searchQuery,
       force: force,
     );
@@ -106,6 +109,14 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
     if (widget.isActive && !oldWidget.isActive) {
       unawaited(_refresh(force: true));
     }
+  }
+
+  void _selectPreset(String preset) {
+    if (_selectedPreset == preset) return;
+    setState(() {
+      _selectedPreset = preset;
+      _reload(force: true);
+    });
   }
 
   void _selectCategory(String category) {
@@ -181,8 +192,10 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
                   final latest =
                       items.length > 1 ? items.skip(1).toList() : items;
                   final offline = MobileContentService.isOfflinePayload(data);
+                  final profileContext = _map(data['profile_context']);
+                  final hasProfile = profileContext['has_profile'] == true;
                   final resultsKey =
-                      '$_selectedCategory|$_selectedCity|$_searchQuery|${items.length}|${featured?.id ?? 0}';
+                      '$_selectedPreset|$_selectedCategory|$_selectedCity|$_searchQuery|${items.length}|${featured?.id ?? 0}';
 
                   return shell(
                     RefreshIndicator(
@@ -231,13 +244,32 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
                                       child:
                                           LinearProgressIndicator(minHeight: 3),
                                     ),
-                                  const SizedBox(height: AppSpacing.lg),
+                                  if (hasProfile) ...[
+                                    const SizedBox(height: AppSpacing.md),
+                                    _ProfileContextBanner(
+                                      english: english,
+                                      contextData: profileContext,
+                                      isMatchedActive:
+                                          _selectedPreset == 'matched',
+                                      onToggleMatched: () => _selectPreset(
+                                          _selectedPreset == 'matched'
+                                              ? 'all'
+                                              : 'matched'),
+                                    ),
+                                  ],
+                                  const SizedBox(height: AppSpacing.md),
                                   _SearchBar(
                                     english: english,
                                     controller: _searchController,
                                     onChanged: _onSearchChanged,
                                   ),
-                                  const SizedBox(height: AppSpacing.md),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  _PresetChips(
+                                    english: english,
+                                    selectedPreset: _selectedPreset,
+                                    onSelected: _selectPreset,
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
                                   _CategoryChips(
                                     english: english,
                                     selectedCategory: _selectedCategory,
@@ -359,6 +391,8 @@ class JobNewsDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
     final actionUrl = item.actionUrl;
+    final hasMatch = item.matchScore != null;
+    final isHighMatch = (item.matchScore ?? 0) >= 80;
 
     return Scaffold(
       appBar: AppBar(title: Text(english ? 'Job Details' : 'تفاصيل الخبر')),
@@ -370,6 +404,72 @@ class JobNewsDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (item.isVerified) ...[
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: context.sirati.primaryLight,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: context.sirati.primary
+                                  .withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                item.isGov
+                                    ? Icons.account_balance_rounded
+                                    : item.isEnterprise
+                                        ? Icons.business_rounded
+                                        : Icons.verified_rounded,
+                                size: 14,
+                                color: context.sirati.primaryDark,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                item.sourceBadge ??
+                                    (english ? 'Verified' : 'جهة موثقة معتمدة'),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.sirati.primaryDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (item.isTamheer) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: context.sirati.amberLight,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: context.sirati.amber
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Text(
+                              english ? 'Tamheer Program' : 'برنامج تمهير 🇸🇦',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: context.sirati.amber,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   JobTitleDisplay(
                     title: item.title,
                     primaryMaxLines: null,
@@ -399,6 +499,12 @@ class JobNewsDetailScreen extends StatelessWidget {
                                 english: english)),
                       if ((item.location ?? '').isNotEmpty)
                         _MetaChip(text: item.location!),
+                      if (item.salaryRange != null &&
+                          item.salaryRange!.isNotEmpty)
+                        _MetaChip(
+                          text: '💰 ${item.salaryRange!}',
+                          highlight: true,
+                        ),
                       if (_jobPublishedText(item, english: english).isNotEmpty)
                         _MetaChip(
                             text: _jobPublishedText(item, english: english)),
@@ -409,22 +515,221 @@ class JobNewsDetailScreen extends StatelessWidget {
                         ),
                     ],
                   ),
+                  if (hasMatch) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: context.sirati.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isHighMatch
+                              ? context.sirati.primary
+                                  .withValues(alpha: 0.4)
+                              : context.sirati.border,
+                          width: 1.2,
+                        ),
+                        boxShadow: context.sirati.softShadow,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.stars_rounded,
+                                  color: context.sirati.primary, size: 22),
+                              const SizedBox(width: 8),
+                              Text(
+                                english
+                                    ? 'Profile & CV Compatibility'
+                                    : 'توافق الوظيفة مع ملفك المهني',
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: context.sirati.textPrimary,
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 9, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: isHighMatch
+                                      ? const Color(0xFFD7F0E5)
+                                      : context.sirati.primaryLight,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${item.matchScore}%',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    color: isHighMatch
+                                        ? const Color(0xFF1E5C41)
+                                        : context.sirati.primaryDark,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: (item.matchScore ?? 0) / 100.0,
+                              minHeight: 8,
+                              backgroundColor: context.sirati.surfaceLow,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isHighMatch
+                                    ? const Color(0xFF2E7D5B)
+                                    : context.sirati.primary,
+                              ),
+                            ),
+                          ),
+                          if (item.matchReasons.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            for (final reason in item.matchReasons)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(Icons.check_circle_rounded,
+                                        size: 15,
+                                        color: context.sirati.primary),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        reason,
+                                        style: TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: context.sirati.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (item.skillsRequired.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      english ? 'Key Skills Required' : 'المهارات المطلوبة للوظيفة',
+                      style: AppTextStyles.titleMd(context.sirati),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: item.skillsRequired.map((skill) {
+                        final isMatched = item.matchedSkills.any((m) =>
+                            m.toLowerCase() == skill.toLowerCase() ||
+                            skill.toLowerCase().contains(m.toLowerCase()));
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: isMatched
+                                ? context.sirati.primaryLight
+                                : context.sirati.surfaceLow,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isMatched
+                                  ? context.sirati.primary
+                                      .withValues(alpha: 0.35)
+                                  : context.sirati.border,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isMatched) ...[
+                                Icon(Icons.check_rounded,
+                                    size: 13,
+                                    color: context.sirati.primaryDark),
+                                const SizedBox(width: 4),
+                              ],
+                              Text(
+                                skill,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isMatched
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isMatched
+                                      ? context.sirati.primaryDark
+                                      : context.sirati.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                   const SizedBox(height: 22),
+                  Text(
+                    english ? 'Job Description' : 'تفاصيل ومتطلبات الإعلان',
+                    style: AppTextStyles.titleMd(context.sirati),
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     LocaleFormat.mixedBody(item.body, english: english),
                     textAlign: TextAlign.start,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15.5,
                       height: 1.75,
                       color: context.sirati.textPrimary,
                     ),
                   ),
+                  const SizedBox(height: 28),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const CvGeneratorScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                    label: Text(
+                      english
+                          ? 'Tailor My CV for this Job'
+                          : 'تخصيص سيرتي الذاتية لهذه الوظيفة 🪄',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.sirati.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
                   if (actionUrl != null) ...[
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
                       onPressed: () => launchSafeExternalUrl(actionUrl),
-                      icon: const Icon(Icons.send_rounded),
-                      label: Text(english ? 'Apply Now' : 'تقدّم الآن'),
+                      icon: const Icon(Icons.open_in_new_rounded),
+                      label: Text(
+                        english
+                            ? 'Apply on Official Site'
+                            : 'التقديم عبر الموقع الرسمي',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: context.sirati.primaryDark,
+                        side: BorderSide(color: context.sirati.borderStrong),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -456,6 +761,9 @@ class _JobNewsCard extends StatelessWidget {
         .where((value) => value.isNotEmpty)
         .join(' · ');
 
+    final hasMatch = item.matchScore != null;
+    final isHighMatch = (item.matchScore ?? 0) >= 80;
+
     return PressScale(
       child: Material(
         color: context.sirati.surface,
@@ -467,17 +775,137 @@ class _JobNewsCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: context.sirati.border),
+              border: Border.all(
+                color: isHighMatch
+                    ? context.sirati.primary.withValues(alpha: 0.35)
+                    : context.sirati.border,
+                width: isHighMatch ? 1.4 : 1.0,
+              ),
               boxShadow: context.sirati.softShadow,
             ),
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      JobTitleDisplay(
+                // Top row: Badges (Verified / Tamheer / Match Score / New)
+                Row(
+                  children: [
+                    if (item.isVerified) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: context.sirati.primaryLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              item.isGov
+                                  ? Icons.account_balance_rounded
+                                  : item.isEnterprise
+                                      ? Icons.business_rounded
+                                      : Icons.verified_rounded,
+                              size: 13,
+                              color: context.sirati.primaryDark,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              item.sourceBadge ??
+                                  (english ? 'Verified' : 'موثقة'),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: context.sirati.primaryDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    if (item.isTamheer) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: context.sirati.amberLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          english ? 'Tamheer' : 'تمهير 🇸🇦',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: context.sirati.amber,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    if (hasMatch) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isHighMatch
+                              ? const Color(0xFFD7F0E5)
+                              : context.sirati.primaryLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.stars_rounded,
+                              size: 13,
+                              color: isHighMatch
+                                  ? const Color(0xFF1E5C41)
+                                  : context.sirati.primaryDark,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${item.matchScore}% ${english ? 'Match' : 'تطابق'}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: isHighMatch
+                                    ? const Color(0xFF1E5C41)
+                                    : context.sirati.primaryDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const Spacer(),
+                    if (isNew)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: context.sirati.primaryLight,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          english ? 'New' : 'جديد',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: context.sirati.primary,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                // Title & Save icon
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: JobTitleDisplay(
                         title: item.title,
                         primaryStyle: AppTextStyles.titleMd(context.sirati),
                         secondaryStyle: TextStyle(
@@ -485,51 +913,147 @@ class _JobNewsCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: context.sirati.textSecondary,
                         ),
-                        trailingBadge: isNew
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: context.sirati.primaryLight,
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  english ? 'New' : 'جديد',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: context.sirati.primary,
-                                  ),
-                                ),
-                              )
-                            : null,
                       ),
-                      const SizedBox(height: 5),
-                      if (meta.isNotEmpty)
-                        Text(
-                          meta,
-                          textAlign: TextAlign.start,
-                          style: TextStyle(
-                            fontSize: 12,
-                            height: 1.35,
-                            color: context.sirati.textSecondary,
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.bookmark_border_rounded,
+                      size: 20,
+                      color: context.sirati.textHint,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+
+                // Company and location
+                if (meta.isNotEmpty)
+                  Text(
+                    meta,
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.35,
+                      fontWeight: FontWeight.w500,
+                      color: context.sirati.textSecondary,
+                    ),
+                  ),
+
+                // Match reason snippet if available
+                if (item.matchReasons.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: context.sirati.surfaceLow,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline_rounded,
+                          size: 14,
+                          color: context.sirati.primaryDark,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            item.matchReasons.first,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: context.sirati.textSecondary,
+                            ),
                           ),
                         ),
-                      const SizedBox(height: 4),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Required skills chips
+                if (item.skillsRequired.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: item.skillsRequired.take(3).map((skill) {
+                      final isMatched = item.matchedSkills.any((m) =>
+                          m.toLowerCase() == skill.toLowerCase() ||
+                          skill.toLowerCase().contains(m.toLowerCase()));
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isMatched
+                              ? context.sirati.primaryLight
+                              : context.sirati.surfaceLow,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: isMatched
+                                ? context.sirati.primary
+                                    .withValues(alpha: 0.3)
+                                : context.sirati.border,
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          skill,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isMatched
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: isMatched
+                                ? context.sirati.primaryDark
+                                : context.sirati.textSecondary,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+
+                const SizedBox(height: 10),
+                // Bottom row: Salary + Published time
+                Row(
+                  children: [
+                    if (item.salaryRange != null &&
+                        item.salaryRange!.isNotEmpty) ...[
                       Text(
-                        _jobPublishedText(item, english: english),
+                        item.salaryRange!,
                         style: TextStyle(
-                          fontSize: 11.5,
-                          height: 1.35,
-                          color: context.sirati.textHint,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: context.sirati.primaryDark,
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      Text('·',
+                          style: TextStyle(color: context.sirati.textHint)),
+                      const SizedBox(width: 8),
                     ],
-                  ),
+                    Text(
+                      _jobPublishedText(item, english: english),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: context.sirati.textHint,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      english ? 'Details →' : 'التفاصيل ←',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: context.sirati.primary,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Icon(Icons.bookmark_border_rounded,
-                    size: 18, color: context.sirati.textHint),
               ],
             ),
           ),
@@ -587,6 +1111,218 @@ class _EmptyNews extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ProfileContextBanner extends StatelessWidget {
+  final bool english;
+  final Map<String, dynamic> contextData;
+  final bool isMatchedActive;
+  final VoidCallback onToggleMatched;
+
+  const _ProfileContextBanner({
+    required this.english,
+    required this.contextData,
+    required this.isMatchedActive,
+    required this.onToggleMatched,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final careerField = contextData['career_field']?.toString() ?? '';
+    final city = contextData['city']?.toString() ?? '';
+    final hasCareer = careerField.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: context.sirati.primaryLight.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: context.sirati.primary.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: context.sirati.primary,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  english ? 'Personalized For You' : 'فرص مهنية مخصصة لك',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: context.sirati.primaryDark,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hasCareer
+                      ? (english
+                          ? '$careerField${city.isNotEmpty ? ' · $city' : ''}'
+                          : '$careerField${city.isNotEmpty ? ' · $city' : ''}')
+                      : (english
+                          ? 'Showing jobs tailored to your background.'
+                          : 'عرض وظائف متوافقة مع مهاراتك وخبراتك.'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: context.sirati.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          PressScale(
+            child: Material(
+              color: isMatchedActive
+                  ? context.sirati.primaryDark
+                  : Colors.transparent,
+              shape: StadiumBorder(
+                side: BorderSide(
+                  color: isMatchedActive
+                      ? Colors.transparent
+                      : context.sirati.primaryDark,
+                  width: 1.2,
+                ),
+              ),
+              child: InkWell(
+                onTap: onToggleMatched,
+                customBorder: const StadiumBorder(),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isMatchedActive) ...[
+                        const Icon(
+                          Icons.check_rounded,
+                          size: 13,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Text(
+                        isMatchedActive
+                            ? (english ? 'Matched ✓' : 'المطابقة ✓')
+                            : (english ? 'Match 🎯' : 'المطابقة 🎯'),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: isMatchedActive
+                              ? Colors.white
+                              : context.sirati.primaryDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PresetChips extends StatelessWidget {
+  final bool english;
+  final String selectedPreset;
+  final ValueChanged<String> onSelected;
+
+  const _PresetChips({
+    required this.english,
+    required this.selectedPreset,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final presets = [
+      _PresetOption('all', english ? 'All' : 'الكل', Icons.dashboard_outlined),
+      _PresetOption(
+          'matched', english ? 'Best Match' : 'مناسبة لي 🎯', Icons.stars_rounded),
+      _PresetOption('gov', english ? 'Government' : 'جهات حكومية 🏛️',
+          Icons.account_balance_outlined),
+      _PresetOption('enterprise', english ? 'Enterprise' : 'شركات كبرى 🏢',
+          Icons.business_outlined),
+      _PresetOption('tamheer', english ? 'Tamheer' : 'تمهير وتدريب 🇸🇦',
+          Icons.school_outlined),
+      _PresetOption('remote', english ? 'Remote' : 'عن بعد 🌐',
+          Icons.public_rounded),
+    ];
+
+    return Material(
+      type: MaterialType.transparency,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final preset in presets)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 6),
+                child: PressScale(
+                  pressedScale: 0.96,
+                  child: ChoiceChip(
+                    label: Text(preset.label),
+                    selected: selectedPreset == preset.key,
+                    onSelected: (_) => onSelected(preset.key),
+                    showCheckmark: false,
+                    labelStyle: TextStyle(
+                      fontSize: 12,
+                      fontWeight: selectedPreset == preset.key
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      color: selectedPreset == preset.key
+                          ? Colors.white
+                          : context.sirati.textSecondary,
+                    ),
+                    selectedColor: context.sirati.primary,
+                    backgroundColor: context.sirati.surface,
+                    side: BorderSide(
+                      color: selectedPreset == preset.key
+                          ? context.sirati.primary
+                          : context.sirati.border,
+                      width: selectedPreset == preset.key ? 1.2 : 1,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PresetOption {
+  final String key;
+  final String label;
+  final IconData icon;
+
+  const _PresetOption(this.key, this.label, this.icon);
 }
 
 class _SearchBar extends StatelessWidget {
@@ -808,21 +1544,109 @@ class _FeaturedJobCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: context.sirati.primaryLight,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    english ? 'New' : 'جديد',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: context.sirati.primary,
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: context.sirati.primaryLight,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        english ? 'New' : 'جديد',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: context.sirati.primaryDark,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (item.isVerified)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 9, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.45),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              item.isGov
+                                  ? Icons.account_balance_rounded
+                                  : item.isEnterprise
+                                      ? Icons.business_rounded
+                                      : Icons.verified_rounded,
+                              size: 13,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              item.sourceBadge ??
+                                  (english ? 'Verified' : 'جهة موثقة'),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (item.isTamheer)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 9, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          english ? 'Tamheer 🇸🇦' : 'تمهير 🇸🇦',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    if (item.matchScore != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 9, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.stars_rounded,
+                              size: 13,
+                              color: context.sirati.primaryDark,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${item.matchScore}% ${english ? 'Match' : 'تطابق'}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: context.sirati.primaryDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 14),
                 JobTitleDisplay(
@@ -863,22 +1687,66 @@ class _FeaturedJobCard extends StatelessWidget {
                     color: Colors.white.withValues(alpha: .75),
                   ),
                 ),
+                if (item.skillsRequired.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: item.skillsRequired.take(3).map((skill) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          skill,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
                 const SizedBox(height: 16),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    english ? 'Apply Now' : 'تقدم الآن',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: context.sirati.primary,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        english ? 'Apply Now' : 'تقدم الآن',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: context.sirati.primaryDark,
+                        ),
+                      ),
                     ),
-                  ),
+                    const Spacer(),
+                    if (item.salaryRange != null &&
+                        item.salaryRange!.isNotEmpty)
+                      Text(
+                        item.salaryRange!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),

@@ -25,14 +25,17 @@ class CvApiService {
   Future<CvAnalysis> submitAnalysis({
     required String targetJobTitle,
     required String resumeText,
+    String? jobDescription,
     http.MultipartFile? resumeFile,
     String? idempotencyKey,
   }) async {
+    final trimmedJd = jobDescription?.trim() ?? '';
     final response = await _apiClient.postMultipart(
       '/cv-analyses',
       fields: {
         'target_job_title': targetJobTitle,
         if (resumeText.trim().isNotEmpty) 'resume_text': resumeText.trim(),
+        if (trimmedJd.isNotEmpty) 'job_description': trimmedJd,
       },
       file: resumeFile,
       extraHeaders: {

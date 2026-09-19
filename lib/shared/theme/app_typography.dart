@@ -32,25 +32,32 @@ class AppTypeToken {
 }
 
 /// Display / headline / title / body / label, each with weights.
+///
+/// WEIGHT CEILING: IBM Plex Sans Arabic ships Thin/ExtraLight/Light/Regular/
+/// Text/Medium/SemiBold/Bold -- there is no ExtraBold in this family, so w800
+/// would silently fall back to the Bold (700) file. Tokens therefore top out
+/// at w700 and the display tier earns its hierarchy from size, not weight.
+/// Only 400/600/700 are declared in pubspec.yaml; do not request 500 until
+/// the Medium file is added there.
 class AppTypography {
   AppTypography._();
 
   static const displayLg = AppTypeToken(
     size: 32,
-    weight: FontWeight.w800,
+    weight: FontWeight.w700,
     heightLatin: 1.15,
     heightArabic: 1.38,
   );
   static const displayMd = AppTypeToken(
     size: 28,
-    weight: FontWeight.w800,
+    weight: FontWeight.w700,
     heightLatin: 1.18,
     heightArabic: 1.4,
   );
 
   static const headlineLg = AppTypeToken(
     size: 24,
-    weight: FontWeight.w800,
+    weight: FontWeight.w700,
     heightLatin: 1.25,
     heightArabic: 1.48,
   );
@@ -63,7 +70,7 @@ class AppTypography {
 
   static const titleLg = AppTypeToken(
     size: 18,
-    weight: FontWeight.w800,
+    weight: FontWeight.w700,
     heightLatin: 1.3,
     heightArabic: 1.52,
   );
@@ -93,7 +100,9 @@ class AppTypography {
     heightArabic: 1.65,
   );
   static const bodySm = AppTypeToken(
-    size: 12.5,
+    // Bumped 12.5 -> 13 (SIRATI-92). 12.5 hints inconsistently across engines
+    // and Arabic diacritics lose legibility at that size on high-DPI Android.
+    size: 13,
     weight: FontWeight.w400,
     heightLatin: 1.4,
     heightArabic: 1.6,
@@ -112,7 +121,10 @@ class AppTypography {
     heightArabic: 1.45,
   );
   static const labelSm = AppTypeToken(
-    size: 11,
+    // Bumped 11 -> 12 (SIRATI-92). 11px Arabic is at the readability floor;
+    // labelSm is used for microcopy under form fields and inside upload zones
+    // where users must actually read the constraint (e.g. "max 5 MB").
+    size: 12,
     weight: FontWeight.w600,
     heightLatin: 1.25,
     heightArabic: 1.4,

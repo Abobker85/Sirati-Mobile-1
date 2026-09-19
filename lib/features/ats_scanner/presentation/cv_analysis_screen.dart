@@ -31,11 +31,17 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
     with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _jobTitleController = TextEditingController();
+  final _jobDescriptionController = TextEditingController();
   final _resumeTextController = TextEditingController();
   late final CvApiService _apiService = widget.apiService ?? CvApiService();
   PlatformFile? _uploadedFile;
   bool _isLoading = false;
   bool _submitted = false;
+
+  /// Collapsed by default so the JD card doesn't push the Analyze button
+  /// below the fold on small phones (SIRATI-94). Auto-expands when the user
+  /// has already typed something (edit / hot-reload flow).
+  bool _jdExpanded = false;
 
   /// Bumped on each submit/cancel so a late AI response cannot apply.
   int _aiRequestGen = 0;
@@ -47,6 +53,9 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (_jobDescriptionController.text.trim().isNotEmpty) {
+      _jdExpanded = true;
+    }
   }
 
   @override
@@ -58,6 +67,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _jobTitleController.dispose();
+    _jobDescriptionController.dispose();
     _resumeTextController.dispose();
     super.dispose();
   }
@@ -128,6 +138,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
 
       var analysis = await _apiService.submitAnalysis(
         targetJobTitle: _jobTitleController.text.trim(),
+        jobDescription: _jobDescriptionController.text,
         resumeText: _resumeTextController.text,
         resumeFile: resumeFile,
         idempotencyKey: _submitIdempotencyKey,
@@ -298,6 +309,95 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  InkWell(
+                    onTap: () => setState(() => _jdExpanded = !_jdExpanded),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              english
+                                  ? 'Job description (optional)'
+                                  : 'وصف الوظيفة (اختياري)',
+                              textAlign: TextAlign.start,
+                              style: AppTextStyles.titleSm(context.sirati),
+                            ),
+                          ),
+                          AnimatedRotation(
+                            turns: _jdExpanded ? 0.5 : 0,
+                            duration: const Duration(milliseconds: 180),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: context.sirati.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 200),
+                    crossFadeState: _jdExpanded
+                        ? CrossFadeState.showSecond
+                        : CrossFadeState.showFirst,
+                    firstChild: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        english
+                            ? 'Tap to score your CV against the actual posting instead of a generic list.'
+                            : 'اضغط لتقييم سيرتك مقارنة بالإعلان الفعلي بدل قائمة عامة.',
+                        textAlign: TextAlign.start,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: context.sirati.textSecondary),
+                      ),
+                    ),
+                    secondChild: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        Text(
+                          english
+                              ? 'Paste the posting to score your CV against the actual role, not a generic keyword list.'
+                              : 'الصق نص الإعلان لتحصل على تقييم مقارنة بالوظيفة الفعلية، لا بقائمة كلمات عامة.',
+                          textAlign: TextAlign.start,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: context.sirati.textSecondary),
+                        ),
+                        const SizedBox(height: 10),
+                        AppTextFormField(
+                          controller: _jobDescriptionController,
+                          textAlign: TextAlign.start,
+                          maxLines: 5,
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          hintText: english
+                              ? 'Paste the full job posting here...'
+                              : 'الصق نص الإعلان الكامل هنا...',
+                          validator: (value) {
+                            if (value != null && value.trim().length > 4000) {
+                              return english
+                                  ? 'Job description must be 4000 characters or fewer.'
+                                  : 'يجب ألا يزيد وصف الوظيفة عن 4000 حرف.';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            AppCard(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
                     english ? 'Upload resume file' : 'رفع ملف السيرة الذاتية',
                     textAlign: TextAlign.start,
@@ -432,9 +532,14 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
                         ? AutovalidateMode.onUserInteraction
                         : AutovalidateMode.disabled,
                     textAlign: TextAlign.start,
-                    maxLines: 8,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _submit(),
+                    // Real resumes run 400-1000 words; a fixed 8-line viewport
+                    // with internal scrolling is where users bail on the paste
+                    // path (SIRATI-93). Start at a comfortable 12 lines and
+                    // let the field grow to match the content.
+                    minLines: 12,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
                     hintText: english
                         ? 'Paste the full resume text here...'
                         : 'الصق نص السيرة الذاتية كاملاً هنا...',

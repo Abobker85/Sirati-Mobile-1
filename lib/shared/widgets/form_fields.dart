@@ -336,7 +336,9 @@ class AppTextFormField extends FormField<String> {
     List<TextInputFormatter>? inputFormatters,
     bool obscureText = false,
     bool enabled = true,
-    int maxLines = 1,
+    // Nullable so callers can pass `maxLines: null` for a fully auto-growing
+    // multiline field (e.g. CV paste). Defaults to 1 (single-line).
+    int? maxLines = 1,
     int? minLines,
     int? maxLength,
     bool readOnly = false,
@@ -570,7 +572,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
     List<TextInputFormatter>? inputFormatters,
     bool obscureText = false,
     bool enabled = true,
-    int maxLines = 1,
+    int? maxLines = 1,
     int? minLines,
     int? maxLength,
     bool readOnly = false,

@@ -12,6 +12,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     required this.primaryMid,
     required this.primaryContainer,
     required this.onPrimary,
+    required this.primaryInk,
     required this.teal,
     required this.tealLight,
     required this.tealDark,
@@ -30,6 +31,10 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     required this.warningLight,
     required this.info,
     required this.infoLight,
+    required this.onSuccessContainer,
+    required this.onWarningContainer,
+    required this.onErrorContainer,
+    required this.onInfoContainer,
     required this.surface,
     required this.background,
     required this.surfaceLow,
@@ -49,6 +54,11 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   final Color primaryMid;
   final Color primaryContainer;
   final Color onPrimary;
+
+  /// Brand ink for FOREGROUND use (labels, icons, indicators) on neutral
+  /// surfaces. [primary] is a FILL color: at 2.79:1 on the light background
+  /// it cannot legally carry text (SIRATI-90).
+  final Color primaryInk;
   final Color teal;
   final Color tealLight;
   final Color tealDark;
@@ -67,6 +77,12 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   final Color warningLight;
   final Color info;
   final Color infoLight;
+
+  /// Ink for text/icons sitting ON the matching status tint.
+  final Color onSuccessContainer;
+  final Color onWarningContainer;
+  final Color onErrorContainer;
+  final Color onInfoContainer;
   final Color surface;
   final Color background;
   final Color surfaceLow;
@@ -100,6 +116,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     primaryMid: Color(0xFF59DAC9),
     primaryContainer: Color(0xFF00A898),
     onPrimary: Color(0xFF00332D),
+    primaryInk: Color(0xFF006A60),
     teal: Color(0xFF00A898),
     tealLight: Color(0xFFE1F5F2),
     tealDark: Color(0xFF006A60),
@@ -118,6 +135,10 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     warningLight: Color(0xFFFDE9C7),
     info: Color(0xFF006A60),
     infoLight: Color(0xFFDDF6F3),
+    onSuccessContainer: Color(0xFF256A4D),
+    onWarningContainer: Color(0xFF8A5612),
+    onErrorContainer: Color(0xFFA32F2B),
+    onInfoContainer: Color(0xFF006A60),
     surface: Color(0xFFFFFFFF),
     background: Color(0xFFFAF7F2),
     surfaceLow: Color(0xFFF2F1EC),
@@ -145,6 +166,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     primaryMid: Color(0xFF3DD4C2),
     primaryContainer: Color(0xFF2FC4B2),
     onPrimary: Color(0xFF00332D),
+    primaryInk: Color(0xFF2FC4B2),
     teal: Color(0xFF2FC4B2),
     tealLight: Color(0xFF0E3B36),
     tealDark: Color(0xFF1A9E8F),
@@ -163,6 +185,10 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     warningLight: Color(0xFF3D2E14),
     info: Color(0xFF2FC4B2),
     infoLight: Color(0xFF0E3B36),
+    onSuccessContainer: Color(0xFF5FBF92),
+    onWarningContainer: Color(0xFFE0A03A),
+    onErrorContainer: Color(0xFFF2726C),
+    onInfoContainer: Color(0xFF2FC4B2),
     surface: Color(0xFF1A201D),
     background: Color(0xFF121614),
     surfaceLow: Color(0xFF202623),
@@ -190,6 +216,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     Color? primaryMid,
     Color? primaryContainer,
     Color? onPrimary,
+    Color? primaryInk,
     Color? teal,
     Color? tealLight,
     Color? tealDark,
@@ -208,6 +235,10 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     Color? warningLight,
     Color? info,
     Color? infoLight,
+    Color? onSuccessContainer,
+    Color? onWarningContainer,
+    Color? onErrorContainer,
+    Color? onInfoContainer,
     Color? surface,
     Color? background,
     Color? surfaceLow,
@@ -227,6 +258,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       primaryMid: primaryMid ?? this.primaryMid,
       primaryContainer: primaryContainer ?? this.primaryContainer,
       onPrimary: onPrimary ?? this.onPrimary,
+      primaryInk: primaryInk ?? this.primaryInk,
       teal: teal ?? this.teal,
       tealLight: tealLight ?? this.tealLight,
       tealDark: tealDark ?? this.tealDark,
@@ -245,6 +277,10 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       warningLight: warningLight ?? this.warningLight,
       info: info ?? this.info,
       infoLight: infoLight ?? this.infoLight,
+      onSuccessContainer: onSuccessContainer ?? this.onSuccessContainer,
+      onWarningContainer: onWarningContainer ?? this.onWarningContainer,
+      onErrorContainer: onErrorContainer ?? this.onErrorContainer,
+      onInfoContainer: onInfoContainer ?? this.onInfoContainer,
       surface: surface ?? this.surface,
       background: background ?? this.background,
       surfaceLow: surfaceLow ?? this.surfaceLow,
@@ -270,6 +306,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       primaryMid: l(primaryMid, other.primaryMid),
       primaryContainer: l(primaryContainer, other.primaryContainer),
       onPrimary: l(onPrimary, other.onPrimary),
+      primaryInk: l(primaryInk, other.primaryInk),
       teal: l(teal, other.teal),
       tealLight: l(tealLight, other.tealLight),
       tealDark: l(tealDark, other.tealDark),
@@ -288,6 +325,10 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       warningLight: l(warningLight, other.warningLight),
       info: l(info, other.info),
       infoLight: l(infoLight, other.infoLight),
+      onSuccessContainer: l(onSuccessContainer, other.onSuccessContainer),
+      onWarningContainer: l(onWarningContainer, other.onWarningContainer),
+      onErrorContainer: l(onErrorContainer, other.onErrorContainer),
+      onInfoContainer: l(onInfoContainer, other.onInfoContainer),
       surface: l(surface, other.surface),
       background: l(background, other.background),
       surfaceLow: l(surfaceLow, other.surfaceLow),

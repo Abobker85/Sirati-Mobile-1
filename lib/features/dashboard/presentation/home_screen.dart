@@ -943,8 +943,9 @@ class _DashboardNavigationBar extends StatelessWidget {
         index: 2,
         icon: Icons.school_outlined,
         selectedIcon: Icons.school_rounded,
-        labelAr: 'التعليم (قريباً)',
-        labelEn: 'Education (Soon)',
+        labelAr: 'التعليم',
+        labelEn: 'Education',
+        comingSoon: true,
       ),
       _NavItemData(
         index: 3,
@@ -978,11 +979,18 @@ class _DashboardNavigationBar extends StatelessWidget {
             items: [
               for (final item in items)
                 BottomNavigationBarItem(
-                  icon: MotionNavIcon(
-                    icon: item.icon,
-                    selectedIcon: item.selectedIcon,
-                    selected: currentIndex == item.index,
-                    selectedBackgroundColor: context.sirati.primaryLight,
+                  // Small "soon" pip on the icon corner keeps the label
+                  // itself clean so the tab slot doesn't overflow into
+                  // its neighbours (SIRATI-95).
+                  icon: _NavIconWithBadge(
+                    showBadge: item.comingSoon,
+                    badgeColor: context.sirati.primary,
+                    child: MotionNavIcon(
+                      icon: item.icon,
+                      selectedIcon: item.selectedIcon,
+                      selected: currentIndex == item.index,
+                      selectedBackgroundColor: context.sirati.primaryLight,
+                    ),
                   ),
                   label: english ? item.labelEn : item.labelAr,
                 ),
@@ -1000,6 +1008,7 @@ class _NavItemData {
   final IconData selectedIcon;
   final String labelAr;
   final String labelEn;
+  final bool comingSoon;
 
   const _NavItemData({
     required this.index,
@@ -1007,5 +1016,45 @@ class _NavItemData {
     required this.selectedIcon,
     required this.labelAr,
     required this.labelEn,
+    this.comingSoon = false,
   });
+}
+
+/// Wraps a nav icon with an optional top-corner dot for "coming soon" state.
+/// Kept as a Stack (rather than a Material `Badge`) so the pip has zero
+/// text and does not steal focus / semantics on tap.
+class _NavIconWithBadge extends StatelessWidget {
+  final Widget child;
+  final bool showBadge;
+  final Color badgeColor;
+
+  const _NavIconWithBadge({
+    required this.child,
+    required this.showBadge,
+    required this.badgeColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!showBadge) return child;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        child,
+        PositionedDirectional(
+          top: 0,
+          end: 4,
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: badgeColor,
+              shape: BoxShape.circle,
+              border: Border.all(color: context.sirati.surface, width: 1.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

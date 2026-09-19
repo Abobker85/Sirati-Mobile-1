@@ -145,32 +145,51 @@ class MobileContentService {
   Future<Map<String, dynamic>> jobNews(
     bool english, {
     String? category,
+    String? preset,
     String? city,
     int? jobTitleId,
     bool? isRemote,
+    bool? isVerified,
+    String? sourceType,
+    String? employmentType,
     String? query,
     bool force = false,
   }) {
     final lang = _lang(english);
     final cat = category ?? '';
+    final pre = preset ?? '';
     final c = city ?? '';
     final jt = jobTitleId?.toString() ?? '';
     final rem = isRemote == true ? '1' : '';
+    final ver = isVerified == true ? '1' : '';
+    final src = sourceType ?? '';
+    final emp = employmentType ?? '';
     final q = query?.trim() ?? '';
-    final isDefault =
-        cat.isEmpty && c.isEmpty && jt.isEmpty && rem.isEmpty && q.isEmpty;
+    final isDefault = cat.isEmpty &&
+        pre.isEmpty &&
+        c.isEmpty &&
+        jt.isEmpty &&
+        rem.isEmpty &&
+        ver.isEmpty &&
+        src.isEmpty &&
+        emp.isEmpty &&
+        q.isEmpty;
     final diskKey = isDefault ? DiskCache.newsKey(lang) : null;
     return _cached(
-      'job-news:$lang:$cat:$c:$jt:$rem:$q',
+      'job-news:$lang:$cat:$pre:$c:$jt:$rem:$ver:$src:$emp:$q',
       force: force,
       diskKey: diskKey,
       ttl: q.isEmpty ? cacheTtl : const Duration(seconds: 30),
       fetch: () async {
         final params = <String, String>{'lang': lang};
         if (cat.isNotEmpty && cat != 'all') params['category'] = cat;
+        if (pre.isNotEmpty && pre != 'all') params['preset'] = pre;
         if (c.isNotEmpty && c != 'all') params['city'] = c;
         if (jt.isNotEmpty) params['job_title_id'] = jt;
         if (rem.isNotEmpty) params['is_remote'] = '1';
+        if (ver.isNotEmpty) params['is_verified'] = '1';
+        if (src.isNotEmpty && src != 'all') params['source_type'] = src;
+        if (emp.isNotEmpty && emp != 'all') params['employment_type'] = emp;
         if (q.isNotEmpty) params['q'] = q;
         final response = await _apiClient
             .getJson('/mobile/job-news?${Uri(queryParameters: params).query}');

@@ -214,6 +214,7 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen>
                 jobMatch: analysis.jobMatch,
                 jobTitle: analysis.targetJobTitle,
                 categoryLabel: analysis.displayCategoryLabel(english: english),
+                keywordSource: analysis.keywordSource,
                 criteria: analysis.criteria,
                 keywordsFound: analysis.keywordsFound,
                 keywordsMissing: analysis.keywordsMissing,
@@ -245,6 +246,8 @@ class _ScoreTab extends StatelessWidget {
   final int jobMatch;
   final String jobTitle;
   final String categoryLabel;
+  /// 'job_description' or 'category' — drives the pill under the benchmark row.
+  final String keywordSource;
   final List<ScoreCriterion> criteria;
   final List<String> keywordsFound;
   final List<String> keywordsMissing;
@@ -259,6 +262,7 @@ class _ScoreTab extends StatelessWidget {
     required this.jobMatch,
     required this.jobTitle,
     required this.categoryLabel,
+    required this.keywordSource,
     required this.criteria,
     required this.keywordsFound,
     required this.keywordsMissing,
@@ -413,6 +417,11 @@ class _ScoreTab extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 8),
+              _KeywordSourceBadge(
+                keywordSource: keywordSource,
+                english: english,
               ),
             ],
           ),
@@ -1123,6 +1132,67 @@ class _AnimatedScoreRing extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Small pill under the benchmark chip that tells the user whether the score
+/// was scored against the actual job description they pasted, or fell back to
+/// the hardcoded category keyword list. When it's the category (generic path),
+/// the pill nudges toward the fix — the user can add a JD on the next run and
+/// get a role-specific score (SIRATI-90).
+class _KeywordSourceBadge extends StatelessWidget {
+  final String keywordSource;
+  final bool english;
+
+  const _KeywordSourceBadge({
+    required this.keywordSource,
+    required this.english,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fromJd = keywordSource == 'job_description';
+    final bg = fromJd
+        ? context.sirati.primaryLight
+        : context.sirati.warningLight;
+    final fg = fromJd
+        ? context.sirati.primaryDark
+        : context.sirati.warning;
+    final icon = fromJd ? Icons.verified_rounded : Icons.lightbulb_outline_rounded;
+    final label = fromJd
+        ? (english
+            ? 'Scored against the job description you pasted'
+            : 'التقييم مبني على وصف الوظيفة الذي أدخلته')
+        : (english
+            ? 'Generic list — paste a job description next time for a sharper score'
+            : 'قائمة عامة — أضف وصف الوظيفة في المرة القادمة لتقييم أدق');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: fg),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: fg,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

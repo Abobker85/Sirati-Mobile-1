@@ -104,6 +104,52 @@ class AppContrast {
         background: c.background,
         minRatio: 4.5,
       ),
+      // Brand ink used as a FOREGROUND (buttons, tabs, bottom nav, progress).
+      // These are the pairs SIRATI-90 missed: `primary` itself is only
+      // 2.79:1 on background and must never carry a label.
+      ContrastPair(
+        name: 'primaryInk / surface',
+        foreground: c.primaryInk,
+        background: c.surface,
+        minRatio: 4.5,
+      ),
+      ContrastPair(
+        name: 'primaryInk / background',
+        foreground: c.primaryInk,
+        background: c.background,
+        minRatio: 4.5,
+      ),
+      ContrastPair(
+        name: 'primaryInk / primaryLight (chip label on chip fill)',
+        foreground: c.primaryInk,
+        background: c.primaryLight,
+        minRatio: 4.5,
+      ),
+      // Status inks on their own tint containers.
+      ContrastPair(
+        name: 'onSuccessContainer / successLight',
+        foreground: c.onSuccessContainer,
+        background: c.successLight,
+        minRatio: 4.5,
+      ),
+      ContrastPair(
+        name: 'onWarningContainer / warningLight',
+        foreground: c.onWarningContainer,
+        background: c.warningLight,
+        minRatio: 4.5,
+      ),
+      ContrastPair(
+        name: 'onErrorContainer / errorLight',
+        foreground: c.onErrorContainer,
+        background: c.errorLight,
+        minRatio: 4.5,
+      ),
+      ContrastPair(
+        name: 'onInfoContainer / infoLight',
+        foreground: c.onInfoContainer,
+        background: c.infoLight,
+        minRatio: 4.5,
+      ),
     ];
   }
 }

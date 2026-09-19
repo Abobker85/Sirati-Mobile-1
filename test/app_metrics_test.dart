@@ -50,47 +50,93 @@ void main() {
     expect(offenders, isEmpty, reason: offenders.join('\n'));
   });
 
-  test(
-      'component library and builder features do not use raw Color literals, Colors.*, or AppColors.* (SIRATI-22)',
+  /// Repo-wide hardcoded-color ratchet (SIRATI-90).
+  ///
+  /// Every .dart file under lib/ is scanned except lib/shared/theme/, where the
+  /// palettes are DEFINED. A line may opt out with
+  /// `// ignore: hardcoded_color -- <reason>` (see cv_live_preview_pane.dart,
+  /// which simulates A4 paper and is intentionally theme-independent).
+  ///
+  /// [legacyColorDebt] is the pre-existing debt, frozen at its current count.
+  /// The list may only shrink: adding a violation to a clean file fails, adding
+  /// one to a debt file fails, and clearing a debt file fails until its entry is
+  /// deleted here. Do not add new entries.
+  const legacyColorDebt = <String, int>{
+    'lib/features/jobs/presentation/job_news_screen.dart': 30,
+    'lib/features/dashboard/presentation/education_screen.dart': 10,
+    'lib/shared/widgets/form_fields.dart': 9,
+    'lib/shared/widgets/app_snack_bar.dart': 6,
+    'lib/features/cv_builder/presentation/cv_generator_screen.dart': 4,
+    'lib/features/dashboard/presentation/home_screen.dart': 4,
+    'lib/core/flavors/app_flavor.dart': 3,
+    'lib/shared/widgets/submit_button.dart': 3,
+    'lib/core/errors/app_crash_view.dart': 2,
+    'lib/shared/widgets/screen_header.dart': 2,
+    'lib/shared/widgets/loading/ai_progress_overlay.dart': 2,
+    'lib/core/flavors/flavor_banner.dart': 1,
+    'lib/features/ats_scanner/presentation/cv_analysis_loader_screen.dart': 1,
+    'lib/features/auth/presentation/register_screen.dart': 1,
+    'lib/features/cv_builder/presentation/generated_cv_loader_screen.dart': 1,
+    'lib/shared/widgets/app_list_tile.dart': 1,
+    'lib/shared/widgets/empty_state.dart': 1,
+    'lib/shared/widgets/success_beat.dart': 1,
+  };
+
+  test('no raw Color literals, Colors.*, or AppColors.* outside the theme layer',
       () {
-    final dirs = [
-      Directory('lib/shared/widgets/components'),
-      Directory('lib/features/cv_builder'),
-      Directory('lib/features/cv_export'),
-    ];
     final raw = RegExp(
         r'(Color\s*\(\s*0x|Colors\.[a-zA-Z]+|Color\.fromRGBO|AppColors\.)');
     final escapeHatch = RegExp(r'//\s*ignore:\s*hardcoded_color\s*--\s*\S+');
+
+    final counts = <String, int>{};
     final offenders = <String>[];
 
-    for (final dir in dirs) {
-      for (final file in dir.listSync(recursive: true).whereType<File>()) {
-        if (!file.path.endsWith('.dart')) continue;
-        final name = file.uri.pathSegments.last;
-        // Screens relocated from lib/screens were not in the original
-        // builder-feature scan set.
-        if (name == 'cv_generator_screen.dart' ||
-            name == 'generated_cv_screen.dart' ||
-            name == 'generated_cv_loader_screen.dart' ||
-            name == 'my_cvs_screen.dart') {
-          continue;
-        }
-        final lines = file.readAsLinesSync();
-        for (int i = 0; i < lines.length; i++) {
-          final line = lines[i];
-          if (raw.hasMatch(line) && !escapeHatch.hasMatch(line)) {
-            offenders
-                .add('${file.uri.pathSegments.last}:${i + 1}: ${line.trim()}');
+    for (final file in Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'))) {
+      final path = file.path.replaceAll('\\', '/');
+      if (path.startsWith('lib/shared/theme/')) continue;
+
+      final lines = file.readAsLinesSync();
+      for (int i = 0; i < lines.length; i++) {
+        final line = lines[i];
+        if (raw.hasMatch(line) && !escapeHatch.hasMatch(line)) {
+          counts[path] = (counts[path] ?? 0) + 1;
+          if (!legacyColorDebt.containsKey(path)) {
+            offenders.add('$path:${i + 1}: ${line.trim()}');
           }
         }
       }
     }
+
     expect(
       offenders,
       isEmpty,
-      reason:
-          'Hardcoded color detected! Use semantic tokens from SiratiColors instead, or document an intentional escape hatch with `// ignore: hardcoded_color -- <reason>`:\n${offenders.join('\n')}',
+      reason: 'Hardcoded color in a file with no legacy debt. Use semantic '
+          'tokens from SiratiColors, or document an intentional escape hatch '
+          'with `// ignore: hardcoded_color -- <reason>`:\n'
+          '${offenders.join('\n')}',
     );
+
+    // Ratchet: debt may shrink, never grow.
+    final grown = <String>[];
+    final cleared = <String>[];
+    legacyColorDebt.forEach((path, budget) {
+      final actual = counts[path] ?? 0;
+      if (actual > budget) {
+        grown.add('$path: $actual > allowed $budget');
+      } else if (actual == 0) {
+        cleared.add(path);
+      }
+    });
+
+    expect(grown, isEmpty,
+        reason: 'Hardcoded-color debt increased:\n${grown.join('\n')}');
+    expect(cleared, isEmpty,
+        reason: 'These files are clean now -- delete their entries from '
+            'legacyColorDebt so the ratchet keeps holding:\n'
+            '${cleared.join('\n')}');
   });
 
   test(

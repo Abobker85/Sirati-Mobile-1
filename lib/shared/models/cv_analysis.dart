@@ -21,6 +21,10 @@ class CvAnalysis {
   final String? categoryLabel;
   final String? categoryLabelEn;
   final bool isGeneralProfile;
+  /// 'job_description' when the score was computed against the pasted JD,
+  /// 'category' when it fell back to the hardcoded category keyword list.
+  /// Drives the badge shown next to the category chip (SIRATI-90).
+  final String keywordSource;
   final String? classificationWarning;
   final DateTime? createdAt;
 
@@ -36,6 +40,7 @@ class CvAnalysis {
     this.categoryLabel,
     this.categoryLabelEn,
     this.isGeneralProfile = false,
+    this.keywordSource = 'category',
     this.classificationWarning,
     required this.criteria,
     required this.strengths,
@@ -62,6 +67,9 @@ class CvAnalysis {
       categoryLabel: json['category_label']?.toString(),
       categoryLabelEn: json['category_label_en']?.toString(),
       isGeneralProfile: json['is_general_profile'] == true || (json['category'] == 'general'),
+      keywordSource: json['keyword_source']?.toString() == 'job_description'
+          ? 'job_description'
+          : 'category',
       classificationWarning: json['classification_warning']?.toString(),
       criteria: _asList(json['criteria']).map(ScoreCriterion.fromJson).toList(),
       strengths: _asStringList(json['strengths']),
