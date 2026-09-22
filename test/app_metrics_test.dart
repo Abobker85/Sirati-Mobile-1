@@ -66,7 +66,6 @@ void main() {
     'lib/shared/widgets/form_fields.dart': 9,
     'lib/shared/widgets/app_snack_bar.dart': 6,
     'lib/core/flavors/app_flavor.dart': 3,
-    'lib/shared/widgets/submit_button.dart': 3,
     'lib/core/errors/app_crash_view.dart': 2,
     'lib/shared/widgets/screen_header.dart': 2,
     'lib/shared/widgets/loading/ai_progress_overlay.dart': 2,
@@ -79,7 +78,8 @@ void main() {
     'lib/shared/widgets/success_beat.dart': 1,
   };
 
-  test('no raw Color literals, Colors.*, or AppColors.* outside the theme layer',
+  test(
+      'no raw Color literals, Colors.*, or AppColors.* outside the theme layer',
       () {
     final raw = RegExp(
         r'(Color\s*\(\s*0x|Colors\.[a-zA-Z]+|Color\.fromRGBO|AppColors\.)');

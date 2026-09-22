@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:sirati/main.dart';
@@ -27,7 +28,8 @@ void main() {
 
   testWidgets('Sirati cold start reaches onboarding or welcome',
       (tester) async {
-    await tester.pumpWidget(const SiratiApp());
+    // Mirrors main.dart: the app always runs inside a ProviderScope.
+    await tester.pumpWidget(const ProviderScope(child: SiratiApp()));
 
     // Bootstrap is async (token + onboarding flags). Avoid pumpAndSettle —
     // BrandedLoader uses a repeating animation that never settles on boot.

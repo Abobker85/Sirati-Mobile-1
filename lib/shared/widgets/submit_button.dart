@@ -29,7 +29,8 @@ class SubmitButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !isLoading;
     final text = isLoading ? (loadingLabel ?? label) : label;
-    final spinnerColor = outlined ? context.sirati.primary : Colors.white;
+    final spinnerColor =
+        outlined ? context.sirati.primary : context.sirati.onPrimary;
 
     final content = Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -76,10 +77,10 @@ class SubmitButton extends StatelessWidget {
               minimumSize: Size(double.infinity, height),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               backgroundColor: context.sirati.primary,
-              foregroundColor: Colors.white,
+              foregroundColor: context.sirati.onPrimary,
               disabledBackgroundColor:
                   context.sirati.primary.withValues(alpha: .55),
-              disabledForegroundColor: Colors.white,
+              disabledForegroundColor: context.sirati.onPrimary,
             ),
             child: content,
           );

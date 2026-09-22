@@ -34,7 +34,8 @@ class LanguageToggle extends StatelessWidget {
                   child: Text(
                     english ? 'AR' : 'EN',
                     style: TextStyle(
-                      color: context.sirati.primary,
+                      // `primary` is a fill; ink is the AA text tone.
+                      color: context.sirati.primaryInk,
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
