@@ -310,7 +310,8 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
       matchedCategory = 'customer';
     }
 
-    if (matchedCategory != null && _curatedSkillPacks.containsKey(matchedCategory)) {
+    if (matchedCategory != null &&
+        _curatedSkillPacks.containsKey(matchedCategory)) {
       for (final s in _curatedSkillPacks[matchedCategory]!) {
         final t = s.trim();
         if (!seen.contains(t.toLowerCase())) {
@@ -323,8 +324,22 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
     // Default fallback if no specific category matched
     if (suggestions.isEmpty) {
       final general = widget.english
-          ? ['Communication', 'Teamwork', 'Problem Solving', 'Leadership', 'Microsoft Office', 'Time Management']
-          : ['التواصل الفعّال', 'العمل الجماعي', 'حل المشكلات', 'القيادة', 'إدارة الوقت', 'مايكروسوفت أوفيس'];
+          ? [
+              'Communication',
+              'Teamwork',
+              'Problem Solving',
+              'Leadership',
+              'Microsoft Office',
+              'Time Management'
+            ]
+          : [
+              'التواصل الفعّال',
+              'العمل الجماعي',
+              'حل المشكلات',
+              'القيادة',
+              'إدارة الوقت',
+              'مايكروسوفت أوفيس'
+            ];
       for (final s in general) {
         if (!seen.contains(s.toLowerCase())) {
           seen.add(s.toLowerCase());
@@ -391,7 +406,8 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                       },
                       child: Text(
                         english ? 'Clear all' : 'مسح الكل',
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 11.5, fontWeight: FontWeight.w600),
                       ),
                     ),
                 ],
@@ -418,7 +434,8 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                   children: _skills.asMap().entries.map((entry) {
                     final index = entry.key;
                     final skill = entry.value;
-                    final display = english ? skill : BidiText.protectLatinTokens(skill);
+                    final display =
+                        english ? skill : BidiText.protectLatinTokens(skill);
 
                     return Container(
                       key: ValueKey('selected_skill_$index'),
@@ -431,7 +448,8 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                       decoration: BoxDecoration(
                         color: c.primaryLight,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: c.primary.withValues(alpha: .2)),
+                        border:
+                            Border.all(color: c.primary.withValues(alpha: .2)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -446,7 +464,9 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                           ),
                           const SizedBox(width: 4),
                           InkWell(
-                            onTap: widget.enabled ? () => _removeSkill(index) : null,
+                            onTap: widget.enabled
+                                ? () => _removeSkill(index)
+                                : null,
                             borderRadius: BorderRadius.circular(12),
                             child: Padding(
                               padding: const EdgeInsets.all(3),
@@ -477,9 +497,12 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                         onSubmitted: (_) => _submitCustomSkill(),
                         style: TextStyle(fontSize: 13, color: c.textPrimary),
                         decoration: InputDecoration(
-                          hintText: english ? 'Type a skill and press + ...' : 'اكتب مهارة واضغط + ...',
+                          hintText: english
+                              ? 'Type a skill and press + ...'
+                              : 'اكتب مهارة واضغط + ...',
                           hintStyle: TextStyle(fontSize: 12, color: c.textHint),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
                           filled: true,
                           fillColor: c.surfaceLow,
                           border: OutlineInputBorder(
@@ -492,7 +515,8 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: c.primary, width: 1.5),
+                            borderSide:
+                                BorderSide(color: c.primary, width: 1.5),
                           ),
                         ),
                       ),
@@ -506,13 +530,15 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                         backgroundColor: c.primary,
                         foregroundColor: c.onPrimary,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                       onPressed: widget.enabled ? _submitCustomSkill : null,
                       icon: const Icon(Icons.add_rounded, size: 18),
                       label: Text(
                         english ? 'Add' : 'إضافة',
-                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                            fontSize: 12.5, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -530,7 +556,9 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
               Icon(Icons.auto_awesome_rounded, size: 15, color: c.primary),
               const SizedBox(width: 6),
               Text(
-                english ? 'Suggested for your target role:' : 'مقترحات ذكية لمسماك الوظيفي:',
+                english
+                    ? 'Suggested for your target role:'
+                    : 'مقترحات ذكية لمسماك الوظيفي:',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -544,14 +572,16 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
             spacing: 6,
             runSpacing: 6,
             children: suggested.map((skill) {
-              final display = english ? skill : BidiText.protectLatinTokens(skill);
+              final display =
+                  english ? skill : BidiText.protectLatinTokens(skill);
 
               return ActionChip(
                 key: ValueKey('suggested_skill_$skill'),
                 onPressed: widget.enabled ? () => _addSkill(skill) : null,
                 backgroundColor: c.surface,
                 side: BorderSide(color: c.primary.withValues(alpha: .3)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 avatar: DirectionalIcon(
                   Icons.add_rounded,

@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/models/job_title.dart';
-import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/session_cache.dart';
@@ -107,12 +107,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final en = AppLocale.isEnglish(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       return;
     }
     if (_selectedJobTitle?.isOther == true &&
         _jobTitleOtherCtrl.text.trim().isEmpty) {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       return;
     }
 
@@ -127,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         clearJobTitle: _selectedJobTitle == null,
       );
       if (!mounted) return;
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       AppSnackBar.success(
         context,
         en ? 'Profile updated.' : 'تم تحديث الملف الشخصي.',

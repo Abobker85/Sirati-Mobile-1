@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/models/generated_cv.dart';
-import 'package:sirati/state/async_state.dart';
-import 'package:sirati/state/cv_list_controller.dart';
+import 'package:sirati/core/utils/async_state.dart';
+import 'package:sirati/features/cv_builder/controllers/cv_list_controller.dart';
+import 'package:sirati/shared/models/generated_cv.dart';
 
 void main() {
   group('CvListController', () {

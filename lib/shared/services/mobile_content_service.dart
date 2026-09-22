@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
 import 'package:sirati/core/storage/disk_cache.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/shared/models/job_title.dart';
 
 /// Short-lived in-memory cache for mobile content endpoints.
 /// TTL keeps data feeling instant on tab revisit without going stale for long.

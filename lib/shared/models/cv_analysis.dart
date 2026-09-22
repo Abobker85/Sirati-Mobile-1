@@ -21,6 +21,7 @@ class CvAnalysis {
   final String? categoryLabel;
   final String? categoryLabelEn;
   final bool isGeneralProfile;
+
   /// 'job_description' when the score was computed against the pasted JD,
   /// 'category' when it fell back to the hardcoded category keyword list.
   /// Drives the badge shown next to the category chip (SIRATI-90).
@@ -66,7 +67,8 @@ class CvAnalysis {
       category: json['category']?.toString() ?? 'general',
       categoryLabel: json['category_label']?.toString(),
       categoryLabelEn: json['category_label_en']?.toString(),
-      isGeneralProfile: json['is_general_profile'] == true || (json['category'] == 'general'),
+      isGeneralProfile:
+          json['is_general_profile'] == true || (json['category'] == 'general'),
       keywordSource: json['keyword_source']?.toString() == 'job_description'
           ? 'job_description'
           : 'category',

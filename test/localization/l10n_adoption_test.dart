@@ -15,8 +15,8 @@ import 'package:sirati/features/cv_builder/presentation/experience_education_edi
 import 'package:sirati/features/cv_builder/presentation/personal_details_editor.dart';
 import 'package:sirati/features/cv_builder/presentation/skills_languages_editor.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
-import 'package:sirati/models/cv_document.dart';
-import 'package:sirati/theme/app_theme.dart';
+import 'package:sirati/shared/models/cv_document.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 
 const _arabicScript = r'[\u0600-\u06FF]';
 

@@ -1,37 +1,36 @@
 import 'package:flutter/material.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/shared/models/cv_analysis.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
-import 'package:sirati/shared/services/cv_api_service.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
+import 'package:sirati/shared/models/cv_analysis.dart';
+import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/branded_loader.dart';
-import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 
 /// Deep-link entry for `/analysis/:id` — loads the analysis then shows the real screen.
-class CvAnalysisLoaderScreen extends StatefulWidget {
+class CvAnalysisLoaderScreen extends ConsumerStatefulWidget {
   final int analysisId;
-  final CvApiService? apiService;
 
   const CvAnalysisLoaderScreen({
     super.key,
     required this.analysisId,
-    this.apiService,
   });
 
   @override
-  State<CvAnalysisLoaderScreen> createState() => _CvAnalysisLoaderScreenState();
+  ConsumerState<CvAnalysisLoaderScreen> createState() =>
+      _CvAnalysisLoaderScreenState();
 }
 
-class _CvAnalysisLoaderScreenState extends State<CvAnalysisLoaderScreen> {
+class _CvAnalysisLoaderScreenState
+    extends ConsumerState<CvAnalysisLoaderScreen> {
   late Future<CvAnalysis> _future;
 
   @override
   void initState() {
     super.initState();
-    _future =
-        (widget.apiService ?? CvApiService()).getAnalysis(widget.analysisId);
+    _future = ref.read(cvApiServiceProvider).getAnalysis(widget.analysisId);
   }
 
   @override
@@ -41,10 +40,7 @@ class _CvAnalysisLoaderScreenState extends State<CvAnalysisLoaderScreen> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          return AnalysisResultScreen(
-            analysis: snapshot.data!,
-            apiService: widget.apiService,
-          );
+          return AnalysisResultScreen(analysis: snapshot.data!);
         }
         if (snapshot.hasError) {
           return Scaffold(
@@ -59,7 +55,8 @@ class _CvAnalysisLoaderScreenState extends State<CvAnalysisLoaderScreen> {
                       : 'تعذر فتح هذا التحليل.'),
               onRetry: () {
                 setState(() {
-                  _future = (widget.apiService ?? CvApiService())
+                  _future = ref
+                      .read(cvApiServiceProvider)
                       .getAnalysis(widget.analysisId);
                 });
               },

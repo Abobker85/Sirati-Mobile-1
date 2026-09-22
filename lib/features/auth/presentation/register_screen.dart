@@ -5,28 +5,27 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/app_router.dart';
+import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/root_navigation.dart';
+import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
+import 'package:sirati/features/auth/presentation/login_screen.dart';
+import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/routing/app_router.dart';
-import 'package:sirati/core/utils/root_navigation.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
-import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/job_title_picker_field.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/password_strength_meter.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
-import 'package:sirati/core/routing/app_routes.dart';
-import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
-import 'package:sirati/features/auth/presentation/login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -101,7 +100,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _jobTitleOtherController.text.trim().isEmpty;
     if (!valid || !_agreedToTerms || otherMissing) {
       setState(() => _showFormBanner = true);
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       if (!_agreedToTerms) {
         AppSnackBar.warning(
           context,
@@ -130,8 +129,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (!mounted) return;
-      AnalyticsService.logRegisterSuccess();
-      HapticFeedback.lightImpact();
+      unawaited(AnalyticsService.logRegisterSuccess());
+      unawaited(HapticFeedback.lightImpact());
       replaceRoot(
         context,
         EmailVerificationScreen(

@@ -1,28 +1,29 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/errors/app_crash_view.dart';
 import 'package:sirati/core/flavors/app_flavor.dart';
 import 'package:sirati/core/flavors/flavor_banner.dart';
-import 'package:sirati/l10n/generated/app_localizations.dart';
-import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/theme/app_theme_controller.dart';
 import 'package:sirati/core/logging/app_log.dart';
+import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/app/sirati_route_table.dart';
-import 'package:sirati/core/errors/app_crash_view.dart';
-import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/features/auth/data/auth_session_guard.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/notification_service.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/theme/app_theme_controller.dart';
 
 /// Top-level background message handler — MUST be a top-level function.
 @pragma('vm:entry-point')
@@ -126,7 +127,7 @@ Future<void> startSiratiApp() async {
       // Always launch UI — Codemagic previews and devices without Firebase config
       // must still open SplashScreen instead of dying on a white/native shell.
       final initialRoute = AppRouter.resolveInitialRoute();
-      runApp(SiratiApp(initialRoute: initialRoute));
+      runApp(ProviderScope(child: SiratiApp(initialRoute: initialRoute)));
 
       if (kDebugMode) {
         debugPrint(

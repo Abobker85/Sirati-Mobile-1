@@ -1,7 +1,7 @@
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
 import 'package:sirati/core/storage/preference_store.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 
 /// Reports activity / open / conversion events for smart notifications.
 class NotificationEngagementService {
@@ -56,10 +56,12 @@ class NotificationEngagementService {
     String? decisionId,
     String? notificationId,
   }) async {
-    final auth = await const AuthTokenStore().readToken();
-    if (auth == null || auth.isEmpty) return;
-
+    // Fire-and-forget from UI callers: the token read (keychain/keystore) must
+    // be inside the try too, or a storage failure escapes as an uncaught error.
     try {
+      final auth = await const AuthTokenStore().readToken();
+      if (auth == null || auth.isEmpty) return;
+
       await _client.postJson('/mobile/conversions', {
         'conversion_type': conversionType,
         if (decisionId != null) 'decision_id': int.tryParse(decisionId),

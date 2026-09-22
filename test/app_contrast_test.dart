@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/theme/app_contrast.dart';
-import 'package:sirati/theme/sirati_colors.dart';
+import 'package:sirati/shared/theme/app_contrast.dart';
+import 'package:sirati/shared/theme/sirati_colors.dart';
 
 void main() {
   for (final entry in {

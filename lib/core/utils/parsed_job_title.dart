@@ -59,7 +59,9 @@ class ParsedJobTitle {
       final insideEn = hasLatin(inside);
 
       if (insideEn && !insideAr) {
-        final outside = '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'.trim();
+        final outside =
+            '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'
+                .trim();
         if (hasArabic(outside)) {
           return ParsedJobTitle(
             arabic: _cleanDelimiters(outside),
@@ -69,7 +71,9 @@ class ParsedJobTitle {
       }
 
       if (insideAr && !insideEn) {
-        final outside = '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'.trim();
+        final outside =
+            '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'
+                .trim();
         if (hasLatin(outside)) {
           return ParsedJobTitle(
             arabic: _cleanDelimiters(inside),
@@ -88,7 +92,9 @@ class ParsedJobTitle {
       final insideEn = hasLatin(inside);
 
       if (insideEn && !insideAr) {
-        final outside = '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'.trim();
+        final outside =
+            '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'
+                .trim();
         if (hasArabic(outside)) {
           return ParsedJobTitle(
             arabic: _cleanDelimiters(outside),
@@ -98,7 +104,9 @@ class ParsedJobTitle {
       }
 
       if (insideAr && !insideEn) {
-        final outside = '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'.trim();
+        final outside =
+            '${trimmed.substring(0, match.start)} ${trimmed.substring(match.end)}'
+                .trim();
         if (hasLatin(outside)) {
           return ParsedJobTitle(
             arabic: _cleanDelimiters(inside),
@@ -116,9 +124,8 @@ class ParsedJobTitle {
         .where((s) => s.isNotEmpty)
         .toList();
     if (parts.length >= 2) {
-      final arParts = parts.where((p) => hasArabic(p)).toList();
-      final enParts =
-          parts.where((p) => hasLatin(p) && !hasArabic(p)).toList();
+      final arParts = parts.where(hasArabic).toList();
+      final enParts = parts.where((p) => hasLatin(p) && !hasArabic(p)).toList();
 
       if (arParts.isNotEmpty && enParts.isNotEmpty) {
         return ParsedJobTitle(

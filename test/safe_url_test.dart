@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/utils/safe_url.dart';
+import 'package:sirati/core/utils/safe_url.dart';
 
 void main() {
   test('accepts https and localhost http only', () {

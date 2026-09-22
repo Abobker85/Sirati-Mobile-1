@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-
-import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
+import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/notification_service.dart';
 import 'package:sirati/shared/services/session_cache.dart';
@@ -22,9 +22,7 @@ class AuthSessionGuard {
   }) {
     _navigatorKey = navigatorKey;
     if (store != null) tokenStore = store;
-    ApiClient.onAuthExpired = ({String? requestToken}) {
-      return handleAuthExpired(requestToken: requestToken);
-    };
+    ApiClient.onAuthExpired = handleAuthExpired;
   }
 
   /// Test hook — restores debounce and the default token store.
@@ -60,14 +58,14 @@ class AuthSessionGuard {
       final nav = _navigatorKey?.currentState;
       if (nav == null) return;
 
-      nav.pushAndRemoveUntil(
+      unawaited(nav.pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => LoginScreen(
             sessionExpiredNotice: showMessage,
           ),
         ),
         (route) => false,
-      );
+      ));
     } finally {
       // Allow a future expiry after the user logs in again.
       Future<void>.delayed(const Duration(seconds: 2), () {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/widgets/directional_icon.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 
 void main() {
   Widget wrap({

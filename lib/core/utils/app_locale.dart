@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:sirati/core/network/analytics_service.dart';
@@ -116,8 +117,8 @@ class AppLocale {
     }
     if (changed) {
       // Fire-and-forget — analytics never blocks locale switch.
-      AnalyticsService.setAppLanguage(next);
-      AnalyticsService.logLanguageChanged(lang: next);
+      unawaited(AnalyticsService.setAppLanguage(next));
+      unawaited(AnalyticsService.logLanguageChanged(lang: next));
     }
   }
 

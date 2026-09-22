@@ -2,10 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:sirati/core/logging/app_log.dart';
-import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/features/cv_builder/data/cv_schema_migrator.dart';
+import 'package:sirati/shared/models/cv_document.dart';
 
 /// Lightweight CV descriptor used for lists, summaries, and dashboard cards.
 class CvMetadata {

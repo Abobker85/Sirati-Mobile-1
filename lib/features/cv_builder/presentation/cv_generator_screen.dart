@@ -2,22 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_exception.dart';
-import 'package:sirati/shared/services/cv_api_service.dart';
-import 'package:sirati/shared/services/in_app_review_service.dart';
-import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/core/storage/preference_store.dart';
 import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/idempotency_key.dart';
+import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
+import 'package:sirati/features/cv_builder/presentation/widgets/achievement_builder_sheet.dart';
+import 'package:sirati/features/cv_builder/presentation/widgets/skill_chips_selector.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
+import 'package:sirati/shared/models/job_title.dart';
+import 'package:sirati/shared/services/cv_api_service.dart';
+import 'package:sirati/shared/services/in_app_review_service.dart';
+import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ai_cv_field.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
-import 'package:sirati/shared/widgets/ai_cv_field.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/loading/ai_field_loading_overlay.dart';
@@ -25,10 +29,6 @@ import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 import 'package:sirati/shared/widgets/success_beat.dart';
-import 'package:sirati/shared/models/job_title.dart';
-import 'package:sirati/features/cv_builder/presentation/widgets/achievement_builder_sheet.dart';
-import 'package:sirati/features/cv_builder/presentation/widgets/skill_chips_selector.dart';
-import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 
 class CvGeneratorScreen extends StatefulWidget {
   final GeneratedCv? initialCv;
@@ -444,7 +444,8 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
         ),
       );
       if (discard == true && mounted) {
-        AnalyticsService.logWizardAbandoned(step: _step, dirty: _isDirty);
+        unawaited(
+            AnalyticsService.logWizardAbandoned(step: _step, dirty: _isDirty));
         Navigator.of(context).pop();
       }
       return;
@@ -486,7 +487,8 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
     if (!mounted || action == null || action == _ExitAction.cancel) return;
 
     if (action == _ExitAction.discard) {
-      AnalyticsService.logWizardAbandoned(step: _step, dirty: _isDirty);
+      unawaited(
+          AnalyticsService.logWizardAbandoned(step: _step, dirty: _isDirty));
       _autosaveTimer?.cancel();
       await _clearStoredDraft();
       if (mounted) Navigator.of(context).pop();
@@ -498,7 +500,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
     await _persistDraft();
     if (!mounted) return;
     _isDirty = false;
-    AnalyticsService.logDraftSaved();
+    unawaited(AnalyticsService.logDraftSaved());
     AppSnackBar.info(
       context,
       english ? 'Draft saved' : 'تم حفظ المسودة',
@@ -575,14 +577,15 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
       }
 
       final durationMs = DateTime.now().difference(startedAt).inMilliseconds;
-      AnalyticsService.logCvGenerated(
+      unawaited(AnalyticsService.logCvGenerated(
         templateId: 'default',
         durationMs: durationMs,
-      );
+      ));
       MobileContentService.invalidateCvRelated();
       _submitIdempotencyKey = null;
       if (!_isEditMode) {
-        NotificationEngagementService.instance.reportConversion('cv_generated');
+        unawaited(NotificationEngagementService.instance
+            .reportConversion('cv_generated'));
         // Successful generate: drop local draft so reopen has no banner.
         _autosaveTimer?.cancel();
         await _clearStoredDraft();
@@ -612,7 +615,8 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
       } else if (generatedCv.aiStatus == AiStatus.failed) {
         AppSnackBar.error(
           context,
-          AiErrorMessage.generationFailed(generatedCv.aiError, english: english),
+          AiErrorMessage.generationFailed(generatedCv.aiError,
+              english: english),
           actionLabel: english ? 'Retry' : 'إعادة المحاولة',
           onAction: _submit,
         );
@@ -624,15 +628,15 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
       if (!_isEditMode) {
         unawaited(InAppReviewService.maybeRequestAfterCvGenerated());
       }
-      Navigator.of(context).push(
+      unawaited(Navigator.of(context).push(
         MaterialPageRoute(
             builder: (_) => GeneratedCvScreen(generatedCv: generatedCv)),
-      );
+      ));
     } on ApiException catch (exception) {
       if (progress.isCancelled || requestId != _aiRequestGen) return;
-      AnalyticsService.logCvGenerationFailed(
+      unawaited(AnalyticsService.logCvGenerationFailed(
         errorType: exception.type.name,
-      );
+      ));
       if (mounted) {
         AppSnackBar.fromException(
           context,
@@ -643,7 +647,7 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
       }
     } catch (_) {
       if (progress.isCancelled || requestId != _aiRequestGen) return;
-      AnalyticsService.logCvGenerationFailed(errorType: 'unknown');
+      unawaited(AnalyticsService.logCvGenerationFailed(errorType: 'unknown'));
       if (mounted) {
         _showError(english
             ? 'An unexpected error occurred while generating the CV.'
@@ -671,7 +675,8 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
     final jobTitle = _jobTitleCtrl.text.trim();
 
     final customMin = field == 'experience' ? 80 : null;
-    if (!AiCvField.isSufficientForEnhancement(draft, customMinimum: customMin)) {
+    if (!AiCvField.isSufficientForEnhancement(draft,
+        customMinimum: customMin)) {
       return;
     }
     if (jobTitle.isEmpty) {
@@ -1638,11 +1643,16 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
                     child: OutlinedButton.icon(
                       key: const Key('open_achievement_builder_btn'),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 11),
                         foregroundColor: context.sirati.primaryDark,
-                        side: BorderSide(color: context.sirati.primary.withValues(alpha: .35)),
-                        backgroundColor: context.sirati.primaryLight.withValues(alpha: .5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        side: BorderSide(
+                            color:
+                                context.sirati.primary.withValues(alpha: .35)),
+                        backgroundColor:
+                            context.sirati.primaryLight.withValues(alpha: .5),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                       onPressed: _enhancingCvField == 'experience'
                           ? null
@@ -1652,7 +1662,8 @@ class _CvGeneratorScreenState extends State<CvGeneratorScreen>
                         english
                             ? '✨ XYZ Achievement Builder'
                             : '✨ صانع الإنجازات المقاسة (معادلة XYZ)',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 13),
                       ),
                     ),
                   ),
@@ -1793,7 +1804,8 @@ class _SectionHeading extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.sirati.primaryLight,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: context.sirati.primary.withValues(alpha: .2)),
+            border:
+                Border.all(color: context.sirati.primary.withValues(alpha: .2)),
           ),
           child: Icon(
             icon,

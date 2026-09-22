@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/flavors/app_flavor.dart';
 import 'package:sirati/core/flavors/flavor_banner.dart';
-import 'package:sirati/services/api_config.dart';
+import 'package:sirati/core/network/api_config.dart';
 
 void main() {
   tearDown(AppFlavor.resetForTest);

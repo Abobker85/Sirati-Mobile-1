@@ -2,20 +2,19 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/app_router.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/root_navigation.dart';
+import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/routing/app_router.dart';
-import 'package:sirati/core/utils/root_navigation.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
-import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
-import 'package:sirati/features/auth/presentation/login_screen.dart';
 
 /// 6-digit OTP email verification after register / unverified login.
 class EmailVerificationScreen extends StatefulWidget {
@@ -80,7 +79,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     final english = AppLocale.isEnglish(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       return;
     }
 
@@ -88,7 +87,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     try {
       await _auth.verifyEmail(code: _codeController.text.trim());
       if (!mounted) return;
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       AppSnackBar.success(
         context,
         english ? 'Email verified successfully.' : 'تم تأكيد البريد بنجاح.',

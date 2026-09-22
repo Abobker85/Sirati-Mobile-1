@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -49,7 +49,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     });
     if (!_formKey.currentState!.validate()) {
       setState(() => _showBanner = true);
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       return;
     }
 
@@ -61,7 +61,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         confirmation: _confirmCtrl.text,
       );
       if (!mounted) return;
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       AppSnackBar.success(
         context,
         english
@@ -257,8 +257,8 @@ class _Label extends StatelessWidget {
     return Text(
       text,
       textAlign: TextAlign.start,
-      style:
-          AppTextStyles.titleSm(context.sirati).copyWith(color: context.sirati.textSecondary),
+      style: AppTextStyles.titleSm(context.sirati)
+          .copyWith(color: context.sirati.textSecondary),
     );
   }
 }

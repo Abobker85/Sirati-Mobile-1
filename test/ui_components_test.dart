@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:sirati/models/ai_status.dart';
-import 'package:sirati/models/cv_analysis.dart';
-import 'package:sirati/screens/analysis_result_screen.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
-import 'package:sirati/theme/app_theme.dart';
-import 'package:sirati/widgets/animated_ats_score_bar.dart';
-import 'package:sirati/widgets/empty_state.dart';
-import 'package:sirati/widgets/form_fields.dart';
-import 'package:sirati/widgets/loading/ai_field_loading_overlay.dart';
-import 'package:sirati/widgets/loading/app_skeleton.dart';
-import 'package:sirati/widgets/auth_form_constraint.dart';
-import 'package:sirati/widgets/motion.dart';
-import 'package:sirati/widgets/password_strength_meter.dart';
-import 'package:sirati/widgets/submit_button.dart';
+import 'package:sirati/shared/models/ai_status.dart';
+import 'package:sirati/shared/models/cv_analysis.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
+import 'package:sirati/shared/widgets/auth_form_constraint.dart';
+import 'package:sirati/shared/widgets/empty_state.dart';
+import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/loading/ai_field_loading_overlay.dart';
+import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/password_strength_meter.dart';
+import 'package:sirati/shared/widgets/submit_button.dart';
 
 void main() {
   Widget wrap(Widget child) {
@@ -264,7 +264,8 @@ void main() {
     expect(decoration.border!.top.color, AppColors.primary);
   });
 
-  testWidgets('MotionNavIcon shows selected icon without opaque background overlay (SIRATI-60)',
+  testWidgets(
+      'MotionNavIcon shows selected icon without opaque background overlay (SIRATI-60)',
       (tester) async {
     await tester.pumpWidget(wrap(
       const MotionNavIcon(
@@ -291,32 +292,34 @@ void main() {
     final missingKeywords = List.generate(2, (index) => 'missing-$index');
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        locale: const Locale('en', 'US'),
-        supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: AnalysisResultScreen(
-          analysis: CvAnalysis(
-            id: 1,
-            targetJobTitle: 'Product Designer',
-            originalFilename: null,
-            inputMethod: 'paste',
-            scoreTotal: 72,
-            grade: 'B',
-            jobMatch: 68,
-            criteria: const [
-              ScoreCriterion(label: 'Structure', score: 8, max: 10),
-            ],
-            strengths: const ['Clear summary'],
-            weaknesses: const [],
-            keywordsFound: foundKeywords,
-            keywordsMissing: missingKeywords,
-            quickWins: const ['Add measurable outcomes'],
-            aiStatus: AiStatus.completed,
-            aiFeedback: null,
-            aiError: null,
-            createdAt: null,
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light,
+          locale: const Locale('en', 'US'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: AnalysisResultScreen(
+            analysis: CvAnalysis(
+              id: 1,
+              targetJobTitle: 'Product Designer',
+              originalFilename: null,
+              inputMethod: 'paste',
+              scoreTotal: 72,
+              grade: 'B',
+              jobMatch: 68,
+              criteria: const [
+                ScoreCriterion(label: 'Structure', score: 8, max: 10),
+              ],
+              strengths: const ['Clear summary'],
+              weaknesses: const [],
+              keywordsFound: foundKeywords,
+              keywordsMissing: missingKeywords,
+              quickWins: const ['Add measurable outcomes'],
+              aiStatus: AiStatus.completed,
+              aiFeedback: null,
+              aiError: null,
+              createdAt: null,
+            ),
           ),
         ),
       ),

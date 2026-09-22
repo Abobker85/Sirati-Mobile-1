@@ -81,7 +81,8 @@ class JobNews {
       isRemote: _asBool(json['is_remote']),
       body: json['body']?.toString() ?? '',
       category: json['category']?.toString() ?? 'general',
-      jobTitleId: json['job_title_id'] != null ? _asInt(json['job_title_id']) : null,
+      jobTitleId:
+          json['job_title_id'] != null ? _asInt(json['job_title_id']) : null,
       url: _nullable(json['url']),
       applyUrl: _nullable(json['apply_url']),
       validFrom: _date(json['valid_from']),
@@ -101,7 +102,8 @@ class JobNews {
       skillsRequired: rawSkills is List
           ? rawSkills.map((e) => e.toString()).toList(growable: false)
           : const [],
-      matchScore: json['match_score'] != null ? _asInt(json['match_score']) : null,
+      matchScore:
+          json['match_score'] != null ? _asInt(json['match_score']) : null,
       matchReasons: rawReasons is List
           ? rawReasons.map((e) => e.toString()).toList(growable: false)
           : const [],

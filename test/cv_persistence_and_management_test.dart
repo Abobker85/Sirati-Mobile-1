@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/core/utils/async_state.dart';
+import 'package:sirati/features/cv_builder/controllers/cv_manage_controller.dart';
+import 'package:sirati/features/cv_builder/data/cv_repository.dart';
+import 'package:sirati/features/cv_builder/data/cv_schema_migrator.dart';
 import 'package:sirati/features/cv_builder/data/skill_storage_keys.dart';
-import 'package:sirati/models/cv_document.dart';
-import 'package:sirati/services/cv_repository.dart';
-import 'package:sirati/services/cv_schema_migrator.dart';
-import 'package:sirati/state/async_state.dart';
-import 'package:sirati/state/cv_manage_controller.dart';
+import 'package:sirati/shared/models/cv_document.dart';
 
 void main() {
   group('SIRATI-34 Schema Migration Invariants', () {
@@ -449,7 +449,7 @@ void main() {
 
     test('M4 free tier limit cannot be bypassed via delete -> create -> undo',
         () async {
-      bool isUserPremium = false;
+      const bool isUserPremium = false;
       final controller = CvManageController(
         repository: repository,
         freeTierLimit: 2,

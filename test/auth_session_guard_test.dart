@@ -5,11 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sirati/services/api_client.dart';
-import 'package:sirati/services/api_exception.dart';
-import 'package:sirati/services/auth_api_service.dart';
-import 'package:sirati/services/auth_session_guard.dart';
-import 'package:sirati/services/auth_token_store.dart';
+import 'package:sirati/core/network/api_client.dart';
+import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/storage/auth_token_store.dart';
+import 'package:sirati/features/auth/data/auth_session_guard.dart';
+import 'package:sirati/shared/services/auth_api_service.dart';
 
 void main() {
   setUp(() {
@@ -17,16 +17,12 @@ void main() {
     AuthSessionGuard.resetForTest();
   });
 
-  tearDown(() {
-    AuthSessionGuard.resetForTest();
-  });
+  tearDown(AuthSessionGuard.resetForTest);
 
   test('delayed 401 for token A does not clear a newer token B', () async {
     final store = MemoryAuthTokenStore('token-a');
     AuthSessionGuard.resetForTest(store: store);
-    ApiClient.onAuthExpired = ({String? requestToken}) {
-      return AuthSessionGuard.handleAuthExpired(requestToken: requestToken);
-    };
+    ApiClient.onAuthExpired = AuthSessionGuard.handleAuthExpired;
 
     final release = Completer<void>();
     final client = ApiClient(

@@ -1,8 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/utils/arabic_date_format.dart';
-import 'package:sirati/utils/bidi_text_utils.dart';
+import 'package:sirati/core/utils/arabic_date_format.dart';
+import 'package:sirati/core/utils/bidi_text_utils.dart';
 
 void main() {
   group('SIRATI-27 Bidirectional Text Handling Invariants', () {

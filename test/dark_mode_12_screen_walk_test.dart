@@ -336,6 +336,12 @@ void main() {
           tester.widget<Text>(find.text('Target job title'));
       final uploadLabel =
           tester.widget<Text>(find.text('Upload resume file'));
+      // Below the fold since the JD card was added; build it by scrolling.
+      await tester.scrollUntilVisible(
+        find.text('Paste resume text'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       final pasteLabel =
           tester.widget<Text>(find.text('Paste resume text'));
 
@@ -594,7 +600,7 @@ void main() {
           cvJob.style!.color!,
           contextDescription: 'HistoryScreen CV target job (line 466)',
         );
-      }, () => createMockClient());
+      }, createMockClient);
     });
 
     testWidgets(
@@ -625,7 +631,7 @@ void main() {
           jobTitle.style!.color!,
           contextDescription: 'JobNewsScreen job card title (line 482)',
         );
-      }, () => createMockClient());
+      }, createMockClient);
     });
 
     testWidgets(
@@ -656,7 +662,7 @@ void main() {
           cardTitle.style!.color!,
           contextDescription: 'MyCvsScreen CV card title (line 462)',
         );
-      }, () => createMockClient());
+      }, createMockClient);
     });
 
     testWidgets(
@@ -688,7 +694,7 @@ void main() {
           notifBody.style!.color!,
           contextDescription: 'NotificationsScreen item body (line 182)',
         );
-      }, () => createMockClient());
+      }, createMockClient);
     });
 
     testWidgets(
@@ -709,7 +715,7 @@ void main() {
           statLabel.style!.color!,
           contextDescription: 'HomeScreen dashboard stat card label (line 646)',
         );
-      }, () => createMockClient());
+      }, createMockClient);
     });
   });
 }

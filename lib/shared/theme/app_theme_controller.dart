@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:sirati/core/network/analytics_service.dart';
@@ -35,8 +36,8 @@ class AppThemeController {
       // In-memory still applied.
     }
     if (changed) {
-      AnalyticsService.setThemeMode(serialized);
-      AnalyticsService.logThemeChanged(mode: serialized);
+      unawaited(AnalyticsService.setThemeMode(serialized));
+      unawaited(AnalyticsService.logThemeChanged(mode: serialized));
     }
   }
 

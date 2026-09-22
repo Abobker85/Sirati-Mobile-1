@@ -3,12 +3,11 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:share_plus/share_plus.dart';
-
-import 'package:sirati/shared/models/cv_template.dart';
-import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/features/cv_export/utils/export_file_namer.dart';
+import 'package:sirati/shared/models/cv_template.dart';
+import 'package:sirati/shared/models/generated_cv.dart';
 
 enum ExportStatus {
   idle,

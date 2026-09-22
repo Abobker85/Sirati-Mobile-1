@@ -107,7 +107,7 @@ class ArabicDateFormat {
   static ({int year, int month, int day}) gregorianToHijri(DateTime date) {
     int m = date.month;
     int y = date.year;
-    int d = date.day;
+    final int d = date.day;
 
     if (m < 3) {
       y -= 1;
@@ -328,7 +328,7 @@ class ArabicDateFormat {
     if (raw == null || raw.trim().isEmpty) return null;
 
     // Normalize Arabic-Indic digits to Western digits
-    var text = toWesternDigits(raw.trim()).toLowerCase();
+    final text = toWesternDigits(raw.trim()).toLowerCase();
 
     // 1. Check for Month name + Year: e.g. "مارس 2021", "March 2021", "ربيع الأول 1442"
     for (final entry in _monthNameToNumber.entries) {

@@ -2,11 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/loading/branded_loader.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Kind of multi-second AI work — drives staged reassurance copy.
 enum AiProgressKind { generation, analysis }

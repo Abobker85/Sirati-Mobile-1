@@ -1,12 +1,17 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/utils/app_format.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/safe_url.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
+import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/utils/app_format.dart';
-import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
@@ -15,10 +20,6 @@ import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
 import 'package:sirati/shared/widgets/template_preview.dart';
-import 'package:sirati/shared/services/session_cache.dart';
-import 'package:sirati/core/routing/app_routes.dart';
-import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
-import 'package:sirati/l10n/generated/app_localizations.dart';
 
 class MyCvsScreen extends StatefulWidget {
   const MyCvsScreen({super.key});
@@ -228,7 +229,7 @@ class _MyCvsScreenState extends State<MyCvsScreen> {
       await Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => CvGeneratorScreen(initialCv: cv)),
       );
-      _refresh();
+      unawaited(_refresh());
     } on ApiException catch (exception) {
       _message(exception.displayMessage, exception: exception);
     }
@@ -260,7 +261,7 @@ class _MyCvsScreenState extends State<MyCvsScreen> {
     try {
       await _cvService.deleteGeneratedCv(id);
       MobileContentService.invalidateCvRelated();
-      _refresh();
+      unawaited(_refresh());
     } on ApiException catch (exception) {
       _message(exception.displayMessage, exception: exception);
     }

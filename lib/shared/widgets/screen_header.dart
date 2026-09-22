@@ -61,7 +61,8 @@ class ScreenHeader extends StatelessWidget {
 
         final avatar = ProfileAvatar(
           icon: icon,
-          label: avatarLabel ?? (icon == null ? _initialFromTitle(title) : null),
+          label:
+              avatarLabel ?? (icon == null ? _initialFromTitle(title) : null),
           onTap: onAvatarTap,
           english: english,
         );

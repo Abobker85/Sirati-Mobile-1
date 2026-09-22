@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/routing/entitlement_store.dart';
 import 'package:sirati/features/app/sirati_route_table.dart';
+import 'package:sirati/features/ats_scanner/presentation/cv_analysis_loader_screen.dart';
+import 'package:sirati/features/dashboard/presentation/not_found_screen.dart';
+import 'package:sirati/features/dashboard/presentation/premium_gate_screen.dart';
 import 'package:sirati/routing/app_router.dart';
-import 'package:sirati/routing/app_routes.dart';
-import 'package:sirati/routing/entitlement_store.dart';
-import 'package:sirati/screens/cv_analysis_loader_screen.dart';
-import 'package:sirati/screens/not_found_screen.dart';
-import 'package:sirati/screens/premium_gate_screen.dart';
-import 'package:sirati/theme/app_theme.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 
 void main() {
   setUpAll(registerSiratiRouteWidgets);

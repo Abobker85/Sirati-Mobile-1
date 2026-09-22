@@ -63,8 +63,7 @@ class JobTitleDisplay extends StatelessWidget {
             textAlign: TextAlign.start,
             textDirection: TextDirection.ltr,
             maxLines: secondaryMaxLines,
-            overflow:
-                secondaryMaxLines != null ? TextOverflow.ellipsis : null,
+            overflow: secondaryMaxLines != null ? TextOverflow.ellipsis : null,
             style: secondaryStyle ??
                 TextStyle(
                   fontSize: 12.5,

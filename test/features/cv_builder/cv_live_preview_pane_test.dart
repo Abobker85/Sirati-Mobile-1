@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/features/cv_builder/cv_builder_controller.dart';
 import 'package:sirati/features/cv_builder/cv_live_preview_pane.dart';
-import 'package:sirati/models/cv_document.dart';
-import 'package:sirati/models/cv_template.dart';
-import 'package:sirati/services/cv_repository.dart';
+import 'package:sirati/features/cv_builder/data/cv_repository.dart';
+import 'package:sirati/shared/models/cv_document.dart';
+import 'package:sirati/shared/models/cv_template.dart';
 
 class _FakeCvRepository implements CvRepository {
   CvDocument? lastSaved;

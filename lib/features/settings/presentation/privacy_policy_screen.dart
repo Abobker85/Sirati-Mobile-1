@@ -46,7 +46,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 : 'لتقديم خدمات الذكاء الاصطناعي وإدارة المنصة، نتعامل مع مزودي خدمات موثوقين:\n• OpenAI و DeepInfra: معالجة نصوص السيرة وتحليلها بالذكاء الاصطناعي.\n• RevenueCat: إدارة وتأكيد صلاحيات الاشتراكات داخل التطبيق.\n• Firebase (Google): إرسال إشعارات الهاتف.\n• Sentry: تتبع الأعطال التقنية مع حجب وحذف أي بيانات شخصية أو نصوص للسير.',
           ),
           _Section(
-            title: english ? 'Data Retention & Deletion' : 'الاحتفاظ بالبيانات وحذفها',
+            title: english
+                ? 'Data Retention & Deletion'
+                : 'الاحتفاظ بالبيانات وحذفها',
             body: english
                 ? 'Your data is retained while your account is active. You can delete individual generated CVs from My CVs. You can permanently delete your entire account and all associated data at any time from Settings → Delete account. Transient guest web analyses are automatically pruned within 24 hours.'
                 : 'نحتفظ ببياناتك طوال فترة نشاط حسابك. يمكنك حذف السير الفردية من شاشة سيراتي. ويمكنك حذف حسابك بالكامل وجميع بياناتك نهائياً في أي وقت من الإعدادات ← حذف الحساب. كما تُحذف التحليلات المؤقتة لزوار الويب تلقائياً خلال 24 ساعة.',

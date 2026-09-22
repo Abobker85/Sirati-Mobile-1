@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
-
+import 'package:sirati/core/utils/async_state.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/cv_api_service.dart';
-import 'package:sirati/core/utils/async_state.dart';
 
 /// Loads the signed-in user's generated CVs.
 ///

@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/storage/preference_store.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -29,6 +29,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _finishing = false;
 
   static const _pageCount = 3;
+
+  /// "1 / 3" — small numeric marker under the dots. Latin digits in every
+  /// locale by product decision: numbers stay 0-9 across the app even in
+  /// Arabic UI, so counters, scores, and dates all read the same way.
+  static String _stepCounterLabel({
+    required int index,
+    required int count,
+  }) {
+    return '${index + 1} / $count';
+  }
 
   List<_OnboardingPage> _pages(bool en) => [
         _OnboardingPage(
@@ -76,9 +86,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // Still advance — don't trap the user if storage fails.
     }
     if (skipped) {
-      AnalyticsService.logOnboardingSkipped(pageIndex: _index);
+      unawaited(AnalyticsService.logOnboardingSkipped(pageIndex: _index));
     } else {
-      AnalyticsService.logOnboardingCompleted();
+      unawaited(AnalyticsService.logOnboardingCompleted());
     }
     if (!mounted) return;
     widget.onFinished();
@@ -90,6 +100,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
     _pageController.nextPage(
+      duration:
+          MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
+      curve: MotionCurves.enter,
+    );
+  }
+
+  void _previous() {
+    if (_index <= 0) return;
+    _pageController.previousPage(
+      duration:
+          MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
+      curve: MotionCurves.enter,
+    );
+  }
+
+  void _jumpTo(int i) {
+    if (i == _index || i < 0 || i >= _pageCount) return;
+    HapticFeedback.selectionClick();
+    _pageController.animateToPage(
+      i,
       duration:
           MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
       curve: MotionCurves.enter,
@@ -129,16 +159,45 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Row(
                 children: [
                   const LanguageToggle(),
+                  // Back to the previous page (SIRATI-100). Hidden on page 1
+                  // so it never appears when there is nowhere to go.
+                  if (_index > 0)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(
+                          start: AppSpacing.xs),
+                      child: IconButton(
+                        onPressed: _finishing ? null : _previous,
+                        // matchTextDirection mirrors this in RTL automatically.
+                        icon: Icon(
+                          Icons.arrow_back_rounded,
+                          color: context.sirati.textSecondary,
+                        ),
+                        tooltip: en ? 'Previous' : 'السابق',
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
                   const Spacer(),
                   if (!last)
-                    TextButton(
+                    // Skip pill — textHint failed AA at 12sp; textSecondary
+                    // with a subtle outline is legible and looks tappable.
+                    OutlinedButton(
                       onPressed:
                           _finishing ? null : () => _finish(skipped: true),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: context.sirati.textSecondary,
+                        side: BorderSide(color: context.sirati.border),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 6),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999)),
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       child: Text(
                         en ? 'Skip' : 'تخطي',
                         style: AppTextStyles.labelMd(context.sirati).copyWith(
                           fontWeight: FontWeight.w700,
-                          color: context.sirati.textHint,
+                          color: context.sirati.textSecondary,
                         ),
                       ),
                     ),
@@ -168,10 +227,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               child: Column(
                 children: [
+                  Text(
+                    _stepCounterLabel(index: _index, count: _pageCount),
+                    style: AppTextStyles.labelMd(context.sirati).copyWith(
+                      color: context.sirati.textSecondary,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
                   _PageDots(
                     count: _pageCount,
                     index: _index,
                     activeColor: page.accent,
+                    onTap: _finishing ? null : _jumpTo,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   SubmitButton(
@@ -365,7 +433,11 @@ class _OnboardingHeroState extends State<_OnboardingHero>
             height: widget.size,
             decoration: BoxDecoration(
               color: widget.page.accentSoft,
-              borderRadius: BorderRadius.circular(widget.radius),
+              // Match the newly-circular SiratiMark on page 2 so all three
+              // onboarding heroes share one geometry (SIRATI-99/100).
+              // `widget.radius` is now unused; kept in the constructor for
+              // callers that still pass it — it silently no-ops here.
+              shape: BoxShape.circle,
               border: Border.all(
                 color: widget.page.accent.withValues(alpha: 0.14),
               ),
@@ -392,10 +464,16 @@ class _PageDots extends StatelessWidget {
   final int index;
   final Color activeColor;
 
+  /// Optional handler that fires when a dot is tapped. When null the dots
+  /// remain visual only (kept optional so callers that don't wire a
+  /// controller can keep using the widget). (SIRATI-100)
+  final ValueChanged<int>? onTap;
+
   const _PageDots({
     required this.count,
     required this.index,
     required this.activeColor,
+    this.onTap,
   });
 
   @override
@@ -405,7 +483,7 @@ class _PageDots extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (i) {
         final active = i == index;
-        return AnimatedContainer(
+        final dot = AnimatedContainer(
           duration: reduce ? Duration.zero : MotionDurations.medium,
           curve: MotionCurves.state,
           margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -416,6 +494,18 @@ class _PageDots extends StatelessWidget {
                 ? activeColor
                 : context.sirati.borderStrong.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(4),
+          ),
+        );
+        if (onTap == null) return dot;
+        // Enlarged hit-target: the dot itself is 8px tall (below WCAG's
+        // 24px minimum), so wrap it in a padded InkWell that keeps the
+        // small visual while giving fingers a real target.
+        return InkWell(
+          onTap: () => onTap!(i),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            child: dot,
           ),
         );
       }),

@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/shared/models/cv_analysis.dart';
-import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/core/network/api_exception.dart';
-import 'package:sirati/shared/services/cv_api_service.dart';
-import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/core/utils/app_format.dart';
-import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
-import 'package:sirati/shared/widgets/empty_state.dart';
-import 'package:sirati/shared/widgets/loading/app_async_body.dart';
-import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
-import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/cv_analysis.dart';
+import 'package:sirati/shared/models/generated_cv.dart';
+import 'package:sirati/shared/services/cv_api_service.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
+import 'package:sirati/shared/widgets/empty_state.dart';
+import 'package:sirati/shared/widgets/loading/app_async_body.dart';
+import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});

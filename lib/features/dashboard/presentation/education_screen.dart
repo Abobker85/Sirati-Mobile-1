@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
+import 'package:sirati/features/settings/presentation/notifications_screen.dart';
+import 'package:sirati/features/settings/presentation/settings_screen.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
-import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
-import 'package:sirati/features/settings/presentation/notifications_screen.dart';
-import 'package:sirati/features/settings/presentation/settings_screen.dart';
 
 class EducationScreen extends StatefulWidget {
   const EducationScreen({super.key});
@@ -28,7 +27,10 @@ class _EducationScreenState extends State<EducationScreen> {
               ? 'Thank you! You will be notified as soon as educational content launches.'
               : 'شكراً لاهتمامك! سنقوم بإشعارك فور إطلاق المحتوى التعليمي.',
         ),
-        backgroundColor: const Color(0xFF0D9488),
+        // Brand teal (was Tailwind #0D9488) — routed through the palette so
+        // dark theme picks up its own version instead of forcing light-mode
+        // teal into a dark surface (SIRATI-101).
+        backgroundColor: context.sirati.primaryDark,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -101,12 +103,18 @@ class _EducationScreenState extends State<EducationScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  // Three upcoming-feature cards, each routed through a
+                  // palette pair (icon foreground + soft container) so they
+                  // adapt to dark mode and inherit any brand re-tune from
+                  // sirati_colors.dart. Previous hardcoded Tailwind hexes
+                  // (#0284C7 sky, #0D9488 teal, #7C3AED violet) drifted
+                  // off-brand and were static across themes (SIRATI-101).
                   MotionReveal(
                     order: 2,
                     child: _UpcomingFeatureCard(
                       icon: Icons.auto_stories_rounded,
-                      iconColor: const Color(0xFF0284C7),
-                      iconBg: const Color(0xFFE0F2FE),
+                      iconColor: context.sirati.info,
+                      iconBg: context.sirati.infoLight,
                       title: english
                           ? 'Specialized Career Courses'
                           : 'دورات تدريبية متخصصة',
@@ -120,8 +128,8 @@ class _EducationScreenState extends State<EducationScreen> {
                     order: 3,
                     child: _UpcomingFeatureCard(
                       icon: Icons.record_voice_over_rounded,
-                      iconColor: const Color(0xFF0D9488),
-                      iconBg: const Color(0xFFCCFBF1),
+                      iconColor: context.sirati.primaryInk,
+                      iconBg: context.sirati.primaryLight,
                       title: english
                           ? 'AI Interview Preparation'
                           : 'تحضير المقابلات بالذكاء الاصطناعي',
@@ -135,8 +143,8 @@ class _EducationScreenState extends State<EducationScreen> {
                     order: 4,
                     child: _UpcomingFeatureCard(
                       icon: Icons.verified_rounded,
-                      iconColor: const Color(0xFF7C3AED),
-                      iconBg: const Color(0xFFEDE9FE),
+                      iconColor: context.sirati.tertiary,
+                      iconBg: context.sirati.tertiaryLight,
                       title: english
                           ? 'ATS Optimization Guides'
                           : 'أدلة التوافق مع أنظمة ATS',

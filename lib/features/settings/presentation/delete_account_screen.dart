@@ -1,11 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
@@ -35,7 +35,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     final en = AppLocale.isEnglish(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       return;
     }
 
@@ -71,10 +71,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         context,
         en ? 'Account deleted.' : 'تم حذف الحساب.',
       );
-      Navigator.of(context).pushNamedAndRemoveUntil(
+      unawaited(Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.splash,
         (route) => false,
-      );
+      ));
     } on ApiException catch (e) {
       if (!mounted) return;
       final pwd = e.errors['password'];

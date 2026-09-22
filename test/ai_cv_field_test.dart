@@ -2,15 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/app_locale.dart';
-import 'package:sirati/screens/cv_generator_screen.dart';
-import 'package:sirati/services/api_exception.dart';
-import 'package:sirati/services/cv_api_service.dart';
+import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
-import 'package:sirati/theme/app_theme.dart';
-import 'package:sirati/widgets/ai_cv_field.dart';
-import 'package:sirati/widgets/form_fields.dart';
-import 'package:sirati/widgets/submit_button.dart';
+import 'package:sirati/shared/services/cv_api_service.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ai_cv_field.dart';
+import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/submit_button.dart';
 
 void main() {
   testWidgets(

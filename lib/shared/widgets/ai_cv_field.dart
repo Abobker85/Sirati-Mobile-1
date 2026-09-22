@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/core/utils/bidi_text.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/ai_field_loading_overlay.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 

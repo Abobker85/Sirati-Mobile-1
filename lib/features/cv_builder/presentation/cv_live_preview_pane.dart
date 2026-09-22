@@ -1,10 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
+import 'package:sirati/features/cv_builder/controllers/cv_builder_controller.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/shared/models/cv_template.dart';
-import 'package:sirati/features/cv_builder/controllers/cv_builder_controller.dart';
 
 abstract final class _PaperPalette {
   static const Color paperBg =

@@ -1,21 +1,21 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/api_exception.dart';
-import 'package:sirati/shared/services/auth_api_service.dart';
+import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
 import 'package:sirati/core/storage/preference_store.dart';
-import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/routing/app_router.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/root_navigation.dart';
+import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
+import 'package:sirati/features/auth/presentation/login_screen.dart';
+import 'package:sirati/features/auth/presentation/register_screen.dart';
+import 'package:sirati/features/settings/presentation/onboarding_screen.dart';
+import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
+import 'package:sirati/shared/services/auth_api_service.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
-import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
-import 'package:sirati/features/auth/presentation/login_screen.dart';
-import 'package:sirati/features/settings/presentation/onboarding_screen.dart';
-import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
-import 'package:sirati/features/auth/presentation/register_screen.dart';
 
 enum _SplashPhase { boot, onboarding, welcome }
 
@@ -105,9 +105,9 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    Navigator.of(context).push(
+    unawaited(Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+    ));
   }
 
   void _goToRegister() {
@@ -260,13 +260,15 @@ class _BootstrapBodyState extends State<_BootstrapBody>
       parent: _controller,
       curve: const Interval(0.54, 0.86, curve: Curves.easeOutCubic),
     ));
-    _brandTextOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+    _brandTextOpacity =
+        Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _controller,
       curve: const Interval(0.52, 0.78, curve: Curves.easeOut),
     ));
 
     // Status message and wave dots
-    _statusOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+    _statusOpacity =
+        Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _controller,
       curve: const Interval(0.66, 0.92, curve: Curves.easeOut),
     ));
@@ -414,7 +416,8 @@ class _BootstrapBodyState extends State<_BootstrapBody>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: context.sirati.primary.withValues(alpha: 0.18),
+                            color:
+                                context.sirati.primary.withValues(alpha: 0.18),
                             blurRadius: 28,
                             spreadRadius: 3,
                           ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/theme/app_typography.dart';
+import 'package:sirati/shared/theme/app_typography.dart';
 
 void main() {
   test('scale covers display through label', () {
@@ -9,7 +9,8 @@ void main() {
     expect(AppTypography.headlineLg.size, 24);
     expect(AppTypography.titleLg.size, 18);
     expect(AppTypography.bodyMd.size, 14);
-    expect(AppTypography.labelSm.size, 11);
+    // 12, not 11: 11px Arabic sits at the readability floor (SIRATI-92).
+    expect(AppTypography.labelSm.size, 12);
   });
 
   test('Arabic line-height is taller than Latin at every token', () {

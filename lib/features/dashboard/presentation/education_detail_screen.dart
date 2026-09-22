@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
@@ -128,7 +127,8 @@ class _DetailBody extends StatelessWidget {
         Text(
           title.isEmpty ? (english ? 'Untitled' : 'بدون عنوان') : title,
           textAlign: TextAlign.start,
-          style: AppTextStyles.titleLg(context.sirati).copyWith(fontSize: 26, height: 1.35),
+          style: AppTextStyles.titleLg(context.sirati)
+              .copyWith(fontSize: 26, height: 1.35),
         ),
         const SizedBox(height: AppSpacing.md),
         Container(

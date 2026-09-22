@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/models/cv_document.dart';
-import 'package:sirati/models/cv_template.dart';
+import 'package:sirati/shared/models/cv_document.dart';
+import 'package:sirati/shared/models/cv_template.dart';
 
 void main() {
   test('round-trips bilingual fields and reports missing translations', () {

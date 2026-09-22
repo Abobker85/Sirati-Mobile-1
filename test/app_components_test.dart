@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/screens/app_crash_view.dart';
-import 'package:sirati/theme/app_theme.dart';
-import 'package:sirati/widgets/components.dart';
+import 'package:sirati/core/errors/app_crash_view.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components.dart';
 
 void main() {
   Widget wrap(Widget child, {TextDirection direction = TextDirection.ltr}) {

@@ -1,28 +1,28 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/l10n/generated/app_localizations.dart';
-import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/storage/preference_store.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/settings/presentation/change_password_screen.dart';
+import 'package:sirati/features/settings/presentation/delete_account_screen.dart';
+import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
+import 'package:sirati/features/settings/presentation/profile_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
 import 'package:sirati/shared/services/notification_service.dart';
-import 'package:sirati/core/storage/preference_store.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/theme/app_theme_controller.dart';
-import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
-import 'package:sirati/features/settings/presentation/change_password_screen.dart';
-import 'package:sirati/features/settings/presentation/delete_account_screen.dart';
-import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
-import 'package:sirati/features/settings/presentation/profile_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -170,10 +170,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
 
-    Navigator.of(context).pushNamedAndRemoveUntil(
+    unawaited(Navigator.of(context).pushNamedAndRemoveUntil(
       AppRoutes.login,
       (route) => false,
-    );
+    ));
   }
 
   @override
@@ -266,14 +266,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.titleLg(context.sirati),
                           ),
-                          if (user?.displayJobTitle(english: english) != null) ...[
+                          if (user?.displayJobTitle(english: english) !=
+                              null) ...[
                             const SizedBox(height: 3),
                             Text(
                               user!.displayJobTitle(english: english)!,
                               textAlign: TextAlign.start,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.bodySm(context.sirati).copyWith(
+                              style:
+                                  AppTextStyles.bodySm(context.sirati).copyWith(
                                 color: context.sirati.textSecondary,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -286,7 +288,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               textAlign: TextAlign.start,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.bodySm(context.sirati).copyWith(
+                              style:
+                                  AppTextStyles.bodySm(context.sirati).copyWith(
                                 color: context.sirati.textHint,
                               ),
                               textDirection: TextDirection.ltr,

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-
 import 'package:sirati/core/logging/app_log.dart';
-import 'package:sirati/l10n/generated/app_localizations.dart';
-import 'package:sirati/shared/models/cv_document.dart';
-import 'package:sirati/shared/models/cv_template.dart';
-import 'package:sirati/features/cv_builder/data/cv_repository.dart';
-import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/components.dart';
 import 'package:sirati/features/cv_builder/controllers/cv_builder_controller.dart';
+import 'package:sirati/features/cv_builder/data/cv_repository.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_live_preview_pane.dart';
 import 'package:sirati/features/cv_builder/presentation/experience_education_editor.dart';
 import 'package:sirati/features/cv_builder/presentation/personal_details_editor.dart';
 import 'package:sirati/features/cv_builder/presentation/skills_languages_editor.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/cv_document.dart';
+import 'package:sirati/shared/models/cv_template.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components.dart';
 
 /// Interactive CV Builder Screen (SIRATI-36, 37, 38, 39, 40, 42).
 class CvBuilderScreen extends StatefulWidget {
@@ -484,8 +483,7 @@ class _SectionReorderTab extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             itemCount: order.length,
             // ignore: deprecated_member_use
-            onReorder: (oldIdx, newIdx) =>
-                controller.reorderSections(oldIdx, newIdx),
+            onReorder: controller.reorderSections,
             itemBuilder: (context, index) {
               final sectionKey = order[index];
               final label = _sectionLabel(l10n, sectionKey);

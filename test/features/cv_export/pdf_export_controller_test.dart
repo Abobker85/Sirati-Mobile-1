@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/features/cv_export/pdf_export_controller.dart';
-import 'package:sirati/models/cv_template.dart';
-import 'package:sirati/models/generated_cv.dart';
-import 'package:sirati/services/api_client.dart';
+import 'package:sirati/shared/models/cv_template.dart';
+import 'package:sirati/shared/models/generated_cv.dart';
 
 void main() {
   final testCv = GeneratedCv.fromJson({

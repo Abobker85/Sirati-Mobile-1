@@ -1,22 +1,22 @@
+import 'dart:async';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
-
-import 'package:sirati/core/utils/ai_error_message.dart';
-import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/shared/models/ai_status.dart';
-import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/utils/ai_error_message.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/idempotency_key.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
+import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
-import 'package:sirati/core/utils/idempotency_key.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
-import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 
 class CvAnalysisScreen extends StatefulWidget {
   final CvApiService? apiService;
@@ -102,7 +102,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
     final english = AppLocale.isEnglish(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       return;
     }
     if (_uploadedFile == null && _resumeTextController.text.trim().isEmpty) {
@@ -115,7 +115,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
     _submitIdempotencyKey ??= newIdempotencyKey();
     setState(() => _isLoading = true);
     final startedAt = DateTime.now();
-    AnalyticsService.logAnalysisStarted();
+    unawaited(AnalyticsService.logAnalysisStarted());
 
     final progress = await AiProgressOverlay.show(
       context,
@@ -164,10 +164,10 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
 
       final durationMs = DateTime.now().difference(startedAt).inMilliseconds;
       // Bucket only — never the exact score.
-      AnalyticsService.logAnalysisCompleted(
+      unawaited(AnalyticsService.logAnalysisCompleted(
         score: analysis.scoreTotal,
         durationMs: durationMs,
-      );
+      ));
       if (!poll.timedOut && analysis.aiStatus != AiStatus.failed) {
         await progress.complete();
       }
@@ -188,10 +188,10 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
           onAction: _submit,
         );
       }
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       // Fire-and-forget conversion for smart-notification measurement.
-      NotificationEngagementService.instance
-          .reportConversion('analysis_completed');
+      unawaited(NotificationEngagementService.instance
+          .reportConversion('analysis_completed'));
       _submitIdempotencyKey = null;
       if (analysis.classificationWarning != null && mounted) {
         AppSnackBar.warning(
@@ -201,17 +201,18 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
               : analysis.classificationWarning!,
         );
       }
-      Navigator.of(context).push(
+      unawaited(Navigator.of(context).push(
         MaterialPageRoute(
             builder: (_) => AnalysisResultScreen(analysis: analysis)),
-      );
+      ));
     } on ApiException catch (exception) {
       if (progress.isCancelled || requestId != _aiRequestGen) return;
-      AnalyticsService.logAnalysisFailed(errorType: exception.type.name);
+      unawaited(
+          AnalyticsService.logAnalysisFailed(errorType: exception.type.name));
       if (mounted) AppSnackBar.fromException(context, exception);
     } catch (_) {
       if (progress.isCancelled || requestId != _aiRequestGen) return;
-      AnalyticsService.logAnalysisFailed(errorType: 'unknown');
+      unawaited(AnalyticsService.logAnalysisFailed(errorType: 'unknown'));
       if (mounted) {
         AppSnackBar.error(
           context,
@@ -350,8 +351,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
                             : 'اضغط لتقييم سيرتك مقارنة بالإعلان الفعلي بدل قائمة عامة.',
                         textAlign: TextAlign.start,
                         style: TextStyle(
-                            fontSize: 12,
-                            color: context.sirati.textSecondary),
+                            fontSize: 12, color: context.sirati.textSecondary),
                       ),
                     ),
                     secondChild: Column(

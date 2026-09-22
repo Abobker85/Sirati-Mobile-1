@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-
+import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/features/cv_builder/controllers/cv_builder_controller.dart';
 import 'package:sirati/features/cv_builder/presentation/section_editor_framework.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/shared/widgets/components.dart';
 
 /// Validation utilities for Gulf phone numbers and emails (SIRATI-37).

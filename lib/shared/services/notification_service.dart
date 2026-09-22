@@ -2,17 +2,16 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
-import 'package:sirati/shared/services/notification_engagement_service.dart';
 import 'package:sirati/core/storage/preference_store.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/shared/services/notification_engagement_service.dart';
 
 /// Handles all push notification logic: permissions, token management,
 /// foreground display, tap handling, and backend registration.

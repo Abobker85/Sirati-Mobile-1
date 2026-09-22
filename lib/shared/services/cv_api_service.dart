@@ -1,11 +1,10 @@
 import 'package:http/http.dart' as http;
-
-import 'package:sirati/shared/models/cv_analysis.dart';
-import 'package:sirati/shared/models/ai_status.dart';
-import 'package:sirati/shared/models/cv_template.dart';
-import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
+import 'package:sirati/shared/models/ai_status.dart';
+import 'package:sirati/shared/models/cv_analysis.dart';
+import 'package:sirati/shared/models/cv_template.dart';
+import 'package:sirati/shared/models/generated_cv.dart';
 
 class CvApiService {
   CvApiService({

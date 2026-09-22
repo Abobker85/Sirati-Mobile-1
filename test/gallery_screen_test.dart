@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/features/dashboard/presentation/gallery_screen.dart';
 import 'package:sirati/routing/app_router.dart';
-import 'package:sirati/routing/app_routes.dart';
-import 'package:sirati/screens/gallery_screen.dart';
-
-import 'package:sirati/theme/app_theme.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 
 void main() {
   testWidgets(

@@ -3,17 +3,17 @@ import 'package:share_plus/share_plus.dart';
 import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/bidi_text_utils.dart';
-import 'package:sirati/shared/models/cv_template.dart';
+import 'package:sirati/core/utils/safe_url.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/shared/models/ai_status.dart';
+import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/template_preview.dart';
-import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 
 class GeneratedCvScreen extends StatefulWidget {
   final GeneratedCv generatedCv;
@@ -231,37 +231,37 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
                 child: Directionality(
                   textDirection: _contentDirection(),
                   child: ListView(
-                  children: [
-                    Text(widget.generatedCv.fullName,
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: context.sirati.primaryDark)),
-                    const SizedBox(height: 4),
-                    Text(_displayHeadline(widget.generatedCv.targetJobTitle),
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: context.sirati.primary,
-                            fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 4),
-                    if (contact.isNotEmpty)
-                      Text(contact,
+                    children: [
+                      Text(widget.generatedCv.fullName,
                           style: TextStyle(
-                              fontSize: 12,
-                              color: context.sirati.textSecondary)),
-                    Divider(height: 24, color: context.sirati.border),
-                    if (widget.generatedCv.generatedMarkdown.trim().isEmpty)
-                      Text(
-                          english
-                              ? 'No CV content is available yet.'
-                              : 'لا يوجد محتوى للسيرة حالياً.',
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: context.sirati.primaryDark)),
+                      const SizedBox(height: 4),
+                      Text(_displayHeadline(widget.generatedCv.targetJobTitle),
                           style: TextStyle(
-                              fontSize: 13,
-                              color: context.sirati.textSecondary))
-                    else
-                      ..._buildMarkdownSectionsCached(context, english),
-                  ],
-                ),
+                              fontSize: 14,
+                              color: context.sirati.primary,
+                              fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 4),
+                      if (contact.isNotEmpty)
+                        Text(contact,
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: context.sirati.textSecondary)),
+                      Divider(height: 24, color: context.sirati.border),
+                      if (widget.generatedCv.generatedMarkdown.trim().isEmpty)
+                        Text(
+                            english
+                                ? 'No CV content is available yet.'
+                                : 'لا يوجد محتوى للسيرة حالياً.',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: context.sirati.textSecondary))
+                      else
+                        ..._buildMarkdownSectionsCached(context, english),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -269,45 +269,45 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
           SafeArea(
             top: false,
             child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: PressScale(
-                    child: OutlinedButton.icon(
-                      onPressed: _shareCv,
-                      icon: const Icon(Icons.share_outlined, size: 18),
-                      label: Text(english ? 'Share' : 'مشاركة'),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: PressScale(
-                    child: ElevatedButton.icon(
-                      onPressed:
-                          _isDownloading ? null : () => _downloadPdf(context),
-                      icon: _isDownloading
-                          ? SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: context.sirati.primary,
-                              ),
-                            )
-                          : const Icon(Icons.download_outlined, size: 18),
-                      label: Text(
-                        _isDownloading
-                            ? (english ? 'Preparing...' : 'جارٍ التجهيز...')
-                            : (english ? 'Download PDF' : 'تنزيل PDF'),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: PressScale(
+                      child: OutlinedButton.icon(
+                        onPressed: _shareCv,
+                        icon: const Icon(Icons.share_outlined, size: 18),
+                        label: Text(english ? 'Share' : 'مشاركة'),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: PressScale(
+                      child: ElevatedButton.icon(
+                        onPressed:
+                            _isDownloading ? null : () => _downloadPdf(context),
+                        icon: _isDownloading
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: context.sirati.primary,
+                                ),
+                              )
+                            : const Icon(Icons.download_outlined, size: 18),
+                        label: Text(
+                          _isDownloading
+                              ? (english ? 'Preparing...' : 'جارٍ التجهيز...')
+                              : (english ? 'Download PDF' : 'تنزيل PDF'),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           ),
         ],
       ),

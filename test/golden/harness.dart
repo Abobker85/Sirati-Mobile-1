@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:sirati/features/cv_builder/cv_builder_controller.dart';
 import 'package:sirati/features/cv_builder/cv_live_preview_pane.dart';
+import 'package:sirati/features/cv_builder/data/cv_repository.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
-import 'package:sirati/models/cv_document.dart';
-import 'package:sirati/models/cv_template.dart';
-import 'package:sirati/services/cv_repository.dart';
-import 'package:sirati/theme/app_theme.dart';
-import 'package:sirati/widgets/animated_ats_score_bar.dart';
-import 'package:sirati/widgets/form_fields.dart';
-import 'package:sirati/widgets/score_booster_card.dart';
-import 'package:sirati/widgets/submit_button.dart';
+import 'package:sirati/shared/models/cv_document.dart';
+import 'package:sirati/shared/models/cv_template.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
+import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/score_booster_card.dart';
+import 'package:sirati/shared/widgets/submit_button.dart';
 
 /// Fixed phone-like viewport for deterministic goldens.
 const goldenSurfaceSize = Size(390, 844);

@@ -76,8 +76,8 @@ void main() {
         'handles boundary invariant: control characters and consecutive spaces',
         () {
       final name = ExportFileNamer.formatFilename(
-        fullName: "\t\n  محمد   سالم   \r",
-        targetJobTitle: "مهندس\nنظم",
+        fullName: '\t\n  محمد   سالم   \r',
+        targetJobTitle: 'مهندس\nنظم',
         language: 'ar',
       );
 

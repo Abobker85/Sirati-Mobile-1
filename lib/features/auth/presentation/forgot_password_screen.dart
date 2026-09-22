@@ -2,9 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -74,7 +73,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     if (!_codeSent) {
       if (!_formKey.currentState!.validate()) {
-        HapticFeedback.selectionClick();
+        unawaited(HapticFeedback.selectionClick());
         return;
       }
     } else if (_emailController.text.trim().isEmpty ||
@@ -106,7 +105,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         _submitted = false;
       });
       _startCooldown(60);
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       AppSnackBar.success(context, message);
     } on ApiException catch (exception) {
       if (mounted) {
@@ -140,7 +139,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final english = AppLocale.isEnglish(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       return;
     }
 
@@ -153,7 +152,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         passwordConfirmation: _confirmController.text,
       );
       if (!mounted) return;
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       AppSnackBar.success(context, message);
       Navigator.of(context).pop();
     } on ApiException catch (exception) {
@@ -258,7 +257,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   loadingLabel: english ? 'Sending...' : 'جارٍ الإرسال...',
                   isLoading: _isLoading,
                   icon: Icons.send_outlined,
-                  onPressed: () => _sendCode(),
+                  onPressed: _sendCode,
                 ),
               ] else ...[
                 const SizedBox(height: AppSpacing.md),

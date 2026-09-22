@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/bidi_text.dart';
 import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/utils/bidi_text.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 
 /// Searchable job-title selector used on register + profile screens.

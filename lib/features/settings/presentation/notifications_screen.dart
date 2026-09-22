@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/utils/app_format.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';

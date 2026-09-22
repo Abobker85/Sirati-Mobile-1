@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:sirati/app_locale.dart';
-import 'package:sirati/models/ai_status.dart';
-import 'package:sirati/models/cv_analysis.dart';
-import 'package:sirati/screens/analysis_result_screen.dart';
-import 'package:sirati/screens/cv_analysis_screen.dart';
-import 'package:sirati/services/cv_api_service.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
+import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
-import 'package:sirati/theme/app_theme.dart';
-import 'package:sirati/widgets/submit_button.dart';
+import 'package:sirati/shared/models/ai_status.dart';
+import 'package:sirati/shared/models/cv_analysis.dart';
+import 'package:sirati/shared/services/cv_api_service.dart';
+import 'package:sirati/shared/services/cv_api_service_provider.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/submit_button.dart';
 
 void main() {
   setUp(() {
@@ -86,12 +88,17 @@ Future<void> _submitAnalysis(
   _PollingCvApiService service,
 ) async {
   await tester.pumpWidget(
-    MaterialApp(
-      locale: const Locale('en'),
-      theme: AppTheme.light,
-      supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: CvAnalysisScreen(apiService: service),
+    // The result screen reads its service from Riverpod; override it with the
+    // same fake so submit and follow-up generation share one backend.
+    ProviderScope(
+      overrides: [cvApiServiceProvider.overrideWithValue(service)],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        theme: AppTheme.light,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: CvAnalysisScreen(apiService: service),
+      ),
     ),
   );
   await tester.pump();
@@ -99,6 +106,13 @@ Future<void> _submitAnalysis(
   await tester.enterText(
     _fieldWithHint('e.g. Laravel Backend Developer'),
     'Laravel Developer',
+  );
+  // The paste field sits below the fold (JD card + 12-line textarea), and
+  // ListView doesn't build off-screen children — scroll it into view first.
+  await tester.scrollUntilVisible(
+    _fieldWithHint('Paste the full resume text here...'),
+    300,
+    scrollable: find.byType(Scrollable).first,
   );
   await tester.enterText(
     _fieldWithHint('Paste the full resume text here...'),
@@ -131,6 +145,7 @@ class _PollingCvApiService extends CvApiService {
   Future<CvAnalysis> submitAnalysis({
     required String targetJobTitle,
     required String resumeText,
+    String? jobDescription,
     http.MultipartFile? resumeFile,
     String? idempotencyKey,
   }) async {

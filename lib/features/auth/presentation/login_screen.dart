@@ -1,23 +1,23 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/app_router.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/root_navigation.dart';
+import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
+import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
+import 'package:sirati/features/auth/presentation/register_screen.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/routing/app_router.dart';
-import 'package:sirati/core/utils/root_navigation.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
-import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
-import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
-import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
-import 'package:sirati/features/auth/presentation/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   /// When true, shows a one-shot "session expired" snackbar after first frame.
@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     if (!_formKey.currentState!.validate()) {
       setState(() => _showFormBanner = true);
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       return;
     }
     setState(() => _isLoading = true);
@@ -83,8 +83,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (!mounted) return;
-      AnalyticsService.logLoginSuccess(method: 'email');
-      HapticFeedback.lightImpact();
+      unawaited(AnalyticsService.logLoginSuccess(method: 'email'));
+      unawaited(HapticFeedback.lightImpact());
       // Unverified accounts must complete email OTP before using the app.
       if (!session.user.emailVerified) {
         replaceRoot(

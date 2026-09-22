@@ -1,22 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/safe_url.dart';
+import 'package:sirati/features/jobs/presentation/widgets/job_title_display.dart';
 import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
-import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/shared/services/session_cache.dart';
-import 'package:sirati/core/utils/app_format.dart';
-import 'package:sirati/core/utils/safe_url.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
-import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
-import 'package:sirati/features/jobs/presentation/widgets/job_title_display.dart';
-import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 
 /// Prefer computed relative time from [JobNews.publishedAt]; fall back to API label digits.
 String _jobPublishedText(JobNews item, {required bool english}) {
@@ -318,7 +317,8 @@ class _JobNewsScreenState extends State<JobNewsScreen> {
                                               ? 'Latest Postings'
                                               : 'آخر الإعلانات',
                                           textAlign: TextAlign.start,
-                                          style: AppTextStyles.titleMd(context.sirati),
+                                          style: AppTextStyles.titleMd(
+                                              context.sirati),
                                         ),
                                         const SizedBox(height: AppSpacing.sm),
                                         if (latest.isEmpty)
@@ -414,8 +414,8 @@ class JobNewsDetailScreen extends StatelessWidget {
                             color: context.sirati.primaryLight,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: context.sirati.primary
-                                  .withValues(alpha: 0.3),
+                              color:
+                                  context.sirati.primary.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
@@ -452,8 +452,8 @@ class JobNewsDetailScreen extends StatelessWidget {
                               color: context.sirati.amberLight,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: context.sirati.amber
-                                    .withValues(alpha: 0.3),
+                                color:
+                                    context.sirati.amber.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(
@@ -524,8 +524,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isHighMatch
-                              ? context.sirati.primary
-                                  .withValues(alpha: 0.4)
+                              ? context.sirati.primary.withValues(alpha: 0.4)
                               : context.sirati.border,
                           width: 1.2,
                         ),
@@ -592,8 +591,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 4),
                                 child: Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Icon(Icons.check_circle_rounded,
                                         size: 15,
@@ -620,7 +618,9 @@ class JobNewsDetailScreen extends StatelessWidget {
                   if (item.skillsRequired.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Text(
-                      english ? 'Key Skills Required' : 'المهارات المطلوبة للوظيفة',
+                      english
+                          ? 'Key Skills Required'
+                          : 'المهارات المطلوبة للوظيفة',
                       style: AppTextStyles.titleMd(context.sirati),
                     ),
                     const SizedBox(height: 8),
@@ -690,13 +690,8 @@ class JobNewsDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const CvGeneratorScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.createCv),
                     icon: const Icon(Icons.auto_awesome_rounded),
                     label: Text(
                       english
@@ -942,8 +937,8 @@ class _JobNewsCard extends StatelessWidget {
                 if (item.matchReasons.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: context.sirati.surfaceLow,
                       borderRadius: BorderRadius.circular(8),
@@ -994,8 +989,7 @@ class _JobNewsCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: isMatched
-                                ? context.sirati.primary
-                                    .withValues(alpha: 0.3)
+                                ? context.sirati.primary.withValues(alpha: 0.3)
                                 : context.sirati.border,
                             width: 0.8,
                           ),
@@ -1004,9 +998,8 @@ class _JobNewsCard extends StatelessWidget {
                           skill,
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: isMatched
-                                ? FontWeight.w700
-                                : FontWeight.w500,
+                            fontWeight:
+                                isMatched ? FontWeight.w700 : FontWeight.w500,
                             color: isMatched
                                 ? context.sirati.primaryDark
                                 : context.sirati.textSecondary,
@@ -1257,16 +1250,16 @@ class _PresetChips extends StatelessWidget {
   Widget build(BuildContext context) {
     final presets = [
       _PresetOption('all', english ? 'All' : 'الكل', Icons.dashboard_outlined),
-      _PresetOption(
-          'matched', english ? 'Best Match' : 'مناسبة لي 🎯', Icons.stars_rounded),
+      _PresetOption('matched', english ? 'Best Match' : 'مناسبة لي 🎯',
+          Icons.stars_rounded),
       _PresetOption('gov', english ? 'Government' : 'جهات حكومية 🏛️',
           Icons.account_balance_outlined),
       _PresetOption('enterprise', english ? 'Enterprise' : 'شركات كبرى 🏢',
           Icons.business_outlined),
       _PresetOption('tamheer', english ? 'Tamheer' : 'تمهير وتدريب 🇸🇦',
           Icons.school_outlined),
-      _PresetOption('remote', english ? 'Remote' : 'عن بعد 🌐',
-          Icons.public_rounded),
+      _PresetOption(
+          'remote', english ? 'Remote' : 'عن بعد 🌐', Icons.public_rounded),
     ];
 
     return Material(

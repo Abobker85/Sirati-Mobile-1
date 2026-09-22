@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/logging/app_log.dart';
+import 'package:sirati/core/logging/app_log.dart';
 
 void main() {
   tearDown(AppLog.resetForTest);

@@ -2,34 +2,33 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/network/analytics_service.dart';
+import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/utils/app_format.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/safe_url.dart';
+import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
+import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
+import 'package:sirati/features/dashboard/presentation/education_detail_screen.dart';
+import 'package:sirati/features/dashboard/presentation/education_screen.dart';
+import 'package:sirati/features/dashboard/presentation/history_screen.dart';
+import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
+import 'package:sirati/features/settings/presentation/notifications_screen.dart';
+import 'package:sirati/features/settings/presentation/settings_screen.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
 import 'package:sirati/shared/services/notification_service.dart';
-import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/services/session_cache.dart';
-import 'package:sirati/core/utils/app_format.dart';
-import 'package:sirati/core/utils/safe_url.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_list_tile.dart';
-import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
-import 'package:sirati/core/network/api_exception.dart';
-import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
-import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
-import 'package:sirati/features/dashboard/presentation/education_detail_screen.dart';
-import 'package:sirati/features/dashboard/presentation/education_screen.dart';
-import 'package:sirati/features/dashboard/presentation/history_screen.dart';
-import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
-import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
-import 'package:sirati/features/settings/presentation/notifications_screen.dart';
-import 'package:sirati/features/settings/presentation/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -380,7 +379,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                                       builder: (_) =>
                                           const NotificationsScreen()),
                                 );
-                                if (mounted) _retry(english);
+                                if (mounted) unawaited(_retry(english));
                               },
                               onAvatarTap: () => Navigator.of(context).push(
                                 MaterialPageRoute(

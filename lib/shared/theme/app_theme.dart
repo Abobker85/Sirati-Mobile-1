@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/shared/widgets/form_fields.dart';
-import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/theme/app_typography.dart';
 import 'package:sirati/shared/theme/sirati_colors.dart';
+import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 export 'package:sirati/shared/theme/app_contrast.dart';
-
 export 'package:sirati/shared/theme/app_typography.dart';
 export 'package:sirati/shared/theme/sirati_colors.dart';
 
@@ -27,14 +25,14 @@ class AppColors {
   static const primaryInk = Color(0xFF006A60);
 
   static const teal = Color(0xFF00A898);
-  static const tealLight = Color(0xFFE1F5F2);
+  static const tealLight = Color(0xFFDDF6F3);
   static const tealDark = Color(0xFF006A60);
 
   static const amber = Color(0xFFC97F1B);
   static const amberLight = Color(0xFFFDE9C7);
   static const amberAccent = Color(0xFFF2A93D);
 
-  static const red = Color(0xFFD8403A);
+  static const red = Color(0xFFC73B36);
   static const redLight = Color(0xFFFFE1DE);
 
   static const tertiary = Color(0xFF9A4528);
@@ -59,7 +57,7 @@ class AppColors {
 
   static const textPrimary = Color(0xFF171D1B);
   static const textSecondary = Color(0xFF3C4947);
-  static const textHint = Color(0xFF64726F);
+  static const textHint = Color(0xFF54615E);
 
   static const softShadow = [
     BoxShadow(
@@ -415,7 +413,12 @@ class SiratiMark extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [Color(0xFF12384F), Color(0xFF0E8F86)],
         ),
-        borderRadius: BorderRadius.circular(size * .26),
+        // Circular mark (SIRATI-99). The check-path in _SiratiMarkPainter is
+        // authored in a unit square whose reachable extents (including the
+        // top-right dot + stroke half-width) sit within the inscribed circle
+        // of radius 0.5, so the glyph is not clipped by the switch to
+        // BoxShape.circle.
+        shape: BoxShape.circle,
         boxShadow: elevated
             ? const [
                 BoxShadow(

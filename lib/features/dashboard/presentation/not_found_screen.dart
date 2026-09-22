@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 

@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 
-import 'package:sirati/shared/models/cv_document.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sirati/core/routing/entitlement_store.dart';
-import 'package:sirati/features/cv_builder/data/cv_repository.dart';
 import 'package:sirati/core/utils/async_state.dart';
+import 'package:sirati/features/cv_builder/data/cv_repository.dart';
+import 'package:sirati/shared/models/cv_document.dart';
 
 /// Thrown when a free user reaches the maximum allowed number of saved CVs.
 class CvLimitReachedException implements Exception {

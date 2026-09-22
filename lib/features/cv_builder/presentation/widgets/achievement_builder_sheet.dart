@@ -38,7 +38,8 @@ class AchievementBuilderSheet extends StatefulWidget {
   }
 
   @override
-  State<AchievementBuilderSheet> createState() => _AchievementBuilderSheetState();
+  State<AchievementBuilderSheet> createState() =>
+      _AchievementBuilderSheetState();
 }
 
 class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
@@ -149,12 +150,38 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
     final canInsert = _actionCtrl.text.trim().isNotEmpty;
 
     final actionPills = english
-        ? ['Developed', 'Led a team to deliver', 'Optimized', 'Automated', 'Increased revenue', 'Reduced costs']
-        : ['طوّرت', 'قدت فريقاً لتنفيذ', 'حسّنت كفاءة', 'أتمتت عمليات', 'رفعت مبيعات', 'قلّصت زمن استجابة'];
+        ? [
+            'Developed',
+            'Led a team to deliver',
+            'Optimized',
+            'Automated',
+            'Increased revenue',
+            'Reduced costs'
+          ]
+        : [
+            'طوّرت',
+            'قدت فريقاً لتنفيذ',
+            'حسّنت كفاءة',
+            'أتمتت عمليات',
+            'رفعت مبيعات',
+            'قلّصت زمن استجابة'
+          ];
 
     final metricPills = english
-        ? ['by 25%', 'by 40%', 'saving 10 hrs/week', 'generating \$50K revenue', 'achieving 99.9% uptime']
-        : ['بنسبة 25%', 'بنسبة 40%', 'توفير 10 ساعات أسبوعياً', 'بقيمة 200,000 ريال', 'بنسبة دقة 99.9%'];
+        ? [
+            'by 25%',
+            'by 40%',
+            'saving 10 hrs/week',
+            'generating \$50K revenue',
+            'achieving 99.9% uptime'
+          ]
+        : [
+            'بنسبة 25%',
+            'بنسبة 40%',
+            'توفير 10 ساعات أسبوعياً',
+            'بقيمة 200,000 ريال',
+            'بنسبة دقة 99.9%'
+          ];
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -233,7 +260,9 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
 
               // ── Quick Presets Carousel ────────────────────────────────────
               Text(
-                english ? 'Quick Inspiration Presets:' : 'نماذج إلهام سريعة بنقرة واحدة:',
+                english
+                    ? 'Quick Inspiration Presets:'
+                    : 'نماذج إلهام سريعة بنقرة واحدة:',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -246,7 +275,9 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                 child: Row(
                   children: [
                     _PresetChip(
-                      label: english ? 'Tech / Performance' : 'تحسين الأداء التقني',
+                      label: english
+                          ? 'Tech / Performance'
+                          : 'تحسين الأداء التقني',
                       onTap: () => _applyPreset(
                         action: english
                             ? 'Optimized database queries and API response times'
@@ -259,7 +290,9 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                     ),
                     const SizedBox(width: 8),
                     _PresetChip(
-                      label: english ? 'Sales / Revenue' : 'زيادة المبيعات والأرباح',
+                      label: english
+                          ? 'Sales / Revenue'
+                          : 'زيادة المبيعات والأرباح',
                       onTap: () => _applyPreset(
                         action: english
                             ? 'Increased quarterly sales pipeline and client deals'
@@ -272,12 +305,16 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                     ),
                     const SizedBox(width: 8),
                     _PresetChip(
-                      label: english ? 'Project / Leadership' : 'إدارة وتسليم المشاريع',
+                      label: english
+                          ? 'Project / Leadership'
+                          : 'إدارة وتسليم المشاريع',
                       onTap: () => _applyPreset(
                         action: english
                             ? 'Led cross-functional team to deliver 4 major releases'
                             : 'قدت فريقاً متعدد التخصصات لتسليم 4 مشاريع كبرى في موعدها',
-                        metric: english ? '100% on schedule and within budget' : 'في الموعد المحدد وبوفورات 15% في الميزانية',
+                        metric: english
+                            ? '100% on schedule and within budget'
+                            : 'في الموعد المحدد وبوفورات 15% في الميزانية',
                         method: english
                             ? 'using Agile sprints and Jira milestone tracking'
                             : 'بتطبيق منهجية Agile ومتابعة مؤشرات الأداء عبر Jira',
@@ -290,7 +327,9 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
 
               // ── Field 1: Action (X) ──────────────────────────────────────
               Text(
-                english ? '1. What did you accomplish? (Action - X) *' : '1. ماذا أنجزت أو طوّرت؟ (الإجراء - س) *',
+                english
+                    ? '1. What did you accomplish? (Action - X) *'
+                    : '1. ماذا أنجزت أو طوّرت؟ (الإجراء - س) *',
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -309,23 +348,30 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
-                children: actionPills.map((pill) => ActionChip(
-                  label: Text(pill, style: TextStyle(fontSize: 11, color: c.textSecondary)),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: c.surfaceLow,
-                  side: BorderSide(color: c.border),
-                  onPressed: () {
-                    final current = _actionCtrl.text.trim();
-                    _actionCtrl.text = current.isEmpty ? pill : '$pill $current';
-                  },
-                )).toList(),
+                children: actionPills
+                    .map((pill) => ActionChip(
+                          label: Text(pill,
+                              style: TextStyle(
+                                  fontSize: 11, color: c.textSecondary)),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor: c.surfaceLow,
+                          side: BorderSide(color: c.border),
+                          onPressed: () {
+                            final current = _actionCtrl.text.trim();
+                            _actionCtrl.text =
+                                current.isEmpty ? pill : '$pill $current';
+                          },
+                        ))
+                    .toList(),
               ),
               const SizedBox(height: 14),
 
               // ── Field 2: Metric / Number (Y) ──────────────────────────────
               Text(
-                english ? '2. What was the measurable result? (Metric - Y)' : '2. ما النتيجة أو المقياس الرقمي؟ (المقياس - ص)',
+                english
+                    ? '2. What was the measurable result? (Metric - Y)'
+                    : '2. ما النتيجة أو المقياس الرقمي؟ (المقياس - ص)',
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -344,22 +390,28 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
-                children: metricPills.map((pill) => ActionChip(
-                  label: Text(pill, style: TextStyle(fontSize: 11, color: c.textSecondary)),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: c.surfaceLow,
-                  side: BorderSide(color: c.border),
-                  onPressed: () {
-                    _metricCtrl.text = pill;
-                  },
-                )).toList(),
+                children: metricPills
+                    .map((pill) => ActionChip(
+                          label: Text(pill,
+                              style: TextStyle(
+                                  fontSize: 11, color: c.textSecondary)),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor: c.surfaceLow,
+                          side: BorderSide(color: c.border),
+                          onPressed: () {
+                            _metricCtrl.text = pill;
+                          },
+                        ))
+                    .toList(),
               ),
               const SizedBox(height: 14),
 
               // ── Field 3: Method / Tools (Z) ──────────────────────────────
               Text(
-                english ? '3. How did you achieve it? (Method / Tools - Z)' : '3. كيف حققته وما الأدوات المستخدمة؟ (الأسلوب - ع)',
+                english
+                    ? '3. How did you achieve it? (Method / Tools - Z)'
+                    : '3. كيف حققته وما الأدوات المستخدمة؟ (الأسلوب - ع)',
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -391,10 +443,13 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.visibility_outlined, size: 16, color: c.primaryDark),
+                          Icon(Icons.visibility_outlined,
+                              size: 16, color: c.primaryDark),
                           const SizedBox(width: 6),
                           Text(
-                            english ? 'Live Achievement Preview:' : 'معاينة الصياغة النهائية:',
+                            english
+                                ? 'Live Achievement Preview:'
+                                : 'معاينة الصياغة النهائية:',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,

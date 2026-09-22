@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:sirati/models/ai_status.dart';
-import 'package:sirati/models/cv_analysis.dart';
-import 'package:sirati/services/api_client.dart';
-import 'package:sirati/services/api_exception.dart';
-import 'package:sirati/services/auth_api_service.dart';
-import 'package:sirati/services/auth_token_store.dart';
-import 'package:sirati/services/cv_api_service.dart';
+import 'package:sirati/core/network/api_client.dart';
+import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/storage/auth_token_store.dart';
+import 'package:sirati/shared/models/ai_status.dart';
+import 'package:sirati/shared/models/cv_analysis.dart';
+import 'package:sirati/shared/services/auth_api_service.dart';
+import 'package:sirati/shared/services/cv_api_service.dart';
 
 void main() {
   group('CvApiService', () {

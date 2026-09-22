@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/screens/login_screen.dart';
+import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
-import 'package:sirati/theme/app_theme.dart';
-import 'package:sirati/widgets/auth_form_constraint.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/auth_form_constraint.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

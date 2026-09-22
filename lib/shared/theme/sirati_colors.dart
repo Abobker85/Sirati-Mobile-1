@@ -109,6 +109,17 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   }
 
   /// Light palette — mirrors historical [AppColors] constants.
+  ///
+  /// Consistency invariants (SIRATI-101) — do not diverge these values by
+  /// hand. If two roles need different reds/greens, add a new named token.
+  ///   red        == error          (was #D8403A vs #C73B36 — visible drift)
+  ///   tealLight  == primaryLight   (was #E1F5F2 vs #DDF6F3 — near-dup)
+  ///   teal       == primary        (already same, kept as legacy alias)
+  ///   tealDark   == primaryDark    (already same, kept as legacy alias)
+  ///   warning    == amber          (already same, kept as legacy alias)
+  ///   info       == primaryDark    (already same, kept as legacy alias)
+  /// Prefer semantic names (error, warning, info) over raw (red, amber, teal)
+  /// in new code so a future re-tune can move a single knob.
   static const light = SiratiColors(
     primary: Color(0xFF00A898),
     primaryDark: Color(0xFF006A60),
@@ -118,12 +129,12 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     onPrimary: Color(0xFF00332D),
     primaryInk: Color(0xFF006A60),
     teal: Color(0xFF00A898),
-    tealLight: Color(0xFFE1F5F2),
+    tealLight: Color(0xFFDDF6F3), // unified with primaryLight (SIRATI-101)
     tealDark: Color(0xFF006A60),
     amber: Color(0xFFC97F1B),
     amberLight: Color(0xFFFDE9C7),
     amberAccent: Color(0xFFF2A93D),
-    red: Color(0xFFD8403A),
+    red: Color(0xFFC73B36), // unified with error (SIRATI-101)
     redLight: Color(0xFFFFE1DE),
     tertiary: Color(0xFF9A4528),
     tertiaryLight: Color(0xFFFFDBD0),
@@ -148,7 +159,9 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     borderStrong: Color(0xFFBBC9C6),
     textPrimary: Color(0xFF171D1B),
     textSecondary: Color(0xFF3C4947),
-    textHint: Color(0xFF64726F),
+    // Was #64726F (~4.7:1 on background, borderline AA). Darkened to ~6:1
+    // for comfortable margin on small hint text.
+    textHint: Color(0xFF54615E),
     softShadow: [
       BoxShadow(
         color: Color(0x0D000000),
