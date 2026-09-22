@@ -65,7 +65,6 @@ void main() {
     'lib/features/dashboard/presentation/education_screen.dart': 10,
     'lib/shared/widgets/form_fields.dart': 9,
     'lib/shared/widgets/app_snack_bar.dart': 6,
-    'lib/features/dashboard/presentation/home_screen.dart': 4,
     'lib/core/flavors/app_flavor.dart': 3,
     'lib/shared/widgets/submit_button.dart': 3,
     'lib/core/errors/app_crash_view.dart': 2,
