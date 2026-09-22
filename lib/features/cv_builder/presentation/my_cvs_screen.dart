@@ -1,243 +1,71 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
-import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/safe_url.dart';
+import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
+import 'package:sirati/features/cv_builder/domain/cv_list.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
+import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
+import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_template_picker.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_template.dart';
-import 'package:sirati/shared/services/cv_api_service.dart';
-import 'package:sirati/shared/services/mobile_content_service.dart';
+import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
-import 'package:sirati/shared/widgets/template_preview.dart';
 
-class MyCvsScreen extends StatefulWidget {
+/// "My CVs" tab: saved CVs with edit, download (per template), and delete.
+class MyCvsScreen extends ConsumerStatefulWidget {
   const MyCvsScreen({super.key});
 
   @override
-  State<MyCvsScreen> createState() => _MyCvsScreenState();
+  ConsumerState<MyCvsScreen> createState() => _MyCvsScreenState();
 }
 
-class _MyCvsScreenState extends State<MyCvsScreen> {
-  final _contentService = MobileContentService();
-  final _cvService = CvApiService();
-  late Future<Map<String, dynamic>> _future;
-  bool? _loadedEnglish;
+class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
+  bool get _english => AppLocale.isEnglish(context);
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final english = AppLocale.isEnglish(context);
-    if (_loadedEnglish != english) {
-      _loadedEnglish = english;
-      _future = _contentService.myCvs(english);
-    }
+  Future<void> _refresh() => refreshMyCvs(ref, english: _english);
+
+  void _openGenerator() {
+    unawaited(Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const CvGeneratorScreen()),
+    ));
   }
 
-  Future<void> _refresh() async {
-    final next =
-        _contentService.myCvs(AppLocale.isEnglish(context), force: true);
-    setState(() => _future = next);
-    try {
-      await next;
-    } catch (_) {
-      // FutureBuilder shows error; pull-to-refresh still settles.
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
-
-    return SafeArea(
-      child: FutureBuilder<Map<String, dynamic>>(
-        future: _future,
-        builder: (context, snapshot) {
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final maxContentWidth = constraints.maxWidth >= 1100
-                  ? 920.0
-                  : constraints.maxWidth >= 780
-                      ? 760.0
-                      : constraints.maxWidth;
-              final horizontalPadding =
-                  AppSpacing.pageGutter(constraints.maxWidth);
-
-              Widget shell(Widget child) => Align(
-                    alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxContentWidth),
-                      child: child,
-                    ),
-                  );
-
-              return AppAsyncBody<Map<String, dynamic>>(
-                snapshot: snapshot,
-                english: english,
-                onRetry: _refresh,
-                fallbackOnEmptyError: _fallback(english),
-                errorMessage: (error) => error is ApiException
-                    ? error.displayMessage
-                    : (english
-                        ? 'Could not load your CVs.'
-                        : 'تعذر تحميل السير الذاتية.'),
-                loading: shell(
-                  CvListSkeleton(horizontalPadding: horizontalPadding),
-                ),
-                builder: (data) {
-                  final items = _list(data['items']);
-                  final offline = MobileContentService.isOfflinePayload(data);
-                  // index 0 = header; then empty-state OR items; optional create CTA.
-                  final itemCount = items.isEmpty
-                      ? 2
-                      : items.length + 2; // header + cards + dashed create
-
-                  return shell(
-                    RefreshIndicator(
-                      color: context.sirati.primary,
-                      onRefresh: _refresh,
-                      child: ListView.builder(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: EdgeInsets.fromLTRB(horizontalPadding, 18,
-                            horizontalPadding, AppSpacing.scrollBottomNavFab),
-                        itemCount: itemCount,
-                        itemBuilder: (context, index) {
-                          if (index == 0) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                ScreenHeader(
-                                  english: english,
-                                  title: _text(data['title'],
-                                      english ? 'My CVs' : 'سيرتي الذاتية'),
-                                  icon: Icons.description_rounded,
-                                  unreadCount:
-                                      SessionCache.instance.unreadCount,
-                                  onNotifications: () =>
-                                      Navigator.of(context).pushNamed(
-                                    AppRoutes.notifications,
-                                  ),
-                                  onAvatarTap: () =>
-                                      Navigator.of(context).pushNamed(
-                                    AppRoutes.settings,
-                                  ),
-                                ),
-                                if (offline) ...[
-                                  const SizedBox(height: AppSpacing.sm),
-                                  OfflineCacheBanner(
-                                    english: english,
-                                    surface: 'cvs',
-                                  ),
-                                ],
-                                const SizedBox(height: AppSpacing.lg),
-                                Text(
-                                  AppLocalizations.of(context)
-                                      .cvCount(items.length),
-                                  textAlign: TextAlign.start,
-                                  style: AppTextStyles.bodySm(context.sirati),
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                              ],
-                            );
-                          }
-
-                          if (items.isEmpty) {
-                            return AppEmptyState(
-                              icon: Icons.description_outlined,
-                              title: english
-                                  ? 'No CVs yet'
-                                  : 'لا توجد سير ذاتية بعد',
-                              subtitle: english
-                                  ? 'Create your first ATS-ready CV in a few steps.'
-                                  : 'أنشئ أول سيرة ذاتية متوافقة مع ATS بخطوات بسيطة.',
-                              actionLabel: english
-                                  ? 'Create New CV'
-                                  : 'إنشاء سيرة جديدة',
-                              onAction: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                    builder: (_) => const CvGeneratorScreen()),
-                              ),
-                              scrollable: false,
-                            );
-                          }
-
-                          if (index == items.length + 1) {
-                            return _CreateCvDashedCard(
-                              english: english,
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                    builder: (_) => const CvGeneratorScreen()),
-                              ),
-                            );
-                          }
-
-                          final item = items[index - 1];
-                          // order > maxStaggerIndex → no reveal controller.
-                          final order = index - 1;
-                          return Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: AppSpacing.sm),
-                            child: MotionReveal(
-                              order: order,
-                              child: _CvDocumentCard(
-                                id: _int(item['id']),
-                                title: _text(item['title'], ''),
-                                updatedAt: _cvUpdatedText(item, english),
-                                badge: _text(item['badge'], ''),
-                                isDraft: _bool(item['is_draft']),
-                                canDownload:
-                                    _bool(item['can_download'], fallback: true),
-                                onEdit: () => _editCv(_int(item['id'])),
-                                onDelete: () => _deleteCv(_int(item['id'])),
-                                onDownload: () => _download(
-                                  cvId: _int(item['id']),
-                                  pdfUrl: _text(item['pdf_url'], ''),
-                                  templatePdfUrl:
-                                      _text(item['template_pdf_url'], ''),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  Future<void> _editCv(int? id) async {
+  Future<void> _edit(CvListItem item) async {
+    final id = item.id;
     if (id == null) return;
     try {
-      final cv = await _cvService.getGeneratedCv(id);
+      final cv = await ref.read(cvApiServiceProvider).getGeneratedCv(id);
       if (!mounted) return;
       await Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => CvGeneratorScreen(initialCv: cv)),
       );
-      unawaited(_refresh());
-    } on ApiException catch (exception) {
-      _message(exception.displayMessage, exception: exception);
+      if (mounted) unawaited(_refresh());
+    } catch (error) {
+      _reportError(
+        error,
+        _english ? 'Could not open this CV.' : 'تعذر فتح هذه السيرة.',
+      );
     }
   }
 
-  Future<void> _deleteCv(int? id) async {
+  Future<void> _delete(CvListItem item) async {
+    final id = item.id;
     if (id == null) return;
-    final english = AppLocale.isEnglish(context);
+    final english = _english;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -252,498 +80,237 @@ class _MyCvsScreenState extends State<MyCvsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: context.sirati.error,
+            ),
             child: Text(english ? 'Delete' : 'حذف'),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
     try {
-      await _cvService.deleteGeneratedCv(id);
-      MobileContentService.invalidateCvRelated();
-      unawaited(_refresh());
-    } on ApiException catch (exception) {
-      _message(exception.displayMessage, exception: exception);
+      await ref.read(myCvsProvider(english).notifier).delete(id);
+    } catch (error) {
+      _reportError(
+        error,
+        english ? 'Could not delete this CV.' : 'تعذر حذف السيرة.',
+      );
     }
   }
 
-  Future<void> _download({
-    int? cvId,
-    required String pdfUrl,
-    required String templatePdfUrl,
-  }) async {
-    final english = AppLocale.isEnglish(context);
-    final selection = (templatePdfUrl.isNotEmpty || cvId != null)
-        ? await _chooseTemplate(english)
-        : const _TemplateSelection.useDefault();
-    if (!mounted || !selection.shouldDownload) return;
+  Future<void> _download(CvListItem item) async {
+    final english = _english;
+    final api = ref.read(cvApiServiceProvider);
+    final String? slug;
+    if (item.offersTemplateChoice) {
+      final choice = await _chooseTemplate(english);
+      if (choice case _Cancelled()) return;
+      slug = (choice as _Chosen).template?.slug;
+    } else {
+      slug = null;
+    }
+    if (!mounted) return;
 
     AppSnackBar.info(
       context,
       english ? 'Opening PDF download...' : 'جارٍ فتح رابط تنزيل الـ PDF...',
     );
-
-    String launchUrlText = '';
-    if (cvId != null) {
-      try {
-        final cv = await _cvService.getGeneratedCv(cvId);
-        launchUrlText =
-            _cvService.pdfUrlForTemplate(cv, selection.template?.slug);
-      } catch (_) {
-        final url = templatePdfUrl.isNotEmpty ? templatePdfUrl : pdfUrl;
-        launchUrlText = _urlForTemplate(url, selection.template?.slug);
-      }
-    } else {
-      final url = templatePdfUrl.isNotEmpty ? templatePdfUrl : pdfUrl;
-      launchUrlText = _urlForTemplate(url, selection.template?.slug);
-    }
-
-    if (launchUrlText.isEmpty) {
-      _message(english
-          ? 'Could not find PDF link.'
-          : 'تعذر العثور على رابط الـ PDF.');
+    final url = await resolveCvDownloadUrl(api, item, templateSlug: slug);
+    if (!mounted) return;
+    if (url.isEmpty) {
+      AppSnackBar.error(
+        context,
+        english ? 'Could not find PDF link.' : 'تعذر العثور على رابط الـ PDF.',
+      );
       return;
     }
-
-    final launched = await launchSafeExternalUrl(launchUrlText);
-    if (!mounted) return;
-    if (!launched) {
-      _message(english ? 'Could not open PDF.' : 'تعذر فتح ملف PDF.');
+    final launched = await launchSafeExternalUrl(url);
+    if (mounted && !launched) {
+      AppSnackBar.error(
+        context,
+        english ? 'Could not open PDF.' : 'تعذر فتح ملف PDF.',
+      );
     }
   }
 
-  Future<_TemplateSelection> _chooseTemplate(bool english) async {
+  Future<_TemplateChoice> _chooseTemplate(bool english) async {
     try {
-      final templates = await _cvService.listCvTemplates(english: english);
-      if (!mounted) return const _TemplateSelection.cancelled();
-      if (templates.isEmpty) return const _TemplateSelection.useDefault();
+      final templates = await ref
+          .read(cvApiServiceProvider)
+          .listCvTemplates(english: english);
+      if (!mounted) return const _Cancelled();
+      if (templates.isEmpty) return const _Chosen(null);
 
-      final selectedTemplate = await showModalBottomSheet<CvTemplate>(
+      final picked = await showModalBottomSheet<CvTemplate>(
         context: context,
         showDragHandle: true,
-        builder: (context) => _CvTemplatePicker(
-          templates: templates,
-          english: english,
-        ),
+        builder: (_) =>
+            CvTemplatePicker(templates: templates, english: english),
       );
-
-      if (selectedTemplate == null) return const _TemplateSelection.cancelled();
-      return _TemplateSelection(template: selectedTemplate);
-    } on ApiException catch (exception) {
-      _message(exception.displayMessage, exception: exception);
-      return const _TemplateSelection.useDefault();
-    } catch (_) {
-      _message(english
-          ? 'Could not load CV designs. Default design will be used.'
-          : 'تعذر تحميل التصاميم. سيتم استخدام التصميم الافتراضي.');
-      return const _TemplateSelection.useDefault();
+      return picked == null ? const _Cancelled() : _Chosen(picked);
+    } catch (error) {
+      _reportError(
+        error,
+        english
+            ? 'Could not load CV designs. Default design will be used.'
+            : 'تعذر تحميل التصاميم. سيتم استخدام التصميم الافتراضي.',
+      );
+      return const _Chosen(null);
     }
   }
 
-  String _urlForTemplate(String url, String? templateSlug) {
-    if (templateSlug == null || templateSlug.isEmpty) return url;
-    final uri = Uri.parse(url);
-    return uri.replace(queryParameters: {
-      ...uri.queryParameters,
-      'template': templateSlug,
-    }).toString();
-  }
-
-  void _message(String message, {ApiException? exception}) {
+  void _reportError(Object error, String fallback) {
     if (!mounted) return;
-    if (exception != null) {
-      AppSnackBar.fromException(context, exception);
-      return;
+    if (error is ApiException) {
+      AppSnackBar.fromException(context, error);
+    } else {
+      AppSnackBar.error(context, fallback);
     }
-    AppSnackBar.error(context, message);
   }
-}
-
-class _TemplateSelection {
-  final CvTemplate? template;
-  final bool shouldDownload;
-
-  const _TemplateSelection({this.template}) : shouldDownload = true;
-  const _TemplateSelection.useDefault()
-      : template = null,
-        shouldDownload = true;
-  const _TemplateSelection.cancelled()
-      : template = null,
-        shouldDownload = false;
-}
-
-/// Shell only when the list cannot be loaded — never invent CV rows or counts.
-Map<String, dynamic> _fallback(bool english) => {
-      'title': english ? 'My CVs' : 'سيرتي الذاتية',
-      'summary': LocaleFormat.cvFilesSummary(0, english: english),
-      'items': const <Map<String, dynamic>>[],
-    };
-
-Map<String, dynamic> _map(dynamic value) =>
-    value is Map<String, dynamic> ? value : const {};
-List<Map<String, dynamic>> _list(dynamic value) =>
-    value is List ? value.map(_map).toList() : const [];
-String _text(dynamic value, String fallback) =>
-    (value?.toString().isNotEmpty ?? false) ? value.toString() : fallback;
-bool _bool(dynamic value, {bool fallback = false}) =>
-    value is bool ? value : fallback;
-int? _int(dynamic value) =>
-    value is int ? value : int.tryParse(value?.toString() ?? '');
-
-String _cvUpdatedText(Map<String, dynamic> item, bool english) {
-  final at = DateTime.tryParse(
-      item['updated_at']?.toString() ?? item['created_at']?.toString() ?? '');
-  if (at != null) {
-    return AppFormat.relativeTime(at, english: english);
-  }
-  final label = _text(item['updated_label'], '');
-  if (label.isEmpty) return '';
-  return AppFormat.digits(label, english: english);
-}
-
-class _CvDocumentCard extends StatelessWidget {
-  final int? id;
-  final String title;
-  final String updatedAt;
-  final String badge;
-  final bool isDraft;
-  final bool canDownload;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onDownload;
-
-  const _CvDocumentCard({
-    required this.id,
-    required this.title,
-    required this.updatedAt,
-    required this.badge,
-    required this.isDraft,
-    required this.canDownload,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onDownload,
-  });
 
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
-    final color = isDraft ? context.sirati.textHint : context.sirati.primary;
+    final cvs = ref.watch(myCvsProvider(english));
 
-    return PressScale(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.sirati.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.sirati.border),
-          boxShadow: context.sirati.softShadow,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _DocumentIcon(color: color),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title.isEmpty
-                            ? (english ? 'Untitled CV' : 'سيرة بلا عنوان')
-                            : LocaleFormat.mixedTitle(
-                                LocaleFormat.fixSampleTitle(title),
-                                english: english,
-                              ),
-                        textAlign: TextAlign.start,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.titleMd(context.sirati),
-                      ),
-                      if (updatedAt.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          updatedAt,
-                          textAlign: TextAlign.start,
-                          style: AppTextStyles.bodySm(context.sirati).copyWith(
-                            color: context.sirati.textHint,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                      if (badge.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: _StatusBadge(
-                            label:
-                                LocaleFormat.atsBadge(badge, english: english),
-                            isDraft: isDraft,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: onEdit,
-                    icon: const Icon(Icons.edit_outlined, size: 16),
-                    label: Text(english ? 'Edit' : 'تعديل'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.sirati.primaryLight,
-                      foregroundColor: context.sirati.primaryDark,
-                      elevation: 0,
-                      minimumSize: const Size(0, 40),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _CircleActionButton(
-                  icon: Icons.download_rounded,
-                  label: english ? 'Download' : 'تنزيل',
-                  iconColor: canDownload
-                      ? context.sirati.primary
-                      : context.sirati.textHint,
-                  borderColor: canDownload
-                      ? context.sirati.borderStrong
-                      : context.sirati.border,
-                  onTap: canDownload ? onDownload : null,
-                ),
-                const SizedBox(width: 8),
-                _CircleActionButton(
-                  icon: Icons.delete_outline_rounded,
-                  label: english ? 'Delete' : 'حذف',
-                  iconColor: context.sirati.red,
-                  borderColor: context.sirati.red.withValues(alpha: .18),
-                  fillColor: context.sirati.redLight,
-                  onTap: id == null ? null : onDelete,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CvTemplatePicker extends StatelessWidget {
-  final List<CvTemplate> templates;
-  final bool english;
-
-  const _CvTemplatePicker({required this.templates, required this.english});
-
-  @override
-  Widget build(BuildContext context) {
     return SafeArea(
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
-        shrinkWrap: true,
-        itemCount: templates.length + 1,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  english ? 'Choose CV design' : 'اختر تصميم السيرة',
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: context.sirati.textPrimary,
-                  ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxContentWidth = constraints.maxWidth >= 1100
+              ? 920.0
+              : constraints.maxWidth >= 780
+                  ? 760.0
+                  : constraints.maxWidth;
+          final horizontalPadding = AppSpacing.pageGutter(constraints.maxWidth);
+
+          Widget shell(Widget child) => Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxContentWidth),
+                  child: child,
                 ),
-                const SizedBox(height: 12),
-              ],
-            );
-          }
-          final template = templates[index - 1];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: ListTile(
-              onTap: () => Navigator.pop(context, template),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(color: context.sirati.border),
+              );
+
+          return AppAsyncBody<CvList>(
+            snapshot: cvs.toSnapshot(),
+            english: english,
+            onRetry: () => ref.invalidate(myCvsProvider(english)),
+            fallbackOnEmptyError: CvList.empty(english: english),
+            errorMessage: (error) => error is ApiException
+                ? error.displayMessage
+                : (english
+                    ? 'Could not load your CVs.'
+                    : 'تعذر تحميل السير الذاتية.'),
+            loading: shell(
+              CvListSkeleton(horizontalPadding: horizontalPadding),
+            ),
+            builder: (data) => shell(
+              RefreshIndicator(
+                color: context.sirati.primary,
+                onRefresh: _refresh,
+                child: _buildList(context, data, english, horizontalPadding),
               ),
-              leading: TemplatePreview(
-                imageUrl: template.previewImageUrl,
-                errorFallback: const SiratiMark(size: 22),
-              ),
-              title: Text(
-                template.name,
-                textAlign: TextAlign.start,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-              subtitle: Text(
-                template.isDefault
-                    ? (english ? 'Default template' : 'القالب الافتراضي')
-                    : template.slug,
-                textAlign: TextAlign.start,
-              ),
-              trailing: const Icon(Icons.download_rounded),
             ),
           );
         },
       ),
     );
   }
-}
 
-class _DocumentIcon extends StatelessWidget {
-  final Color color;
+  Widget _buildList(
+    BuildContext context,
+    CvList data,
+    bool english,
+    double horizontalPadding,
+  ) {
+    final items = data.items;
+    // Header, then the empty state or every card plus the create CTA.
+    final itemCount = items.isEmpty ? 2 : items.length + 2;
 
-  const _DocumentIcon({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Center(child: SiratiMark(size: 22)),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final String label;
-  final bool isDraft;
-
-  const _StatusBadge({required this.label, required this.isDraft});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color:
-            isDraft ? context.sirati.surfaceLow : context.sirati.primaryLight,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w800,
-          color: isDraft
-              ? context.sirati.textSecondary
-              : context.sirati.primaryDark,
-        ),
-      ),
-    );
-  }
-}
-
-class _CircleActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color iconColor;
-  final Color borderColor;
-  final Color? fillColor;
-  final VoidCallback? onTap;
-
-  const _CircleActionButton(
-      {required this.icon,
-      required this.label,
-      required this.iconColor,
-      required this.borderColor,
-      this.fillColor,
-      required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final fill = fillColor ?? context.sirati.surface;
-    return Tooltip(
-      message: label,
-      child: Semantics(
-        label: label,
-        button: true,
-        enabled: onTap != null,
-        child: Material(
-          color: fill,
-          shape: CircleBorder(side: BorderSide(color: borderColor, width: 1.5)),
-          child: InkWell(
-            onTap: onTap,
-            customBorder: const CircleBorder(),
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: Icon(icon, color: iconColor, size: 18),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CreateCvDashedCard extends StatelessWidget {
-  final bool english;
-  final VoidCallback onTap;
-
-  const _CreateCvDashedCard({required this.english, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: context.sirati.surface,
-            border: Border.all(
-              color: context.sirati.primary.withValues(alpha: .35),
-              width: 1.5,
-            ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(horizontalPadding, 18, horizontalPadding,
+          AppSpacing.scrollBottomNavFab),
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(Icons.add_rounded, size: 18, color: context.sirati.primary),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  english ? 'Create New CV' : 'إنشاء سيرة جديدة',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.35,
-                    fontWeight: FontWeight.w700,
-                    color: context.sirati.primary,
-                  ),
-                ),
+              ScreenHeader(
+                english: english,
+                title: data.title,
+                icon: Icons.description_rounded,
+                unreadCount: SessionCache.instance.unreadCount,
+                onNotifications: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.notifications),
+                onAvatarTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.settings),
               ),
+              if (data.offline) ...[
+                const SizedBox(height: AppSpacing.sm),
+                OfflineCacheBanner(english: english, surface: 'cvs'),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                AppLocalizations.of(context).cvCount(items.length),
+                textAlign: TextAlign.start,
+                style: AppTextStyles.bodySm(context.sirati),
+              ),
+              const SizedBox(height: AppSpacing.md),
             ],
+          );
+        }
+
+        if (items.isEmpty) {
+          return AppEmptyState(
+            icon: Icons.description_outlined,
+            title: english ? 'No CVs yet' : 'لا توجد سير ذاتية بعد',
+            subtitle: english
+                ? 'Create your first ATS-ready CV in a few steps.'
+                : 'أنشئ أول سيرة ذاتية متوافقة مع ATS بخطوات بسيطة.',
+            actionLabel: english ? 'Create New CV' : 'إنشاء سيرة جديدة',
+            onAction: _openGenerator,
+            scrollable: false,
+          );
+        }
+
+        if (index == items.length + 1) {
+          return CreateCvCard(english: english, onTap: _openGenerator);
+        }
+
+        final item = items[index - 1];
+        return Padding(
+          // Stable key: a delete shifts rows without reusing card state.
+          key: ValueKey(item.id ?? 'row-$index'),
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          // order > maxStaggerIndex → no reveal controller.
+          child: MotionReveal(
+            order: index - 1,
+            child: CvDocumentCard(
+              item: item,
+              onEdit: () => unawaited(_edit(item)),
+              onDelete: () => unawaited(_delete(item)),
+              onDownload: () => unawaited(_download(item)),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+}
+
+sealed class _TemplateChoice {
+  const _TemplateChoice();
+}
+
+/// Download with [template], or the default design when null.
+final class _Chosen extends _TemplateChoice {
+  const _Chosen(this.template);
+  final CvTemplate? template;
+}
+
+final class _Cancelled extends _TemplateChoice {
+  const _Cancelled();
 }
