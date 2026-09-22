@@ -71,7 +71,6 @@ void main() {
     'lib/shared/widgets/loading/ai_progress_overlay.dart': 2,
     'lib/core/flavors/flavor_banner.dart': 1,
     'lib/features/ats_scanner/presentation/cv_analysis_loader_screen.dart': 1,
-    'lib/features/auth/presentation/register_screen.dart': 1,
     'lib/features/cv_builder/presentation/generated_cv_loader_screen.dart': 1,
     'lib/shared/widgets/app_list_tile.dart': 1,
     'lib/shared/widgets/empty_state.dart': 1,

@@ -6,6 +6,7 @@ import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/root_navigation.dart';
+import 'package:sirati/features/auth/domain/social_sign_in.dart';
 import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
 import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
 import 'package:sirati/features/auth/presentation/register_screen.dart';
@@ -330,45 +331,47 @@ class _LoginScreenState extends State<LoginScreen> {
                           isLoading: _isLoading,
                           onPressed: _login,
                         ),
-                        const SizedBox(height: AppSpacing.xl),
-                        Row(
-                          children: [
-                            Expanded(
-                                child: Divider(color: context.sirati.border)),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 14),
-                              child: Text(
-                                english ? 'Or continue with' : 'أو تابع بـ',
-                                style: TextStyle(
-                                    fontSize: 13,
-                                    color: context.sirati.textSecondary),
+                        if (socialSignInEnabled) ...[
+                          const SizedBox(height: AppSpacing.xl),
+                          Row(
+                            children: [
+                              Expanded(
+                                  child: Divider(color: context.sirati.border)),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 14),
+                                child: Text(
+                                  english ? 'Or continue with' : 'أو تابع بـ',
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      color: context.sirati.textSecondary),
+                                ),
                               ),
-                            ),
-                            Expanded(
-                                child: Divider(color: context.sirati.border)),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _SocialButton(
-                                icon: Icons.g_mobiledata_rounded,
-                                label: 'Google',
-                                onTap: _loginWithGoogle,
+                              Expanded(
+                                  child: Divider(color: context.sirati.border)),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _SocialButton(
+                                  icon: Icons.g_mobiledata_rounded,
+                                  label: 'Google',
+                                  onTap: _loginWithGoogle,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _SocialButton(
-                                icon: Icons.apple,
-                                label: 'Apple',
-                                onTap: _loginWithApple,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _SocialButton(
+                                  icon: Icons.apple,
+                                  label: 'Apple',
+                                  onTap: _loginWithApple,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 28),
                         Wrap(
                           alignment: WrapAlignment.center,
