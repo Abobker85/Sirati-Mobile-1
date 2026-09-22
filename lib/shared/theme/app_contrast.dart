@@ -150,6 +150,18 @@ class AppContrast {
         background: c.infoLight,
         minRatio: 4.5,
       ),
+      ContrastPair(
+        name: 'onBrandSurface / brandSurface',
+        foreground: c.onBrandSurface,
+        background: c.brandSurface,
+        minRatio: 4.5,
+      ),
+      ContrastPair(
+        name: 'onBrandSurface / brandSurfaceDeep',
+        foreground: c.onBrandSurface,
+        background: c.brandSurfaceDeep,
+        minRatio: 4.5,
+      ),
     ];
   }
 }

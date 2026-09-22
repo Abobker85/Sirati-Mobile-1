@@ -45,6 +45,9 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     required this.textPrimary,
     required this.textSecondary,
     required this.textHint,
+    required this.brandSurface,
+    required this.brandSurfaceDeep,
+    required this.onBrandSurface,
     required this.softShadow,
   });
 
@@ -93,6 +96,13 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   final Color textPrimary;
   final Color textSecondary;
   final Color textHint;
+
+  /// Dark brand fill for hero cards that carry white text. Unlike [primary]
+  /// (a mid-tone fill), it holds AA for [onBrandSurface] in both themes,
+  /// across the whole [brandSurface] -> [brandSurfaceDeep] gradient.
+  final Color brandSurface;
+  final Color brandSurfaceDeep;
+  final Color onBrandSurface;
   final List<BoxShadow> softShadow;
 
   /// Semantic aliases (SIRATI-17). Prefer these names in new widgets.
@@ -162,6 +172,9 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     // Was #64726F (~4.7:1 on background, borderline AA). Darkened to ~6:1
     // for comfortable margin on small hint text.
     textHint: Color(0xFF54615E),
+    brandSurface: Color(0xFF006A60),
+    brandSurfaceDeep: Color(0xFF004A43),
+    onBrandSurface: Color(0xFFFFFFFF),
     softShadow: [
       BoxShadow(
         color: Color(0x0D000000),
@@ -212,6 +225,9 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     textPrimary: Color(0xFFE6EAE7),
     textSecondary: Color(0xFFAEB8B4),
     textHint: Color(0xFF7E8985),
+    brandSurface: Color(0xFF0F5C54),
+    brandSurfaceDeep: Color(0xFF0A3D38),
+    onBrandSurface: Color(0xFFFFFFFF),
     softShadow: [
       BoxShadow(
         color: Color(0x14000000),
@@ -262,6 +278,9 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     Color? textPrimary,
     Color? textSecondary,
     Color? textHint,
+    Color? brandSurface,
+    Color? brandSurfaceDeep,
+    Color? onBrandSurface,
     List<BoxShadow>? softShadow,
   }) {
     return SiratiColors(
@@ -304,6 +323,9 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       textHint: textHint ?? this.textHint,
+      brandSurface: brandSurface ?? this.brandSurface,
+      brandSurfaceDeep: brandSurfaceDeep ?? this.brandSurfaceDeep,
+      onBrandSurface: onBrandSurface ?? this.onBrandSurface,
       softShadow: softShadow ?? this.softShadow,
     );
   }
@@ -352,6 +374,9 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       textPrimary: l(textPrimary, other.textPrimary),
       textSecondary: l(textSecondary, other.textSecondary),
       textHint: l(textHint, other.textHint),
+      brandSurface: l(brandSurface, other.brandSurface),
+      brandSurfaceDeep: l(brandSurfaceDeep, other.brandSurfaceDeep),
+      onBrandSurface: l(onBrandSurface, other.onBrandSurface),
       softShadow: t < 0.5 ? softShadow : other.softShadow,
     );
   }

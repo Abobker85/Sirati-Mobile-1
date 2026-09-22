@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -49,7 +50,9 @@ void main() {
   });
 
   Widget darkSubject(Widget child, {bool arabic = false}) {
-    return MaterialApp(
+    // Several audited screens read their data through Riverpod providers.
+    return ProviderScope(
+        child: MaterialApp(
       theme: AppTheme.darkFor(arabic: arabic),
       locale: Locale(arabic ? 'ar' : 'en'),
       supportedLocales: AppLocalizations.supportedLocales,
@@ -58,7 +61,7 @@ void main() {
         backgroundColor: SiratiColors.dark.background,
         body: child,
       ),
-    );
+    ));
   }
 
   void assertDarkAaContrast(
@@ -93,7 +96,9 @@ void main() {
   }
 
   group('SIRATI-80: Core Type Ramp Dark Mode Contrast Invariants', () {
-    test('all AppTextStyles ramp helpers resolve to dark palette with AA contrast', () {
+    test(
+        'all AppTextStyles ramp helpers resolve to dark palette with AA contrast',
+        () {
       const c = SiratiColors.dark;
       final styles = <String, TextStyle>{
         'titleLg': AppTextStyles.titleLg(c),
@@ -136,8 +141,8 @@ void main() {
       await tester.pump();
 
       final titleWidget = tester.widget<Text>(find.text('Audit Settings Tile'));
-      final subtitleWidget =
-          tester.widget<Text>(find.text('Clear description of feature behavior'));
+      final subtitleWidget = tester
+          .widget<Text>(find.text('Clear description of feature behavior'));
 
       expect(titleWidget.style?.color, SiratiColors.dark.textPrimary);
       expect(subtitleWidget.style?.color, SiratiColors.dark.textSecondary);
@@ -179,7 +184,8 @@ void main() {
       );
     });
 
-    testWidgets('3. JobTitlePickerField bottom sheet header renders with AA contrast',
+    testWidgets(
+        '3. JobTitlePickerField bottom sheet header renders with AA contrast',
         (tester) async {
       final titles = [
         const JobTitle(
@@ -222,7 +228,8 @@ void main() {
       );
     });
 
-    testWidgets('4. EducationDetailScreen renders title and body with AA contrast',
+    testWidgets(
+        '4. EducationDetailScreen renders title and body with AA contrast',
         (tester) async {
       await tester.pumpWidget(
         darkSubject(
@@ -255,15 +262,16 @@ void main() {
       );
     });
 
-    testWidgets('5. ForgotPasswordScreen renders instructions and labels with AA contrast',
+    testWidgets(
+        '5. ForgotPasswordScreen renders instructions and labels with AA contrast',
         (tester) async {
       await tester.pumpWidget(
         darkSubject(const ForgotPasswordScreen()),
       );
       await tester.pump();
 
-      final instructions = tester.widget<Text>(find.text(
-          'Enter your email and we will send a 6-digit reset code.'));
+      final instructions = tester.widget<Text>(
+          find.text('Enter your email and we will send a 6-digit reset code.'));
       final emailLabel = tester.widget<Text>(find.text('Email Address'));
 
       expect(instructions.style?.color, SiratiColors.dark.textPrimary);
@@ -279,7 +287,8 @@ void main() {
       );
     });
 
-    testWidgets('6. EducationScreen renders hub, topic, and CTA with AA contrast',
+    testWidgets(
+        '6. EducationScreen renders hub, topic, and CTA with AA contrast',
         (tester) async {
       await tester.pumpWidget(
         darkSubject(const EducationScreen()),
@@ -332,18 +341,15 @@ void main() {
       );
       await tester.pump();
 
-      final jobTitleLabel =
-          tester.widget<Text>(find.text('Target job title'));
-      final uploadLabel =
-          tester.widget<Text>(find.text('Upload resume file'));
+      final jobTitleLabel = tester.widget<Text>(find.text('Target job title'));
+      final uploadLabel = tester.widget<Text>(find.text('Upload resume file'));
       // Below the fold since the JD card was added; build it by scrolling.
       await tester.scrollUntilVisible(
         find.text('Paste resume text'),
         300,
         scrollable: find.byType(Scrollable).first,
       );
-      final pasteLabel =
-          tester.widget<Text>(find.text('Paste resume text'));
+      final pasteLabel = tester.widget<Text>(find.text('Paste resume text'));
 
       expect(jobTitleLabel.style?.color, SiratiColors.dark.textPrimary);
       expect(uploadLabel.style?.color, SiratiColors.dark.textPrimary);
@@ -574,7 +580,8 @@ void main() {
         expect(analysisTitle.style?.color, SiratiColors.dark.textPrimary);
         assertDarkAaContrast(
           analysisTitle.style!.color!,
-          contextDescription: 'HistoryScreen analysis target job title (line 313)',
+          contextDescription:
+              'HistoryScreen analysis target job title (line 313)',
         );
 
         // 2. Switch to Generated CVs tab
@@ -619,7 +626,8 @@ void main() {
         expect(latestHeader.style?.color, SiratiColors.dark.textPrimary);
         assertDarkAaContrast(
           latestHeader.style!.color!,
-          contextDescription: 'JobNewsScreen latest postings section heading (line 289)',
+          contextDescription:
+              'JobNewsScreen latest postings section heading (line 289)',
         );
 
         // Audited line 482: JobTitleDisplay in job card

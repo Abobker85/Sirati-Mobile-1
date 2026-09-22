@@ -62,7 +62,6 @@ void main() {
   /// one to a debt file fails, and clearing a debt file fails until its entry is
   /// deleted here. Do not add new entries.
   const legacyColorDebt = <String, int>{
-    'lib/features/jobs/presentation/job_news_screen.dart': 30,
     'lib/features/dashboard/presentation/education_screen.dart': 10,
     'lib/shared/widgets/form_fields.dart': 9,
     'lib/shared/widgets/app_snack_bar.dart': 6,
