@@ -14,7 +14,8 @@ Widget _wrap(Widget child) {
 }
 
 void main() {
-  testWidgets('SkillChipsSelector parses initial comma-separated skills and renders chips',
+  testWidgets(
+      'SkillChipsSelector parses initial comma-separated skills and renders chips',
       (tester) async {
     final controller = TextEditingController(text: 'Flutter, Dart, Firebase');
     addTearDown(controller.dispose);
@@ -60,7 +61,8 @@ void main() {
     expect(find.text('Selected Skills (2)'), findsOneWidget);
   });
 
-  testWidgets('adding custom skill updates chips and controller', (tester) async {
+  testWidgets('adding custom skill updates chips and controller',
+      (tester) async {
     final controller = TextEditingController(text: 'Flutter');
     addTearDown(controller.dispose);
 

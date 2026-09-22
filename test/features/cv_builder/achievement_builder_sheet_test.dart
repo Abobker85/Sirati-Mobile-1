@@ -63,7 +63,8 @@ void main() {
 
     // Verify sheet closed and callback received the formatted string
     expect(find.text('XYZ Achievement Builder'), findsNothing);
-    expect(insertedBullet, '• Developed REST APIs, by 35% using Redis caching.');
+    expect(
+        insertedBullet, '• Developed REST APIs, by 35% using Redis caching.');
   });
 
   testWidgets('AchievementBuilderSheet applies quick preset on tap',

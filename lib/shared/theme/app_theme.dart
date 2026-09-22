@@ -118,6 +118,16 @@ class AppShadows {
       ),
     ];
   }
+
+  /// Same shadow cast upward, for bars pinned to the bottom of the screen.
+  static List<BoxShadow> above(
+    SiratiColors colors, {
+    required double elevation,
+  }) =>
+      [
+        for (final s in of(colors, elevation: elevation))
+          s.copyWith(offset: Offset(0, -s.offset.dy)),
+      ];
 }
 
 /// Shared type ramp. [colors] is required so dark-mode text cannot silently

@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/cv_api_service.dart';
+import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ai_cv_field.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
@@ -138,8 +140,7 @@ void main() {
 
     api.complete('skills', _result('stale skills response'));
     await tester.pump();
-    expect(
-        tester.widget<TextField>(skills).controller!.text, skillsText);
+    expect(tester.widget<TextField>(skills).controller!.text, skillsText);
 
     api.complete('summary', _result('current summary response'));
     await tester.pumpAndSettle();
@@ -172,16 +173,19 @@ void main() {
       expect(AiCvField.isSufficientForEnhancement('Developer'), isFalse);
       expect(AiCvField.isSufficientForEnhancement('مبرمج'), isFalse);
       expect(AiCvField.isSufficientForEnhancement('Laravel PHP'), isFalse);
-      expect(AiCvField.isSufficientForEnhancement('مطور تطبيقات فلاتر'), isFalse);
       expect(
-          AiCvField.isSufficientForEnhancement('Senior Software Engineer'), isFalse);
+          AiCvField.isSufficientForEnhancement('مطور تطبيقات فلاتر'), isFalse);
+      expect(AiCvField.isSufficientForEnhancement('Senior Software Engineer'),
+          isFalse);
       expect(
           AiCvField.isSufficientForEnhancement(
               '123456789012345678901234567890123456789'),
           isFalse); // 39 chars
     });
 
-    test('returns true for text that spans more than a single line (>= 40 chars)', () {
+    test(
+        'returns true for text that spans more than a single line (>= 40 chars)',
+        () {
       expect(
           AiCvField.isSufficientForEnhancement(
               '1234567890123456789012345678901234567890'),
@@ -253,11 +257,16 @@ Future<void> _openSkillsStep(
   _FakeCvApiService api,
 ) async {
   AppLocale.languageCode.value = 'en';
-  await tester.pumpWidget(_testApp(CvGeneratorScreen(apiService: api)));
+  await tester.pumpWidget(ProviderScope(
+    overrides: [cvApiServiceProvider.overrideWithValue(api)],
+    child: _testApp(const CvGeneratorScreen()),
+  ));
   await tester.pump();
   await tester.enterText(_fieldWithHint('Salem Sayer'), 'Salem Sayer');
-  await tester.enterText(_fieldWithHint('salem@example.com'), 'salem@example.com');
-  await tester.enterText(_fieldWithHint('+966 5X XXX XXXX'), '+966 59 189 0300');
+  await tester.enterText(
+      _fieldWithHint('salem@example.com'), 'salem@example.com');
+  await tester.enterText(
+      _fieldWithHint('+966 5X XXX XXXX'), '+966 59 189 0300');
   await tester.enterText(
       _fieldWithHint('Laravel Backend Developer'), 'Backend Developer');
   await tester.tap(find.text('Next'));
