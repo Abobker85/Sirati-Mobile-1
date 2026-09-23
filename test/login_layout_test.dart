@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -26,15 +27,15 @@ void main() {
 
   testWidgets('login centers the brand header and start-aligns fields',
       (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
+    await tester.pumpWidget(ProviderScope(
+      child: MaterialApp(
         theme: AppTheme.light,
         locale: const Locale('en', 'US'),
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: const LoginScreen(),
       ),
-    );
+    ));
 
     expect(find.byType(AuthFormConstraint), findsOneWidget);
     expect(find.text('Welcome to Sirati'), findsOneWidget);

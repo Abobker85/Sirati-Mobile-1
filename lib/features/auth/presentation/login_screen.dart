@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/analytics_service.dart';
-import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/root_navigation.dart';
+import 'package:sirati/features/auth/application/login_controller.dart';
 import 'package:sirati/features/auth/domain/social_sign_in.dart';
 import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
 import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
 import 'package:sirati/features/auth/presentation/register_screen.dart';
-import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
@@ -20,23 +20,21 @@ import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   /// When true, shows a one-shot "session expired" snackbar after first frame.
   final bool sessionExpiredNotice;
 
   const LoginScreen({super.key, this.sessionExpiredNotice = false});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthApiService();
   bool _obscurePassword = true;
-  bool _isLoading = false;
   bool _submitted = false;
   bool _showFormBanner = false;
 
@@ -65,6 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    if (ref.read(loginControllerProvider)) return;
     final english = AppLocale.isEnglish(context);
     setState(() {
       _submitted = true;
@@ -75,43 +74,40 @@ class _LoginScreenState extends State<LoginScreen> {
       unawaited(HapticFeedback.selectionClick());
       return;
     }
-    setState(() => _isLoading = true);
 
-    try {
-      final session = await _authService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
-
-      if (!mounted) return;
-      unawaited(AnalyticsService.logLoginSuccess(method: 'email'));
-      unawaited(HapticFeedback.lightImpact());
-      // Unverified accounts must complete email OTP before using the app.
-      if (!session.user.emailVerified) {
-        replaceRoot(
-          context,
-          EmailVerificationScreen(email: session.user.email),
+    final outcome = await ref.read(loginControllerProvider.notifier).signIn(
+          email: _emailController.text,
+          password: _passwordController.text,
         );
-        return;
-      }
-      AppRouter.openAfterAuth(context);
-    } on ApiException catch (exception) {
-      if (mounted) {
+    if (!mounted) return;
+    switch (outcome) {
+      case LoginSucceeded(:final email, :final emailVerified):
+        // Lets the platform password manager offer to save the credentials.
+        TextInput.finishAutofillContext();
+        unawaited(AnalyticsService.logLoginSuccess(method: 'email'));
+        unawaited(HapticFeedback.lightImpact());
+        // Unverified accounts must complete email OTP before using the app.
+        if (!emailVerified) {
+          replaceRoot(context, EmailVerificationScreen(email: email));
+          return;
+        }
+        AppRouter.openAfterAuth(context);
+      case LoginRejected(:final error):
         AppSnackBar.fromException(
           context,
-          exception,
+          error,
           retryLabel: english ? 'Retry' : 'إعادة',
-          onRetry: _login,
+          onRetry: () => unawaited(_login()),
         );
-      }
-    } catch (_) {
-      if (mounted) {
-        _showError(english
-            ? 'An unexpected error occurred while signing in.'
-            : 'حدث خطأ غير متوقع أثناء تسجيل الدخول.');
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      case LoginFailedUnexpectedly():
+        AppSnackBar.error(
+          context,
+          english
+              ? 'An unexpected error occurred while signing in.'
+              : 'حدث خطأ غير متوقع أثناء تسجيل الدخول.',
+        );
+      case LoginIgnored():
+        break;
     }
   }
 
@@ -135,25 +131,21 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _showError(String message) {
-    AppSnackBar.error(context, message);
-  }
-
   void _goToRegister() {
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const RegisterScreen()),
-      );
-    } else {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const RegisterScreen()),
-      );
-    }
+    final navigator = Navigator.of(context);
+    final route =
+        MaterialPageRoute<void>(builder: (_) => const RegisterScreen());
+    // Replace when stacked (Login <-> Register ping-pong); push when Login is
+    // the root so Back from Register returns here.
+    unawaited(navigator.canPop()
+        ? navigator.pushReplacement(route)
+        : navigator.push(route));
   }
 
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
+    final isLoading = ref.watch(loginControllerProvider);
     final compactHeader = MediaQuery.sizeOf(context).height < 520;
 
     return Scaffold(
@@ -206,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(
                         fontSize: compactHeader ? 20 : 22,
                         fontWeight: FontWeight.w800,
-                        color: context.sirati.primary),
+                        color: context.sirati.primaryInk),
                   ),
                   SizedBox(height: compactHeader ? 4 : 6),
                   Text(
@@ -285,29 +277,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           textDirection: TextDirection.ltr,
                           textAlign: TextAlign.start,
                           textInputAction: TextInputAction.send,
-                          onFieldSubmitted: (_) => _login(),
+                          onFieldSubmitted: (_) => unawaited(_login()),
                           hintText: '••••••••',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
+                            tooltip: _obscurePassword
+                                ? (english
+                                    ? 'Show password'
+                                    : 'إظهار كلمة المرور')
+                                : (english
+                                    ? 'Hide password'
+                                    : 'إخفاء كلمة المرور'),
                             icon: Icon(_obscurePassword
                                 ? Icons.visibility_outlined
                                 : Icons.visibility_off_outlined),
                             onPressed: () => setState(
                                 () => _obscurePassword = !_obscurePassword),
                           ),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) {
-                              return english
+                          // Presence only: the server has no length rule for
+                          // sign-in, and a client one can lock out accounts.
+                          validator: (v) => loginPasswordError(v) == null
+                              ? null
+                              : (english
                                   ? 'Please enter your password'
-                                  : 'يرجى إدخال كلمة المرور';
-                            }
-                            if (v.length < 6) {
-                              return english
-                                  ? 'Password must be at least 6 characters'
-                                  : 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-                            }
-                            return null;
-                          },
+                                  : 'يرجى إدخال كلمة المرور'),
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Align(
@@ -328,8 +321,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           loadingLabel: english
                               ? 'Signing in...'
                               : 'جارٍ تسجيل الدخول...',
-                          isLoading: _isLoading,
-                          onPressed: _login,
+                          isLoading: isLoading,
+                          onPressed: () => unawaited(_login()),
                         ),
                         if (socialSignInEnabled) ...[
                           const SizedBox(height: AppSpacing.xl),
