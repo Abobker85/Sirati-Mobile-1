@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/storage/preference_store.dart';
+import 'package:sirati/features/settings/domain/profile_update.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
@@ -130,5 +131,65 @@ class NotificationPreferenceController extends AsyncNotifier<bool> {
       ok = false;
     }
     return ok;
+  }
+}
+
+sealed class ProfileSaveOutcome {
+  const ProfileSaveOutcome();
+}
+
+final class ProfileSaved extends ProfileSaveOutcome {
+  const ProfileSaved();
+}
+
+final class ProfileRejected extends ProfileSaveOutcome {
+  const ProfileRejected(this.error);
+  final ApiException error;
+}
+
+final class ProfileSaveFailed extends ProfileSaveOutcome {
+  const ProfileSaveFailed();
+}
+
+/// A save was already running.
+final class ProfileSaveIgnored extends ProfileSaveOutcome {
+  const ProfileSaveIgnored();
+}
+
+/// Whether a profile save is in flight.
+final profileSaveProvider =
+    NotifierProvider.autoDispose<ProfileSaveController, bool>(
+  ProfileSaveController.new,
+);
+
+class ProfileSaveController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  Future<ProfileSaveOutcome> save(ProfileUpdate update) async {
+    if (state) return const ProfileSaveIgnored();
+    state = true;
+    try {
+      final auth = ref.read(authApiServiceProvider);
+      switch (update.jobTitle) {
+        case JobTitleUnchanged():
+          await auth.updateProfile(name: update.name);
+        case JobTitleCleared():
+          await auth.updateProfile(name: update.name, clearJobTitle: true);
+        case JobTitleSelected(:final id, :final otherText):
+          await auth.updateProfile(
+            name: update.name,
+            jobTitleId: id,
+            jobTitleOther: otherText?.trim(),
+          );
+      }
+      return const ProfileSaved();
+    } on ApiException catch (e) {
+      return ProfileRejected(e);
+    } catch (_) {
+      return const ProfileSaveFailed();
+    } finally {
+      if (ref.mounted) state = false;
+    }
   }
 }
