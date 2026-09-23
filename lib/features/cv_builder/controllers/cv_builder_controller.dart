@@ -29,6 +29,7 @@ class CvBuilderController extends ChangeNotifier {
   DateTime? _lastSavedAt;
   bool _disposed = false;
   bool _isDirty = false;
+  Future<void>? _inFlight;
 
   CvDocument get document => _document;
   bool get isSaving => _isSaving;
@@ -80,46 +81,76 @@ class CvBuilderController extends ChangeNotifier {
 
   void _scheduleAutosave() {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(debounceDuration, saveImmediately);
+    _debounceTimer =
+        Timer(debounceDuration, () => unawaited(saveImmediately()));
   }
 
-  /// Immediately commits document to repository and clears dirty flag and draft cache.
-  /// Safe to call on app backgrounding, screen pop, or force quit.
-  Future<void> saveImmediately() async {
-    if (_disposed) return;
+  /// Commits the current document to the repository.
+  ///
+  /// Saves never overlap: a call made while one is running waits for it,
+  /// then saves whatever is current. The document is only marked clean when
+  /// the saved snapshot is still the current one — an edit made during the
+  /// write stays dirty and is saved next.
+  ///
+  /// Returns whether this call's write succeeded. Safe to call on app
+  /// backgrounding, screen pop, or from the Save button.
+  Future<bool> saveImmediately() async {
+    if (_disposed) return !_isDirty;
     _debounceTimer?.cancel();
-    _draftTimer?.cancel();
 
+    while (_inFlight != null) {
+      await _inFlight;
+      if (_disposed) return !_isDirty;
+    }
+
+    final done = Completer<void>();
+    _inFlight = done.future;
+    final snapshot = _document;
+    _draftTimer?.cancel();
     _isSaving = true;
     notifyListeners();
 
-    // Stage draft backup first so uncommitted state is persisted in prefs
-    // in case the repository save fails or crashes midway.
+    // Stage the draft first so uncommitted state survives a failed or
+    // interrupted repository write.
     await _stageDraftBackup();
 
+    var ok = false;
     try {
-      await _repository.saveCv(_document);
+      await _repository.saveCv(snapshot);
+      ok = true;
       _lastSavedAt = DateTime.now();
-      _isDirty = false;
-
-      // Durable save succeeded: clear temporary crash draft
-      if (_document.id != null) {
-        await clearDraft(_document.id!);
+      if (identical(_document, snapshot)) {
+        _isDirty = false;
+        // Durable save of the current state: the crash draft is obsolete.
+        if (snapshot.id != null) await clearDraft(snapshot.id!);
       }
     } catch (e, stack) {
       AppLog.event(
         AppLogEvent.cvAutosaveFailed,
         level: AppLogLevel.error,
-        data: {'cv_id': _document.id},
+        data: {'cv_id': snapshot.id},
         error: e,
         stackTrace: stack,
       );
     } finally {
+      _inFlight = null;
+      done.complete();
       if (!_disposed) {
         _isSaving = false;
         notifyListeners();
       }
     }
+    return ok;
+  }
+
+  /// Saves until the document is clean, stopping at the first failure.
+  /// Returns whether everything is persisted.
+  Future<bool> flush() async {
+    // Bounded: each pass only repeats if the user edited during the write.
+    for (var pass = 0; pass < 3 && _isDirty; pass++) {
+      if (!await saveImmediately()) return false;
+    }
+    return !_isDirty;
   }
 
   /// Checks if a crashed / uncommitted draft exists for [cvId] that is newer
@@ -208,10 +239,12 @@ class CvBuilderController extends ChangeNotifier {
       _document.sectionOrder ?? CvDocument.defaultSectionOrder,
     );
     if (oldIndex < 0 || oldIndex >= currentOrder.length) return;
-    if (newIndex > currentOrder.length) newIndex = currentOrder.length;
+    newIndex = newIndex.clamp(0, currentOrder.length);
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
+    // Dropping an item where it was is not an edit.
+    if (newIndex == oldIndex) return;
     final item = currentOrder.removeAt(oldIndex);
     currentOrder.insert(newIndex, item);
     updateDocument(_document.copyWith(sectionOrder: currentOrder));

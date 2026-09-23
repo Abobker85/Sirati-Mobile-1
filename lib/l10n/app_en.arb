@@ -157,6 +157,7 @@
   "livePreview": "Live preview",
   "saveNow": "Save now",
   "cvSaved": "CV saved successfully",
+  "cvSaveFailed": "Couldn't save. Your edits are kept as a draft on this device.",
   "tabPersonal": "Details",
   "tabExperience": "Experience",
   "tabSkills": "Skills",

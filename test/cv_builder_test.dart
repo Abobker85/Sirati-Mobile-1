@@ -1,12 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/utils/arabic_date_format.dart';
 import 'package:sirati/features/cv_builder/cv_builder_controller.dart';
 import 'package:sirati/features/cv_builder/cv_builder_screen.dart';
 import 'package:sirati/features/cv_builder/data/cv_repository.dart';
+import 'package:sirati/features/cv_builder/data/cv_repository_provider.dart';
 import 'package:sirati/features/cv_builder/experience_education_editor.dart';
 import 'package:sirati/features/cv_builder/personal_details_editor.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -337,18 +339,16 @@ void main() {
           id: 'cv_ui_test', title: 'سيرتي الذاتية للتجربة');
       await repo.saveCv(doc);
 
-      await tester.pumpWidget(
-        MaterialApp(
+      await tester.pumpWidget(ProviderScope(
+        overrides: [cvRepositoryProvider.overrideWithValue(repo)],
+        child: MaterialApp(
           locale: const Locale('ar'),
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           theme: AppTheme.light,
-          home: CvBuilderScreen(
-            cvId: 'cv_ui_test',
-            repository: repo,
-          ),
+          home: const CvBuilderScreen(cvId: 'cv_ui_test'),
         ),
-      );
+      ));
 
       await tester.pumpAndSettle();
 
