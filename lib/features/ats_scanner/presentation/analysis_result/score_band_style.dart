@@ -18,6 +18,22 @@ extension ScoreBandStyle on ScoreBand {
         ScoreBand.weak => c.redLight,
       };
 
+  /// Badge fill for the score, paired with [onContainer] (a gated AA pair
+  /// in both themes). [color] is a fill/accent tone and fails AA as text.
+  Color container(SiratiColors c) => switch (this) {
+        ScoreBand.excellent => c.successLight,
+        ScoreBand.veryGood => c.primaryLight,
+        ScoreBand.fair => c.warningLight,
+        ScoreBand.weak => c.errorLight,
+      };
+
+  Color onContainer(SiratiColors c) => switch (this) {
+        ScoreBand.excellent => c.onSuccessContainer,
+        ScoreBand.veryGood => c.primaryInk,
+        ScoreBand.fair => c.onWarningContainer,
+        ScoreBand.weak => c.onErrorContainer,
+      };
+
   String description({required bool english}) => switch (this) {
         ScoreBand.excellent => english
             ? 'Excellent - your CV is strong and ready'

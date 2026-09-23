@@ -1,538 +1,221 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
-import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
+import 'package:sirati/features/dashboard/application/history_controllers.dart';
+import 'package:sirati/features/dashboard/domain/history_page.dart';
+import 'package:sirati/features/dashboard/presentation/history/history_cards.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
-import 'package:sirati/shared/models/cv_analysis.dart';
-import 'package:sirati/shared/models/generated_cv.dart';
-import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
-import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
 
-class HistoryScreen extends StatefulWidget {
+/// Past analyses and generated CVs, one tab each.
+class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final english = AppLocale.isEnglish(context);
+    final c = context.sirati;
 
-class _HistoryScreenState extends State<HistoryScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final _apiService = CvApiService();
-  late Future<_HistoryData> _historyFuture;
-  bool _loadingMoreAnalyses = false;
-  bool _loadingMoreCvs = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _historyFuture = _loadHistory();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  Future<_HistoryData> _loadHistory() async {
-    final analyses = await _apiService.listAnalysesPage();
-    final generatedCvs = await _apiService.listGeneratedCvsPage();
-    return _HistoryData(
-      analyses: analyses.items,
-      generatedCvs: generatedCvs.items,
-      analysesPage: analyses.currentPage,
-      analysesHasMore: analyses.hasMore,
-      cvsPage: generatedCvs.currentPage,
-      cvsHasMore: generatedCvs.hasMore,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(english ? 'History' : 'السجل'),
+          automaticallyImplyLeading: Navigator.of(context).canPop(),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              tooltip: english ? 'Refresh' : 'تحديث',
+              onPressed: () {
+                ref
+                  ..invalidate(analysesHistoryProvider)
+                  ..invalidate(generatedCvsHistoryProvider);
+              },
+            ),
+          ],
+          bottom: TabBar(
+            labelColor: c.textPrimary,
+            unselectedLabelColor: c.textSecondary,
+            indicatorColor: c.primary,
+            tabs: [
+              Tab(text: english ? 'Analyses' : 'التحليلات'),
+              Tab(text: english ? 'Generated CVs' : 'السير المنشأة'),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [_AnalysesTab(), _GeneratedCvsTab()],
+        ),
+      ),
     );
   }
+}
 
-  Future<void> _refresh() async {
-    final nextFuture = _loadHistory();
-    setState(() => _historyFuture = nextFuture);
-    await nextFuture;
-  }
+/// Loading / error / list scaffolding shared by both tabs.
+class _HistoryTab<T> extends StatelessWidget {
+  const _HistoryTab({
+    required this.value,
+    required this.onRetry,
+    required this.onRefresh,
+    required this.onLoadMore,
+    required this.empty,
+    required this.header,
+    required this.itemBuilder,
+  });
 
-  Future<void> _loadMoreAnalyses(_HistoryData current) async {
-    if (_loadingMoreAnalyses || !current.analysesHasMore) return;
-    setState(() => _loadingMoreAnalyses = true);
-    try {
-      final next =
-          await _apiService.listAnalysesPage(page: current.analysesPage + 1);
-      if (!mounted) return;
-      setState(() {
-        _historyFuture = Future.value(_HistoryData(
-          analyses: [...current.analyses, ...next.items],
-          generatedCvs: current.generatedCvs,
-          analysesPage: next.currentPage,
-          analysesHasMore: next.hasMore,
-          cvsPage: current.cvsPage,
-          cvsHasMore: current.cvsHasMore,
-        ));
-      });
-    } finally {
-      if (mounted) setState(() => _loadingMoreAnalyses = false);
-    }
-  }
-
-  Future<void> _loadMoreCvs(_HistoryData current) async {
-    if (_loadingMoreCvs || !current.cvsHasMore) return;
-    setState(() => _loadingMoreCvs = true);
-    try {
-      final next =
-          await _apiService.listGeneratedCvsPage(page: current.cvsPage + 1);
-      if (!mounted) return;
-      setState(() {
-        _historyFuture = Future.value(_HistoryData(
-          analyses: current.analyses,
-          generatedCvs: [...current.generatedCvs, ...next.items],
-          analysesPage: current.analysesPage,
-          analysesHasMore: current.analysesHasMore,
-          cvsPage: next.currentPage,
-          cvsHasMore: next.hasMore,
-        ));
-      });
-    } finally {
-      if (mounted) setState(() => _loadingMoreCvs = false);
-    }
-  }
-
-  Color _scoreColor(int score) {
-    if (score >= 80) return context.sirati.tealDark;
-    if (score >= 65) return context.sirati.primary;
-    if (score >= 50) return context.sirati.amber;
-    return context.sirati.red;
-  }
+  final AsyncValue<HistoryPage<T>> value;
+  final VoidCallback onRetry;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onLoadMore;
+  final Widget empty;
+  final Widget Function(HistoryPage<T> page)? header;
+  final Widget Function(BuildContext context, T item) itemBuilder;
 
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
-
-    final canPop = Navigator.of(context).canPop();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(english ? 'History' : 'السجل'),
-        // When opened from Home, show a real back affordance; refresh stays trailing.
-        automaticallyImplyLeading: canPop,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: english ? 'Refresh' : 'تحديث',
-            onPressed: () => setState(() => _historyFuture = _loadHistory()),
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: context.sirati.textPrimary,
-          unselectedLabelColor: context.sirati.textHint,
-          indicatorColor: context.sirati.primary,
-          // Logical tab order; Material places the first tab at the start edge.
-          tabs: [
-            Tab(text: english ? 'Analyses' : 'التحليلات'),
-            Tab(text: english ? 'Generated CVs' : 'السير المنشأة'),
-          ],
-        ),
+    return AppAsyncBody<HistoryPage<T>>(
+      snapshot: value.toSnapshot(),
+      english: english,
+      onRetry: onRetry,
+      errorMessage: (error) => error is ApiException
+          ? error.displayMessage
+          : (english ? 'Could not load history.' : 'تعذر تحميل السجل.'),
+      loading: const ListScreenSkeleton(
+        itemCount: 5,
+        padding: EdgeInsets.all(AppSpacing.md),
       ),
-      body: FutureBuilder<_HistoryData>(
-        future: _historyFuture,
-        builder: (context, snapshot) {
-          return AppAsyncBody<_HistoryData>(
-            snapshot: snapshot,
-            english: english,
-            onRetry: () => setState(() => _historyFuture = _loadHistory()),
-            fallbackOnEmptyError:
-                const _HistoryData(analyses: [], generatedCvs: []),
-            errorMessage: (error) => error is ApiException
-                ? error.displayMessage
-                : (english ? 'Could not load history.' : 'تعذر تحميل السجل.'),
-            loading: const ListScreenSkeleton(
-              itemCount: 5,
-              padding: EdgeInsets.all(AppSpacing.md),
-            ),
-            builder: (data) => RefreshIndicator(
-              onRefresh: _refresh,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _AnalysisList(
-                    analyses: data.analyses,
-                    scoreColor: _scoreColor,
-                    english: english,
-                    hasMore: data.analysesHasMore,
-                    loadingMore: _loadingMoreAnalyses,
-                    onLoadMore: () => _loadMoreAnalyses(data),
-                  ),
-                  _GeneratedCvList(
-                    cvs: data.generatedCvs,
-                    scoreColor: _scoreColor,
-                    english: english,
-                    hasMore: data.cvsHasMore,
-                    loadingMore: _loadingMoreCvs,
-                    onLoadMore: () => _loadMoreCvs(data),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _HistoryData {
-  final List<CvAnalysis> analyses;
-  final List<GeneratedCv> generatedCvs;
-  final int analysesPage;
-  final bool analysesHasMore;
-  final int cvsPage;
-  final bool cvsHasMore;
-
-  const _HistoryData({
-    required this.analyses,
-    required this.generatedCvs,
-    this.analysesPage = 1,
-    this.analysesHasMore = false,
-    this.cvsPage = 1,
-    this.cvsHasMore = false,
-  });
-}
-
-class _AnalysisList extends StatelessWidget {
-  final List<CvAnalysis> analyses;
-  final Color Function(int) scoreColor;
-  final bool english;
-  final bool hasMore;
-  final bool loadingMore;
-  final VoidCallback? onLoadMore;
-
-  const _AnalysisList({
-    required this.analyses,
-    required this.scoreColor,
-    required this.english,
-    this.hasMore = false,
-    this.loadingMore = false,
-    this.onLoadMore,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    if (analyses.isEmpty) {
-      return AppEmptyState(
-        icon: Icons.analytics_outlined,
-        title: l10n.analysisCount(0),
-        subtitle: english
-            ? 'Upload a CV to get your first ATS score and tips.'
-            : 'ارفع سيرتك لتحصل على أول درجة ATS ونصائح التحسين.',
-        actionLabel: english ? 'Analyze CV' : 'تحليل سيرة',
-        onAction: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const CvAnalysisScreen()),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Text(
-            l10n.analysisCount(analyses.length),
-            textAlign: TextAlign.start,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: analyses.length + (hasMore ? 1 : 0),
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (_, i) {
-              if (i >= analyses.length) {
-                return TextButton(
-                  onPressed: loadingMore ? null : onLoadMore,
-                  child: Text(loadingMore
-                      ? (english ? 'Loading…' : 'جارٍ التحميل...')
-                      : (english ? 'Load more' : 'تحميل المزيد')),
-                );
-              }
-              final analysis = analyses[i];
-              final color = scoreColor(analysis.scoreTotal);
-
-              return PressScale(
-                child: InkWell(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            AnalysisResultScreen(analysis: analysis)),
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: context.sirati.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: context.sirati.border),
-                      boxShadow: context.sirati.softShadow,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: context.sirati.primaryLight,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(Icons.manage_search,
-                                  size: 18, color: context.sirati.primary),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                LocaleFormat.mixedTitle(analysis.targetJobTitle,
-                                    english: english),
-                                textAlign: TextAlign.start,
-                                style: AppTextStyles.titleSm(context.sirati),
-                              ),
-                            ),
-                            Text('${analysis.scoreTotal}',
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
-                                    color: color)),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        AnimatedAtsScoreBar(
-                          value: analysis.scoreTotal / 100,
-                          color: color,
-                          height: 5,
-                          borderRadius: 4,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Row(
-                          children: [
-                            _MetaChip(label: analysis.grade, color: color),
-                            const SizedBox(width: 6),
-                            _MetaChip(
-                                label: analysis.inputMethodLabel,
-                                color: context.sirati.textSecondary),
-                            const Spacer(),
-                            Text(
-                                _dateLabel(analysis.createdAt,
-                                    english: english),
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: context.sirati.textSecondary)),
-                          ],
-                        ),
-                      ],
+      builder: (page) {
+        final items = page.items;
+        final headerWidget = header?.call(page);
+        final leading = headerWidget == null ? 0 : 1;
+        return RefreshIndicator(
+          onRefresh: onRefresh,
+          child: items.isEmpty
+              // Scrollable so pull-to-refresh still works when empty.
+              ? LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(minHeight: constraints.maxHeight),
+                      child: empty,
                     ),
                   ),
+                )
+              : ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  itemCount: leading + items.length + (page.hasMore ? 1 : 0),
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, i) {
+                    if (headerWidget != null && i == 0) return headerWidget;
+                    final index = i - leading;
+                    if (index >= items.length) {
+                      return LoadMoreFooter(
+                        loading: page.loadingMore,
+                        failed: page.loadMoreFailed,
+                        onPressed: onLoadMore,
+                      );
+                    }
+                    return itemBuilder(context, items[index]);
+                  },
                 ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GeneratedCvList extends StatelessWidget {
-  final List<GeneratedCv> cvs;
-  final Color Function(int) scoreColor;
-  final bool english;
-  final bool hasMore;
-  final bool loadingMore;
-  final VoidCallback? onLoadMore;
-
-  const _GeneratedCvList({
-    required this.cvs,
-    required this.scoreColor,
-    required this.english,
-    this.hasMore = false,
-    this.loadingMore = false,
-    this.onLoadMore,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (cvs.isEmpty) {
-      return AppEmptyState(
-        icon: Icons.description_outlined,
-        title: english ? 'No generated CVs yet' : 'لا توجد سير ذاتية منشأة بعد',
-        subtitle: english
-            ? 'Build an ATS-ready CV and it will show up here.'
-            : 'أنشئ سيرة متوافقة مع ATS وستظهر هنا.',
-        actionLabel: english ? 'Create CV' : 'إنشاء سيرة',
-        onAction: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const CvGeneratorScreen()),
-        ),
-      );
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: cvs.length + (hasMore ? 1 : 0),
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) {
-        if (i >= cvs.length) {
-          return TextButton(
-            onPressed: loadingMore ? null : onLoadMore,
-            child: Text(loadingMore
-                ? (english ? 'Loading…' : 'جارٍ التحميل...')
-                : (english ? 'Load more' : 'تحميل المزيد')),
-          );
-        }
-        final cv = cvs[i];
-        final color = scoreColor(cv.scoreTotal);
-
-        return PressScale(
-          child: InkWell(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                  builder: (_) => GeneratedCvScreen(generatedCv: cv)),
-            ),
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: context.sirati.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: context.sirati.border),
-                boxShadow: context.sirati.softShadow,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: context.sirati.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Text(
-                            cv.fullName.characters.isEmpty
-                                ? 'س'
-                                : cv.fullName.characters.first,
-                            style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: context.sirati.primary),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                            LocaleFormat.mixedTitle(cv.fullName,
-                                english: english),
-                            textAlign: TextAlign.start,
-                            style: AppTextStyles.titleSm(context.sirati)),
-                        const SizedBox(height: 3),
-                        Text(
-                            LocaleFormat.mixedTitle(cv.targetJobTitle,
-                                english: english),
-                            textAlign: TextAlign.start,
-                            style: AppTextStyles.bodySm(context.sirati)),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            _MetaChip(
-                                label: cv.language == 'ar' ? 'عربي' : 'English',
-                                color: context.sirati.primary),
-                            const SizedBox(width: 5),
-                            Text(_dateLabel(cv.createdAt, english: english),
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: context.sirati.textSecondary)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    children: [
-                      Text('${cv.scoreTotal}',
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: color)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: .1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(cv.grade,
-                            style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: color)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
         );
       },
     );
   }
 }
 
-class _MetaChip extends StatelessWidget {
-  final String label;
-  final Color color;
+/// Completes when the refetch settles; errors surface through the provider.
+Future<void> _settle(Future<Object?> next) async {
+  try {
+    await next;
+  } catch (_) {}
+}
 
-  const _MetaChip({required this.label, required this.color});
+void _push(BuildContext context, Widget screen) {
+  unawaited(Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => screen),
+  ));
+}
+
+class _AnalysesTab extends ConsumerWidget {
+  const _AnalysesTab();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .1),
-        borderRadius: BorderRadius.circular(20),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
+    return _HistoryTab(
+      value: ref.watch(analysesHistoryProvider),
+      onRetry: () => ref.invalidate(analysesHistoryProvider),
+      onRefresh: () => _settle(ref.refresh(analysesHistoryProvider.future)),
+      onLoadMore: () => unawaited(
+        ref.read(analysesHistoryProvider.notifier).loadMore(),
       ),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w500, color: color)),
+      empty: AppEmptyState(
+        icon: Icons.analytics_outlined,
+        title: l10n.analysisCount(0),
+        subtitle: english
+            ? 'Upload a CV to get your first ATS score and tips.'
+            : 'ارفع سيرتك لتحصل على أول درجة ATS ونصائح التحسين.',
+        actionLabel: english ? 'Analyze CV' : 'تحليل سيرة',
+        onAction: () => _push(context, const CvAnalysisScreen()),
+        scrollable: false,
+      ),
+      header: (page) => Text(
+        l10n.analysisCount(page.items.length),
+        textAlign: TextAlign.start,
+        style: AppTextStyles.bodySm(context.sirati),
+      ),
+      itemBuilder: (context, analysis) => AnalysisHistoryCard(
+        analysis: analysis,
+        onTap: () => _push(context, AnalysisResultScreen(analysis: analysis)),
+      ),
     );
   }
 }
 
-String _dateLabel(DateTime? date, {required bool english}) {
-  if (date == null) return '-';
-  return AppFormat.relativeTime(date, english: english);
+class _GeneratedCvsTab extends ConsumerWidget {
+  const _GeneratedCvsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final english = AppLocale.isEnglish(context);
+    return _HistoryTab(
+      value: ref.watch(generatedCvsHistoryProvider),
+      onRetry: () => ref.invalidate(generatedCvsHistoryProvider),
+      onRefresh: () => _settle(ref.refresh(generatedCvsHistoryProvider.future)),
+      onLoadMore: () => unawaited(
+        ref.read(generatedCvsHistoryProvider.notifier).loadMore(),
+      ),
+      empty: AppEmptyState(
+        icon: Icons.description_outlined,
+        title: english ? 'No generated CVs yet' : 'لا توجد سير ذاتية منشأة بعد',
+        subtitle: english
+            ? 'Build an ATS-ready CV and it will show up here.'
+            : 'أنشئ سيرة متوافقة مع ATS وستظهر هنا.',
+        actionLabel: english ? 'Create CV' : 'إنشاء سيرة',
+        onAction: () => _push(context, const CvGeneratorScreen()),
+        scrollable: false,
+      ),
+      header: null,
+      itemBuilder: (context, cv) => GeneratedCvHistoryCard(
+        cv: cv,
+        onTap: () => _push(context, GeneratedCvScreen(generatedCv: cv)),
+      ),
+    );
+  }
 }
