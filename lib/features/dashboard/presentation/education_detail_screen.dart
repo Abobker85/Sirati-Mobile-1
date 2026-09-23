@@ -198,7 +198,7 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: context.sirati.primary.withValues(alpha: .12),
+        color: context.sirati.primaryLight,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -206,11 +206,12 @@ class _Chip extends StatelessWidget {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: context.sirati.primary,
+          // Gated chip pair: primaryInk on primaryLight.
+          color: context.sirati.primaryInk,
         ),
       ),
     );
   }
 }
 
-String _text(dynamic value) => value?.toString() ?? '';
+String _text(dynamic value) => value?.toString().trim() ?? '';

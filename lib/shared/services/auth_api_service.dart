@@ -174,14 +174,25 @@ class AuthApiService {
     return response['message']?.toString() ?? 'تم تغيير كلمة المرور بنجاح.';
   }
 
+  /// Deletes the account after the server verifies [password].
+  ///
+  /// Nothing local is touched until the server confirms: a wrong password
+  /// must leave the session — including push delivery — exactly as it was.
+  /// Once the account is gone, local cleanup is best effort and never turns
+  /// the success into a reported failure.
   Future<void> deleteAccount({required String password}) async {
-    try {
-      await NotificationService.instance.unregisterToken();
-    } catch (_) {}
     await _apiClient.deleteJson('/auth/account', body: {
       'password': password,
     });
-    await _clearLocalSession();
+    // No FCM unregister call here: the server already deleted this account's
+    // tokens, and calling the API with the now-revoked bearer would 401 and
+    // trigger the session-expired flow on top of this one.
+    try {
+      await _clearLocalSession();
+    } catch (_) {
+      // The account no longer exists server-side, so a leftover token can't
+      // authenticate; the next launch lands on the signed-out flow.
+    }
   }
 
   Future<void> _clearLocalSession() async {

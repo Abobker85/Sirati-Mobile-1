@@ -1,29 +1,32 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/shared/services/auth_api_service.dart';
+import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/password_visibility_toggle.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
-class DeleteAccountScreen extends StatefulWidget {
+class DeleteAccountScreen extends ConsumerStatefulWidget {
   const DeleteAccountScreen({super.key});
 
   @override
-  State<DeleteAccountScreen> createState() => _DeleteAccountScreenState();
+  ConsumerState<DeleteAccountScreen> createState() =>
+      _DeleteAccountScreenState();
 }
 
-class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
+class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordCtrl = TextEditingController();
-  final _auth = AuthApiService();
   bool _obscure = true;
   bool _loading = false;
   bool _submitted = false;
+  bool _confirming = false;
 
   @override
   void dispose() {
@@ -32,6 +35,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   }
 
   Future<void> _delete() async {
+    // One flow at a time: keyboard Done + button must not stack two
+    // confirmation dialogs or two delete requests.
+    if (_loading || _confirming) return;
     final en = AppLocale.isEnglish(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
@@ -39,6 +45,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       return;
     }
 
+    _confirming = true;
     final second = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -61,11 +68,14 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         ],
       ),
     );
+    _confirming = false;
     if (second != true || !mounted) return;
 
     setState(() => _loading = true);
     try {
-      await _auth.deleteAccount(password: _passwordCtrl.text);
+      await ref
+          .read(authApiServiceProvider)
+          .deleteAccount(password: _passwordCtrl.text);
       if (!mounted) return;
       AppSnackBar.success(
         context,
@@ -116,7 +126,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: context.sirati.errorLight.withValues(alpha: .55),
+                color: context.sirati.errorLight,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                     color: context.sirati.error.withValues(alpha: .25)),
@@ -127,7 +137,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     : 'حذف الحساب يزيل نهائياً ملفك والسير والتحليلات وسجل الإشعارات. لا يمكن التراجع عن هذا الإجراء.',
                 textAlign: TextAlign.start,
                 style: AppTextStyles.bodySm(context.sirati).copyWith(
-                  color: context.sirati.error,
+                  // Gated pair: onErrorContainer on errorLight.
+                  color: context.sirati.onErrorContainer,
                   fontWeight: FontWeight.w600,
                   height: 1.5,
                 ),
@@ -150,16 +161,12 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               textDirection: TextDirection.ltr,
               textAlign: TextAlign.start,
               textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _delete(),
+              onFieldSubmitted: (_) => unawaited(_delete()),
               hintText: '••••••••',
               prefixIcon: const Icon(Icons.lock_outline_rounded),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscure
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                ),
-                onPressed: () => setState(() => _obscure = !_obscure),
+              suffixIcon: PasswordVisibilityToggle(
+                obscured: _obscure,
+                onToggle: () => setState(() => _obscure = !_obscure),
               ),
               validator: (v) => (v == null || v.isEmpty)
                   ? (en ? 'Password is required' : 'كلمة المرور مطلوبة')
@@ -171,7 +178,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               loadingLabel: en ? 'Deleting...' : 'جارٍ الحذف...',
               isLoading: _loading,
               icon: Icons.delete_forever_rounded,
-              onPressed: _delete,
+              onPressed: () => unawaited(_delete()),
             ),
           ],
         ),

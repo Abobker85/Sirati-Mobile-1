@@ -84,14 +84,18 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            textAlign: TextAlign.start,
-            style: TextStyle(
-              fontSize: 18,
-              height: 1.3,
-              fontWeight: FontWeight.w800,
-              color: context.sirati.primary,
+          Semantics(
+            header: true,
+            child: Text(
+              title,
+              textAlign: TextAlign.start,
+              style: TextStyle(
+                fontSize: 18,
+                height: 1.3,
+                fontWeight: FontWeight.w800,
+                // 18px bold is below the large-text size: needs 4.5:1.
+                color: context.sirati.primaryInk,
+              ),
             ),
           ),
           const SizedBox(height: 8),

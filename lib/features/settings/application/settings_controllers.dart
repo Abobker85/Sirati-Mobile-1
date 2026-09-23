@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/storage/preference_store.dart';
+import 'package:sirati/features/settings/domain/notification_item.dart';
 import 'package:sirati/features/settings/domain/profile_update.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
+import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
 import 'package:sirati/shared/services/notification_service.dart';
 import 'package:sirati/shared/services/session_cache.dart';
@@ -190,6 +192,73 @@ class ProfileSaveController extends Notifier<bool> {
       return const ProfileSaveFailed();
     } finally {
       if (ref.mounted) state = false;
+    }
+  }
+}
+
+/// The in-app notification inbox.
+final notificationsInboxProvider = AsyncNotifierProvider.autoDispose<
+    NotificationsInboxController, List<NotificationItem>>(
+  NotificationsInboxController.new,
+  retry: (_, __) => null,
+);
+
+class NotificationsInboxController
+    extends AsyncNotifier<List<NotificationItem>> {
+  bool _loadedOnce = false;
+
+  @override
+  Future<List<NotificationItem>> build() async {
+    final force = _loadedOnce;
+    _loadedOnce = true;
+    final payload = await ref
+        .read(mobileContentServiceProvider)
+        .notifications(force: force);
+    return NotificationItem.listFrom(payload);
+  }
+
+  void _syncBadge(List<NotificationItem> items) {
+    SessionCache.instance.unreadCount = items.where((i) => !i.isRead).length;
+  }
+
+  /// Marks [item] read on the server; the row updates immediately and is
+  /// restored if the request fails. Returns whether it succeeded.
+  Future<bool> markRead(NotificationItem item) async {
+    final id = item.id;
+    final before = state.value;
+    if (id == null || item.isRead || before == null) return true;
+    final after = [
+      for (final i in before) i.id == id ? i.asRead() : i,
+    ];
+    state = AsyncData(after);
+    _syncBadge(after);
+    try {
+      await ref.read(mobileContentServiceProvider).markNotificationRead(id);
+      return true;
+    } catch (_) {
+      if (ref.mounted) {
+        state = AsyncData(before);
+        _syncBadge(before);
+      }
+      return false;
+    }
+  }
+
+  Future<bool> markAllRead() async {
+    final before = state.value;
+    if (before == null || before.every((i) => i.isRead)) return true;
+    final after = [for (final i in before) i.asRead()];
+    state = AsyncData(after);
+    _syncBadge(after);
+    try {
+      await ref.read(mobileContentServiceProvider).markAllNotificationsRead();
+      return true;
+    } catch (_) {
+      if (ref.mounted) {
+        state = AsyncData(before);
+        _syncBadge(before);
+      }
+      return false;
     }
   }
 }

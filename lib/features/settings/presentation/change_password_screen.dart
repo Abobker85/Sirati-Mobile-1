@@ -1,28 +1,31 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/shared/services/auth_api_service.dart';
+import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/password_strength_meter.dart';
+import 'package:sirati/shared/widgets/password_visibility_toggle.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
-class ChangePasswordScreen extends StatefulWidget {
+class ChangePasswordScreen extends ConsumerStatefulWidget {
   const ChangePasswordScreen({super.key});
 
   @override
-  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+  ConsumerState<ChangePasswordScreen> createState() =>
+      _ChangePasswordScreenState();
 }
 
-class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _currentCtrl = TextEditingController();
   final _newCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-  final _auth = AuthApiService();
+  final _confirmKey = GlobalKey<FormFieldState<String>>();
 
   bool _obscureCurrent = true;
   bool _obscureNew = true;
@@ -41,6 +44,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Future<void> _submit() async {
+    // One request at a time (keyboard Done + button).
+    if (_loading) return;
     final english = AppLocale.isEnglish(context);
     setState(() {
       _submitted = true;
@@ -55,11 +60,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     setState(() => _loading = true);
     try {
-      final message = await _auth.changePassword(
-        currentPassword: _currentCtrl.text,
-        newPassword: _newCtrl.text,
-        confirmation: _confirmCtrl.text,
-      );
+      final message = await ref.read(authApiServiceProvider).changePassword(
+            currentPassword: _currentCtrl.text,
+            newPassword: _newCtrl.text,
+            confirmation: _confirmCtrl.text,
+          );
       if (!mounted) return;
       unawaited(HapticFeedback.lightImpact());
       AppSnackBar.success(
@@ -132,13 +137,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
               hintText: '••••••••',
               prefixIcon: const Icon(Icons.lock_outline_rounded),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscureCurrent
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                ),
-                onPressed: () =>
+              suffixIcon: PasswordVisibilityToggle(
+                obscured: _obscureCurrent,
+                onToggle: () =>
                     setState(() => _obscureCurrent = !_obscureCurrent),
               ),
               validator: (v) {
@@ -169,15 +170,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
               hintText: '••••••••',
               prefixIcon: const Icon(Icons.lock_outline_rounded),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscureNew
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                ),
-                onPressed: () => setState(() => _obscureNew = !_obscureNew),
+              suffixIcon: PasswordVisibilityToggle(
+                obscured: _obscureNew,
+                onToggle: () => setState(() => _obscureNew = !_obscureNew),
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) {
+                setState(() {});
+                // A stale "do not match" must clear when the new one changes.
+                if (_submitted) _confirmKey.currentState?.validate();
+              },
               validator: (v) {
                 if (v == null || v.isEmpty) {
                   return en ? 'Enter a new password' : 'أدخل كلمة مرور جديدة';
@@ -201,22 +202,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             _Label(en ? 'Confirm new password' : 'تأكيد كلمة المرور الجديدة'),
             const SizedBox(height: 6),
             AppTextFormField(
+              key: _confirmKey,
               controller: _confirmCtrl,
               autovalidateMode: auto,
               obscureText: _obscureConfirm,
               textDirection: TextDirection.ltr,
               textAlign: TextAlign.start,
               textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _submit(),
+              onFieldSubmitted: (_) => unawaited(_submit()),
               hintText: '••••••••',
               prefixIcon: const Icon(Icons.lock_outline_rounded),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscureConfirm
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                ),
-                onPressed: () =>
+              suffixIcon: PasswordVisibilityToggle(
+                obscured: _obscureConfirm,
+                onToggle: () =>
                     setState(() => _obscureConfirm = !_obscureConfirm),
               ),
               validator: (v) {
@@ -239,7 +237,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               loadingLabel: en ? 'Updating...' : 'جارٍ التحديث...',
               isLoading: _loading,
               icon: Icons.check_rounded,
-              onPressed: _submit,
+              onPressed: () => unawaited(_submit()),
             ),
           ],
         ),
