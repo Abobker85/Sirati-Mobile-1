@@ -38,7 +38,20 @@ class ParsedRoute {
     this.stringId,
     this.requiresEntitlement = false,
     this.unknown = false,
+    this.arguments,
   });
+
+  /// `RouteSettings.arguments` of the push that produced this route.
+  final Object? arguments;
+
+  ParsedRoute withArguments(Object? arguments) => ParsedRoute(
+        name: name,
+        id: id,
+        stringId: stringId,
+        requiresEntitlement: requiresEntitlement,
+        unknown: unknown,
+        arguments: arguments,
+      );
 
   final String name;
   final int? id;

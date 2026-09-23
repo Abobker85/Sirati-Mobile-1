@@ -21,6 +21,7 @@ import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
+import 'package:sirati/shared/models/cv_target_job.dart';
 
 /// Composition root: maps route names onto feature screens.
 void registerSiratiRouteWidgets() {
@@ -40,7 +41,8 @@ Widget _widgetFor(ParsedRoute parsed) {
     case AppRoutes.history:
       return const HistoryScreen();
     case AppRoutes.createCv:
-      return const CvGeneratorScreen();
+      final job = parsed.arguments;
+      return CvGeneratorScreen(targetJob: job is CvTargetJob ? job : null);
     case AppRoutes.cvBuilder:
       return const CvBuilderScreen();
     case AppRoutes.myCvs:

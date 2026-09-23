@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
@@ -6,8 +8,10 @@ import 'package:sirati/features/jobs/domain/job_news_feed.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_common.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_format.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_title_display.dart';
+import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_snack_bar.dart';
 
 class JobNewsDetailScreen extends StatelessWidget {
   final JobNews item;
@@ -18,8 +22,9 @@ class JobNewsDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
     final actionUrl = item.actionUrl;
-    final hasMatch = item.matchScore != null;
-    final highMatch = isHighMatch(item.matchScore);
+    final matchScore = displayMatchScore(item.matchScore);
+    final hasMatch = matchScore != null;
+    final highMatch = isHighMatch(matchScore);
 
     return Scaffold(
       appBar: AppBar(title: Text(english ? 'Job Details' : 'تفاصيل الخبر')),
@@ -55,7 +60,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                                         ? Icons.business_rounded
                                         : Icons.verified_rounded,
                                 size: 14,
-                                color: context.sirati.primaryDark,
+                                color: context.sirati.primaryInk,
                               ),
                               const SizedBox(width: 5),
                               Text(
@@ -64,7 +69,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: context.sirati.primaryDark,
+                                  color: context.sirati.primaryInk,
                                 ),
                               ),
                             ],
@@ -76,7 +81,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: context.sirati.amberLight,
+                              color: context.sirati.warningLight,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color:
@@ -88,7 +93,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: context.sirati.amber,
+                                color: context.sirati.onWarningContainer,
                               ),
                             ),
                           ),
@@ -186,13 +191,13 @@ class JobNewsDetailScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  '${item.matchScore}%',
+                                  '$matchScore%',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w800,
                                     color: highMatch
                                         ? context.sirati.onSuccessContainer
-                                        : context.sirati.primaryDark,
+                                        : context.sirati.primaryInk,
                                   ),
                                 ),
                               ),
@@ -202,7 +207,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(6),
                             child: LinearProgressIndicator(
-                              value: (item.matchScore ?? 0) / 100.0,
+                              value: matchScore / 100.0,
                               minHeight: 8,
                               backgroundColor: context.sirati.surfaceLow,
                               valueColor: AlwaysStoppedAnimation<Color>(
@@ -255,9 +260,8 @@ class JobNewsDetailScreen extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: item.skillsRequired.map((skill) {
-                        final isMatched = item.matchedSkills.any((m) =>
-                            m.toLowerCase() == skill.toLowerCase() ||
-                            skill.toLowerCase().contains(m.toLowerCase()));
+                        final isMatched =
+                            isSkillMatched(skill, item.matchedSkills);
                         return Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
@@ -278,8 +282,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                             children: [
                               if (isMatched) ...[
                                 Icon(Icons.check_rounded,
-                                    size: 13,
-                                    color: context.sirati.primaryDark),
+                                    size: 13, color: context.sirati.primaryInk),
                                 const SizedBox(width: 4),
                               ],
                               Text(
@@ -290,7 +293,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                                       ? FontWeight.w700
                                       : FontWeight.w500,
                                   color: isMatched
-                                      ? context.sirati.primaryDark
+                                      ? context.sirati.primaryInk
                                       : context.sirati.textSecondary,
                                 ),
                               ),
@@ -317,8 +320,15 @@ class JobNewsDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
                   ElevatedButton.icon(
-                    onPressed: () =>
-                        Navigator.of(context).pushNamed(AppRoutes.createCv),
+                    // Carries this post into the generator so the CV is
+                    // actually tailored to it (target title + description).
+                    onPressed: () => unawaited(Navigator.of(context).pushNamed(
+                      AppRoutes.createCv,
+                      arguments: CvTargetJob(
+                        title: item.title,
+                        description: item.body,
+                      ),
+                    )),
                     icon: const Icon(Icons.auto_awesome_rounded),
                     label: Text(
                       english
@@ -337,7 +347,17 @@ class JobNewsDetailScreen extends StatelessWidget {
                   if (actionUrl != null) ...[
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
-                      onPressed: () => launchSafeExternalUrl(actionUrl),
+                      onPressed: () async {
+                        final opened = await launchSafeExternalUrl(actionUrl);
+                        if (!opened && context.mounted) {
+                          AppSnackBar.error(
+                            context,
+                            english
+                                ? 'Could not open the application page.'
+                                : 'تعذر فتح صفحة التقديم.',
+                          );
+                        }
+                      },
                       icon: const Icon(Icons.open_in_new_rounded),
                       label: Text(
                         english
@@ -345,7 +365,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                             : 'التقديم عبر الموقع الرسمي',
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: context.sirati.primaryDark,
+                        foregroundColor: context.sirati.primaryInk,
                         side: BorderSide(color: context.sirati.borderStrong),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(

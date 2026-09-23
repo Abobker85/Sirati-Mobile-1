@@ -93,3 +93,32 @@ class JobNewsFeed {
   static String _defaultTitle(bool english) =>
       english ? 'Job News' : 'أخبار الوظائف';
 }
+
+String _normalizeSkill(String s) =>
+    s.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+/// Whether [skill] is covered by one of the user's [matchedSkills].
+///
+/// Case- and spacing-insensitive, and a matched phrase counts inside a longer
+/// skill only as whole words: "React" covers "React Native", but "Java" does
+/// not cover "JavaScript". Blank entries never match (a blank used to match
+/// every skill through `contains('')`).
+bool isSkillMatched(String skill, Iterable<String> matchedSkills) {
+  final target = _normalizeSkill(skill);
+  if (target.isEmpty) return false;
+  for (final raw in matchedSkills) {
+    final m = _normalizeSkill(raw);
+    if (m.isEmpty) continue;
+    if (m == target) return true;
+    // Raw strings: `\p{…}` must reach the regex engine unescaped.
+    final wholeWord = RegExp(
+      r'(^|[^\p{L}\p{N}])' + RegExp.escape(m) + r'($|[^\p{L}\p{N}])',
+      unicode: true,
+    );
+    if (wholeWord.hasMatch(target)) return true;
+  }
+  return false;
+}
+
+/// Match score limited to 0–100 for display; null stays null.
+int? displayMatchScore(int? score) => score?.clamp(0, 100);

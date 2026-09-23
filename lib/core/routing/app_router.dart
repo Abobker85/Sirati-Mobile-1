@@ -142,7 +142,10 @@ class AppRouter {
         AppRoutes.premium,
       );
     }
-    return _page(_widgetFor(parsed), parsed.name);
+    return _page(
+      _widgetFor(parsed.withArguments(settings.arguments)),
+      parsed.name,
+    );
   }
 
   static Route<dynamic> onUnknownRoute(RouteSettings settings) {

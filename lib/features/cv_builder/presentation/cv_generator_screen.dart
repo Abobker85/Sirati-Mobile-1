@@ -23,6 +23,7 @@ import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_head
 import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_widgets.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/widgets/achievement_builder_sheet.dart';
+import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/services/in_app_review_service.dart';
@@ -41,9 +42,12 @@ import 'package:sirati/shared/widgets/success_beat.dart';
 /// dirty tracking, local draft). Network work lives in Riverpod controllers:
 /// [CvGenerationController], [CvFieldEnhancer], [JobDescriptionEnhancer].
 class CvGeneratorScreen extends ConsumerStatefulWidget {
-  const CvGeneratorScreen({super.key, this.initialCv});
+  const CvGeneratorScreen({super.key, this.initialCv, this.targetJob});
 
   final GeneratedCv? initialCv;
+
+  /// Job to tailor a new CV for (from a job post). Ignored when editing.
+  final CvTargetJob? targetJob;
 
   @override
   ConsumerState<CvGeneratorScreen> createState() => _CvGeneratorScreenState();
@@ -99,6 +103,13 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       final data = CvFormData.fromGeneratedCv(cv);
       _fillSilently(data);
       _language = data.language;
+    } else if (widget.targetJob case final job?) {
+      // Prefill only: a pre-filled form is not a user edit, so it must not
+      // mark the draft dirty on its own.
+      _suppressDirtyTracking = true;
+      _fields.jobTitle.text = job.title;
+      _fields.jobDescription.text = job.description;
+      _suppressDirtyTracking = false;
     }
 
     _fields.addListener(_onAnyFieldChanged);
