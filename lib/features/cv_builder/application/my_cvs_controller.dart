@@ -59,24 +59,37 @@ Future<void> refreshMyCvs(WidgetRef ref, {required bool english}) async {
   } catch (_) {}
 }
 
-/// The PDF link to open for [item] in [templateSlug].
+/// The PDF link to open for a saved CV in [templateSlug].
 ///
-/// Prefers a fresh link from the CV record (links can expire); falls back to
-/// the one stored on the list row. Empty when neither is available.
-Future<String> resolveCvDownloadUrl(
-  CvApiService api,
-  CvListItem item, {
+/// Prefers a fresh link from the CV record [id] (links can expire); falls
+/// back to [storedUrl]. Empty when neither is available. Never throws.
+Future<String> resolveCvPdfUrl(
+  CvApiService api, {
+  required int? id,
+  required String storedUrl,
   String? templateSlug,
 }) async {
-  final id = item.id;
-  if (id != null) {
+  if (id != null && id > 0) {
     try {
       final cv = await api.getGeneratedCv(id);
       final url = api.pdfUrlForTemplate(cv, templateSlug);
       if (url.isNotEmpty) return url;
     } catch (_) {
-      // Offline or expired session: the stored link may still work.
+      // Offline, expired session, or a malformed link: try the stored one.
     }
   }
-  return withTemplateParam(item.storedPdfUrl, templateSlug);
+  return withTemplateParam(storedUrl, templateSlug);
 }
+
+/// [resolveCvPdfUrl] for a row of the My CVs list.
+Future<String> resolveCvDownloadUrl(
+  CvApiService api,
+  CvListItem item, {
+  String? templateSlug,
+}) =>
+    resolveCvPdfUrl(
+      api,
+      id: item.id,
+      storedUrl: item.storedPdfUrl,
+      templateSlug: templateSlug,
+    );

@@ -1,41 +1,70 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sirati/core/utils/ai_error_message.dart';
+import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/core/utils/safe_url.dart';
+import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
+import 'package:sirati/features/cv_builder/domain/cv_markdown.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
+import 'package:sirati/features/cv_builder/presentation/generated_cv/cv_document_view.dart';
+import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_template_picker.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
-import 'package:sirati/shared/services/cv_api_service.dart';
+import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
-import 'package:sirati/shared/widgets/template_preview.dart';
 
-class GeneratedCvScreen extends StatefulWidget {
-  final GeneratedCv generatedCv;
+/// Reading direction for a CV: its declared language, else detected.
+TextDirection cvContentDirection(GeneratedCv cv) => switch (cv.language) {
+      'en' => TextDirection.ltr,
+      'ar' => TextDirection.rtl,
+      _ => BidiTextUtils.detectBaseDirection(
+          cv.generatedMarkdown,
+          fallback: TextDirection.rtl,
+        ),
+    };
 
+/// Whether the CV can be handed to an employer (AI finished or not used).
+bool isCvReadyToSend(GeneratedCv cv) =>
+    !AiStatus.isPending(cv.aiStatus) && cv.aiStatus != AiStatus.failed;
+
+class GeneratedCvScreen extends ConsumerStatefulWidget {
   const GeneratedCvScreen({super.key, required this.generatedCv});
 
+  final GeneratedCv generatedCv;
+
   @override
-  State<GeneratedCvScreen> createState() => _GeneratedCvScreenState();
+  ConsumerState<GeneratedCvScreen> createState() => _GeneratedCvScreenState();
 }
 
-class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
-  String? _cachedMarkdown;
-  bool? _cachedRtl;
-  List<Widget>? _cachedMarkdownSections;
+class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
+  late List<CvBlock> _blocks =
+      parseCvMarkdown(widget.generatedCv.generatedMarkdown);
   bool _isDownloading = false;
 
-  Future<void> _downloadPdf(BuildContext context) async {
+  GeneratedCv get _cv => widget.generatedCv;
+
+  @override
+  void didUpdateWidget(covariant GeneratedCvScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.generatedCv.generatedMarkdown != _cv.generatedMarkdown) {
+      _blocks = parseCvMarkdown(_cv.generatedMarkdown);
+    }
+  }
+
+  Future<void> _downloadPdf() async {
     if (_isDownloading) return;
     final english = AppLocale.isEnglish(context);
-    if (AiStatus.isPending(widget.generatedCv.aiStatus) ||
-        widget.generatedCv.aiStatus == AiStatus.failed) {
-      _showMessage(
+    if (!isCvReadyToSend(_cv)) {
+      AppSnackBar.warning(
         context,
         english
             ? 'This CV is not ready to send to an employer yet.'
@@ -43,91 +72,97 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
       );
       return;
     }
-    final service = CvApiService();
-
+    final api = ref.read(cvApiServiceProvider);
     setState(() => _isDownloading = true);
     try {
-      final selection = (widget.generatedCv.templatePdfUrl?.isNotEmpty ?? false)
-          ? await _chooseTemplate(context, service, english)
-          : const _TemplateSelection.useDefault();
-      if (!context.mounted || !selection.shouldDownload) return;
-
-      final pdfUrl = service.pdfUrlForTemplate(
-          widget.generatedCv, selection.template?.slug);
-      if (pdfUrl.isEmpty) {
-        _showMessage(
-            context,
-            english
-                ? 'PDF link is not available yet.'
-                : 'رابط PDF غير متاح حالياً.');
-        return;
+      String? slug;
+      if (_cv.templatePdfUrl?.isNotEmpty ?? false) {
+        final choice = await _chooseTemplate(english);
+        if (choice == null || !mounted) return; // cancelled
+        slug = choice.template?.slug;
       }
-
       AppSnackBar.info(
         context,
         english ? 'Opening PDF download...' : 'جارٍ فتح رابط تنزيل الـ PDF...',
       );
-
-      final launched = await launchSafeExternalUrl(pdfUrl);
-      if (!launched && context.mounted) {
-        _showMessage(context,
-            english ? 'Could not open the PDF link.' : 'تعذر فتح رابط PDF.');
+      final url = await resolveCvPdfUrl(
+        api,
+        id: _cv.id,
+        storedUrl: (_cv.templatePdfUrl?.isNotEmpty ?? false)
+            ? _cv.templatePdfUrl!
+            : (_cv.pdfUrl ?? ''),
+        templateSlug: slug,
+      );
+      if (!mounted) return;
+      if (url.isEmpty) {
+        AppSnackBar.warning(
+          context,
+          english
+              ? 'PDF link is not available yet.'
+              : 'رابط PDF غير متاح حالياً.',
+        );
+        return;
+      }
+      final launched = await launchSafeExternalUrl(url);
+      if (!launched && mounted) {
+        AppSnackBar.warning(
+          context,
+          english ? 'Could not open the PDF link.' : 'تعذر فتح رابط PDF.',
+        );
       }
     } finally {
       if (mounted) setState(() => _isDownloading = false);
     }
   }
 
-  Future<_TemplateSelection> _chooseTemplate(
-    BuildContext context,
-    CvApiService service,
-    bool english,
-  ) async {
+  /// Null when the user dismissed the picker; a null template means "use
+  /// the default design".
+  Future<({CvTemplate? template})?> _chooseTemplate(bool english) async {
     try {
-      final templates = await service.listCvTemplates(english: english);
-      if (!context.mounted) return const _TemplateSelection.cancelled();
-      if (templates.isEmpty) return const _TemplateSelection.useDefault();
-
-      final selectedTemplate = await showModalBottomSheet<CvTemplate>(
+      final templates = await ref
+          .read(cvApiServiceProvider)
+          .listCvTemplates(english: english);
+      if (!mounted) return null;
+      if (templates.isEmpty) return (template: null);
+      final picked = await showModalBottomSheet<CvTemplate>(
         context: context,
         showDragHandle: true,
-        builder: (context) => _CvTemplatePicker(
-          templates: templates,
-          english: english,
-        ),
+        builder: (_) =>
+            CvTemplatePicker(templates: templates, english: english),
       );
-
-      if (selectedTemplate == null) return const _TemplateSelection.cancelled();
-      return _TemplateSelection(template: selectedTemplate);
+      return picked == null ? null : (template: picked);
     } catch (_) {
-      if (context.mounted) {
-        _showMessage(
+      if (mounted) {
+        AppSnackBar.warning(
           context,
           english
               ? 'Could not load CV designs. Default design will be used.'
               : 'تعذر تحميل التصاميم. سيتم استخدام التصميم الافتراضي.',
         );
       }
-      return const _TemplateSelection.useDefault();
+      return (template: null);
     }
   }
 
-  void _shareCv() {
-    Share.share(
-        '${widget.generatedCv.fullName}\n${widget.generatedCv.targetJobTitle}\n\n${widget.generatedCv.generatedMarkdown}');
-  }
-
-  void _showMessage(BuildContext context, String message) {
-    AppSnackBar.warning(context, message);
+  void _share() {
+    final text = cvPlainText(
+      fullName: _cv.fullName,
+      headline: displayHeadline(_cv.targetJobTitle, language: _cv.language),
+      markdown: _cv.generatedMarkdown,
+    );
+    if (text.isEmpty) return;
+    unawaited(Share.share(text));
   }
 
   @override
   Widget build(BuildContext context) {
-    final contact = [widget.generatedCv.email, widget.generatedCv.phone]
+    final english = AppLocale.isEnglish(context);
+    final c = context.sirati;
+    final contact = [_cv.email, _cv.phone]
         .whereType<String>()
         .where((value) => value.trim().isNotEmpty)
         .join(' · ');
-    final english = AppLocale.isEnglish(context);
+    final aiError = _cv.aiError;
 
     return Scaffold(
       appBar: AppBar(
@@ -135,88 +170,31 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
         actions: [
           const LanguageToggle(),
           IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) =>
-                      CvGeneratorScreen(initialCv: widget.generatedCv)))),
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: english ? 'Edit CV' : 'تعديل السيرة',
+            onPressed: () => unawaited(Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => CvGeneratorScreen(initialCv: _cv),
+              ),
+            )),
+          ),
         ],
       ),
       body: Column(
         children: [
-          if (widget.generatedCv.aiStatus == AiStatus.completed ||
-              widget.generatedCv.aiStatus == AiStatus.notConfigured)
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: context.sirati.tealLight,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.auto_awesome,
-                      color: context.sirati.teal, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      english
-                          ? 'CV generated · ATS score: '
-                          : 'تم إنشاء السيرة · درجة ATS: ',
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: context.sirati.tealDark,
-                          fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  Text('${widget.generatedCv.scoreTotal}',
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: context.sirati.tealDark,
-                          fontWeight: FontWeight.w700)),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: context.sirati.tealLight,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: context.sirati.teal.withValues(alpha: .4)),
-                    ),
-                    child: Text(widget.generatedCv.grade,
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: context.sirati.tealDark)),
-                  ),
-                ],
-              ),
+          if (_cv.aiStatus == AiStatus.completed ||
+              _cv.aiStatus == AiStatus.notConfigured)
+            CvStatusBanner.success(
+              message: english
+                  ? 'CV generated · ATS score: ${_cv.scoreTotal}'
+                  : 'تم إنشاء السيرة · درجة ATS: ${AppFormat.digits('${_cv.scoreTotal}', english: english)}',
+              trailing: _cv.grade.trim().isEmpty || _cv.grade == '-'
+                  ? null
+                  : Text(_cv.grade),
             ),
-          if (widget.generatedCv.aiStatus == AiStatus.failed &&
-              widget.generatedCv.aiError != null)
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                  color: context.sirati.amberLight,
-                  borderRadius: BorderRadius.circular(12)),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline,
-                      color: context.sirati.amber, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      AiErrorMessage.localFallback(widget.generatedCv.aiError,
-                          english: english),
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: context.sirati.amber,
-                          height: 1.4),
-                      textAlign: TextAlign.start,
-                    ),
-                  ),
-                ],
-              ),
+          if (_cv.aiStatus == AiStatus.failed && aiError != null)
+            CvStatusBanner.warning(
+              message: AiErrorMessage.localFallback(aiError, english: english),
             ),
           Expanded(
             child: MotionReveal(
@@ -224,42 +202,53 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: context.sirati.surface,
+                  color: c.surface,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: context.sirati.border),
+                  border: Border.all(color: c.border),
                 ),
                 child: Directionality(
-                  textDirection: _contentDirection(),
+                  textDirection: cvContentDirection(_cv),
                   child: ListView(
                     children: [
-                      Text(widget.generatedCv.fullName,
-                          style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: context.sirati.primaryDark)),
+                      Text(
+                        _cv.fullName,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: c.primaryDark,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(_displayHeadline(widget.generatedCv.targetJobTitle),
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: context.sirati.primary,
-                              fontWeight: FontWeight.w500)),
+                      Text(
+                        displayHeadline(
+                          _cv.targetJobTitle,
+                          language: _cv.language,
+                        ),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: c.primaryInk,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       if (contact.isNotEmpty)
-                        Text(contact,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: context.sirati.textSecondary)),
-                      Divider(height: 24, color: context.sirati.border),
-                      if (widget.generatedCv.generatedMarkdown.trim().isEmpty)
                         Text(
-                            english
-                                ? 'No CV content is available yet.'
-                                : 'لا يوجد محتوى للسيرة حالياً.',
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: context.sirati.textSecondary))
+                          contact,
+                          textDirection: TextDirection.ltr,
+                          style:
+                              TextStyle(fontSize: 12, color: c.textSecondary),
+                        ),
+                      Divider(height: 24, color: c.border),
+                      if (_blocks.isEmpty)
+                        Text(
+                          english
+                              ? 'No CV content is available yet.'
+                              : 'لا يوجد محتوى للسيرة حالياً.',
+                          style:
+                              TextStyle(fontSize: 13, color: c.textSecondary),
+                        )
                       else
-                        ..._buildMarkdownSectionsCached(context, english),
+                        CvDocumentBlocks(blocks: _blocks),
                     ],
                   ),
                 ),
@@ -275,7 +264,7 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
                   Expanded(
                     child: PressScale(
                       child: OutlinedButton.icon(
-                        onPressed: _shareCv,
+                        onPressed: _blocks.isEmpty ? null : _share,
                         icon: const Icon(Icons.share_outlined, size: 18),
                         label: Text(english ? 'Share' : 'مشاركة'),
                       ),
@@ -285,15 +274,16 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
                   Expanded(
                     child: PressScale(
                       child: ElevatedButton.icon(
-                        onPressed:
-                            _isDownloading ? null : () => _downloadPdf(context),
+                        onPressed: _isDownloading
+                            ? null
+                            : () => unawaited(_downloadPdf()),
                         icon: _isDownloading
                             ? SizedBox(
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: context.sirati.primary,
+                                  color: c.primary,
                                 ),
                               )
                             : const Icon(Icons.download_outlined, size: 18),
@@ -309,227 +299,6 @@ class _GeneratedCvScreenState extends State<GeneratedCvScreen> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  TextDirection _contentDirection() {
-    final language = widget.generatedCv.language;
-    if (language == 'en') return TextDirection.ltr;
-    if (language == 'ar') return TextDirection.rtl;
-    return BidiTextUtils.detectBaseDirection(
-      widget.generatedCv.generatedMarkdown,
-      fallback: TextDirection.rtl,
-    );
-  }
-
-  String _displayHeadline(String raw) {
-    final trimmed = raw.trim();
-    if (trimmed.isEmpty || widget.generatedCv.language != 'en') {
-      return trimmed;
-    }
-    return trimmed
-        .split(RegExp(r'\s+'))
-        .map((word) => word.isEmpty
-            ? word
-            : '${word[0].toUpperCase()}${word.substring(1)}')
-        .join(' ');
-  }
-
-  List<Widget> _buildMarkdownSections(
-    BuildContext context,
-    String markdown,
-    bool english,
-  ) {
-    final direction = Directionality.of(context);
-    final widgets = <Widget>[];
-    for (final line in markdown.trim().split('\n')) {
-      final raw = line.trim();
-      if (raw.isEmpty || raw == '---') {
-        continue;
-      }
-
-      if (raw.startsWith('## ') ||
-          raw.startsWith('### ') ||
-          raw.startsWith('#### ')) {
-        final title = raw
-            .replaceFirst(RegExp(r'^#{2,4}\s*'), '')
-            .replaceAll('**', '')
-            .trim();
-        widgets.add(Padding(
-          padding: const EdgeInsets.only(top: 14, bottom: 6),
-          child: Text(
-            title,
-            textAlign: TextAlign.start,
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: context.sirati.textPrimary,
-                letterSpacing: 0.3),
-          ),
-        ));
-        widgets.add(Divider(height: 1, color: context.sirati.border));
-        widgets.add(const SizedBox(height: 6));
-      } else if (raw.startsWith('**') && raw.endsWith('**')) {
-        final cleaned = raw.replaceAll('**', '').trim();
-        widgets.add(Padding(
-          padding: const EdgeInsets.only(bottom: 3),
-          child: Text(cleaned,
-              textAlign: TextAlign.start,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: context.sirati.textPrimary)),
-        ));
-      } else if (raw.startsWith('- ') || raw.startsWith('* ')) {
-        final bulletText = raw.replaceFirst(RegExp(r'^[-*]\s+'), '');
-        widgets.add(Padding(
-          padding: const EdgeInsets.only(bottom: 3),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            textDirection: direction,
-            children: [
-              Text('• ',
-                  style:
-                      TextStyle(fontSize: 12, color: context.sirati.primary)),
-              Expanded(
-                  child: Text(bulletText,
-                      textAlign: TextAlign.start,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: context.sirati.textPrimary,
-                          height: 1.5))),
-            ],
-          ),
-        ));
-      } else {
-        final cleaned = raw.replaceAll('**', '');
-        final isContactLine = cleaned.contains('@') ||
-            cleaned.contains('Email:') ||
-            cleaned.contains('Phone:') ||
-            cleaned.contains('|');
-        widgets.add(Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text(
-            cleaned,
-            textDirection: isContactLine ? TextDirection.ltr : direction,
-            textAlign: TextAlign.start,
-            style: TextStyle(
-                fontSize: 12, color: context.sirati.textPrimary, height: 1.6),
-          ),
-        ));
-      }
-    }
-    return widgets;
-  }
-
-  List<Widget> _buildMarkdownSectionsCached(
-    BuildContext context,
-    bool english,
-  ) {
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
-    final markdown = widget.generatedCv.generatedMarkdown;
-    if (_cachedMarkdown == markdown &&
-        _cachedRtl == isRtl &&
-        _cachedMarkdownSections != null) {
-      return _cachedMarkdownSections!;
-    }
-
-    final sections = _buildMarkdownSections(
-      context,
-      markdown,
-      english,
-    );
-    _cachedMarkdown = markdown;
-    _cachedRtl = isRtl;
-    _cachedMarkdownSections = sections;
-    return sections;
-  }
-
-  @override
-  void didUpdateWidget(covariant GeneratedCvScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.generatedCv.generatedMarkdown !=
-        widget.generatedCv.generatedMarkdown) {
-      _cachedMarkdown = null;
-      _cachedRtl = null;
-      _cachedMarkdownSections = null;
-    }
-  }
-}
-
-class _TemplateSelection {
-  final CvTemplate? template;
-  final bool shouldDownload;
-
-  const _TemplateSelection({this.template}) : shouldDownload = true;
-  const _TemplateSelection.useDefault()
-      : template = null,
-        shouldDownload = true;
-  const _TemplateSelection.cancelled()
-      : template = null,
-        shouldDownload = false;
-}
-
-class _CvTemplatePicker extends StatelessWidget {
-  final List<CvTemplate> templates;
-  final bool english;
-
-  const _CvTemplatePicker({required this.templates, required this.english});
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
-        shrinkWrap: true,
-        children: [
-          Text(
-            english ? 'Choose CV design' : 'اختر تصميم السيرة',
-            textAlign: TextAlign.start,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: context.sirati.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          for (final entry in templates.asMap().entries)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: MotionReveal(
-                order: entry.key,
-                child: PressScale(
-                  child: ListTile(
-                    onTap: () => Navigator.pop(context, entry.value),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      side: BorderSide(color: context.sirati.border),
-                    ),
-                    leading: TemplatePreview(
-                      imageUrl: entry.value.previewImageUrl,
-                      errorFallback: Icon(
-                        Icons.description_outlined,
-                        color: context.sirati.primary,
-                      ),
-                    ),
-                    title: Text(
-                      entry.value.name,
-                      textAlign: TextAlign.start,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    subtitle: Text(
-                      entry.value.isDefault
-                          ? (english ? 'Default template' : 'القالب الافتراضي')
-                          : entry.value.slug,
-                      textAlign: TextAlign.start,
-                    ),
-                    trailing: const Icon(Icons.download_rounded),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
