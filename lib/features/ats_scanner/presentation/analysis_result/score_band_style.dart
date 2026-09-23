@@ -11,13 +11,6 @@ extension ScoreBandStyle on ScoreBand {
         ScoreBand.weak => c.red,
       };
 
-  Color track(SiratiColors c) => switch (this) {
-        ScoreBand.excellent => c.tealLight,
-        ScoreBand.veryGood => c.primaryLight,
-        ScoreBand.fair => c.amberLight,
-        ScoreBand.weak => c.redLight,
-      };
-
   /// Badge fill for the score, paired with [onContainer] (a gated AA pair
   /// in both themes). [color] is a fill/accent tone and fails AA as text.
   Color container(SiratiColors c) => switch (this) {
@@ -49,9 +42,23 @@ extension ScoreBandStyle on ScoreBand {
 }
 
 extension CriterionBandStyle on CriterionBand {
+  /// Bar fill (a graphic, not text).
   Color color(SiratiColors c) => switch (this) {
         CriterionBand.strong => c.teal,
         CriterionBand.good => c.primary,
         CriterionBand.needsWork => c.amber,
+      };
+
+  /// Percentage chip: gated container / on-container pairs.
+  Color container(SiratiColors c) => switch (this) {
+        CriterionBand.strong => c.successLight,
+        CriterionBand.good => c.primaryLight,
+        CriterionBand.needsWork => c.warningLight,
+      };
+
+  Color onContainer(SiratiColors c) => switch (this) {
+        CriterionBand.strong => c.onSuccessContainer,
+        CriterionBand.good => c.primaryInk,
+        CriterionBand.needsWork => c.onWarningContainer,
       };
 }

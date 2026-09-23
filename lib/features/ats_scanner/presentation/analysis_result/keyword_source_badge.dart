@@ -18,7 +18,10 @@ class KeywordSourceBadge extends StatelessWidget {
     final fromJd = keywordSource == 'job_description';
     final bg =
         fromJd ? context.sirati.primaryLight : context.sirati.warningLight;
-    final fg = fromJd ? context.sirati.primaryDark : context.sirati.warning;
+    // Gated container pairs: primaryInk / primaryLight and
+    // onWarningContainer / warningLight (warning text was ~2.7:1).
+    final fg =
+        fromJd ? context.sirati.primaryInk : context.sirati.onWarningContainer;
     final icon =
         fromJd ? Icons.verified_rounded : Icons.lightbulb_outline_rounded;
     final label = fromJd

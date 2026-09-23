@@ -81,7 +81,8 @@ class _KeywordChip extends StatelessWidget {
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: found ? c.tealLight : c.redLight,
+        // Gated container pairs (missing on red was ~4.2:1).
+        color: found ? c.successLight : c.errorLight,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: found
@@ -94,7 +95,7 @@ class _KeywordChip extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: found ? c.tealDark : c.red,
+          color: found ? c.onSuccessContainer : c.onErrorContainer,
         ),
       ),
     );
@@ -137,7 +138,7 @@ class _KeywordOverflowButton extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: context.sirati.primary,
+          color: context.sirati.primaryInk,
         ),
       ),
     );

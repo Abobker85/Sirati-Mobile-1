@@ -234,7 +234,8 @@ class _UpgradeCta extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: c.primaryDark,
+                    // primaryDark on primaryLight is ~3.7:1 in dark mode.
+                    color: c.primaryInk,
                   ),
                 ),
                 const SizedBox(height: 4),

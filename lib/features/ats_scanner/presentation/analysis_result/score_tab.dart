@@ -66,7 +66,7 @@ class _ScoreHero extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: band.track(c),
+              color: band.container(c),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -74,7 +74,7 @@ class _ScoreHero extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
-                color: scoreColor,
+                color: band.onContainer(c),
               ),
             ),
           ),
@@ -115,7 +115,7 @@ class _ScoreHero extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: c.primaryDark,
+                    color: c.primaryInk,
                   ),
                 ),
               ),
@@ -207,7 +207,8 @@ class _CriterionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.sirati;
     final ratio = criterionRatio(criterion.score, criterion.max);
-    final barColor = CriterionBand.of(ratio).color(c);
+    final criterionBand = CriterionBand.of(ratio);
+    final barColor = criterionBand.color(c);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -234,7 +235,7 @@ class _CriterionRow extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
-                  color: barColor.withValues(alpha: .12),
+                  color: criterionBand.container(c),
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: Text(
@@ -242,7 +243,7 @@ class _CriterionRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: barColor,
+                    color: criterionBand.onContainer(c),
                   ),
                 ),
               ),
