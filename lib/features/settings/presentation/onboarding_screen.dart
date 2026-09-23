@@ -43,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   List<_OnboardingPage> _pages(bool en) => [
         _OnboardingPage(
           icon: Icons.description_outlined,
-          accent: context.sirati.primary,
+          accent: context.sirati.primaryInk,
           accentSoft: context.sirati.primaryLight,
           title: en ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
           body: en
@@ -62,8 +62,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         _OnboardingPage(
           icon: Icons.auto_awesome_rounded,
-          accent: context.sirati.amber,
-          accentSoft: context.sirati.amberLight,
+          accent: context.sirati.onWarningContainer,
+          accentSoft: context.sirati.warningLight,
           title: en ? 'AI CV in minutes' : 'سيرة بالذكاء في دقائق',
           body: en
               ? 'Enter your details and generate a polished, downloadable CV with templates built for hiring systems.'
@@ -96,34 +96,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _next() {
     if (_index >= _pageCount - 1) {
-      _finish(skipped: false);
+      unawaited(_finish(skipped: false));
       return;
     }
-    _pageController.nextPage(
+    unawaited(_pageController.nextPage(
       duration:
           MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
       curve: MotionCurves.enter,
-    );
+    ));
   }
 
   void _previous() {
     if (_index <= 0) return;
-    _pageController.previousPage(
+    unawaited(_pageController.previousPage(
       duration:
           MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
       curve: MotionCurves.enter,
-    );
+    ));
   }
 
   void _jumpTo(int i) {
     if (i == _index || i < 0 || i >= _pageCount) return;
     HapticFeedback.selectionClick();
-    _pageController.animateToPage(
+    unawaited(_pageController.animateToPage(
       i,
       duration:
           MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
       curve: MotionCurves.enter,
-    );
+    ));
   }
 
   void _onPageChanged(int i) {
@@ -135,125 +135,134 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final en = AppLocale.isEnglish(context);
     final pages = _pages(en);
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
     final last = _index >= _pageCount - 1;
-    final page = pages[_index];
 
     // No Scaffold here — host [SplashScreen] already provides one.
     // Overlay style matches global theme (edge-to-edge + icon brightness).
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: AppTheme.systemUiOverlayStyle(
-        context.sirati,
-        Theme.of(context).brightness,
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                0,
-              ),
-              child: Row(
-                children: [
-                  const LanguageToggle(),
-                  // Back to the previous page (SIRATI-100). Hidden on page 1
-                  // so it never appears when there is nowhere to go.
-                  if (_index > 0)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(
-                          start: AppSpacing.xs),
-                      child: IconButton(
-                        onPressed: _finishing ? null : _previous,
-                        // matchTextDirection mirrors this in RTL automatically.
-                        icon: Icon(
-                          Icons.arrow_back_rounded,
-                          color: context.sirati.textSecondary,
-                        ),
-                        tooltip: en ? 'Previous' : 'السابق',
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  const Spacer(),
-                  if (!last)
-                    // Skip pill — textHint failed AA at 12sp; textSecondary
-                    // with a subtle outline is legible and looks tappable.
-                    OutlinedButton(
-                      onPressed:
-                          _finishing ? null : () => _finish(skipped: true),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: context.sirati.textSecondary,
-                        side: BorderSide(color: context.sirati.border),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999)),
-                        minimumSize: const Size(0, 32),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        en ? 'Skip' : 'تخطي',
-                        style: AppTextStyles.labelMd(context.sirati).copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: context.sirati.textSecondary,
+    return PopScope(
+      canPop: _index == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _previous();
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: AppTheme.systemUiOverlayStyle(
+          context.sirati,
+          Theme.of(context).brightness,
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  0,
+                ),
+                child: Row(
+                  children: [
+                    const LanguageToggle(),
+                    // Back to the previous page (SIRATI-100). Hidden on page 1
+                    // so it never appears when there is nowhere to go.
+                    if (_index > 0)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(
+                            start: AppSpacing.xs),
+                        child: IconButton(
+                          onPressed: _finishing ? null : _previous,
+                          // matchTextDirection mirrors this in RTL automatically.
+                          icon: Icon(
+                            Icons.arrow_back_rounded,
+                            color: context.sirati.textSecondary,
+                          ),
+                          tooltip: en ? 'Previous' : 'السابق',
+                          visualDensity: VisualDensity.compact,
                         ),
                       ),
+                    const Spacer(),
+                    if (!last)
+                      // Skip pill — textHint failed AA at 12sp; textSecondary
+                      // with a subtle outline is legible and looks tappable.
+                      OutlinedButton(
+                        onPressed: _finishing
+                            ? null
+                            : () => unawaited(_finish(skipped: true)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: context.sirati.textSecondary,
+                          side: BorderSide(color: context.sirati.border),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 6),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999)),
+                          minimumSize: const Size(48, 36),
+                          tapTargetSize: MaterialTapTargetSize.padded,
+                        ),
+                        child: Text(
+                          en ? 'Skip' : 'تخطي',
+                          style: AppTextStyles.labelMd(context.sirati).copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: context.sirati.textSecondary,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: PageView.builder(
+                  // No `reverse`: PageView already follows Directionality, so
+                  // in Arabic the next page enters from the left, matching the
+                  // mirrored Back arrow.
+                  controller: _pageController,
+                  itemCount: _pageCount,
+                  onPageChanged: _onPageChanged,
+                  itemBuilder: (context, i) {
+                    return _OnboardingPageView(
+                      page: pages[i],
+                      active: i == _index,
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.sm,
+                  AppSpacing.xl,
+                  AppSpacing.xl,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      _stepCounterLabel(index: _index, count: _pageCount),
+                      style: AppTextStyles.labelMd(context.sirati).copyWith(
+                        color: context.sirati.textSecondary,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                reverse: isRtl,
-                itemCount: _pageCount,
-                onPageChanged: _onPageChanged,
-                itemBuilder: (context, i) {
-                  return _OnboardingPageView(
-                    page: pages[i],
-                    active: i == _index,
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl,
-                AppSpacing.sm,
-                AppSpacing.xl,
-                AppSpacing.xl,
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    _stepCounterLabel(index: _index, count: _pageCount),
-                    style: AppTextStyles.labelMd(context.sirati).copyWith(
-                      color: context.sirati.textSecondary,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                    const SizedBox(height: AppSpacing.xs),
+                    _PageDots(
+                      count: _pageCount,
+                      index: _index,
+                      // One ink tone for the active dot: >= 3:1 on the page
+                      // background in both themes (WCAG 1.4.11).
+                      activeColor: context.sirati.primaryInk,
+                      onTap: _finishing ? null : _jumpTo,
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  _PageDots(
-                    count: _pageCount,
-                    index: _index,
-                    activeColor: page.accent,
-                    onTap: _finishing ? null : _jumpTo,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  SubmitButton(
-                    label: last
-                        ? (en ? 'Get started' : 'ابدأ الآن')
-                        : (en ? 'Next' : 'التالي'),
-                    icon: last ? null : Icons.arrow_forward_rounded,
-                    onPressed: _finishing ? null : _next,
-                    isLoading: _finishing && last,
-                  ),
-                ],
+                    const SizedBox(height: AppSpacing.lg),
+                    SubmitButton(
+                      label: last
+                          ? (en ? 'Get started' : 'ابدأ الآن')
+                          : (en ? 'Next' : 'التالي'),
+                      icon: last ? null : Icons.arrow_forward_rounded,
+                      onPressed: _finishing ? null : _next,
+                      isLoading: _finishing && last,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -293,7 +302,6 @@ class _OnboardingPageView extends StatelessWidget {
       builder: (context, constraints) {
         final compact = constraints.maxHeight < 280;
         final iconSize = compact ? 92.0 : 112.0;
-        final iconRadius = compact ? 24.0 : 28.0;
         final iconGlyphSize = compact ? 44.0 : 52.0;
         final titleSize = compact ? 23.0 : 26.0;
         final bodySize = compact ? 14.0 : 15.0;
@@ -310,7 +318,6 @@ class _OnboardingPageView extends StatelessWidget {
                   page: page,
                   active: active,
                   size: iconSize,
-                  radius: iconRadius,
                   glyphSize: iconGlyphSize,
                 ),
                 SizedBox(height: heroGap),
@@ -347,14 +354,12 @@ class _OnboardingHero extends StatefulWidget {
   final _OnboardingPage page;
   final bool active;
   final double size;
-  final double radius;
   final double glyphSize;
 
   const _OnboardingHero({
     required this.page,
     required this.active,
     required this.size,
-    required this.radius,
     required this.glyphSize,
   });
 
@@ -433,10 +438,8 @@ class _OnboardingHeroState extends State<_OnboardingHero>
             height: widget.size,
             decoration: BoxDecoration(
               color: widget.page.accentSoft,
-              // Match the newly-circular SiratiMark on page 2 so all three
-              // onboarding heroes share one geometry (SIRATI-99/100).
-              // `widget.radius` is now unused; kept in the constructor for
-              // callers that still pass it — it silently no-ops here.
+              // Circular like the SiratiMark on page 2 so all three heroes
+              // share one geometry (SIRATI-99/100).
               shape: BoxShape.circle,
               border: Border.all(
                 color: widget.page.accent.withValues(alpha: 0.14),
