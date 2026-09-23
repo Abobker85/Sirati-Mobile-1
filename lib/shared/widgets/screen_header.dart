@@ -248,7 +248,7 @@ class ProfileAvatar extends StatelessWidget {
       content = Icon(
         icon,
         size: size * 0.52,
-        color: context.sirati.onPrimary,
+        color: context.sirati.onBrandSurface,
       );
     } else {
       content = FittedBox(
@@ -260,7 +260,7 @@ class ProfileAvatar extends StatelessWidget {
             style: TextStyle(
               fontSize: size * 0.35,
               fontWeight: FontWeight.w800,
-              color: context.sirati.onPrimary,
+              color: context.sirati.onBrandSurface,
             ),
           ),
         ),
@@ -276,7 +276,12 @@ class ProfileAvatar extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [context.sirati.primary, context.sirati.primaryDark],
+            // Gated pair across the whole gradient: onBrandSurface on both
+            // brandSurface and brandSurfaceDeep is >= 4.5:1.
+            colors: [
+              context.sirati.brandSurface,
+              context.sirati.brandSurfaceDeep,
+            ],
           ),
         ),
         child: Center(child: content),

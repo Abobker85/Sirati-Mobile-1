@@ -148,6 +148,7 @@
   "logOut": "تسجيل الخروج",
   "logOutConfirmTitle": "تسجيل الخروج؟",
   "logOutConfirmBody": "ستحتاج إلى تسجيل الدخول مجدداً للوصول إلى سيرتك.",
+  "logOutFailed": "تعذّر تسجيل الخروج على هذا الجهاز. حاول مرة أخرى.",
   "deleteAccount": "حذف الحساب",
   "couldNotLoadProfile": "تعذر تحميل ملفك الشخصي.",
   "notificationPrefUpdateFailed": "تعذر تحديث تفضيل الإشعارات على الخادم.",

@@ -3,16 +3,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/shared/theme/app_contrast.dart';
 
 /// Nearest opaque background painted behind [element] in a pumped tree:
-/// a coloured [DecoratedBox], a non-transparent [Material], or a button's
-/// resolved fill.
-Color paintedBackgroundOf(Element element) {
-  Color? found;
+/// a coloured or gradient [DecoratedBox], a non-transparent [Material], or a
+/// button's resolved fill. A gradient yields every stop, so text must pass
+/// against the worst one.
+List<Color> paintedBackgroundsOf(Element element) {
+  List<Color>? found;
   element.visitAncestorElements((ancestor) {
     final widget = ancestor.widget;
     Color? candidate;
     if (widget is DecoratedBox) {
       final d = widget.decoration;
-      if (d is BoxDecoration) candidate = d.color;
+      if (d is BoxDecoration) {
+        final gradient = d.gradient;
+        if (gradient != null) {
+          found = gradient.colors;
+          return false;
+        }
+        candidate = d.color;
+      }
     } else if (widget is Material && widget.type != MaterialType.transparency) {
       candidate = widget.color;
     } else if (widget is ButtonStyleButton) {
@@ -27,7 +35,7 @@ Color paintedBackgroundOf(Element element) {
       candidate = widget.style?.backgroundColor?.resolve({}) ??
           themed?.backgroundColor?.resolve({});
     }
-    if (candidate != null && candidate.a > 0) found = candidate;
+    if (candidate != null && candidate.a > 0) found = [candidate];
     return found == null;
   });
   return found ?? fail('no painted background above ${element.widget}');
@@ -42,11 +50,12 @@ void expectAllTextAa(String label) {
     final text = element.widget as Text;
     final color =
         text.style?.color ?? DefaultTextStyle.of(element).style.color!;
-    final background = paintedBackgroundOf(element);
-    expect(
-      AppContrast.ratio(Color.alphaBlend(color, background), background),
-      greaterThanOrEqualTo(4.5),
-      reason: '"${text.data}" ($label)',
-    );
+    for (final background in paintedBackgroundsOf(element)) {
+      expect(
+        AppContrast.ratio(Color.alphaBlend(color, background), background),
+        greaterThanOrEqualTo(4.5),
+        reason: '"${text.data}" on $background ($label)',
+      );
+    }
   }
 }
