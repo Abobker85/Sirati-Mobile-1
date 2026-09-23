@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
+import 'package:sirati/core/storage/user_scoped_storage.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/notification_service.dart';
@@ -53,6 +54,7 @@ class AuthSessionGuard {
       SessionCache.instance.clear();
       // Drop offline content so the next account never sees prior user data.
       await MobileContentService.clearAllCaches();
+      await wipeUserScopedStorage();
       await AnalyticsService.clearUser();
 
       final nav = _navigatorKey?.currentState;

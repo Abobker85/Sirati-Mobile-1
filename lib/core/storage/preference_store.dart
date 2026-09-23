@@ -23,6 +23,9 @@ class PreferenceStore {
 
   final FlutterSecureStorage _storage;
 
+  /// Removes one key; used by the sign-out wipe of account data.
+  Future<void> deleteKey(String key) => _storage.delete(key: key);
+
   Future<String?> readLanguage() => _storage.read(key: langKey);
 
   Future<void> saveLanguage(String code) =>

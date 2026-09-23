@@ -4,13 +4,14 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/logging/app_log.dart';
+import 'package:sirati/core/storage/user_scoped_storage.dart';
 import 'package:sirati/features/cv_builder/data/cv_repository.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 
 /// Controller coordinating the interactive CV builder, section state,
 /// debounced autosave, and crash recovery (SIRATI-42).
 class CvBuilderController extends ChangeNotifier {
-  static const draftPrefix = 'sirati_cv_draft_';
+  static const draftPrefix = UserScopedKeys.builderDraftPrefix;
   static const debounceDuration = Duration(milliseconds: 600);
 
   CvBuilderController({

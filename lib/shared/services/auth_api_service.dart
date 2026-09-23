@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
+import 'package:sirati/core/storage/user_scoped_storage.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/notification_service.dart';
@@ -199,6 +200,9 @@ class AuthApiService {
     await _tokenStore.clearToken();
     SessionCache.instance.clear();
     await MobileContentService.clearAllCaches();
+    // CV drafts and per-account preferences must not survive into the next
+    // account on this device.
+    await wipeUserScopedStorage();
     await AnalyticsService.clearUser();
   }
 

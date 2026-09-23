@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/logging/app_log.dart';
+import 'package:sirati/core/storage/user_scoped_storage.dart';
 import 'package:sirati/features/cv_builder/data/cv_schema_migrator.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 
@@ -205,8 +206,8 @@ class FileCvStorageEngine implements CvStorageEngine {
 
 /// SharedPreferences storage engine for web or fallback persistence.
 class SharedPreferencesCvStorageEngine implements CvStorageEngine {
-  static const prefix = 'sirati_cv_doc_';
-  static const indexKey = 'sirati_cv_ids';
+  static const prefix = UserScopedKeys.builderDocPrefix;
+  static const indexKey = UserScopedKeys.builderIndexKey;
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
 
