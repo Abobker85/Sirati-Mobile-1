@@ -97,7 +97,7 @@ Future<void> _submitAnalysis(
         theme: AppTheme.light,
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: CvAnalysisScreen(apiService: service),
+        home: const CvAnalysisScreen(),
       ),
     ),
   );

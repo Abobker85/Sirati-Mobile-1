@@ -1,16 +1,20 @@
 import 'dart:async';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/idempotency_key.dart';
+import 'package:sirati/features/ats_scanner/domain/analysis_draft.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
+import 'package:sirati/features/ats_scanner/presentation/cv_analysis/analysis_form_sections.dart';
 import 'package:sirati/shared/models/ai_status.dart';
-import 'package:sirati/shared/services/cv_api_service.dart';
+import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -18,49 +22,45 @@ import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
-class CvAnalysisScreen extends StatefulWidget {
-  final CvApiService? apiService;
+/// Polling waits while the app is not in the foreground; background time
+/// doesn't count toward the poll timeout.
+bool pausesPolling(AppLifecycleState state) =>
+    state == AppLifecycleState.paused ||
+    state == AppLifecycleState.hidden ||
+    state == AppLifecycleState.detached;
 
-  const CvAnalysisScreen({super.key, this.apiService});
+class CvAnalysisScreen extends ConsumerStatefulWidget {
+  const CvAnalysisScreen({super.key});
 
   @override
-  State<CvAnalysisScreen> createState() => _CvAnalysisScreenState();
+  ConsumerState<CvAnalysisScreen> createState() => _CvAnalysisScreenState();
 }
 
-class _CvAnalysisScreenState extends State<CvAnalysisScreen>
+class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
     with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _jobTitleController = TextEditingController();
   final _jobDescriptionController = TextEditingController();
   final _resumeTextController = TextEditingController();
-  late final CvApiService _apiService = widget.apiService ?? CvApiService();
+  final _keys = IdempotencyKeyRing(newIdempotencyKey);
   PlatformFile? _uploadedFile;
   bool _isLoading = false;
   bool _submitted = false;
-
-  /// Collapsed by default so the JD card doesn't push the Analyze button
-  /// below the fold on small phones (SIRATI-94). Auto-expands when the user
-  /// has already typed something (edit / hot-reload flow).
   bool _jdExpanded = false;
 
   /// Bumped on each submit/cancel so a late AI response cannot apply.
   int _aiRequestGen = 0;
   bool _pollingPaused = false;
-  String? _submitIdempotencyKey;
-  static const _maxUploadBytes = 5 * 1024 * 1024;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (_jobDescriptionController.text.trim().isNotEmpty) {
-      _jdExpanded = true;
-    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _pollingPaused = false;
+    _pollingPaused = pausesPolling(state);
   }
 
   @override
@@ -72,47 +72,65 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
     super.dispose();
   }
 
+  AnalysisDraft get _draft => AnalysisDraft(
+        jobTitle: _jobTitleController.text,
+        jobDescription: _jobDescriptionController.text,
+        resumeText: _resumeTextController.text,
+        fileName: _uploadedFile?.name,
+        fileSize: _uploadedFile?.size,
+      );
+
   Future<void> _pickFile() async {
     final english = AppLocale.isEnglish(context);
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'txt'],
+      allowedExtensions: AnalysisLimits.allowedExtensions,
       withData: true,
     );
-    if (!mounted) return;
-    if (result == null || result.files.isEmpty) return;
+    if (!mounted || result == null || result.files.isEmpty) return;
 
     final file = result.files.single;
-    if (file.size > _maxUploadBytes) {
-      AppSnackBar.error(
-        context,
-        english
-            ? 'File must be 5 MB or smaller.'
-            : 'يجب أن يكون حجم الملف 5 ميغابايت أو أقل.',
-      );
-      return;
+    switch (AnalysisRules.upload(name: file.name, size: file.size)) {
+      case UploadRejection.tooLarge:
+        AppSnackBar.error(
+          context,
+          english
+              ? 'File must be 5 MB or smaller.'
+              : 'يجب أن يكون حجم الملف 5 ميغابايت أو أقل.',
+        );
+      case UploadRejection.unsupportedType:
+        AppSnackBar.error(
+          context,
+          english
+              ? 'Only PDF or TXT files are supported.'
+              : 'يُدعم فقط ملف PDF أو TXT.',
+        );
+      case null:
+        setState(() => _uploadedFile = file);
     }
-
-    setState(() => _uploadedFile = file);
   }
 
-  void _clearFile() => setState(() => _uploadedFile = null);
-
   Future<void> _submit() async {
+    if (_isLoading) return;
     final english = AppLocale.isEnglish(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
       unawaited(HapticFeedback.selectionClick());
       return;
     }
-    if (_uploadedFile == null && _resumeTextController.text.trim().isEmpty) {
-      _showError(english
-          ? 'Paste resume text or upload a PDF/TXT file to start.'
-          : 'الصق نص السيرة أو ارفع ملف PDF/TXT للبدء.');
+    final draft = _draft;
+    if (!draft.hasResume) {
+      AppSnackBar.error(
+        context,
+        english
+            ? 'Paste resume text or upload a PDF/TXT file to start.'
+            : 'الصق نص السيرة أو ارفع ملف PDF/TXT للبدء.',
+      );
       return;
     }
+    final api = ref.read(cvApiServiceProvider);
     final requestId = ++_aiRequestGen;
-    _submitIdempotencyKey ??= newIdempotencyKey();
+    final idempotencyKey = _keys.keyFor(draft);
     setState(() => _isLoading = true);
     final startedAt = DateTime.now();
     unawaited(AnalyticsService.logAnalysisStarted());
@@ -125,28 +143,26 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
         if (_aiRequestGen == requestId) _aiRequestGen++;
         if (!mounted) return;
         setState(() => _isLoading = false);
-        AppSnackBar.info(
-          context,
-          english ? 'Cancelled' : 'تم الإلغاء',
-        );
+        AppSnackBar.info(context, english ? 'Cancelled' : 'تم الإلغاء');
       },
     );
+    bool stale() =>
+        !mounted || progress.isCancelled || requestId != _aiRequestGen;
 
     try {
       final resumeFile = await _multipartFile();
-      if (!mounted || requestId != _aiRequestGen) return;
+      if (stale()) return;
 
-      var analysis = await _apiService.submitAnalysis(
-        targetJobTitle: _jobTitleController.text.trim(),
-        jobDescription: _jobDescriptionController.text,
-        resumeText: _resumeTextController.text,
+      var analysis = await api.submitAnalysis(
+        targetJobTitle: draft.jobTitle.trim(),
+        jobDescription: draft.jobDescription,
+        resumeText: draft.resumeText,
         resumeFile: resumeFile,
-        idempotencyKey: _submitIdempotencyKey,
+        idempotencyKey: idempotencyKey,
       );
-
       progress.setPhase(AiProgressPhase.fromAiStatus(analysis.aiStatus));
 
-      final poll = await _apiService.pollAnalysis(
+      final poll = await api.pollAnalysis(
         analysis,
         isCancelled: () => progress.isCancelled || requestId != _aiRequestGen,
         isPaused: () => _pollingPaused,
@@ -154,25 +170,21 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
             progress.setPhase(AiProgressPhase.fromAiStatus(value.aiStatus)),
       );
       analysis = poll.value;
+      if (poll.cancelled || stale()) return;
 
-      if (!mounted ||
-          poll.cancelled ||
-          progress.isCancelled ||
-          requestId != _aiRequestGen) {
-        return;
-      }
-
-      final durationMs = DateTime.now().difference(startedAt).inMilliseconds;
-      // Bucket only — never the exact score.
+      // The server has a result for this draft; an identical resubmit is
+      // now a new analysis.
+      _keys.consume();
       unawaited(AnalyticsService.logAnalysisCompleted(
+        // Bucketed by the service — never the exact score.
         score: analysis.scoreTotal,
-        durationMs: durationMs,
+        durationMs: DateTime.now().difference(startedAt).inMilliseconds,
       ));
-      if (!poll.timedOut && analysis.aiStatus != AiStatus.failed) {
-        await progress.complete();
-      }
+      final aiFailed = analysis.aiStatus == AiStatus.failed;
+      if (!poll.timedOut && !aiFailed) await progress.complete();
       await progress.dismiss();
-      if (!mounted || requestId != _aiRequestGen) return;
+      if (!mounted || stale()) return;
+
       if (poll.timedOut) {
         AppSnackBar.warning(
           context,
@@ -180,30 +192,30 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
               ? 'AI is still working. Your ATS score is ready, and you can retry the AI suggestions later.'
               : 'لا يزال الذكاء الاصطناعي يعمل. نتيجتك الأساسية جاهزة، ويمكنك إعادة محاولة التوصيات لاحقاً.',
         );
-      } else if (analysis.aiStatus == AiStatus.failed) {
+      } else if (aiFailed) {
         AppSnackBar.error(
           context,
           AiErrorMessage.suggestionsFailed(analysis.aiError, english: english),
           actionLabel: english ? 'Retry' : 'إعادة المحاولة',
-          onAction: _submit,
+          onAction: () => unawaited(_submit()),
         );
       }
       unawaited(HapticFeedback.lightImpact());
-      // Fire-and-forget conversion for smart-notification measurement.
       unawaited(NotificationEngagementService.instance
           .reportConversion('analysis_completed'));
-      _submitIdempotencyKey = null;
-      if (analysis.classificationWarning != null && mounted) {
+      final warning = analysis.classificationWarning;
+      if (warning != null) {
         AppSnackBar.warning(
           context,
           english
               ? 'This file may not be a resume. Analysis results may not be accurate.'
-              : analysis.classificationWarning!,
+              : warning,
         );
       }
       unawaited(Navigator.of(context).push(
         MaterialPageRoute(
-            builder: (_) => AnalysisResultScreen(analysis: analysis)),
+          builder: (_) => AnalysisResultScreen(analysis: analysis),
+        ),
       ));
     } on ApiException catch (exception) {
       if (progress.isCancelled || requestId != _aiRequestGen) return;
@@ -232,36 +244,33 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
   Future<http.MultipartFile?> _multipartFile() async {
     final file = _uploadedFile;
     if (file == null) return null;
-
-    if (file.size > _maxUploadBytes) return null;
-
-    if (file.bytes != null) {
-      if (file.bytes!.length > _maxUploadBytes) return null;
+    final bytes = file.bytes;
+    if (bytes != null) {
       return http.MultipartFile.fromBytes(
         'resume_file',
-        file.bytes!,
+        bytes,
         filename: file.name,
       );
     }
-
-    if (file.path != null) {
+    final path = file.path;
+    if (path != null) {
       return http.MultipartFile.fromPath(
         'resume_file',
-        file.path!,
+        path,
         filename: file.name,
       );
     }
-
     return null;
   }
 
-  void _showError(String msg) {
-    AppSnackBar.error(context, msg);
-  }
+  AutovalidateMode get _autovalidate => _submitted
+      ? AutovalidateMode.onUserInteraction
+      : AutovalidateMode.disabled;
 
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
+    final file = _uploadedFile;
 
     return Scaffold(
       appBar: AppBar(
@@ -277,17 +286,13 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AnalysisSectionTitle(
                     english ? 'Target job title' : 'المسمى الوظيفي المستهدف',
-                    textAlign: TextAlign.start,
-                    style: AppTextStyles.titleSm(context.sirati),
                   ),
                   const SizedBox(height: 10),
                   AppTextFormField(
                     controller: _jobTitleController,
-                    autovalidateMode: _submitted
-                        ? AutovalidateMode.onUserInteraction
-                        : AutovalidateMode.disabled,
+                    autovalidateMode: _autovalidate,
                     textAlign: TextAlign.start,
                     textInputAction: TextInputAction.next,
                     onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
@@ -295,13 +300,65 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
                         ? 'e.g. Laravel Backend Developer'
                         : 'مثال: مطوّر Laravel Backend',
                     prefixIcon: const Icon(Icons.work_outline_rounded),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? (english
-                            ? 'Please enter a target job title'
-                            : 'يرجى إدخال المسمى الوظيفي المستهدف')
-                        : null,
+                    validator: (v) => switch (AnalysisRules.jobTitle(v)) {
+                      AnalysisFieldError.required => english
+                          ? 'Please enter a target job title'
+                          : 'يرجى إدخال المسمى الوظيفي المستهدف',
+                      AnalysisFieldError.tooLong => english
+                          ? 'Job title must be ${AnalysisLimits.jobTitleMax} characters or fewer.'
+                          : 'يجب ألا يزيد المسمى الوظيفي عن ${AnalysisLimits.jobTitleMax} حرفاً.',
+                      null => null,
+                    },
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            AppCard(
+              padding: const EdgeInsets.all(16),
+              child: CollapsibleSection(
+                title: english
+                    ? 'Job description (optional)'
+                    : 'وصف الوظيفة (اختياري)',
+                collapsedHint: english
+                    ? 'Tap to score your CV against the actual posting instead of a generic list.'
+                    : 'اضغط لتقييم سيرتك مقارنة بالإعلان الفعلي بدل قائمة عامة.',
+                expanded: _jdExpanded,
+                onToggle: () => setState(() => _jdExpanded = !_jdExpanded),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    Text(
+                      english
+                          ? 'Paste the posting to score your CV against the actual role, not a generic keyword list.'
+                          : 'الصق نص الإعلان لتحصل على تقييم مقارنة بالوظيفة الفعلية، لا بقائمة كلمات عامة.',
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.sirati.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    AppTextFormField(
+                      controller: _jobDescriptionController,
+                      textAlign: TextAlign.start,
+                      maxLines: 5,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
+                      hintText: english
+                          ? 'Paste the full job posting here...'
+                          : 'الصق نص الإعلان الكامل هنا...',
+                      validator: (value) => AnalysisRules.jobDescription(
+                                  value) ==
+                              null
+                          ? null
+                          : (english
+                              ? 'Job description must be ${AnalysisLimits.jobDescriptionMax} characters or fewer.'
+                              : 'يجب ألا يزيد وصف الوظيفة عن ${AnalysisLimits.jobDescriptionMax} حرف.'),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -310,232 +367,38 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  InkWell(
-                    onTap: () => setState(() => _jdExpanded = !_jdExpanded),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              english
-                                  ? 'Job description (optional)'
-                                  : 'وصف الوظيفة (اختياري)',
-                              textAlign: TextAlign.start,
-                              style: AppTextStyles.titleSm(context.sirati),
-                            ),
-                          ),
-                          AnimatedRotation(
-                            turns: _jdExpanded ? 0.5 : 0,
-                            duration: const Duration(milliseconds: 180),
-                            child: Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              color: context.sirati.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  AnimatedCrossFade(
-                    duration: const Duration(milliseconds: 200),
-                    crossFadeState: _jdExpanded
-                        ? CrossFadeState.showSecond
-                        : CrossFadeState.showFirst,
-                    firstChild: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        english
-                            ? 'Tap to score your CV against the actual posting instead of a generic list.'
-                            : 'اضغط لتقييم سيرتك مقارنة بالإعلان الفعلي بدل قائمة عامة.',
-                        textAlign: TextAlign.start,
-                        style: TextStyle(
-                            fontSize: 12, color: context.sirati.textSecondary),
-                      ),
-                    ),
-                    secondChild: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text(
-                          english
-                              ? 'Paste the posting to score your CV against the actual role, not a generic keyword list.'
-                              : 'الصق نص الإعلان لتحصل على تقييم مقارنة بالوظيفة الفعلية، لا بقائمة كلمات عامة.',
-                          textAlign: TextAlign.start,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: context.sirati.textSecondary),
-                        ),
-                        const SizedBox(height: 10),
-                        AppTextFormField(
-                          controller: _jobDescriptionController,
-                          textAlign: TextAlign.start,
-                          maxLines: 5,
-                          keyboardType: TextInputType.multiline,
-                          textInputAction: TextInputAction.newline,
-                          hintText: english
-                              ? 'Paste the full job posting here...'
-                              : 'الصق نص الإعلان الكامل هنا...',
-                          validator: (value) {
-                            if (value != null && value.trim().length > 4000) {
-                              return english
-                                  ? 'Job description must be 4000 characters or fewer.'
-                                  : 'يجب ألا يزيد وصف الوظيفة عن 4000 حرف.';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            AppCard(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+                  AnalysisSectionTitle(
                     english ? 'Upload resume file' : 'رفع ملف السيرة الذاتية',
-                    textAlign: TextAlign.start,
-                    style: AppTextStyles.titleSm(context.sirati),
                   ),
                   const SizedBox(height: 12),
-                  if (_uploadedFile == null)
-                    GestureDetector(
-                      onTap: _pickFile,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 28),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: context.sirati.primaryMid,
-                              width: 1.5,
-                              style: BorderStyle.solid),
-                          borderRadius: BorderRadius.circular(14),
-                          color:
-                              context.sirati.primaryLight.withValues(alpha: .5),
-                        ),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                  color: context.sirati.primaryLight,
-                                  shape: BoxShape.circle),
-                              child: Icon(Icons.cloud_upload_outlined,
-                                  size: 28, color: context.sirati.primary),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              english
-                                  ? 'Tap to upload PDF or TXT'
-                                  : 'اضغط لرفع ملف PDF أو TXT',
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: context.sirati.primary),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              english
-                                  ? 'Maximum size 5 MB'
-                                  : 'الحد الأقصى 5 ميجابايت',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: context.sirati.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
+                  if (file == null)
+                    UploadDropZone(onTap: () => unawaited(_pickFile()))
                   else
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: context.sirati.tealLight,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: context.sirati.teal.withValues(alpha: .4)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.insert_drive_file_outlined,
-                              color: context.sirati.tealDark, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              BidiText.isolateLtr(_uploadedFile!.name),
-                              textAlign: TextAlign.start,
-                              textDirection: TextDirection.ltr,
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: context.sirati.tealDark),
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.close,
-                                size: 18, color: context.sirati.red),
-                            onPressed: _clearFile,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ],
-                      ),
+                    SelectedFileTile(
+                      fileName: file.name,
+                      onRemove: () => setState(() => _uploadedFile = null),
                     ),
                 ],
               ),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: Divider(color: context.sirati.border)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    decoration: BoxDecoration(
-                        color: context.sirati.background,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: context.sirati.border)),
-                    child: Text(
-                      english ? 'OR' : 'أو',
-                      style: TextStyle(
-                          fontSize: 12, color: context.sirati.textSecondary),
-                    ),
-                  ),
-                ),
-                Expanded(child: Divider(color: context.sirati.border)),
-              ],
-            ),
+            const OrDivider(),
             const SizedBox(height: 12),
             AppCard(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AnalysisSectionTitle(
                     english ? 'Paste resume text' : 'لصق نص السيرة الذاتية',
-                    textAlign: TextAlign.start,
-                    style: AppTextStyles.titleSm(context.sirati),
                   ),
                   const SizedBox(height: 10),
                   AppTextFormField(
                     controller: _resumeTextController,
-                    autovalidateMode: _submitted
-                        ? AutovalidateMode.onUserInteraction
-                        : AutovalidateMode.disabled,
+                    autovalidateMode: _autovalidate,
                     textAlign: TextAlign.start,
-                    // Real resumes run 400-1000 words; a fixed 8-line viewport
-                    // with internal scrolling is where users bail on the paste
-                    // path (SIRATI-93). Start at a comfortable 12 lines and
-                    // let the field grow to match the content.
+                    // Real resumes run 400-1000 words; start at 12 lines and
+                    // grow with the content (SIRATI-93).
                     minLines: 12,
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
@@ -562,7 +425,7 @@ class _CvAnalysisScreenState extends State<CvAnalysisScreen>
               loadingLabel: english ? 'Analyzing...' : 'جارٍ التحليل...',
               isLoading: _isLoading,
               icon: Icons.analytics_outlined,
-              onPressed: _submit,
+              onPressed: () => unawaited(_submit()),
             ),
           ],
         ),
