@@ -13,11 +13,53 @@ import 'package:sirati/core/storage/preference_store.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
 
+/// Reads and deletes this device's FCM registration token.
+class FcmTokenSource {
+  const FcmTokenSource();
+
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
+
+  Future<String?> getToken() async {
+    if (!kIsWeb && Platform.isIOS) {
+      // On iOS, getToken() throws until the APNs device token arrives.
+      String? apnsToken = await _messaging.getAPNSToken();
+      if (apnsToken == null) {
+        for (var i = 0; i < 6; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+          apnsToken = await _messaging.getAPNSToken();
+          if (apnsToken != null) break;
+        }
+      }
+    }
+    return _messaging.getToken();
+  }
+
+  /// Invalidates the current token; FCM issues a new one on next request.
+  Future<void> deleteToken() => _messaging.deleteToken();
+}
+
 /// Handles all push notification logic: permissions, token management,
 /// foreground display, tap handling, and backend registration.
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
+
+  FcmTokenSource _tokens = const FcmTokenSource();
+  ApiClient Function() _clientFactory =
+      () => ApiClient(tokenProvider: () => const AuthTokenStore().readToken());
+
+  /// Test seam for the singleton: token source and backend client.
+  @visibleForTesting
+  void configureForTest({
+    FcmTokenSource? tokens,
+    ApiClient Function()? clientFactory,
+  }) {
+    if (tokens != null) _tokens = tokens;
+    if (clientFactory != null) _clientFactory = clientFactory;
+    _registeringToken = false;
+    _lastRegisteredToken = null;
+    _lastRegisterAttemptAt = null;
+  }
 
   bool _registeringToken = false;
   String? _lastRegisteredToken;
@@ -147,19 +189,7 @@ class NotificationService {
   /// Get the current FCM registration token.
   Future<String?> getToken() async {
     try {
-      if (!kIsWeb && Platform.isIOS) {
-        // On iOS, FCM getToken() throws if APNs device token has not yet been
-        // received from Apple. Retry a few times to allow APNs callback to settle.
-        String? apnsToken = await _messaging.getAPNSToken();
-        if (apnsToken == null) {
-          for (var i = 0; i < 6; i++) {
-            await Future.delayed(const Duration(milliseconds: 500));
-            apnsToken = await _messaging.getAPNSToken();
-            if (apnsToken != null) break;
-          }
-        }
-      }
-      return await _messaging.getToken();
+      return await _tokens.getToken();
     } catch (e) {
       debugPrint('[FCM] Failed to get token: $e');
       return null;
@@ -193,9 +223,7 @@ class NotificationService {
     _lastRegisterAttemptAt = now;
 
     try {
-      final client = ApiClient(
-        tokenProvider: () => const AuthTokenStore().readToken(),
-      );
+      final client = _clientFactory();
       await client.postJson('/fcm-tokens', {
         'token': token,
         'device_id': deviceId,
@@ -223,9 +251,7 @@ class NotificationService {
     if (token == null) return;
 
     try {
-      final client = ApiClient(
-        tokenProvider: () => const AuthTokenStore().readToken(),
-      );
+      final client = _clientFactory();
       await client.deleteJson('/fcm-tokens', body: {
         'token': token,
         if (optOut) 'opt_out': true,
@@ -233,6 +259,23 @@ class NotificationService {
       debugPrint('[FCM] Token unregistered from backend (opt_out=$optOut)');
     } catch (e) {
       debugPrint('[FCM] Token unregister failed: $e');
+    }
+  }
+
+  /// Detaches this device from the signed-out account.
+  ///
+  /// Deleting the FCM token makes any server row still pointing at it
+  /// undeliverable — the backstop for when the unregister call could not be
+  /// authenticated (e.g. after a 401). Forgetting the last registration
+  /// makes the next account register immediately instead of being skipped
+  /// by the 5-minute de-duplication.
+  Future<void> forgetDevice() async {
+    _lastRegisteredToken = null;
+    _lastRegisterAttemptAt = null;
+    try {
+      await _tokens.deleteToken();
+    } catch (e) {
+      debugPrint('[FCM] Token delete skipped: $e');
     }
   }
 

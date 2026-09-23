@@ -55,6 +55,10 @@ class AuthSessionGuard {
       // Drop offline content so the next account never sees prior user data.
       await MobileContentService.clearAllCaches();
       await wipeUserScopedStorage();
+      // The unregister above ran with a revoked bearer and usually 401s;
+      // rotating the device token is what actually stops this account's
+      // pushes reaching the device.
+      await NotificationService.instance.forgetDevice();
       await AnalyticsService.clearUser();
 
       final nav = _navigatorKey?.currentState;

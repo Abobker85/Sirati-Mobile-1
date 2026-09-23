@@ -133,16 +133,18 @@ class AuthApiService {
 
   Future<void> logout() async {
     final token = await _tokenStore.readToken();
+    // Read the device token before the local wipe rotates it, so the server
+    // cleanup removes the row that actually belongs to this account.
+    final fcmToken = await NotificationService.instance.getToken();
     await _clearLocalSession();
 
     if (token == null || token.isEmpty) return;
-    unawaited(_remoteLogoutCleanup(token));
+    unawaited(_remoteLogoutCleanup(token, fcmToken));
   }
 
-  Future<void> _remoteLogoutCleanup(String token) async {
+  Future<void> _remoteLogoutCleanup(String token, String? fcmToken) async {
     final remote = ApiClient(tokenProvider: () async => token);
     try {
-      final fcmToken = await NotificationService.instance.getToken();
       if (fcmToken != null && fcmToken.isNotEmpty) {
         await remote.deleteJson('/fcm-tokens', body: {'token': fcmToken});
       }
@@ -203,6 +205,8 @@ class AuthApiService {
     // CV drafts and per-account preferences must not survive into the next
     // account on this device.
     await wipeUserScopedStorage();
+    // Detach push from this account (rotates the FCM token).
+    await NotificationService.instance.forgetDevice();
     await AnalyticsService.clearUser();
   }
 
