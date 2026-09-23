@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
 import 'package:sirati/features/cv_builder/domain/cv_markdown.dart';
@@ -188,6 +189,27 @@ void main() {
         matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
       ));
       expect(share.onPressed, isNull);
+    });
+
+    testWidgets('an edited CV replaces the one on screen', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await tester.pumpWidget(
+        app(_cv(markdown: '## Summary\n- Old line'),
+            AppTheme.lightFor(arabic: false)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Old line'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Edit CV'));
+      await tester.pumpAndSettle();
+      // The editor saves and hands the updated CV back.
+      tester
+          .state<NavigatorState>(find.byType(Navigator))
+          .pop(_cv(markdown: '## Summary\n- New line'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('New line'), findsOneWidget);
+      expect(find.text('Old line'), findsNothing);
     });
   });
 }

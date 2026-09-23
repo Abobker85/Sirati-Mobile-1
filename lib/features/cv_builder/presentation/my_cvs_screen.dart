@@ -9,10 +9,12 @@ import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
 import 'package:sirati/features/cv_builder/domain/cv_list.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
+import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_template_picker.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_template.dart';
+import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -50,10 +52,18 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     try {
       final cv = await ref.read(cvApiServiceProvider).getGeneratedCv(id);
       if (!mounted) return;
-      await Navigator.of(context).push(
+      final updated = await Navigator.of(context).push<GeneratedCv>(
         MaterialPageRoute(builder: (_) => CvGeneratorScreen(initialCv: cv)),
       );
-      if (mounted) unawaited(_refresh());
+      if (!mounted) return;
+      unawaited(_refresh());
+      if (updated != null) {
+        unawaited(Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => GeneratedCvScreen(generatedCv: updated),
+          ),
+        ));
+      }
     } catch (error) {
       _reportError(
         error,

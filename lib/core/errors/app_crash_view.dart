@@ -7,6 +7,10 @@ import 'package:sirati/core/utils/app_locale.dart';
 /// Recoverable UI for uncaught Flutter errors (SIRATI-16).
 ///
 /// Lives in `core/` so it must not import `shared/` or `features/`.
+const _crashBackground =
+    Color(0xFFF4F7F6); // ignore: hardcoded_color -- no_theme
+const _crashAccent = Color(0xFFD8403A); // ignore: hardcoded_color -- no_theme
+
 class AppCrashView extends StatelessWidget {
   const AppCrashView({super.key});
 
@@ -18,7 +22,7 @@ class AppCrashView extends StatelessWidget {
       child: Material(
         // Shown when the app has crashed, possibly before any theme exists;
         // core may not import the shared palette.
-        color: const Color(0xFFF4F7F6), // ignore: hardcoded_color -- renders_without_theme
+        color: _crashBackground,
         child: SafeArea(
           child: _CrashBody(
             english: english,
@@ -79,7 +83,7 @@ class _CrashBody extends StatelessWidget {
             const Icon(
               Icons.error_outline_rounded,
               size: 48,
-              color: Color(0xFFD8403A), // ignore: hardcoded_color -- renders_without_theme
+              color: _crashAccent,
             ),
             const SizedBox(height: 16),
             Text(

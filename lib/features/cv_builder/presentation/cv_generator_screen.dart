@@ -429,6 +429,12 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         if (!_isEditMode) {
           unawaited(InAppReviewService.maybeRequestAfterCvGenerated());
         }
+        if (_isEditMode) {
+          // Hand the saved CV back: the screen that opened the editor shows
+          // it, instead of stacking a second copy above a stale one.
+          Navigator.of(context).pop<GeneratedCv>(cv);
+          return;
+        }
         unawaited(Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => GeneratedCvScreen(generatedCv: cv)),
         ));

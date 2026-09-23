@@ -18,11 +18,16 @@ enum AppFlavor {
         AppFlavor.prod => 'PROD',
       };
 
+  // Non-prod build markers; never themed, never shown in prod.
+  static const _dev = Color(0xFFF9A825); // ignore: hardcoded_color -- marker
+  static const _stg = Color(0xFF1565C0); // ignore: hardcoded_color -- marker
+  static const _none = Color(0x00000000); // ignore: hardcoded_color -- marker
+
   /// Ribbon color for the on-device [FlavorBanner]. Prod never renders it.
   Color get bannerColor => switch (this) {
-        AppFlavor.dev => const Color(0xFFF9A825), // ignore: hardcoded_color -- non_prod_build_marker
-        AppFlavor.staging => const Color(0xFF1565C0), // ignore: hardcoded_color -- non_prod_build_marker
-        AppFlavor.prod => const Color(0x00000000), // ignore: hardcoded_color -- never_rendered_in_prod
+        AppFlavor.dev => _dev,
+        AppFlavor.staging => _stg,
+        AppFlavor.prod => _none,
       };
 
   static AppFlavor? _current;

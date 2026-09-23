@@ -16,6 +16,9 @@ enum AppSnackBarVariant { error, success, info, warning }
 ///
 /// Use the named helpers ([error], [success], [info], [warning]) or the
 /// [fromException] shortcut which picks a variant/icon from an [ApiException].
+
+const _clear = Colors.transparent; // ignore: hardcoded_color -- shell
+
 class AppSnackBar {
   AppSnackBar._();
 
@@ -34,7 +37,8 @@ class AppSnackBar {
     return ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent, // ignore: hardcoded_color -- content_paints_its_own_surface
+        // The content paints its own surface.
+        backgroundColor: _clear,
         elevation: 0,
         padding: EdgeInsets.zero,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),

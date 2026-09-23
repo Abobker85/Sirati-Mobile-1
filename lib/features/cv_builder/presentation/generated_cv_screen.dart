@@ -46,18 +46,29 @@ class GeneratedCvScreen extends ConsumerStatefulWidget {
 }
 
 class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
-  late List<CvBlock> _blocks =
-      parseCvMarkdown(widget.generatedCv.generatedMarkdown);
+  /// The CV on screen; replaced when the user edits it.
+  late GeneratedCv _cv = widget.generatedCv;
+  late List<CvBlock> _blocks = parseCvMarkdown(_cv.generatedMarkdown);
   bool _isDownloading = false;
-
-  GeneratedCv get _cv => widget.generatedCv;
 
   @override
   void didUpdateWidget(covariant GeneratedCvScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.generatedCv.generatedMarkdown != _cv.generatedMarkdown) {
-      _blocks = parseCvMarkdown(_cv.generatedMarkdown);
+    if (!identical(oldWidget.generatedCv, widget.generatedCv)) {
+      _show(widget.generatedCv);
     }
+  }
+
+  void _show(GeneratedCv cv) {
+    _cv = cv;
+    _blocks = parseCvMarkdown(cv.generatedMarkdown);
+  }
+
+  Future<void> _edit() async {
+    final updated = await Navigator.of(context).push<GeneratedCv>(
+      MaterialPageRoute(builder: (_) => CvGeneratorScreen(initialCv: _cv)),
+    );
+    if (updated != null && mounted) setState(() => _show(updated));
   }
 
   Future<void> _downloadPdf() async {
@@ -172,11 +183,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: english ? 'Edit CV' : 'تعديل السيرة',
-            onPressed: () => unawaited(Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => CvGeneratorScreen(initialCv: _cv),
-              ),
-            )),
+            onPressed: () => unawaited(_edit()),
           ),
         ],
       ),
