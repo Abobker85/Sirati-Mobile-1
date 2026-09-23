@@ -1,3 +1,7 @@
+import 'package:sirati/core/utils/latin_digits.dart';
+
+export 'package:sirati/core/utils/latin_digits.dart' show latinDigits;
+
 /// Why a registration field was rejected. Localised in the presentation layer.
 enum FieldError { required, tooLong, tooShort, invalidEmail, invalidPhone }
 
@@ -58,23 +62,6 @@ abstract final class RegistrationRules {
     if (text.isEmpty) return FieldError.required;
     return text.length > max ? FieldError.tooLong : null;
   }
-}
-
-/// Maps Arabic-Indic (٠–٩) and Extended Arabic-Indic (۰–۹) digits to
-/// ASCII so numbers typed on Arabic, Persian, or Urdu keyboards validate and
-/// are stored in one form.
-String latinDigits(String input) {
-  final out = StringBuffer();
-  for (final rune in input.runes) {
-    if (rune >= 0x0660 && rune <= 0x0669) {
-      out.writeCharCode(0x30 + rune - 0x0660);
-    } else if (rune >= 0x06F0 && rune <= 0x06F9) {
-      out.writeCharCode(0x30 + rune - 0x06F0);
-    } else {
-      out.writeCharCode(rune);
-    }
-  }
-  return out.toString();
 }
 
 /// The values sent to the register endpoint, already normalised.

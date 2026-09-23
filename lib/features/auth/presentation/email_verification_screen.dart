@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/latin_digits.dart';
 import 'package:sirati/core/utils/root_navigation.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
@@ -260,9 +261,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                           onFieldSubmitted: (_) => _verify(),
                           maxLength: 6,
                           hintText: '••••••',
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(6),
+                          autofillHints: const [AutofillHints.oneTimeCode],
+                          // Accepts codes typed on Arabic keyboards (٠-٩), unlike digitsOnly.
+                          inputFormatters: const [
+                            LatinDigitsInputFormatter(maxLength: 6)
                           ],
                           prefixIcon: const Icon(Icons.pin_outlined),
                           validator: (value) {

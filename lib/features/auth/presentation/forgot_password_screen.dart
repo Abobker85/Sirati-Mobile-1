@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/core/utils/latin_digits.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -27,6 +28,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _codeController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _confirmKey = GlobalKey<FormFieldState<String>>();
   final _authService = AuthApiService();
 
   bool _isLoading = false;
@@ -66,6 +68,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _sendCode({bool isResend = false}) async {
+    // One request at a time: keyboard Done, the button, Resend and the
+    // snackbar Retry can all fire while one is running.
+    if (_isLoading || _isResending) return;
     final english = AppLocale.isEnglish(context);
     setState(() {
       _submitted = true;
@@ -136,6 +141,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _resetPassword() async {
+    if (_isLoading) return;
     final english = AppLocale.isEnglish(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
@@ -230,7 +236,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 textInputAction:
                     _codeSent ? TextInputAction.next : TextInputAction.done,
                 onFieldSubmitted: (_) {
-                  if (!_codeSent) _sendCode();
+                  if (!_codeSent) unawaited(_sendCode());
                 },
                 hintText: 'name@example.com',
                 prefixIcon: const Icon(Icons.email_outlined),
@@ -279,9 +285,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   textInputAction: TextInputAction.next,
                   maxLength: 6,
                   hintText: '••••••',
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(6),
+                  autofillHints: const [AutofillHints.oneTimeCode],
+                  // Accepts codes typed on Arabic keyboards (٠-٩), unlike digitsOnly.
+                  inputFormatters: const [
+                    LatinDigitsInputFormatter(maxLength: 6)
                   ],
                   prefixIcon: const Icon(Icons.pin_outlined),
                   validator: (value) {
@@ -314,13 +321,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   hintText: '••••••••',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
+                    tooltip: _obscurePassword
+                        ? (english ? 'Show password' : 'إظهار كلمة المرور')
+                        : (english ? 'Hide password' : 'إخفاء كلمة المرور'),
                     icon: Icon(_obscurePassword
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) {
+                    setState(() {});
+                    if (_submitted) _confirmKey.currentState?.validate();
+                  },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return english
@@ -349,6 +362,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 6),
                 AppTextFormField(
+                  key: _confirmKey,
                   controller: _confirmController,
                   autovalidateMode: _submitted
                       ? AutovalidateMode.onUserInteraction
@@ -357,10 +371,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   textDirection: TextDirection.ltr,
                   textAlign: TextAlign.start,
                   textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _resetPassword(),
+                  onFieldSubmitted: (_) => unawaited(_resetPassword()),
                   hintText: '••••••••',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
+                    tooltip: _obscureConfirm
+                        ? (english ? 'Show password' : 'إظهار كلمة المرور')
+                        : (english ? 'Hide password' : 'إخفاء كلمة المرور'),
                     icon: Icon(_obscureConfirm
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined),
