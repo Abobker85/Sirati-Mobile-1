@@ -62,18 +62,6 @@ void main() {
   /// one to a debt file fails, and clearing a debt file fails until its entry is
   /// deleted here. Do not add new entries.
   const legacyColorDebt = <String, int>{
-    'lib/shared/widgets/form_fields.dart': 9,
-    'lib/shared/widgets/app_snack_bar.dart': 6,
-    'lib/core/flavors/app_flavor.dart': 3,
-    'lib/core/errors/app_crash_view.dart': 2,
-    'lib/shared/widgets/screen_header.dart': 2,
-    'lib/shared/widgets/loading/ai_progress_overlay.dart': 2,
-    'lib/core/flavors/flavor_banner.dart': 1,
-    'lib/features/ats_scanner/presentation/cv_analysis_loader_screen.dart': 1,
-    'lib/features/cv_builder/presentation/generated_cv_loader_screen.dart': 1,
-    'lib/shared/widgets/app_list_tile.dart': 1,
-    'lib/shared/widgets/empty_state.dart': 1,
-    'lib/shared/widgets/success_beat.dart': 1,
   };
 
   test(

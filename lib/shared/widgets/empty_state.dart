@@ -78,7 +78,7 @@ class AppEmptyState extends StatelessWidget {
                 label: Text(actionLabel!),
                 style: FilledButton.styleFrom(
                   backgroundColor: context.sirati.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: context.sirati.onPrimary,
                   minimumSize: const Size(0, AppTouchTarget.min),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

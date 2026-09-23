@@ -120,7 +120,7 @@ class AppListTile extends StatelessWidget {
       child: ExcludeSemantics(
         child: PressScale(
           child: Material(
-            color: Colors.transparent,
+            type: MaterialType.transparency,
             child: InkWell(
               onTap: onTap,
               borderRadius: BorderRadius.circular(16),

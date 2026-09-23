@@ -200,13 +200,14 @@ class NotificationBellButton extends StatelessWidget {
                         const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: context.sirati.red,
+                      color: context.sirati.error,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       unreadCount > 9 ? '9+' : '$unreadCount',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      // Gated pair: onError on error.
+                      style: TextStyle(
+                        color: context.sirati.onError,
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
                         height: 1.1,
@@ -303,7 +304,7 @@ class ProfileAvatar extends StatelessWidget {
         label: actionLabel,
         child: PressScale(
           child: Material(
-            color: Colors.transparent,
+            type: MaterialType.transparency,
             shape: const CircleBorder(),
             child: InkWell(
               onTap: onTap,

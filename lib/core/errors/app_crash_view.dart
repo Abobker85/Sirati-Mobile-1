@@ -16,7 +16,9 @@ class AppCrashView extends StatelessWidget {
     return Directionality(
       textDirection: english ? TextDirection.ltr : TextDirection.rtl,
       child: Material(
-        color: const Color(0xFFF4F7F6),
+        // Shown when the app has crashed, possibly before any theme exists;
+        // core may not import the shared palette.
+        color: const Color(0xFFF4F7F6), // ignore: hardcoded_color -- renders_without_theme
         child: SafeArea(
           child: _CrashBody(
             english: english,
@@ -77,7 +79,7 @@ class _CrashBody extends StatelessWidget {
             const Icon(
               Icons.error_outline_rounded,
               size: 48,
-              color: Color(0xFFD8403A),
+              color: Color(0xFFD8403A), // ignore: hardcoded_color -- renders_without_theme
             ),
             const SizedBox(height: 16),
             Text(

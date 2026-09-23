@@ -129,7 +129,8 @@ class AiProgressOverlay {
         useRootNavigator: true,
         barrierDismissible: false,
         barrierLabel: english ? 'AI progress' : 'تقدم الذكاء الاصطناعي',
-        barrierColor: Colors.black.withValues(alpha: 0.55),
+        barrierColor:
+            Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55),
         transitionDuration: reduce ? Duration.zero : MotionDurations.medium,
         pageBuilder: (dialogContext, animation, secondaryAnimation) {
           handle._dialogContext = dialogContext;
@@ -609,7 +610,7 @@ class _DoneMark extends StatelessWidget {
           ),
         ],
       ),
-      child: const Icon(Icons.check_rounded, color: Colors.white, size: 34),
+      child: Icon(Icons.check_rounded, color: c.onPrimary, size: 34),
     );
 
     if (reduce) return mark;

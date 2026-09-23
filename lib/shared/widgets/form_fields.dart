@@ -11,56 +11,20 @@ class AppFormStyles {
 
   static const radius = 14.0;
 
-  /// Light defaults for static decoration helpers. Prefer theme-aware
-  /// [inputThemeFor] / [context.sirati] in widgets.
-  static final border = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(radius),
-    borderSide: const BorderSide(color: AppColors.border, width: 1),
-  );
-
-  static final focusedBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(radius),
-    borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
-  );
-
-  static final errorBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(radius),
-    borderSide: BorderSide(
-      color: AppColors.red.withValues(alpha: .55),
-      width: 1.4,
-    ),
-  );
-
-  static final focusedErrorBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(radius),
-    borderSide: const BorderSide(color: AppColors.red, width: 1.8),
-  );
-
-  static final successBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(radius),
-    borderSide: BorderSide(
-      color: AppColors.success.withValues(alpha: .55),
-      width: 1.4,
-    ),
-  );
-
-  static final focusedSuccessBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(radius),
-    borderSide: const BorderSide(color: AppColors.success, width: 1.8),
-  );
-
-  static TextStyle get errorTextStyle => const TextStyle(
+  /// Inline field error text. `error` on surface/background is a gated AA
+  /// pair in both themes (the old static style was light-only).
+  static TextStyle errorTextStyle(SiratiColors c) => TextStyle(
         fontSize: 12.5,
         height: 1.35,
         fontWeight: FontWeight.w600,
-        color: AppColors.red,
+        color: c.error,
       );
 
-  static TextStyle get successTextStyle => const TextStyle(
+  static TextStyle successTextStyle(SiratiColors c) => TextStyle(
         fontSize: 12.5,
         height: 1.35,
         fontWeight: FontWeight.w600,
-        color: AppColors.success,
+        color: c.onSuccessContainer,
       );
 
   static InputDecorationTheme inputThemeFor(SiratiColors c) {
@@ -159,7 +123,7 @@ class AppFieldError extends StatelessWidget {
             child: Text(
               message,
               textAlign: TextAlign.start,
-              style: AppFormStyles.errorTextStyle,
+              style: AppFormStyles.errorTextStyle(context.sirati),
             ),
           ),
         ],
@@ -208,7 +172,7 @@ class AppFormErrorBanner extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: AppSpacing.md),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: context.sirati.redLight.withValues(alpha: .75),
+          color: context.sirati.errorLight,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: context.sirati.red.withValues(alpha: .22)),
         ),
@@ -221,7 +185,11 @@ class AppFormErrorBanner extends StatelessWidget {
               child: Text(
                 message,
                 textAlign: TextAlign.start,
-                style: AppFormStyles.errorTextStyle.copyWith(height: 1.4),
+                // Banner sits on errorLight: use the gated container pair.
+                style: AppFormStyles.errorTextStyle(context.sirati).copyWith(
+                  height: 1.4,
+                  color: context.sirati.onErrorContainer,
+                ),
               ),
             ),
             if (onDismiss != null)
@@ -629,7 +597,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
               : MotionDurations.fast,
           curve: MotionCurves.state,
           decoration: BoxDecoration(
-            color: fill ?? Colors.transparent,
+            color: fill,
             borderRadius: BorderRadius.circular(AppFormStyles.radius),
             border: Border.all(
               color: borderColor,
@@ -739,7 +707,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
                       child: Text(
                         widget.successMessage!,
                         textAlign: TextAlign.start,
-                        style: AppFormStyles.successTextStyle,
+                        style: AppFormStyles.successTextStyle(context.sirati),
                       ),
                     )
                   : const SizedBox(width: double.infinity),

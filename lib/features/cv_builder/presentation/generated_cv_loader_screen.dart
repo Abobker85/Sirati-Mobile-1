@@ -59,7 +59,8 @@ class _GeneratedCvLoaderScreenState extends State<GeneratedCvLoaderScreen> {
         return Scaffold(
           backgroundColor: context.sirati.background,
           appBar: AppBar(
-            backgroundColor: Colors.transparent,
+            // Same as the page: a transparent bar over `background`.
+            backgroundColor: context.sirati.background,
             elevation: 0,
           ),
           body: const Center(child: BrandedLoader()),

@@ -34,7 +34,7 @@ class AppSnackBar {
     return ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.transparent, // ignore: hardcoded_color -- content_paints_its_own_surface
         elevation: 0,
         padding: EdgeInsets.zero,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -113,8 +113,9 @@ class AppSnackBar {
         return _SnackBarScheme(
           background: c.errorLight,
           border: c.error,
-          iconBackground: c.error,
-          iconColor: Colors.white,
+          // Gated pair, inverted: on-container square, container glyph.
+          iconBackground: c.onErrorContainer,
+          iconColor: c.errorLight,
           textColor: c.textPrimary,
           accent: c.error,
         );
@@ -122,8 +123,9 @@ class AppSnackBar {
         return _SnackBarScheme(
           background: c.successLight,
           border: c.success,
-          iconBackground: c.success,
-          iconColor: Colors.white,
+          // Gated pair, inverted: on-container square, container glyph.
+          iconBackground: c.onSuccessContainer,
+          iconColor: c.successLight,
           textColor: c.textPrimary,
           accent: c.success,
         );
@@ -131,8 +133,9 @@ class AppSnackBar {
         return _SnackBarScheme(
           background: c.warningLight,
           border: c.warning,
-          iconBackground: c.warning,
-          iconColor: Colors.white,
+          // Gated pair, inverted: on-container square, container glyph.
+          iconBackground: c.onWarningContainer,
+          iconColor: c.warningLight,
           textColor: c.textPrimary,
           accent: c.warning,
         );
@@ -140,8 +143,9 @@ class AppSnackBar {
         return _SnackBarScheme(
           background: c.infoLight,
           border: c.info,
-          iconBackground: c.info,
-          iconColor: Colors.white,
+          // Gated pair, inverted: on-container square, container glyph.
+          iconBackground: c.onInfoContainer,
+          iconColor: c.infoLight,
           textColor: c.textPrimary,
           accent: c.info,
         );
@@ -221,7 +225,7 @@ class _AppSnackBarContent extends StatelessWidget {
         actionLabel != null && actionLabel!.isNotEmpty && onAction != null;
 
     return Material(
-      color: Colors.transparent,
+      type: MaterialType.transparency,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(

@@ -20,9 +20,9 @@ enum AppFlavor {
 
   /// Ribbon color for the on-device [FlavorBanner]. Prod never renders it.
   Color get bannerColor => switch (this) {
-        AppFlavor.dev => const Color(0xFFF9A825),
-        AppFlavor.staging => const Color(0xFF1565C0),
-        AppFlavor.prod => const Color(0x00000000),
+        AppFlavor.dev => const Color(0xFFF9A825), // ignore: hardcoded_color -- non_prod_build_marker
+        AppFlavor.staging => const Color(0xFF1565C0), // ignore: hardcoded_color -- non_prod_build_marker
+        AppFlavor.prod => const Color(0x00000000), // ignore: hardcoded_color -- never_rendered_in_prod
       };
 
   static AppFlavor? _current;

@@ -20,7 +20,7 @@ class FlavorBanner extends StatelessWidget {
         fontWeight: FontWeight.w800,
         fontSize: 10,
         letterSpacing: 0.6,
-        color: Colors.white,
+        color: Colors.white, // ignore: hardcoded_color -- non_prod_build_marker
       ),
       child: child,
     );

@@ -34,7 +34,7 @@ class SuccessBeat {
       context: context,
       barrierDismissible: false,
       barrierLabel: 'Success',
-      barrierColor: Colors.black.withValues(alpha: 0.18),
+      barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.18),
       transitionDuration: Duration.zero,
       pageBuilder: (context, animation, secondaryAnimation) {
         return const _SuccessBeatOverlay();
