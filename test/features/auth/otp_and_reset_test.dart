@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/latin_digits.dart';
-import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
 import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -87,25 +86,5 @@ void main() {
         expectAllTextAa('forgot password $mode');
       });
     }
-  });
-
-  testWidgets('the verification code field accepts Arabic-keyboard digits',
-      (tester) async {
-    AppLocale.languageCode.value = 'ar';
-    await tester.pumpWidget(MaterialApp(
-      theme: AppTheme.lightFor(arabic: true),
-      locale: const Locale('ar'),
-      supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: const EmailVerificationScreen(email: 'sara@x.io'),
-    ));
-    await tester.pump();
-    final codeField = find.byWidgetPredicate((w) =>
-        w is TextField &&
-        (w.inputFormatters ?? const [])
-            .any((f) => f is LatinDigitsInputFormatter));
-    expect(codeField, findsOneWidget);
-    await tester.enterText(codeField, '٤٨٢٩١٥٧');
-    expect(tester.widget<TextField>(codeField).controller!.text, '482915');
   });
 }

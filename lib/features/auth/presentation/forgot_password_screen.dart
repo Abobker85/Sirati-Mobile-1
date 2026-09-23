@@ -409,6 +409,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Center(
                   child: TextButton(
+                    // The countdown is information, not a dead control: keep it readable
+                    // while the button is disabled.
+                    style: TextButton.styleFrom(
+                      disabledForegroundColor: context.sirati.textSecondary,
+                    ),
                     onPressed: (_resendCooldown > 0 || _isResending)
                         ? null
                         : () => _sendCode(isResend: true),
