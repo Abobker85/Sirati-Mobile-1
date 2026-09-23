@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/shared/services/mobile_content_service.dart';
+import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 
-class EducationDetailScreen extends StatefulWidget {
+class EducationDetailScreen extends ConsumerStatefulWidget {
   final int? id;
   final Map<String, dynamic> fallback;
 
   const EducationDetailScreen({super.key, this.id, required this.fallback});
 
   @override
-  State<EducationDetailScreen> createState() => _EducationDetailScreenState();
+  ConsumerState<EducationDetailScreen> createState() =>
+      _EducationDetailScreenState();
 }
 
-class _EducationDetailScreenState extends State<EducationDetailScreen> {
+class _EducationDetailScreenState extends ConsumerState<EducationDetailScreen> {
   Future<Map<String, dynamic>>? _future;
   bool? _loadedEnglish;
 
@@ -28,7 +30,7 @@ class _EducationDetailScreenState extends State<EducationDetailScreen> {
     final id = widget.id;
     _future = id == null
         ? Future.value(widget.fallback)
-        : MobileContentService().educationContent(id, english);
+        : ref.read(mobileContentServiceProvider).educationContent(id, english);
   }
 
   void _retry(bool english) {

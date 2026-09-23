@@ -27,7 +27,7 @@ import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/services/in_app_review_service.dart';
-import 'package:sirati/shared/services/mobile_content_service.dart';
+import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
 import 'package:sirati/shared/widgets/ai_cv_field.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -201,7 +201,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
   Future<void> _loadJobTitles() async {
     try {
-      final titles = await MobileContentService().jobTitles();
+      final titles = await ref.read(mobileContentServiceProvider).jobTitles();
       if (mounted) setState(() => _jobTitles = titles);
     } catch (_) {
       // Chip suggestions are optional; the free-text field still works.

@@ -3,7 +3,7 @@ import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
 import 'package:sirati/core/storage/preference_store.dart';
 import 'package:sirati/shared/models/auth_session.dart';
-import 'package:sirati/shared/services/auth_api_service.dart';
+import 'package:sirati/shared/services/auth_api_service_provider.dart';
 
 /// Where the app should go after the splash.
 sealed class LaunchDestination {
@@ -96,7 +96,7 @@ class SessionBootstrap {
 final sessionBootstrapProvider = Provider<SessionBootstrap>((ref) {
   const tokens = AuthTokenStore();
   const prefs = PreferenceStore();
-  final auth = AuthApiService();
+  final auth = ref.read(authApiServiceProvider);
   return SessionBootstrap(
     readToken: tokens.readToken,
     fetchUser: auth.me,

@@ -2,10 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/latin_digits.dart';
-import 'package:sirati/shared/services/auth_api_service.dart';
+import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
@@ -15,21 +16,21 @@ import 'package:sirati/shared/widgets/password_strength_meter.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
 /// Two-step forgot password: request OTP → enter code + new password.
-class ForgotPasswordScreen extends StatefulWidget {
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   final _confirmKey = GlobalKey<FormFieldState<String>>();
-  final _authService = AuthApiService();
 
   bool _isLoading = false;
   bool _isResending = false;
@@ -101,9 +102,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     });
 
     try {
-      final message = await _authService.forgotPassword(
-        email: _emailController.text.trim(),
-      );
+      final message = await ref.read(authApiServiceProvider).forgotPassword(
+            email: _emailController.text.trim(),
+          );
       if (!mounted) return;
       setState(() {
         _codeSent = true;
@@ -151,12 +152,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final message = await _authService.resetPassword(
-        email: _emailController.text.trim(),
-        code: _codeController.text.trim(),
-        password: _passwordController.text,
-        passwordConfirmation: _confirmController.text,
-      );
+      final message = await ref.read(authApiServiceProvider).resetPassword(
+            email: _emailController.text.trim(),
+            code: _codeController.text.trim(),
+            password: _passwordController.text,
+            passwordConfirmation: _confirmController.text,
+          );
       if (!mounted) return;
       unawaited(HapticFeedback.lightImpact());
       AppSnackBar.success(context, message);
