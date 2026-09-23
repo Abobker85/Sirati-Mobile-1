@@ -83,6 +83,10 @@ class AnalyticsService {
 
   static Future<void> logRegisterSuccess() => logEvent('register_success');
 
+  /// Counts demand for an unreleased section (e.g. education).
+  static Future<void> logFeatureInterest({required String feature}) =>
+      logEvent('feature_interest', {'feature': feature});
+
   static Future<void> logWizardStarted({required String mode}) =>
       logEvent('wizard_started', {
         'mode': mode == 'edit' ? 'edit' : 'create',

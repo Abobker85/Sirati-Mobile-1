@@ -16,6 +16,7 @@ class PreferenceStore {
   static const cvDraftKey = 'sirati_cv_draft';
   static const reviewRequestedKey = 'sirati_review_requested';
   static const cvGenerationCountKey = 'sirati_cv_generation_count';
+  static const educationInterestKey = 'sirati_education_interest';
 
   /// Bump when the draft JSON shape changes incompatibly.
   static const cvDraftSchemaVersion = 1;
@@ -36,6 +37,13 @@ class PreferenceStore {
 
   Future<void> saveNotificationsEnabled(bool enabled) =>
       _storage.write(key: notificationsKey, value: enabled ? '1' : '0');
+
+  /// Whether the user asked to hear about the education section's launch.
+  Future<bool> readEducationInterest() async =>
+      (await _storage.read(key: educationInterestKey)) == '1';
+
+  Future<void> saveEducationInterest() =>
+      _storage.write(key: educationInterestKey, value: '1');
 
   /// First-run product tour. Missing key → not completed.
   Future<bool> readOnboardingCompleted() async {

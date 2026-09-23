@@ -1,44 +1,39 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
+import 'package:sirati/features/dashboard/application/education_interest_controller.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
 
-class EducationScreen extends StatefulWidget {
+class EducationScreen extends ConsumerWidget {
   const EducationScreen({super.key});
 
-  @override
-  State<EducationScreen> createState() => _EducationScreenState();
-}
-
-class _EducationScreenState extends State<EducationScreen> {
-  bool _notified = false;
-
-  void _onNotifyMe(bool english) {
-    setState(() => _notified = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          english
-              ? 'Thank you! You will be notified as soon as educational content launches.'
-              : 'شكراً لاهتمامك! سنقوم بإشعارك فور إطلاق المحتوى التعليمي.',
-        ),
-        // Brand teal (was Tailwind #0D9488) — routed through the palette so
-        // dark theme picks up its own version instead of forcing light-mode
-        // teal into a dark surface (SIRATI-101).
-        backgroundColor: context.sirati.primaryDark,
-        behavior: SnackBarBehavior.floating,
-      ),
+  Future<void> _onNotifyMe(BuildContext context, WidgetRef ref) async {
+    final english = AppLocale.isEnglish(context);
+    await ref.read(educationInterestProvider.notifier).register();
+    if (!context.mounted) return;
+    // Honest copy: there is no launch-notification pipeline behind this yet,
+    // so it must not promise one.
+    AppSnackBar.success(
+      context,
+      english
+          ? "Thanks! We've noted your interest. Keep an eye on this tab for the launch."
+          : 'شكراً! سجّلنا اهتمامك. تابع هذا القسم عند الإطلاق.',
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final english = AppLocale.isEnglish(context);
+    final notified = ref.watch(educationInterestProvider).value ?? false;
 
     return SafeArea(
       child: LayoutBuilder(
@@ -89,8 +84,8 @@ class _EducationScreenState extends State<EducationScreen> {
                     order: 0,
                     child: _ComingSoonHero(
                       english: english,
-                      notified: _notified,
-                      onNotify: () => _onNotifyMe(english),
+                      notified: notified,
+                      onNotify: () => unawaited(_onNotifyMe(context, ref)),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -215,9 +210,9 @@ class _ComingSoonHero extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(
+            child: Icon(
               Icons.school_rounded,
-              color: Colors.white,
+              color: context.sirati.onPrimary,
               size: 32,
             ),
           ),
@@ -225,7 +220,7 @@ class _ComingSoonHero extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: context.sirati.primary.withValues(alpha: 0.12),
+              color: context.sirati.primaryLight,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -233,7 +228,7 @@ class _ComingSoonHero extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: context.sirati.primaryDark,
+                color: context.sirati.primaryInk,
                 letterSpacing: 0.5,
               ),
             ),
@@ -263,7 +258,11 @@ class _ComingSoonHero extends StatelessWidget {
               onPressed: notified ? null : onNotify,
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.sirati.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: context.sirati.onPrimary,
+                // "Registered" is a confirmation, not an unavailable action:
+                // show it in the success pair rather than greyed out.
+                disabledBackgroundColor: context.sirati.successLight,
+                disabledForegroundColor: context.sirati.onSuccessContainer,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -407,7 +406,7 @@ class _CvCtaCard extends StatelessWidget {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.sirati.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: context.sirati.onPrimary,
                 minimumSize: const Size(0, 44),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
