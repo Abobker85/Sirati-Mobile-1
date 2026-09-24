@@ -237,6 +237,31 @@ void main() {
         await tester.pumpAndSettle();
         expectAllTextAa('settings $mode');
       });
+
+      testWidgets('an on switch shows its thumb against the track ($mode)',
+          (tester) async {
+        tester.view.physicalSize = const Size(1080, 4000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(app(_FakeAuth(), theme: theme));
+        await tester.pumpAndSettle();
+        expect(find.byType(Switch), findsWidgets);
+        final context = tester.element(find.byType(Switch));
+        final t = Theme.of(context);
+        final cs = t.colorScheme;
+        const on = {WidgetState.selected};
+        for (final s in tester.widgetList<Switch>(find.byType(Switch))) {
+          // Effective colours: widget, then theme, then the M3 defaults.
+          final thumb = s.thumbColor?.resolve(on) ??
+              t.switchTheme.thumbColor?.resolve(on) ??
+              cs.onPrimary;
+          final track = s.trackColor?.resolve(on) ??
+              t.switchTheme.trackColor?.resolve(on) ??
+              cs.primary;
+          expect(AppContrast.ratio(thumb, track), greaterThanOrEqualTo(3.0),
+              reason: 'switch thumb vs track ($mode)');
+        }
+      });
     }
   });
 }

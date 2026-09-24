@@ -237,11 +237,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             showChevron: false,
             trailing: Switch.adaptive(
               value: notifications.value ?? true,
-              thumbColor: WidgetStateProperty.resolveWith(
-                (states) => states.contains(WidgetState.selected)
-                    ? context.sirati.primary
-                    : null,
-              ),
               // Disabled until the stored value is known, so a quick tap
               // can't be overwritten by the late load.
               onChanged: notifications.hasValue
