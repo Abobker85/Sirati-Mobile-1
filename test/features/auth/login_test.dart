@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/auth/application/login_controller.dart';
@@ -120,7 +122,7 @@ void main() {
           .setMockMethodCallHandler(secureStorage, null);
     });
 
-    Widget app(_FakeAuth auth, {ThemeData? theme}) => ProviderScope(
+    Widget app(AuthApiService auth, {ThemeData? theme}) => ProviderScope(
           overrides: [authApiServiceProvider.overrideWithValue(auth)],
           child: MaterialApp(
             theme: theme ?? AppTheme.lightFor(arabic: false),
@@ -164,6 +166,40 @@ void main() {
       expect(auth.calls, hasLength(1));
       auth.gate!.complete();
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('the server\'s rejection is shown to the user', (tester) async {
+      // The live backend's reply to wrong credentials: 422 + field error.
+      const message = 'بيانات تسجيل الدخول غير صحيحة.';
+      for (final (status, body) in [
+        (422, '{"message":"$message","errors":{"email":["$message"]}}'),
+        (401, '{"message":"$message"}'),
+        (429, '{"message":"Too Many Attempts."}'),
+        (500, '<html>oops</html>'),
+      ]) {
+        await http.runWithClient(() async {
+          await tester.pumpWidget(app(AuthApiService()));
+          await tester.pumpAndSettle();
+          await fill(tester, 'wrong-pass');
+          await tester.tap(find.text('Sign in'));
+          await tester.pumpAndSettle();
+        },
+            () => MockClient((_) async => http.Response(body, status,
+                headers: {'content-type': 'application/json'})));
+        final snack = find.byType(SnackBar);
+        expect(snack, findsOneWidget, reason: 'HTTP $status: no feedback');
+        final shown = tester
+            .widgetList<Text>(find.descendant(of: snack, matching: find.byType(Text)))
+            .map((t) => t.data ?? '')
+            .join(' ');
+        expect(shown.trim(), isNotEmpty, reason: 'HTTP $status');
+        if (status == 422 || status == 401) {
+          expect(shown, contains(message), reason: 'HTTP $status');
+        }
+        ScaffoldMessenger.of(tester.element(find.byType(Scaffold).first))
+            .removeCurrentSnackBar();
+        await tester.pumpWidget(const SizedBox());
+      }
     });
 
     testWidgets('password visibility toggle is labelled', (tester) async {
