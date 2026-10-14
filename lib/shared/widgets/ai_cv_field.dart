@@ -151,27 +151,26 @@ class AiCvField extends StatelessWidget {
                   icon: Icons.auto_fix_high_rounded,
                   onPressed: enabled ? onEnhance : null,
                 ),
-                if (value.text.trim().isNotEmpty && !enabled && !isLoading) ...[
+                // Always say why the button is off — an empty field included —
+                // so a disabled Enhance never looks broken.
+                if (!enabled && !isLoading) ...[
                   const SizedBox(height: 5),
                   Row(
                     children: [
                       Icon(
                         Icons.info_outline_rounded,
                         size: 13,
-                        color: context.sirati.textHint,
+                        color: context.sirati.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          minimumCharacters != null
-                              ? (english
-                                  ? 'Enter at least $minimumCharacters characters to enable enhancement'
-                                  : 'اكتب $minimumCharacters حرفاً كحد أدنى لتفعيل التحسين')
-                              : (english
-                                  ? 'Write more than a line for accurate AI enhancement'
-                                  : 'اكتب أكثر من سطر لتوجيه الذكاء الاصطناعي بدقة'),
+                          key: Key('enhance_hint_$field'),
+                          english
+                              ? 'Write at least ${minimumCharacters ?? defaultMinimumCharacters} characters for AI to enhance'
+                              : 'اكتب ${minimumCharacters ?? defaultMinimumCharacters} حرفاً على الأقل ليحسّنها الذكاء الاصطناعي',
                           style: TextStyle(
-                            color: context.sirati.textHint,
+                            color: context.sirati.textSecondary,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),

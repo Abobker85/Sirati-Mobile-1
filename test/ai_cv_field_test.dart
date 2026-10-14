@@ -67,6 +67,46 @@ void main() {
     expect(multilineEnabled.onPressed, isNotNull);
   });
 
+  for (final minimum in [null, 80]) {
+    testWidgets('a disabled Enhance always says why (minimum: $minimum)',
+        (tester) async {
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(_testApp(AiCvField(
+        field: 'f',
+        controller: controller,
+        english: true,
+        isLoading: false,
+        minimumCharacters: minimum,
+        helperText: 'Example',
+        onEnhance: () {},
+        onDismissResult: () {},
+        child: AppTextFormField(controller: controller),
+      )));
+      for (final text in [
+        '',
+        '   ',
+        'short',
+        'a\nb',
+        'x' * 39,
+        'x' * 40,
+        'x' * 79,
+        'x' * 80,
+        'Line one here\nLine two here',
+      ]) {
+        controller.text = text;
+        await tester.pump();
+        final disabled = tester
+                .widget<SubmitButton>(find.byKey(const Key('enhance_f')))
+                .onPressed ==
+            null;
+        expect(find.byKey(const Key('enhance_hint_f')),
+            disabled ? findsOneWidget : findsNothing,
+            reason: '"$text" (disabled: $disabled)');
+      }
+    });
+  }
+
   testWidgets('loading overlay appears and missing facts render prominently',
       (tester) async {
     final controller = TextEditingController(text: 'Laravel and PHP');
