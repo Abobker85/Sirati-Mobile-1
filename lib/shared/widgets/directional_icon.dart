@@ -45,17 +45,19 @@ class DirectionalIcon extends StatelessWidget {
 
   static bool isDirectional(IconData icon) => directionalIcons.contains(icon);
 
+  /// Mirrors exactly once in RTL. Most Material arrows already set
+  /// `matchTextDirection` and [Icon] flips them itself; flipping those again
+  /// would point them backwards.
   @override
   Widget build(BuildContext context) {
-    final rtl = Directionality.of(context) == TextDirection.rtl;
-    return Transform.scale(
-      scaleX: rtl ? -1.0 : 1.0,
-      child: Icon(
-        icon,
-        size: size,
-        color: color,
-        semanticLabel: semanticLabel,
-      ),
+    final glyph = Icon(
+      icon,
+      size: size,
+      color: color,
+      semanticLabel: semanticLabel,
     );
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    if (!rtl || icon.matchTextDirection) return glyph;
+    return Transform.scale(scaleX: -1.0, child: glyph);
   }
 }

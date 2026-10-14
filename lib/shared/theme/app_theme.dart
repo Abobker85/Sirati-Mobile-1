@@ -259,11 +259,20 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: c.primaryInk,
-          side: BorderSide(color: c.primaryInk, width: 1.5),
           minimumSize: const Size.fromHeight(54),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           textStyle: AppTypography.labelLg.resolve(arabic: arabic),
+        ).copyWith(
+          // A disabled button must not keep the active outline.
+          side: WidgetStateProperty.resolveWith(
+            (states) => BorderSide(
+              color: states.contains(WidgetState.disabled)
+                  ? c.border
+                  : c.primaryInk,
+              width: 1.5,
+            ),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(

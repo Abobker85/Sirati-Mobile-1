@@ -52,6 +52,17 @@ void main() {
       }
     });
 
+    test('outlined buttons show state through their outline ($mode)', () {
+      final side = theme.outlinedButtonTheme.style!.side!;
+      final surface = theme.colorScheme.surface;
+      final active = side.resolve(<WidgetState>{})!.color;
+      final disabled = side.resolve({WidgetState.disabled})!.color;
+      // Enabled outline is a real control boundary (>= 3:1); the disabled
+      // one must read as inactive, i.e. not the same strong outline.
+      expect(AppContrast.ratio(active, surface), greaterThanOrEqualTo(3.0));
+      expect(AppContrast.ratio(disabled, surface), lessThan(3.0));
+    });
+
     testWidgets('form feedback, banner, badge and empty state are AA ($mode)',
         (tester) async {
       await tester.pumpWidget(_app(
