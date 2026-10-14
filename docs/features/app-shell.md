@@ -14,7 +14,7 @@ Overview of everything outside individual features: startup in `lib/main.dart` (
 ## Entry points
 
 - Entrypoints: `lib/main.dart` (shared `startSiratiApp`), `lib/main_dev.dart` (dev), `lib/main_staging.dart` (staging), `lib/main_prod.dart` (prod).
-- Routes (`AppRoutes`): `/`, `/home`, `/login`, `/register`, `/history`, `/create-cv`, `/mycvs`, `/education`, `/education/{id}`, `/job-news`, `/privacy`, `/settings`, `/notifications`, `/premium`, `/gallery`, `/builder`, `/builder/{stringId}`, `/cv/{id}`, `/analysis/{id}` (bare `/analysis` → new analysis form), `/not-found`.
+- Routes (`AppRoutes`): `/`, `/home`, `/login`, `/register`, `/history`, `/create-cv`, `/mycvs`, `/education`, `/education/{id}`, `/job-news`, `/privacy`, `/settings`, `/notifications`, `/premium`, `/gallery`, `/builder`, `/builder/{stringId}`, `/cv/{id}`, `/analysis/{id}`, `/not-found`. (No bare `/analysis` route — `parse` marks it unknown → not-found; the analysis form opens via direct navigation, e.g. the notification aliases `cv-analysis`/`analysis-new`.)
 - Deep links: `sirati://app/...` warm-start via a `WidgetsBindingObserver`; cold-start links stash to `pendingLocation`. Web preview: `?screen=` (register, create-cv, mycvs, education, history, job-news, privacy, home) and `?lang=` (ar/en, also seeds locale bootstrap).
 - Notifications open: tabs (`home`, `my-cvs`, `education[/id]`, `job-news`), screens (notifications, cv-analysis, history, cv-generator, settings), or external URLs — see the dashboard doc for the full mapping.
 
