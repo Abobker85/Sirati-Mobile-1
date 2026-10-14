@@ -45,6 +45,10 @@ class _FakeContent extends MobileContentService {
   Future<Map<String, dynamic>> markNotificationRead(int id) async {
     marked.add(id);
     if (markError != null) throw markError!;
+    rows = [
+      for (final r in rows)
+        if (r['id'] == id) {...r, 'is_read': true} else r,
+    ];
     return {};
   }
 
@@ -190,6 +194,92 @@ void main() {
       expect(find.byType(NotificationsScreen), findsNothing,
           reason: 'screen actions leave the inbox so the target is visible');
       expect(content.marked, containsAll([1, 2, 3]));
+    });
+
+    testWidgets(
+        'actionable + markRead fails -> navigation still happens, error snackbar shown, item back to unread',
+        (tester) async {
+      final routed = <Map<String, dynamic>>[];
+      NotificationService.instance.onNotificationTap = routed.add;
+      final content = _FakeContent([
+        _row(1, type: 'screen', url: 'jobs'),
+        _row(2, type: 'url', url: 'https://x.io'),
+      ]);
+      content.markError = const ApiException('offline');
+      await tester.pumpWidget(app(content));
+      await openInbox(tester);
+
+      // URL action: stays on screen, item reverts to unread, snackbar shown
+      await tester.tap(find.text('Note 2'));
+      await tester.pumpAndSettle();
+      expect(routed.last, {'action_type': 'url', 'action_url': 'https://x.io'});
+      expect(
+        find.text('Could not update notifications. Check your connection.'),
+        findsOneWidget,
+      );
+      final card2 = tester.widget<NotificationCard>(
+        find.widgetWithText(NotificationCard, 'Note 2'),
+      );
+      expect(card2.item.isRead, isFalse);
+
+      // Dismiss snackbar before testing screen action
+      tester
+          .state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger))
+          .clearSnackBars();
+      await tester.pumpAndSettle();
+
+      // Screen action: pops inbox, navigation happens, snackbar shown via surviving messenger
+      await tester.tap(find.text('Note 1'));
+      await tester.pumpAndSettle();
+      expect(routed.last['action_url'], 'jobs');
+      expect(find.byType(NotificationsScreen), findsNothing);
+      expect(
+        find.text('Could not update notifications. Check your connection.'),
+        findsOneWidget,
+      );
+
+      // Re-open inbox: screen action item is still unread
+      await openInbox(tester);
+      final card1 = tester.widget<NotificationCard>(
+        find.widgetWithText(NotificationCard, 'Note 1'),
+      );
+      expect(card1.item.isRead, isFalse);
+    });
+
+    testWidgets('actionable + success -> no snackbar, item read',
+        (tester) async {
+      final routed = <Map<String, dynamic>>[];
+      NotificationService.instance.onNotificationTap = routed.add;
+      final content = _FakeContent([
+        _row(1, type: 'screen', url: 'jobs'),
+        _row(2, type: 'url', url: 'https://x.io'),
+      ]);
+      await tester.pumpWidget(app(content));
+      await openInbox(tester);
+
+      // URL action: marks read and stays open without snackbar
+      await tester.tap(find.text('Note 2'));
+      await tester.pumpAndSettle();
+      expect(routed.last, {'action_type': 'url', 'action_url': 'https://x.io'});
+      expect(find.byType(SnackBar), findsNothing);
+      final card2 = tester.widget<NotificationCard>(
+        find.widgetWithText(NotificationCard, 'Note 2'),
+      );
+      expect(card2.item.isRead, isTrue);
+
+      // Screen action: marks read and leaves inbox without snackbar
+      await tester.tap(find.text('Note 1'));
+      await tester.pumpAndSettle();
+      expect(routed.last['action_url'], 'jobs');
+      expect(find.byType(NotificationsScreen), findsNothing);
+      expect(find.byType(SnackBar), findsNothing);
+
+      // Re-open inbox: row is read
+      await openInbox(tester);
+      final card1 = tester.widget<NotificationCard>(
+        find.widgetWithText(NotificationCard, 'Note 1'),
+      );
+      expect(card1.item.isRead, isTrue);
     });
 
     for (final (mode, theme) in [

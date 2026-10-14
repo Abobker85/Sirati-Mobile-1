@@ -26,11 +26,12 @@ class NotificationsScreen extends ConsumerWidget {
     } catch (_) {}
   }
 
-  void _reportFailure(BuildContext context) {
+  void _reportFailure(BuildContext context, {bool? english}) {
     if (!context.mounted) return;
+    final isEn = english ?? AppLocale.isEnglish(context);
     AppSnackBar.error(
       context,
-      AppLocale.isEnglish(context)
+      isEn
           ? 'Could not update notifications. Check your connection.'
           : 'تعذر تحديث الإشعارات. تحقق من الاتصال.',
     );
@@ -44,11 +45,18 @@ class NotificationsScreen extends ConsumerWidget {
     final inbox = ref.read(notificationsInboxProvider.notifier);
     final handler = NotificationService.instance.onNotificationTap;
     if (item.opensSomething && handler != null) {
+      final messenger = ScaffoldMessenger.of(context);
+      final messengerContext = Navigator.of(context).context;
+      final english = AppLocale.isEnglish(context);
       // Same router as a tapped push. Screen targets may switch a Home tab,
       // so leave the inbox first to make the result visible.
       if (item.actionType == 'screen') Navigator.of(context).pop();
       handler(item.routePayload);
-      unawaited(inbox.markRead(item));
+      if (!await inbox.markRead(item) &&
+          messenger.mounted &&
+          messengerContext.mounted) {
+        _reportFailure(messengerContext, english: english);
+      }
       return;
     }
     if (!await inbox.markRead(item) && context.mounted) {

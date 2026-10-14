@@ -227,6 +227,7 @@ class NotificationsInboxController
     final id = item.id;
     final before = state.value;
     if (id == null || item.isRead || before == null) return true;
+    final link = ref.keepAlive();
     final after = [
       for (final i in before) i.id == id ? i.asRead() : i,
     ];
@@ -241,6 +242,8 @@ class NotificationsInboxController
         _syncBadge(before);
       }
       return false;
+    } finally {
+      link.close();
     }
   }
 
