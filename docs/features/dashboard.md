@@ -60,6 +60,7 @@ The authenticated heart of the app: launch/session bootstrap, the splash and wel
 - `analysesHistoryProvider` / `generatedCvsHistoryProvider` (`AsyncNotifierProvider.autoDispose`): page 1 on build; `loadMore` guarded by `loadingMore`/`hasMore` and a generation counter so a pre-refresh fetch can't append to a refreshed list; failures keep rows and set `loadMoreFailed`.
 - `educationInterestProvider` (`AsyncNotifierProvider.autoDispose`): device flag via `EducationInterestStore` (backed by `sirati_education_interest`); UI flips optimistically, storage failure only re-shows the button after restart; double-register writes once.
 - Local data: greeting falls back to `SessionCache.user` name; unread badge falls back to `SessionCache.unreadCount` when the payload omits it. Sign-out/401 wipe (`AuthSessionGuard` + `wipeUserScopedStorage` + `MobileContentService.clearAllCaches`) clears session, disk caches, and the education-interest flag.
+- Content caches use a generation boundary at sign-out/401. Late responses cannot warm memory or disk, and disk envelopes with a previous persisted epoch remain unreadable even if a platform write finishes after the wipe. Normal cache hits and offline fallback stay available within the current session.
 
 ## API
 

@@ -27,6 +27,7 @@ class MobileContentService {
 
   /// Shared process-wide cache (service is often re-created per call site).
   static final Map<String, _CacheEntry> _cache = {};
+  static int _cacheGeneration = 0;
 
   static const cacheTtl = Duration(seconds: 60);
 
@@ -58,6 +59,7 @@ class MobileContentService {
 
   /// Clear memory + disk content caches (logout / session expiry).
   static Future<void> clearAllCaches() async {
+    _cacheGeneration++;
     invalidate();
     await DiskCache.instance.clear();
   }
@@ -241,6 +243,7 @@ class MobileContentService {
     Duration ttl = cacheTtl,
     String? diskKey,
   }) async {
+    final generation = _cacheGeneration;
     final mem = _cache[key];
     if (!force && mem != null && mem.isFresh(ttl)) {
       return _withoutOfflineMeta(mem.data);
@@ -249,12 +252,15 @@ class MobileContentService {
     try {
       final data = await fetch();
       final clean = _withoutOfflineMeta(data);
+      // Return a late response to its caller without warming the next session.
+      if (generation != _cacheGeneration) return clean;
       _cache[key] = _CacheEntry(clean, DateTime.now());
       if (diskKey != null) {
         unawaited(DiskCache.instance.put(diskKey, clean));
       }
       return clean;
     } catch (error) {
+      if (generation != _cacheGeneration) rethrow;
       // Prefer last good payload over a hard fail when offline.
       if (mem != null) {
         return _withOfflineMeta(mem.data, mem.at);
@@ -262,6 +268,7 @@ class MobileContentService {
 
       if (diskKey != null) {
         final disk = await DiskCache.instance.get(diskKey);
+        if (generation != _cacheGeneration) rethrow;
         if (disk != null) {
           _cache[key] = _CacheEntry(disk.data, disk.savedAt);
           return _withOfflineMeta(disk.data, disk.savedAt);
