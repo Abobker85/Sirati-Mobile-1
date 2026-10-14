@@ -227,6 +227,13 @@ class NotificationsInboxController
     final id = item.id;
     final before = state.value;
     if (id == null || item.isRead || before == null) return true;
+    final startGen = SessionCache.instance.generation;
+    final startUser = SessionCache.instance.user.value;
+    bool isSameSession() =>
+        SessionCache.instance.generation == startGen &&
+        SessionCache.instance.user.value == startUser;
+
+    final link = ref.keepAlive();
     final after = [
       for (final i in before) i.id == id ? i.asRead() : i,
     ];
@@ -234,31 +241,50 @@ class NotificationsInboxController
     _syncBadge(after);
     try {
       await ref.read(mobileContentServiceProvider).markNotificationRead(id);
+      if (!isSameSession()) return true;
       return true;
     } catch (_) {
+      if (!isSameSession()) {
+        return true;
+      }
       if (ref.mounted) {
         state = AsyncData(before);
         _syncBadge(before);
       }
       return false;
+    } finally {
+      link.close();
     }
   }
 
   Future<bool> markAllRead() async {
     final before = state.value;
     if (before == null || before.every((i) => i.isRead)) return true;
+    final startGen = SessionCache.instance.generation;
+    final startUser = SessionCache.instance.user.value;
+    bool isSameSession() =>
+        SessionCache.instance.generation == startGen &&
+        SessionCache.instance.user.value == startUser;
+
+    final link = ref.keepAlive();
     final after = [for (final i in before) i.asRead()];
     state = AsyncData(after);
     _syncBadge(after);
     try {
       await ref.read(mobileContentServiceProvider).markAllNotificationsRead();
+      if (!isSameSession()) return true;
       return true;
     } catch (_) {
+      if (!isSameSession()) {
+        return true;
+      }
       if (ref.mounted) {
         state = AsyncData(before);
         _syncBadge(before);
       }
       return false;
+    } finally {
+      link.close();
     }
   }
 }
