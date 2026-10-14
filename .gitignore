@@ -24,3 +24,6 @@ new_stitch_design/
 # Golden tests & generated l10n
 lib/l10n/generated/
 test/golden/failures/
+.agents/logs/
+.env
+.env.local
