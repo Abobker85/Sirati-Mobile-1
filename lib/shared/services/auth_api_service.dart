@@ -198,6 +198,9 @@ class AuthApiService {
 
   Future<void> _clearLocalSession() => _localSessionCleanup.run();
 
+  /// Retries device cleanup without repeating confirmed server deletion.
+  Future<void> retryLocalSessionCleanup() => _clearLocalSession();
+
   Future<AuthUser> updateProfile({
     required String name,
     int? jobTitleId,

@@ -12,6 +12,13 @@ typedef LocalCleanupFailure = ({
   StackTrace stackTrace,
 });
 
+/// Passed to the signed-out route after confirmed account deletion.
+class PendingLocalSessionCleanup {
+  const PendingLocalSessionCleanup({required this.retry});
+
+  final Future<void> Function() retry;
+}
+
 /// Reported only after every local cleanup step has been attempted.
 class LocalSessionCleanupException implements Exception {
   LocalSessionCleanupException(Iterable<LocalCleanupFailure> failures)
@@ -43,9 +50,14 @@ class LocalSessionCleanup {
           (step: 'storage', run: wipeStorage ?? wipeUserScopedStorage),
           (
             step: 'device',
-            run: forgetDevice ?? NotificationService.instance.forgetDevice,
+            run: forgetDevice ??
+                () => NotificationService.instance
+                    .forgetDevice(reportFailure: true),
           ),
-          (step: 'analytics', run: clearAnalytics ?? AnalyticsService.clearUser),
+          (
+            step: 'analytics',
+            run: clearAnalytics ?? AnalyticsService.clearUser
+          ),
         ];
 
   final List<({String step, FutureOr<void> Function() run})> _steps;

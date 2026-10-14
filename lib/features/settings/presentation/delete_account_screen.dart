@@ -73,27 +73,29 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     if (second != true || !mounted) return;
 
     setState(() => _loading = true);
+    final auth = ref.read(authApiServiceProvider);
     try {
-      await ref
-          .read(authApiServiceProvider)
-          .deleteAccount(password: _passwordCtrl.text);
+      await auth.deleteAccount(password: _passwordCtrl.text);
       if (!mounted) return;
       AppSnackBar.success(
         context,
         en ? 'Account deleted.' : 'تم حذف الحساب.',
       );
-      unawaited(Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.splash,
+      unawaited(
+          Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+        AppRoutes.login,
         (route) => false,
       ));
     } on LocalSessionCleanupException {
       if (!mounted) return;
-      AppSnackBar.error(
-        context,
-        en
-            ? 'Your account was deleted, but some data could not be cleared from this device.'
-            : 'تم حذف حسابك، لكن تعذر مسح بعض البيانات من هذا الجهاز.',
-      );
+      unawaited(
+          Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+        AppRoutes.login,
+        (route) => false,
+        arguments: PendingLocalSessionCleanup(
+          retry: auth.retryLocalSessionCleanup,
+        ),
+      ));
     } on ApiException catch (e) {
       if (!mounted) return;
       final pwd = e.errors['password'];

@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/storage/preference_store.dart';
+import 'package:sirati/core/storage/storage_cleanup_exception.dart';
 
 /// Keys for data that belongs to the signed-in account, as opposed to the
 /// device (language, theme, onboarding). Features store under these so a
@@ -29,22 +30,37 @@ abstract final class UserScopedKeys {
 /// account on a shared phone never sees (or is offered to restore) the
 /// previous one's CV drafts or preferences.
 ///
-/// Every step is independent and best effort: one failing store must not
-/// leave the others behind.
+/// Every removal is attempted; failures are reported after all stores ran.
 Future<void> wipeUserScopedStorage({
   PreferenceStore prefs = const PreferenceStore(),
 }) async {
+  final failures = <StorageCleanupFailure>[];
   for (final key in UserScopedKeys.secureKeys) {
     try {
       await prefs.deleteKey(key);
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      failures.add((operation: key, error: error, stackTrace: stackTrace));
+    }
   }
   try {
     final shared = await SharedPreferences.getInstance();
+    // A failed platform removal can still evict the in-memory preference.
+    // Reload so a cleanup retry sees any personal data left on disk.
+    await shared.reload();
     for (final key in shared.getKeys().toList()) {
       if (UserScopedKeys.isUserScopedPreference(key)) {
-        await shared.remove(key);
+        try {
+          if (!await shared.remove(key)) {
+            throw StateError('User-scoped preference removal failed');
+          }
+        } catch (error, stackTrace) {
+          failures.add((operation: key, error: error, stackTrace: stackTrace));
+        }
       }
     }
-  } catch (_) {}
+  } catch (error, stackTrace) {
+    failures
+        .add((operation: 'preferences', error: error, stackTrace: stackTrace));
+  }
+  if (failures.isNotEmpty) throw StorageCleanupException(failures);
 }

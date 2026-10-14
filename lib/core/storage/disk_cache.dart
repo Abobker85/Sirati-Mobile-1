@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sirati/core/storage/storage_cleanup_exception.dart';
 
 /// Disk-backed JSON entry for offline last-known mobile content.
 class DiskCacheEntry {
@@ -125,20 +126,45 @@ class DiskCache {
   }
 
   Future<void> _clear(Future<void>? previous) async {
+    // A failed wipe must not prevent a later retry from rotating the epoch.
+    var previousFailed = false;
     try {
       await previous;
+    } catch (_) {
+      previousFailed = true;
+    }
+    final failures = <StorageCleanupFailure>[];
+    try {
       final prefs = await _prefs;
-      final random = Random.secure();
-      final epoch = List.generate(
-        16,
-        (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
-      ).join();
-      await prefs.setString(_epochKey, epoch);
+      // Failed removals may already be absent from the preferences memo.
+      if (previousFailed) await prefs.reload();
+      try {
+        final random = Random.secure();
+        final epoch = List.generate(
+          16,
+          (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+        ).join();
+        if (!await prefs.setString(_epochKey, epoch)) {
+          throw StateError('Cache epoch rotation failed');
+        }
+      } catch (error, stackTrace) {
+        failures
+            .add((operation: 'epoch', error: error, stackTrace: stackTrace));
+      }
       final keys =
           prefs.getKeys().where((k) => k.startsWith(keyPrefix)).toList();
       for (final key in keys) {
-        await prefs.remove(key);
+        try {
+          if (!await prefs.remove(key)) {
+            throw StateError('Cache entry removal failed');
+          }
+        } catch (error, stackTrace) {
+          failures.add((operation: key, error: error, stackTrace: stackTrace));
+        }
       }
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      failures.add((operation: 'cache', error: error, stackTrace: stackTrace));
+    }
+    if (failures.isNotEmpty) throw StorageCleanupException(failures);
   }
 }

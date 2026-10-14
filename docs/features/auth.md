@@ -51,6 +51,7 @@ The auth feature governs user onboarding, authentication, account registration, 
   - Listens to HTTP 401 responses globally across `ApiClient`.
   - Debounces concurrent 401 events, unregisters device push tokens, clears secure tokens, flushes memory and disk caches, wipes all account-scoped data, rotates the device FCM token, and replaces the navigator stack with `LoginScreen(sessionExpiredNotice: true)`.
   - Logout, account deletion, and expiry share `LocalSessionCleanup`: token, session cache, content caches, account storage, device push token, then analytics identity. Every step is attempted in order; thrown failures are collected in `LocalSessionCleanupException`. Expiry still redirects on cleanup failure; the installed API callback reports the error through Flutter.
+  - Storage helpers report failed secure removals, preference removals (including false acknowledgements), and cache epoch writes after attempting all independent removals. A failed cache wipe remains unreadable until a successful retry; retry refreshes preferences that failed removals may have evicted from memory. Epoch rotation and generation checks remain the session boundary. FCM rotation failures are reported during privacy cleanup; remote push unregistration remains best effort, and absent Firebase configuration has no token to detach.
 
 ## Entry points
 
@@ -194,6 +195,8 @@ The auth feature governs user onboarding, authentication, account registration, 
   - Injects synchronous and asynchronous failures into each cleanup step for logout, deletion, and expiry; checks remaining steps run, original errors are reported, and real account data is wiped even when token deletion fails. Checks that the installed expiry callback reports cleanup errors and still redirects to login.
 - `test/auth_session_guard_test.dart`:
   - Verifies a delayed 401 for an old token does not purge a newer token, failed account deletion preserves local credentials, logout clears token immediately, public login does not send stale bearer headers, and malformed responses become typed `ApiException` instances.
+- `test/shared/local_session_cleanup_failures_test.dart`:
+  - Runs logout, account deletion, and expiry through the real helpers with failing secure-storage deletes, preference removals, cache epoch writes, and FCM token deletion. Verifies failure reporting, remaining data removals, local retry, and best-effort remote push unregistration.
 - `test/login_layout_test.dart`:
   - Asserts `AuthFormConstraint` constraints, centered branding header, and start-aligned form field labels.
 

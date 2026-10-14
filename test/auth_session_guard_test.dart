@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -12,12 +13,21 @@ import 'package:sirati/features/auth/data/auth_session_guard.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  const secureStorage =
+      MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     AuthSessionGuard.resetForTest();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorage, (_) async => null);
   });
 
-  tearDown(AuthSessionGuard.resetForTest);
+  tearDown(() {
+    AuthSessionGuard.resetForTest();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorage, null);
+  });
 
   test('delayed 401 for token A does not clear a newer token B', () async {
     final store = MemoryAuthTokenStore('token-a');
@@ -78,7 +88,10 @@ void main() {
     final store = MemoryAuthTokenStore('session');
     final service = AuthApiService(tokenStore: store);
 
-    await service.logout();
+    await http.runWithClient(
+      service.logout,
+      () => MockClient((_) async => http.Response('{}', 200)),
+    );
     expect(store.value, isNull);
   });
 

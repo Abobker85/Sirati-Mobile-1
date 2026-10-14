@@ -34,7 +34,7 @@ The settings feature provides user management, app preferences configuration, ac
   - Collects account password for re-authentication.
   - "Delete my account" (`SubmitButton`): opens secondary confirmation dialog ("Delete forever" / "Cancel").
   - Confirmation triggers `AuthApiService.deleteAccount(password: ...)`.
-  - States: Server confirms deletion -> attempts every local cleanup step in order -> routes to `AppRoutes.splash` on complete cleanup. Thrown cleanup failures are collected and reported after all steps run; the screen stays open and shows an Arabic/English error explaining that the account was deleted but some data could not be cleared from the device. Incorrect password -> displays error snackbar and retains local session.
+  - States: Server confirms deletion -> attempts every local cleanup step in order -> replaces the entire navigator stack with `AppRoutes.login`. On cleanup failure that route displays `DeletedAccountCleanupScreen`, with persistent Arabic/English feedback and a local-only retry. The deletion form and authenticated screens are removed, so Back cannot expose retained account state. A successful retry opens login without another server deletion; login is unavailable while cleanup is pending. Incorrect password -> displays error snackbar and retains local session.
 - **Notifications Inbox (`NotificationsScreen`)**:
   - Displays in-app notifications in a pull-to-refresh list.
   - AppBar provides "Read all" action button (enabled when unread notifications exist).
@@ -75,6 +75,7 @@ The settings feature provides user management, app preferences configuration, ac
 | `lib/features/settings/presentation/profile_screen.dart` | Profile editor screen, job title picker, name validation, read-only account details |
 | `lib/features/settings/presentation/change_password_screen.dart` | Password change form, current password verification, new password strength meter |
 | `lib/features/settings/presentation/delete_account_screen.dart` | Account deletion screen, warning banner, password verification, confirmation dialog |
+| `lib/features/settings/presentation/deleted_account_cleanup_screen.dart` | Signed-out local cleanup recovery with a single in-flight retry and no server deletion |
 | `lib/features/settings/presentation/notifications_screen.dart` | Notifications inbox screen, `NotificationCard`, pull-to-refresh, mark read routing |
 | `lib/features/settings/presentation/onboarding_screen.dart` | 3-page product tour, step counter, interactive dots, skip/finish persistence |
 | `lib/features/settings/presentation/privacy_policy_screen.dart` | Privacy policy disclosures, sub-processor list, and PDPL compliance information |
@@ -182,7 +183,7 @@ The settings feature provides user management, app preferences configuration, ac
   - Tests switch thumb vs track contrast >= 3.0:1 in both light and dark modes.
 - `test/features/settings/account_security_test.dart`:
   - Tests `AuthApiService.deleteAccount`: incorrect password preserves local session and push tokens without unregistering; success cleans up session without trailing API calls.
-  - Tests `DeleteAccountScreen`: keyboard Done and button clicks prevent duplicate confirmation dialogs; cleanup errors after confirmed deletion show Arabic/English feedback without a success message or navigation.
+  - Tests `DeleteAccountScreen`: keyboard Done and button clicks prevent duplicate confirmation dialogs; successful or partially cleaned deletion removes authenticated routes. Arabic/English recovery retries only local cleanup, stays signed out on repeated failure, and allows only one retry in flight.
   - Tests `ChangePasswordScreen`: enforces single in-flight request, re-validates password confirmation when new password is typed, and passes WCAG AA contrast tests.
 - `test/features/settings/notifications_test.dart`:
   - Verifies `NotificationItem`: `opensSomething` logic (only non-empty url/screen), invalid row pruning.

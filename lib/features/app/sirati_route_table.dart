@@ -18,10 +18,12 @@ import 'package:sirati/features/dashboard/presentation/not_found_screen.dart';
 import 'package:sirati/features/dashboard/presentation/premium_gate_screen.dart';
 import 'package:sirati/features/dashboard/presentation/splash_screen.dart';
 import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
+import 'package:sirati/features/settings/presentation/deleted_account_cleanup_screen.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
 import 'package:sirati/shared/models/cv_target_job.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 
 /// Composition root: maps route names onto feature screens.
 void registerSiratiRouteWidgets() {
@@ -35,6 +37,10 @@ Widget _widgetFor(ParsedRoute parsed) {
     case AppRoutes.home:
       return const HomeScreen();
     case AppRoutes.login:
+      final cleanup = parsed.arguments;
+      if (cleanup is PendingLocalSessionCleanup) {
+        return DeletedAccountCleanupScreen(retryCleanup: cleanup.retry);
+      }
       return const LoginScreen();
     case AppRoutes.register:
       return const RegisterScreen();

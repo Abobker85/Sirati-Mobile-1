@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
 import 'package:sirati/core/storage/preference_store.dart';
+import 'package:sirati/core/storage/storage_cleanup_exception.dart';
 import 'package:sirati/core/storage/user_scoped_storage.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/auth/data/auth_session_guard.dart';
@@ -151,7 +152,14 @@ void main() {
 
   test('the wipe keeps going when one store fails', () async {
     await _seedAccountData();
-    await wipeUserScopedStorage(prefs: _ThrowingPrefs());
+    await expectLater(
+      wipeUserScopedStorage(prefs: _ThrowingPrefs()),
+      throwsA(isA<StorageCleanupException>().having(
+        (error) => error.failures.map((failure) => failure.operation),
+        'failed removals',
+        UserScopedKeys.secureKeys,
+      )),
+    );
     final shared = await SharedPreferences.getInstance();
     expect(
       shared.getKeys().where(UserScopedKeys.isUserScopedPreference),
@@ -162,7 +170,8 @@ void main() {
   for (final path in ['logout', 'deleteAccount', 'handleAuthExpired']) {
     for (final step in _cleanupSteps) {
       for (final synchronous in [true, false]) {
-        test('$path attempts every step when $step fails '
+        test(
+            '$path attempts every step when $step fails '
             '${synchronous ? 'synchronously' : 'asynchronously'}', () async {
           final calls = <String>[];
           final error = StateError('failed $step');
@@ -191,7 +200,8 @@ void main() {
       await expectLater(
         _runCleanupPath(path, _recordingCleanup(calls, errors)),
         throwsA(isA<LocalSessionCleanupException>()
-            .having((e) => e.failures.map((f) => f.step), 'steps', _cleanupSteps)
+            .having(
+                (e) => e.failures.map((f) => f.step), 'steps', _cleanupSteps)
             .having((e) => e.failures.map((f) => f.error), 'original errors',
                 errors.values.toList())),
       );

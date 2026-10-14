@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -9,10 +10,15 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/app_router.dart';
+import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/app/sirati_route_table.dart';
+import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/features/settings/presentation/change_password_screen.dart';
 import 'package:sirati/features/settings/presentation/delete_account_screen.dart';
+import 'package:sirati/features/settings/presentation/deleted_account_cleanup_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
@@ -53,7 +59,18 @@ import '../../support/contrast_probe.dart';
 }
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  TestWidgetsFlutterBinding.ensureInitialized();
+  const secureStorage =
+      MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorage, (_) async => null);
+  });
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorage, null);
+  });
 
   group('AuthApiService.deleteAccount', () {
     test('a wrong password leaves the session and push untouched', () async {
@@ -78,7 +95,10 @@ void main() {
   });
 
   group('screens', () {
-    setUp(() => AppLocale.languageCode.value = 'en');
+    setUp(() {
+      AppLocale.languageCode.value = 'en';
+      registerSiratiRouteWidgets();
+    });
 
     Widget app(Widget home, AuthApiService auth, ThemeData theme,
             {String language = 'en'}) =>
@@ -90,10 +110,7 @@ void main() {
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: home,
-            onGenerateRoute: (settings) => MaterialPageRoute(
-              settings: settings,
-              builder: (_) => Scaffold(body: Text('route:${settings.name}')),
-            ),
+            onGenerateRoute: AppRouter.onGenerateRoute,
           ),
         );
 
@@ -113,12 +130,14 @@ void main() {
     });
 
     for (final language in ['en', 'ar']) {
-      testWidgets('delete: local cleanup failure is shown in $language',
-          (tester) async {
+      testWidgets(
+          'delete: removes private routes and retries only local cleanup '
+          'in $language', (tester) async {
         AppLocale.languageCode.value = language;
         final en = language == 'en';
         final requests = <String>[];
         final calls = <String>[];
+        var failCleanup = true;
         final auth = AuthApiService(
           apiClient: ApiClient(httpClient: MockClient((request) async {
             requests.add('${request.method} ${request.url.path}');
@@ -127,18 +146,34 @@ void main() {
           localSessionCleanup: LocalSessionCleanup(
             clearToken: () => calls.add('token'),
             clearSession: () => calls.add('session'),
-            clearCaches: () => throw StateError('cache locked'),
+            clearCaches: () {
+              calls.add('caches');
+              if (failCleanup) throw StateError('cache locked');
+            },
             wipeStorage: () => calls.add('storage'),
             forgetDevice: () => calls.add('device'),
             clearAnalytics: () => calls.add('analytics'),
           ),
         );
         await tester.pumpWidget(app(
-          const DeleteAccountScreen(),
+          Scaffold(
+            body: Builder(builder: (context) {
+              return TextButton(
+                onPressed: () => unawaited(Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const DeleteAccountScreen(),
+                  ),
+                )),
+                child: const Text('Private account data'),
+              );
+            }),
+          ),
           auth,
           AppTheme.lightFor(arabic: !en),
           language: language,
         ));
+        await tester.tap(find.text('Private account data'));
+        await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField), 'secret');
         await tester.tap(find.text(en ? 'Delete my account' : 'احذف حسابي'));
         await tester.pumpAndSettle();
@@ -146,7 +181,14 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(requests, ['DELETE /api/auth/account']);
-        expect(calls, ['token', 'session', 'storage', 'device', 'analytics']);
+        expect(calls, [
+          'token',
+          'session',
+          'caches',
+          'storage',
+          'device',
+          'analytics',
+        ]);
         expect(
           find.text(en
               ? 'Your account was deleted, but some data could not be cleared from this device.'
@@ -157,11 +199,107 @@ void main() {
           find.text(en ? 'Account deleted.' : 'تم حذف الحساب.'),
           findsNothing,
         );
-        expect(find.byType(DeleteAccountScreen), findsOneWidget);
-        expect(find.text('route:/'), findsNothing);
+        expect(find.byType(DeleteAccountScreen), findsNothing);
+        expect(find.text('Private account data'), findsNothing);
+        final retry = find.text(en ? 'Retry cleanup' : 'إعادة محاولة المسح');
+        expect(retry, findsOneWidget);
+        final retryContext = tester.element(retry);
+        expect(ModalRoute.of(retryContext)?.settings.name, AppRoutes.login);
+        expect(Navigator.of(retryContext).canPop(), isFalse);
+        expect(await Navigator.of(retryContext).maybePop(), isFalse);
+        await tester.pumpAndSettle();
+        expect(find.text('Private account data'), findsNothing);
+        expect(find.byType(DeleteAccountScreen), findsNothing);
+
+        // A retry that still fails stays on the signed-out route.
+        await tester.tap(retry);
+        await tester.pumpAndSettle();
+        expect(retry, findsOneWidget);
+        expect(requests, ['DELETE /api/auth/account']);
+        expect(find.byType(LoginScreen), findsNothing);
+
+        failCleanup = false;
+        await tester.tap(retry);
+        await tester.pumpAndSettle();
+        expect(requests, ['DELETE /api/auth/account']);
+        expect(calls, [
+          for (var i = 0; i < 3; i++) ...[
+            'token',
+            'session',
+            'caches',
+            'storage',
+            'device',
+            'analytics'
+          ],
+        ]);
+        expect(find.byType(LoginScreen), findsOneWidget);
+        expect(
+          Navigator.of(tester.element(find.byType(LoginScreen))).canPop(),
+          isFalse,
+        );
         expect(tester.takeException(), isNull);
       });
     }
+
+    testWidgets('delete: success leaves only the signed-out entry route',
+        (tester) async {
+      final service = _service(deleteStatus: 200);
+      await tester.pumpWidget(app(
+        Builder(
+            builder: (context) => Scaffold(
+                  body: TextButton(
+                    onPressed: () => unawaited(Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (_) => const DeleteAccountScreen()),
+                    )),
+                    child: const Text('Private account data'),
+                  ),
+                )),
+        service.auth,
+        AppTheme.lightFor(arabic: false),
+      ));
+      await tester.tap(find.text('Private account data'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'secret');
+      await tester.tap(find.text('Delete my account'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete forever'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.text('Private account data'), findsNothing);
+      expect(find.byType(DeleteAccountScreen), findsNothing);
+      expect(
+        Navigator.of(tester.element(find.byType(LoginScreen))).canPop(),
+        isFalse,
+      );
+      expect(service.requests, ['DELETE /api/auth/account']);
+    });
+
+    testWidgets('cleanup retry allows only one attempt in flight',
+        (tester) async {
+      final gate = Completer<void>();
+      var attempts = 0;
+      await tester.pumpWidget(app(
+        DeletedAccountCleanupScreen(retryCleanup: () {
+          attempts++;
+          return gate.future;
+        }),
+        AuthApiService(),
+        AppTheme.lightFor(arabic: false),
+      ));
+      await tester.tap(find.text('Retry cleanup'));
+      await tester.pump();
+      expect(
+        tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+        isNull,
+      );
+      await tester.tap(find.byType(ElevatedButton));
+      await tester.pump();
+      expect(attempts, 1);
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(LoginScreen), findsOneWidget);
+    });
 
     testWidgets('change password: one request in flight', (tester) async {
       var calls = 0;
@@ -215,6 +353,7 @@ void main() {
       for (final (name, screen) in [
         ('delete', const DeleteAccountScreen() as Widget),
         ('change', const ChangePasswordScreen()),
+        ('cleanup', DeletedAccountCleanupScreen(retryCleanup: () async {})),
       ]) {
         testWidgets('$name account screen is AA in $mode', (tester) async {
           await tester.pumpWidget(
@@ -222,7 +361,9 @@ void main() {
           );
           await tester.pump();
           expectAllTextAa('$name $mode');
-          expect(find.byTooltip('Show password'), findsWidgets);
+          if (name != 'cleanup') {
+            expect(find.byTooltip('Show password'), findsWidgets);
+          }
         });
       }
     }
