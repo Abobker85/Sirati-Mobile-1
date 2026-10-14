@@ -8,6 +8,7 @@ import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/settings/application/settings_controllers.dart';
 import 'package:sirati/features/settings/domain/notification_item.dart';
 import 'package:sirati/shared/services/notification_service.dart';
+import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
@@ -48,18 +49,27 @@ class NotificationsScreen extends ConsumerWidget {
       final messenger = ScaffoldMessenger.of(context);
       final messengerContext = Navigator.of(context).context;
       final english = AppLocale.isEnglish(context);
+      final startGen = SessionCache.instance.generation;
+      final startUser = SessionCache.instance.user.value;
       // Same router as a tapped push. Screen targets may switch a Home tab,
       // so leave the inbox first to make the result visible.
       if (item.actionType == 'screen') Navigator.of(context).pop();
       handler(item.routePayload);
       if (!await inbox.markRead(item) &&
+          SessionCache.instance.generation == startGen &&
+          SessionCache.instance.user.value == startUser &&
           messenger.mounted &&
           messengerContext.mounted) {
         _reportFailure(messengerContext, english: english);
       }
       return;
     }
-    if (!await inbox.markRead(item) && context.mounted) {
+    final startGen = SessionCache.instance.generation;
+    final startUser = SessionCache.instance.user.value;
+    if (!await inbox.markRead(item) &&
+        SessionCache.instance.generation == startGen &&
+        SessionCache.instance.user.value == startUser &&
+        context.mounted) {
       _reportFailure(context);
     }
   }

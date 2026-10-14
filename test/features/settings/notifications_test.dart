@@ -35,6 +35,7 @@ class _FakeContent extends MobileContentService {
   _FakeContent(this.rows);
   List<Map<String, dynamic>> rows;
   Object? markError;
+  Future<void>? markGate;
   final marked = <Object>[];
 
   @override
@@ -44,6 +45,7 @@ class _FakeContent extends MobileContentService {
   @override
   Future<Map<String, dynamic>> markNotificationRead(int id) async {
     marked.add(id);
+    if (markGate != null) await markGate;
     if (markError != null) throw markError!;
     rows = [
       for (final r in rows)
@@ -280,6 +282,42 @@ void main() {
         find.widgetWithText(NotificationCard, 'Note 1'),
       );
       expect(card1.item.isRead, isTrue);
+    });
+
+    testWidgets(
+        'open actionable notification, log out (clear session) while markRead is pending, then fail it -> unread count stays cleared, no snackbar for the old account',
+        (tester) async {
+      final routed = <Map<String, dynamic>>[];
+      NotificationService.instance.onNotificationTap = routed.add;
+      final content = _FakeContent([
+        _row(1, type: 'url', url: 'https://x.io'),
+      ]);
+      final completer = Completer<void>();
+      content.markGate = completer.future;
+      content.markError = const ApiException('offline');
+      SessionCache.instance.unreadCount = 1;
+
+      await tester.pumpWidget(app(content));
+      await openInbox(tester);
+      expect(SessionCache.instance.unreadCount, 1);
+
+      // Open actionable notification: navigation happens, markRead starts and waits on markGate
+      await tester.tap(find.text('Note 1'));
+      await tester.pump();
+      expect(routed, hasLength(1));
+      expect(SessionCache.instance.unreadCount, 0);
+
+      // User logs out / session is cleared while markRead is pending
+      SessionCache.instance.clear();
+      expect(SessionCache.instance.unreadCount, 0);
+
+      // The pending request now completes with an error
+      completer.complete();
+      await tester.pumpAndSettle();
+
+      // Guard should prevent rollback into SessionCache and prevent error snackbar
+      expect(SessionCache.instance.unreadCount, 0);
+      expect(find.byType(SnackBar), findsNothing);
     });
 
     for (final (mode, theme) in [

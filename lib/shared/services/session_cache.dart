@@ -14,11 +14,16 @@ class SessionCache {
 
   int unreadCount = 0;
 
+  /// Monotonically increasing counter to detect session changes and logouts.
+  int generation = 0;
+
   void setUser(AuthUser? value) {
+    generation++;
     user.value = value;
   }
 
   void clear() {
+    generation++;
     user.value = null;
     unreadCount = 0;
   }
