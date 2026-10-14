@@ -16,6 +16,7 @@ The settings feature provides user management, app preferences configuration, ac
     - Loading: shows skeleton placeholders (`AppSkeletonScope`) during initial profile fetch when no cached user exists.
     - Error: renders `AppErrorState` with retry button on network failure if no cached session user is available.
     - Loaded: renders list view with cached or fresh user data.
+    - Logout cleanup failure: token-removal errors keep Settings open with retry feedback. If the token was removed but a later step failed, the full stack is replaced with login and a partial-sign-out message; server revocation still runs in the background.
 - **Profile Edit (`ProfileScreen`)**:
   - Pre-fills user details from `settingsUserProvider` or `SessionCache.instance.user`.
   - Fields:
@@ -179,7 +180,7 @@ The settings feature provides user management, app preferences configuration, ac
 
 - `test/features/settings/settings_test.dart`:
   - Validates `NotificationPreferenceController`: server value preference over local, fallback handling on unreadable storage, device unregistration even if server sync fails, rapid toggle coalescing, and execution completion after screen disposal.
-  - Validates `SettingsScreen`: logout confirmation dialog, graceful recovery when local sign-out fails, navigation to login on success, and WCAG AA contrast compliance in light and dark themes.
+  - Validates `SettingsScreen`: logout confirmation dialog, token-removal failure recovery, navigation to login after successful token removal even if later cleanup fails, Arabic/English partial-sign-out feedback, and WCAG AA contrast compliance in light and dark themes.
   - Tests switch thumb vs track contrast >= 3.0:1 in both light and dark modes.
 - `test/features/settings/account_security_test.dart`:
   - Tests `AuthApiService.deleteAccount`: incorrect password preserves local session and push tokens without unregistering; success cleans up session without trailing API calls.

@@ -42,7 +42,7 @@ The auth feature governs user onboarding, authentication, account registration, 
   - Displays recipient email and a 6-digit numeric input field.
   - Auto-submits immediately when the 6th digit is typed, pasted, or autofilled, or on keyboard Done / "Verify email" tap.
   - Resend countdown timer: 60-second cooldown period prevents rapid resend calls.
-  - Exit protection: `PopScope(canPop: false)` intercepts system Back and back button, calling `AuthApiService.logout()` and navigating to `LoginScreen` so an unverified session never lingers. If logout fails, displays an error snackbar and keeps the user on-screen.
+  - Exit protection: `PopScope(canPop: false)` intercepts system Back and back button, calling `AuthApiService.logout()` and navigating to `LoginScreen` so an unverified session never lingers. Token-removal failures keep the screen open with retry feedback. If the token was removed but later cleanup failed, the screen still leaves for login and shows an Arabic/English partial-sign-out message.
   - Success: routes to `HomeScreen` via `AppRouter.openAfterAuth`.
 - **Forgot & Reset Password (`ForgotPasswordScreen`)**:
   - Step 1 (Request OTP): user submits email address; calls `/auth/forgot-password`. Success advances to Step 2 and activates a 60-second cooldown timer.
@@ -51,6 +51,7 @@ The auth feature governs user onboarding, authentication, account registration, 
   - Listens to HTTP 401 responses globally across `ApiClient`.
   - Debounces concurrent 401 events, unregisters device push tokens, clears secure tokens, flushes memory and disk caches, wipes all account-scoped data, rotates the device FCM token, and replaces the navigator stack with `LoginScreen(sessionExpiredNotice: true)`.
   - Logout, account deletion, and expiry share `LocalSessionCleanup`: token, session cache, content caches, account storage, device push token, then analytics identity. Every step is attempted in order; thrown failures are collected in `LocalSessionCleanupException`. Expiry still redirects on cleanup failure; the installed API callback reports the error through Flutter.
+  - `LocalSessionCleanupException.tokenCleared` distinguishes token-removal failures from later failures. Settings logout and email verification leave authenticated screens whenever token removal succeeded, even if other cleanup steps failed. Logout always starts background remote cleanup with the bearer and FCM token captured before the wipe, then reports local failures without waiting for the server.
   - Storage helpers report failed secure removals, preference removals (including false acknowledgements), and cache epoch writes after attempting all independent removals. A failed cache wipe remains unreadable until a successful retry; retry refreshes preferences that failed removals may have evicted from memory. Epoch rotation and generation checks remain the session boundary. FCM rotation failures are reported during privacy cleanup; remote push unregistration remains best effort, and absent Firebase configuration has no token to detach.
 
 ## Entry points
@@ -151,7 +152,7 @@ The auth feature governs user onboarding, authentication, account registration, 
   - Response: `{ "message": "..." }`.
   - Errors: 422 for invalid code or mismatched passwords.
 - `POST /auth/logout` (authenticated remote client):
-  - Request: `{}`. Invoked after local storage is wiped as a fire-and-forget remote token invalidation.
+  - Request: `{}`. Invoked after all local cleanup attempts, including failed cleanup, as a fire-and-forget remote token invalidation using the captured bearer.
 - `DELETE /fcm-tokens` (authenticated remote client):
   - Request: `{ "token": "<fcm_token>" }`. Unlinks the current device token before remote logout.
 - `GET /auth/me` (authenticated client):
@@ -197,6 +198,8 @@ The auth feature governs user onboarding, authentication, account registration, 
   - Verifies a delayed 401 for an old token does not purge a newer token, failed account deletion preserves local credentials, logout clears token immediately, public login does not send stale bearer headers, and malformed responses become typed `ApiException` instances.
 - `test/shared/local_session_cleanup_failures_test.dart`:
   - Runs logout, account deletion, and expiry through the real helpers with failing secure-storage deletes, preference removals, cache epoch writes, and FCM token deletion. Verifies failure reporting, remaining data removals, local retry, and best-effort remote push unregistration.
+- `test/shared/notification_token_test.dart`:
+  - Verifies failed local token removal or FCM rotation still starts remote unregistration and bearer revocation with the original credentials. Local error reporting remains independent of remote completion; failed remote unregistration still proceeds to revocation.
 - `test/login_layout_test.dart`:
   - Asserts `AuthFormConstraint` constraints, centered branding header, and start-aligned form field labels.
 
@@ -206,4 +209,6 @@ The auth feature governs user onboarding, authentication, account registration, 
 - `lib/features/auth/presentation/login_screen.dart:258-262`: Email field in login screen checks only `!v.contains('@')`, whereas registration uses the stricter regex `RegistrationRules.email` in `lib/features/auth/domain/registration_rules.dart:23`.
 - `lib/features/auth/presentation/register_screen.dart:425-436`: "Continue without account" directly invokes `AppRouter.openAfterAuth(context)`, bypassing authentication entirely to grant preview access to Home without clear entitlement boundary messaging on the registration screen.
 - `lib/features/auth/presentation/register_screen.dart:58-60`: Direct dependency on `FirebaseCrashlytics.instance.log` inside `initState` instead of routing through an abstraction service.
-- `lib/features/auth/presentation/email_verification_screen.dart:151-172`: If `logout()` throws during `_leave()`, the screen blocks exit via `PopScope(canPop: false)`, trapping the user on the verification screen until sign-out succeeds.
+- `lib/features/auth/presentation/email_verification_screen.dart`: Token-removal failures block exit via `PopScope(canPop: false)` until local credentials can be cleared.
+- `lib/features/app/sirati_route_table.dart:40`: A `sirati://app/login` deep link after failed post-deletion cleanup opens normal login without retrying the pending cleanup; the deep link does not carry `PendingLocalSessionCleanup` route arguments.
+- `lib/core/storage/user_scoped_storage.dart:49`: If preferences `reload()` fails in `wipeUserScopedStorage()`, no user-scoped preference removal is attempted, although the independent secure-storage removals have already run.

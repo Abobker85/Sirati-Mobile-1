@@ -12,6 +12,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
@@ -112,6 +113,72 @@ void main() {
     // Retrying is possible after a failure.
     auth.logoutError = null;
     await tester.tap(find.byTooltip('Back to sign in'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LoginScreen), findsOneWidget);
+  });
+
+  for (final language in ['en', 'ar']) {
+    for (final step in [
+      'session',
+      'caches',
+      'storage',
+      'device',
+      'analytics'
+    ]) {
+      testWidgets(
+          '$step failure after token removal leaves verification in $language',
+          (tester) async {
+        final auth = _FakeAuth()
+          ..logoutError = LocalSessionCleanupException([
+            (
+              step: step,
+              error: StateError('cleanup'),
+              stackTrace: StackTrace.current,
+            ),
+          ]);
+        await tester.pumpWidget(_app(auth, lang: language));
+        await tester.pump();
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        expect(auth.logouts, 1);
+        expect(find.byType(EmailVerificationScreen), findsNothing);
+        expect(find.byType(LoginScreen), findsOneWidget);
+        expect(
+          Navigator.of(tester.element(find.byType(LoginScreen))).canPop(),
+          isFalse,
+        );
+        expect(
+          find.text(language == 'en'
+              ? 'Could not fully sign out on this device.'
+              : 'تعذر إكمال تسجيل الخروج على هذا الجهاز.'),
+          findsOneWidget,
+        );
+      });
+    }
+  }
+
+  testWidgets(
+      'a token failure keeps verification open even if other steps fail',
+      (tester) async {
+    final auth = _FakeAuth()
+      ..logoutError = LocalSessionCleanupException([
+        for (final step in ['token', 'device'])
+          (
+            step: step,
+            error: StateError('cleanup'),
+            stackTrace: StackTrace.current,
+          ),
+      ]);
+    await tester.pumpWidget(_app(auth));
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(EmailVerificationScreen), findsOneWidget);
+    expect(find.byType(LoginScreen), findsNothing);
+    expect(find.textContaining("Couldn't sign out"), findsOneWidget);
+    auth.logoutError = null;
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.byType(LoginScreen), findsOneWidget);
   });

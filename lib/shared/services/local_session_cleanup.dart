@@ -26,6 +26,9 @@ class LocalSessionCleanupException implements Exception {
 
   final List<LocalCleanupFailure> failures;
 
+  /// Every step was attempted, so no token failure means it was removed.
+  bool get tokenCleared => !failures.any((failure) => failure.step == 'token');
+
   @override
   String toString() =>
       'Local session cleanup failed: ${failures.map((f) => f.step).join(', ')}';

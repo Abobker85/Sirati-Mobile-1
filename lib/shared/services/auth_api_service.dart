@@ -139,10 +139,14 @@ class AuthApiService {
     // Read the device token before the local wipe rotates it, so the server
     // cleanup removes the row that actually belongs to this account.
     final fcmToken = await NotificationService.instance.getToken();
-    await _clearLocalSession();
-
-    if (token == null || token.isEmpty) return;
-    unawaited(_remoteLogoutCleanup(token, fcmToken));
+    try {
+      await _clearLocalSession();
+    } finally {
+      // Local failures must not leave the captured bearer valid on the server.
+      if (token != null && token.isNotEmpty) {
+        unawaited(_remoteLogoutCleanup(token, fcmToken));
+      }
+    }
   }
 
   Future<void> _remoteLogoutCleanup(String token, String? fcmToken) async {

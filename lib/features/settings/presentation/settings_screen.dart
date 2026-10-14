@@ -14,6 +14,7 @@ import 'package:sirati/features/settings/presentation/profile_screen.dart';
 import 'package:sirati/features/settings/presentation/settings/settings_widgets.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/theme/app_theme_controller.dart';
@@ -103,18 +104,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     setState(() => _loggingOut = true);
     try {
-      // Clears the token and local data first; server cleanup runs after
-      // in the background. A throw here means the device is NOT signed
-      // out, so the user must not be sent to Login as if it were.
+      // Local cleanup completes before remote cleanup starts in the background.
       await ref.read(authApiServiceProvider).logout();
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
-      setState(() => _loggingOut = false);
-      AppSnackBar.error(context, l10n.logOutFailed);
-      return;
+      if (error is LocalSessionCleanupException && error.tokenCleared) {
+        AppSnackBar.error(
+          context,
+          AppLocale.isEnglish(context)
+              ? 'Could not fully sign out on this device.'
+              : 'تعذر إكمال تسجيل الخروج على هذا الجهاز.',
+        );
+      } else {
+        setState(() => _loggingOut = false);
+        AppSnackBar.error(context, l10n.logOutFailed);
+        return;
+      }
     }
     if (!mounted) return;
-    unawaited(Navigator.of(context).pushNamedAndRemoveUntil(
+    unawaited(
+        Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
       AppRoutes.login,
       (route) => false,
     ));
