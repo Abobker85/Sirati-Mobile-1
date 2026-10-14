@@ -108,7 +108,8 @@ The auth feature governs user onboarding, authentication, account registration, 
   - `LaunchDestination`: `LaunchHome()`, `LaunchVerifyEmail(email)`, `LaunchOnboarding()`, `LaunchWelcome()`.
 - **In-memory caching**:
   - `SessionCache.instance.user`: `ValueNotifier<AuthUser?>` holding the current user profile.
-  - `MobileContentService.clearAllCaches()`: drops all in-memory content caches on logout or session expiry.
+  - `MobileContentService.clearAllCaches()`: increments `_cacheGeneration`, drops all in-memory content caches, and delegates to `DiskCache.instance.clear()`.
+  - `DiskCache`: generation counter + rotating `sirati_content_cache_epoch` stop late network responses and disk writes from being *stored* for the next session. A late response is still returned to the caller that requested it (`MobileContentService._cached`), so a widget still mounted after sign-out could show it; this relies on sign-out removing the authenticated routes.
 - **Local storage keys**:
   - `FlutterSecureStorage`:
     - `sirati_auth_token` (`AuthTokenStore`): bearer authorization token. Wiped on logout, 401 expiry, or account deletion.
@@ -122,9 +123,10 @@ The auth feature governs user onboarding, authentication, account registration, 
       - `sirati_review_requested` (`PreferenceStore.reviewRequestedKey`): in-app review prompt status.
       - `sirati_cv_generation_count` (`PreferenceStore.cvGenerationCountKey`): successful generation counter on device.
   - `SharedPreferences`:
-    - `sirati_cv_draft_<id>` (`UserScopedKeys.builderDraftPrefix`): builder draft per CV ID. Wiped on logout.
-    - `sirati_cv_doc_<id>` (`UserScopedKeys.builderDocPrefix`): builder document per CV ID. Wiped on logout.
-    - `sirati_cv_ids` (`UserScopedKeys.builderIndexKey`): index of builder document IDs. Wiped on logout.
+    - `sirati_content_cache_epoch` (`DiskCache._epochKey`): random 16-byte hex epoch rotated on every cache wipe (`DiskCache.instance.clear()`), rendering pre-wipe disk entries unreadable.
+    - `sirati_cv_draft_<id>` (`UserScopedKeys.builderDraftPrefix`): builder draft per CV ID. Wiped on logout via `wipeUserScopedStorage()`.
+    - `sirati_cv_doc_<id>` (`UserScopedKeys.builderDocPrefix`): builder document per CV ID. Wiped on logout via `wipeUserScopedStorage()`.
+    - `sirati_cv_ids` (`UserScopedKeys.builderIndexKey`): index of builder document IDs. Wiped on logout via `wipeUserScopedStorage()`.
     - `sirati_cache_*` (`DiskCache.keyPrefix`): offline content cache. Wiped on logout via `DiskCache.instance.clear()`.
 
 ## API
@@ -165,7 +167,7 @@ The auth feature governs user onboarding, authentication, account registration, 
 
 - Default language is Arabic (`ar_SA`, RTL); English (`en_US`, LTR) is fully supported.
 - Direction-aware navigation:
-  - Back buttons use `DirectionalIcon(Icons.arrow_back_ios_new_rounded)` which mirrors automatically in RTL.
+  - Back buttons use `DirectionalIcon(Icons.arrow_back_ios_new_rounded)` (`lib/shared/widgets/directional_icon.dart`), which mirrors exactly once in RTL (skipping flip when `icon.matchTextDirection` is already true).
   - Back gestures and header alignments follow ambient `Directionality`.
 - BiDi text handling:
   - Form labels and instructional texts use `TextAlign.start`.
@@ -173,6 +175,8 @@ The auth feature governs user onboarding, authentication, account registration, 
   - Digit normalization: `LatinDigitsInputFormatter` and `latinDigits` automatically convert Arabic-Indic (٠-٩) and Extended Arabic-Indic (۰-۹) digits into standard ASCII digits (0-9).
 - Language switching:
   - `LanguageToggle` in app headers triggers `AppLocale.setLanguage()`, updating reactive state and immediately rebuilding UI without restart.
+- Button theming:
+  - Filled buttons (`ElevatedButton`, `SubmitButton`) use white `onPrimary` on primary teal `#007F73`; disabled outlined buttons resolve with a muted outline (`c.border`) rather than retaining active brand ink.
 
 ## Tests
 
@@ -209,6 +213,6 @@ The auth feature governs user onboarding, authentication, account registration, 
 - `lib/features/auth/presentation/login_screen.dart:258-262`: Email field in login screen checks only `!v.contains('@')`, whereas registration uses the stricter regex `RegistrationRules.email` in `lib/features/auth/domain/registration_rules.dart:23`.
 - `lib/features/auth/presentation/register_screen.dart:425-436`: "Continue without account" directly invokes `AppRouter.openAfterAuth(context)`, bypassing authentication entirely to grant preview access to Home without clear entitlement boundary messaging on the registration screen.
 - `lib/features/auth/presentation/register_screen.dart:58-60`: Direct dependency on `FirebaseCrashlytics.instance.log` inside `initState` instead of routing through an abstraction service.
-- `lib/features/auth/presentation/email_verification_screen.dart`: Token-removal failures block exit via `PopScope(canPop: false)` until local credentials can be cleared.
-- `lib/features/app/sirati_route_table.dart:40`: A `sirati://app/login` deep link after failed post-deletion cleanup opens normal login without retrying the pending cleanup; the deep link does not carry `PendingLocalSessionCleanup` route arguments.
-- `lib/core/storage/user_scoped_storage.dart:49`: If preferences `reload()` fails in `wipeUserScopedStorage()`, no user-scoped preference removal is attempted, although the independent secure-storage removals have already run.
+- `lib/features/auth/presentation/email_verification_screen.dart:152-177`: Token-removal failures block exit via `PopScope(canPop: false)` until local credentials can be cleared.
+- `lib/features/app/sirati_route_table.dart:40-43`: A `sirati://app/login` deep link after failed post-deletion cleanup opens normal login without retrying the pending cleanup; the deep link does not carry `PendingLocalSessionCleanup` route arguments.
+- `lib/core/storage/user_scoped_storage.dart:49-64`: If preferences `reload()` fails in `wipeUserScopedStorage()`, no user-scoped preference removal is attempted, although the independent secure-storage removals have already run.
