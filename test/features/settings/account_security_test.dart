@@ -264,6 +264,10 @@ void main() {
       await tester.tap(find.text('Delete my account'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Delete forever'));
+      await tester.pump();
+      // The preceding service test created DiskCache's completed wipe future
+      // outside FakeAsync. Let its real-zone continuation run before settling.
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
       await tester.pumpAndSettle();
       expect(find.byType(LoginScreen), findsOneWidget);
       expect(find.text('Private account data'), findsNothing);
@@ -272,6 +276,7 @@ void main() {
         Navigator.of(tester.element(find.byType(LoginScreen))).canPop(),
         isFalse,
       );
+      expect(service.tokens.value, isNull);
       expect(service.requests, ['DELETE /api/auth/account']);
     });
 

@@ -106,7 +106,7 @@ void main() {
     device = _DeviceTokens();
     NotificationService.instance.configureForTest(
       tokens: device,
-      clientFactory: () => ApiClient(),
+      clientFactory: ApiClient.new,
     );
     SessionCache.instance.setUser(
       const AuthUser(
@@ -201,8 +201,8 @@ void main() {
             '$path reports ${returnFalse ? 'false' : 'throwing'} preference '
             'removal for $key', () async {
           final shared = await SharedPreferences.getInstance();
-          final other = '${DiskCache.keyPrefix}other';
-          final otherDocument = '${UserScopedKeys.builderDraftPrefix}other';
+          const other = '${DiskCache.keyPrefix}other';
+          const otherDocument = '${UserScopedKeys.builderDraftPrefix}other';
           await shared.setString(key, 'private data');
           await shared.setString(other, 'other private data');
           await shared.setString(otherDocument, 'other private CV');
