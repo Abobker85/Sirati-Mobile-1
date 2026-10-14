@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,14 +16,20 @@ class DiskCacheEntry {
 /// Used only for non-auth content (dashboard, CVs list, news). Never store
 /// tokens or session payloads here.
 ///
-/// Envelope: `{ schemaVersion, savedAt, data }`. Schema mismatch → empty.
+/// Envelope: `{ schemaVersion, cacheEpoch, savedAt, data }`.
+/// Schema or session epoch mismatch → empty.
 class DiskCache {
   DiskCache._();
 
   static final DiskCache instance = DiskCache._();
+  int _generation = 0;
+  Future<void>? _pendingClear;
+
+  // Kept outside keyPrefix so wiping entries preserves the session boundary.
+  static const _epochKey = 'sirati_content_cache_epoch';
 
   /// Bump when the envelope or expected payload shape changes incompatibly.
-  static const schemaVersion = 1;
+  static const schemaVersion = 2;
 
   /// Skip write when serialized envelope exceeds this size (~200KB).
   static const maxBytes = 200 * 1024;
@@ -48,8 +55,11 @@ class DiskCache {
 
   /// Returns `{data, savedAt}` or null when missing / corrupt / schema mismatch.
   Future<DiskCacheEntry?> get(String key) async {
+    final generation = _generation;
     try {
+      await _pendingClear;
       final prefs = await _prefs;
+      if (generation != _generation) return null;
       final raw = prefs.getString(key);
       if (raw == null || raw.isEmpty) return null;
 
@@ -64,6 +74,9 @@ class DiskCache {
         await prefs.remove(key);
         return null;
       }
+      // A platform write dispatched before clear may finish after the wipe.
+      // Its old epoch stays unreadable, including after preferences reload.
+      if (map['cacheEpoch'] != (prefs.getString(_epochKey) ?? '')) return null;
 
       final data = map['data'];
       if (data is! Map) return null;
@@ -82,9 +95,14 @@ class DiskCache {
 
   /// Persists [data] under [key]. Oversized or failed writes are swallowed.
   Future<void> put(String key, Map<String, dynamic> data) async {
+    final generation = _generation;
     try {
+      await _pendingClear;
+      final prefs = await _prefs;
+      if (generation != _generation) return;
       final envelope = <String, dynamic>{
         'schemaVersion': schemaVersion,
+        'cacheEpoch': prefs.getString(_epochKey) ?? '',
         'savedAt': DateTime.now().toUtc().toIso8601String(),
         'data': data,
       };
@@ -92,7 +110,6 @@ class DiskCache {
       // utf8 length ≈ code-unit length for JSON ASCII; reject large blobs.
       if (encoded.length > maxBytes) return;
 
-      final prefs = await _prefs;
       await prefs.setString(key, encoded);
     } catch (_) {
       // Best-effort offline cache — never block the UI.
@@ -100,9 +117,23 @@ class DiskCache {
   }
 
   /// Removes every `sirati_cache_*` key (logout / session expiry).
-  Future<void> clear() async {
+  Future<void> clear() {
+    _generation++;
+    final clearing = _clear(_pendingClear);
+    _pendingClear = clearing;
+    return clearing;
+  }
+
+  Future<void> _clear(Future<void>? previous) async {
     try {
+      await previous;
       final prefs = await _prefs;
+      final random = Random.secure();
+      final epoch = List.generate(
+        16,
+        (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+      ).join();
+      await prefs.setString(_epochKey, epoch);
       final keys =
           prefs.getKeys().where((k) => k.startsWith(keyPrefix)).toList();
       for (final key in keys) {
