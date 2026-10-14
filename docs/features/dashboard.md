@@ -59,7 +59,7 @@ The authenticated heart of the app: launch/session bootstrap, the splash and wel
 - `dashboardProvider(english)` (`AsyncNotifierProvider.autoDispose.family`): first `build` may use memory/disk cache, every later build forces network; syncs `SessionCache.unreadCount` from the payload; Riverpod `retry` disabled (explicit Retry button instead).
 - `analysesHistoryProvider` / `generatedCvsHistoryProvider` (`AsyncNotifierProvider.autoDispose`): page 1 on build; `loadMore` guarded by `loadingMore`/`hasMore` and a generation counter so a pre-refresh fetch can't append to a refreshed list; failures keep rows and set `loadMoreFailed`.
 - `educationInterestProvider` (`AsyncNotifierProvider.autoDispose`): device flag via `EducationInterestStore` (backed by `sirati_education_interest`); UI flips optimistically, storage failure only re-shows the button after restart; double-register writes once.
-- Local data: greeting falls back to `SessionCache.user` name; unread badge falls back to `SessionCache.unreadCount` when the payload omits it. Sign-out/401 wipe (`AuthSessionGuard` + `wipeUserScopedStorage` + `MobileContentService.clearAllCaches`) clears session, disk caches, and the education-interest flag.
+- Local data: greeting falls back to `SessionCache.user` name; unread badge falls back to `SessionCache.unreadCount` when the payload omits it. Sign-out/401 wipe (`LocalSessionCleanup` in `lib/shared/services/local_session_cleanup.dart`: token, session cache, content caches via `MobileContentService.clearAllCaches`, account storage via `wipeUserScopedStorage`, device push token, analytics identity) clears session, disk caches, and the education-interest flag. Every step runs and failures aggregate into `LocalSessionCleanupException`.
 - Content caches use a generation boundary at sign-out/401. Late responses cannot warm memory or disk, and disk envelopes with a previous persisted epoch remain unreadable even if a platform write finishes after the wipe. Normal cache hits and offline fallback stay available within the current session.
 
 ## API
@@ -101,7 +101,7 @@ The authenticated heart of the app: launch/session bootstrap, the splash and wel
 
 ## Known gaps
 
-- Education tab has no list: `MobileContentService.education()` (list endpoint `/mobile/education?lang=&type=`) has no callers — `lib/shared/services/mobile_content_service.dart:98`, verified by search; the detail endpoint is only reachable via push-tap ids.
+- Education tab has no list: `MobileContentService.education()` (list endpoint `/mobile/education?lang=&type=`) has no production callers — `lib/shared/services/mobile_content_service.dart:100`, verified by search; the detail endpoint is only reachable via push-tap ids.
 - `EducationInterestStore` is device-only with no server waitlist: reinstalls and second devices lose the flag (`lib/features/dashboard/application/education_interest_controller.dart:17`).
 - `EntitlementStore.hasPremium` is a hardcoded `false` placeholder, so `/premium` always gates (`lib/core/routing/entitlement_store.dart:8`).
 - `AnalyticsService` is currently a disabled no-op (debug prints only), so `feature_interest` and tab `screen_view` events don't leave the device (`lib/core/network/analytics_service.dart:9`). The `app_open` heartbeat is separate and does leave: `HomeScreen` sends it via `NotificationEngagementService` to `POST /mobile/activity`.

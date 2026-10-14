@@ -44,21 +44,21 @@ Overview of everything outside individual features: startup in `lib/main.dart` (
 | `lib/core/utils/bidi_text.dart` / `bidi_text_utils.dart` | BiDi isolation, greeting, avatar initial |
 | `lib/core/utils/locale_format.dart` / `arabic_date_format.dart` / `app_format.dart` / `latin_digits.dart` | Mixed-locale titles/bodies, Arabic dates, relative time, digit shaping |
 | `lib/features/localization/app_locale.dart` | Re-export of the core locale API for feature code |
-| `lib/shared/theme/sirati_colors.dart` | `SiratiColors` token set (light + dark), `context.sirati` accessor |
-| `lib/shared/theme/app_theme.dart` | Material themes per locale (`lightFor`/`darkFor`), spacing, text styles |
+| `lib/shared/theme/sirati_colors.dart` | `SiratiColors` token set (light + dark), `context.sirati` accessor; `primary` is a fill (white `onPrimary` text on it), `primaryInk` is the teal text ink |
+| `lib/shared/theme/app_theme.dart` | Material themes per locale (`lightFor`/`darkFor`), spacing, text styles; filled buttons use white `onPrimary` on `primary` (#007F73), disabled outlined buttons fall back to a muted outline |
 | `lib/shared/theme/app_theme_controller.dart` | `themeMode` notifier: bootstrap, persist, analytics on change |
 | `lib/shared/services/notification_service.dart` | FCM: permissions, token register/unregister, foreground display, tap buffering |
 | `lib/shared/services/notification_engagement_service.dart` | Activity/open/conversion/preference telemetry for smart scheduling |
 | `lib/shared/services/mobile_content_service.dart` | Cached content gateway (dashboard, CVs, education, job news, notifications) |
 | `lib/shared/services/session_cache.dart` | In-memory session identity (`user`, `unreadCount`) |
-| `lib/shared/widgets/directional_icon.dart` | Once-mirroring RTL icon wrapper |
+| `lib/shared/widgets/directional_icon.dart` | Once-mirroring RTL icon wrapper (skips icons with `matchTextDirection`, which `Icon` already flips) |
 | `lib/l10n/app_ar.arb` / `lib/l10n/app_en.arb` | Arabic / English string catalogues |
 
 ## State and data
 
-- No global store: locale (`AppLocale.languageCode`), theme (`AppThemeController.themeMode`), and session identity (`SessionCache`) are `ValueNotifier`s observed directly by `MaterialApp`; feature data lives in Riverpod providers per feature.
-- Persisted keys (secure storage): `sirati_lang`, `sirati_theme_mode`, `sirati_onboarding_completed`, `sirati_notifications_enabled`, `sirati_cv_draft`, `sirati_review_requested`, `sirati_cv_generation_count`, `sirati_education_interest`, `sirati_auth_token`. Device-scoped (survive sign-out): language, theme, onboarding. Wiped on sign-out/401: token, `DiskCache` (`sirati_cache_*`), CV draft, notifications opt-in, education interest, builder drafts/docs.
-- `DiskCache` envelope (`schemaVersion`, `savedAt`, `data`): schema mismatch or oversize (> ~200 KB) payloads are dropped silently; CVs/news caches are language-scoped so ar/en never overwrite each other; notifications are never disk-cached.
+- No global store: locale (`AppLocale.languageCode`) and theme (`AppThemeController.themeMode`) are `ValueNotifier`s observed directly by `MaterialApp` (`lib/main.dart:261`); session identity (`SessionCache.user`, also a `ValueNotifier`) is read per feature, and feature data lives in Riverpod providers per feature.
+- Persisted keys (secure storage): `sirati_lang`, `sirati_theme_mode`, `sirati_onboarding_completed`, `sirati_notifications_enabled`, `sirati_cv_draft`, `sirati_review_requested`, `sirati_cv_generation_count`, `sirati_education_interest`, `sirati_auth_token`. Device-scoped (survive sign-out): language, theme, onboarding. Wiped on sign-out/401 via `LocalSessionCleanup` (`lib/shared/services/local_session_cleanup.dart`, every step attempted, failures aggregated): token, `DiskCache` (`sirati_cache_*`), CV draft, notifications opt-in, education interest, builder drafts/docs.
+- `DiskCache` envelope (`schemaVersion`, `cacheEpoch`, `savedAt`, `data`): schema mismatch or oversize (> ~200 KB) payloads are dropped silently; CVs/news caches are language-scoped so ar/en never overwrite each other; notifications are never disk-cached. Sign-out/401 bumps an in-memory generation and rotates a persisted epoch (`sirati_content_cache_epoch`) so late responses and stale disk writes can never warm the next session.
 - `MobileContentService` memory cache: 60 s TTL by default (job titles 24 h, notification list 30 s); `force` bypasses; `invalidateCvRelated()` clears dashboard + CV lists after mutations.
 
 ## API
@@ -104,9 +104,9 @@ Overview of everything outside individual features: startup in `lib/main.dart` (
 
 ## Known gaps
 
-- `AnalyticsService` is a disabled facade: every method debug-prints and returns, so no screen/funnel/preference event currently leaves the device (`lib/core/network/analytics_service.dart:14`).
-- `EntitlementStore.hasPremium` defaults to `false` with RevenueCat yet to replace it — gated routes are unreachable until then (`lib/core/routing/entitlement_store.dart:5`).
-- Missing Firebase config (no plist/json, e.g. previews) silently disables push, analytics, and Crashlytics while the app still runs (`lib/main.dart:150`).
+- `AnalyticsService` is a disabled facade: every method debug-prints and returns, so no screen/funnel/preference event currently leaves the device (`lib/core/network/analytics_service.dart:21`).
+- `EntitlementStore.hasPremium` defaults to `false` with RevenueCat yet to replace it — gated routes are unreachable until then (`lib/core/routing/entitlement_store.dart:8`).
+- Missing Firebase config (no plist/json, e.g. previews) silently disables push, analytics, and Crashlytics while the app still runs (`lib/main.dart:144`).
 - Sentry DSN/environment/release arrive via `--dart-define` with empty defaults — unset means events go nowhere (`lib/main.dart:49`).
-- Non-mobile platforms squeeze the whole app into a 430 px column — a stopgap, not a responsive layout (`lib/main.dart:304`).
-- `DiskCache` silently drops payloads over ~200 KB, which can leave large responses permanently uncached offline (`lib/core/storage/disk_cache.dart:28`).
+- Non-mobile platforms squeeze the whole app into a 430 px column — a stopgap, not a responsive layout (`lib/main.dart:305`).
+- `DiskCache` silently drops payloads over ~200 KB, which can leave large responses permanently uncached offline (`lib/core/storage/disk_cache.dart:36`).
