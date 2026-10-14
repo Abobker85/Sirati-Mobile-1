@@ -138,32 +138,18 @@ void main() {
     expect(offenders, isEmpty, reason: offenders.join('\n'));
   });
 
-  test(
-      'brand ramp between primary and primaryDark cannot support WCAG AA across a gradient (R2 documentation)',
-      () {
-    // Mathematical proof documenting why primaryGradient was eliminated as a design token:
-    // It cannot support WCAG AA (>= 4.5:1) for either dark or light ink across the ramp.
-    final lightPrimary = SiratiColors.light.primary; // #00A898
-    final lightPrimaryDark = SiratiColors.light.primaryDark; // #006A60
-    final darkInk = SiratiColors.light.onPrimary; // #00332D
-    const whiteInk = Color(0xFFFFFFFF);
-
-    // Dark ink fails on primaryDark (gradient far end: 2.14:1 < 4.5)
-    final darkInkRatio = AppContrast.ratio(darkInk, lightPrimaryDark);
-    expect(darkInkRatio, lessThan(4.5),
-        reason:
-            'Dark ink cannot be used across gradient ramp because far end is only $darkInkRatio:1');
-
-    // White text fails on primary (gradient near end: 2.98:1 < 4.5)
-    final whiteInkRatio = AppContrast.ratio(whiteInk, lightPrimary);
-    expect(whiteInkRatio, lessThan(4.5),
-        reason:
-            'White ink cannot be used across gradient ramp because near end is only $whiteInkRatio:1');
-
-    // Solid primaryDark with white text passes strictly (6.50:1 >= 4.5)
-    final solidRatio = AppContrast.ratio(whiteInk, lightPrimaryDark);
-    expect(solidRatio, greaterThanOrEqualTo(4.5),
-        reason:
-            'Solid primaryDark with white text provides safe $solidRatio:1 contrast');
-  });
+  for (final (mode, c) in [
+    ('light', SiratiColors.light),
+    ('dark', SiratiColors.dark),
+  ]) {
+    test('filled buttons carry white labels at AA ($mode)', () {
+      // Product decision: primary actions read white-on-teal. The fill is
+      // tuned so that stays >= 4.5:1, not the other way round.
+      expect(c.onPrimary, const Color(0xFFFFFFFF));
+      for (final fill in [c.primary, c.primaryContainer]) {
+        expect(AppContrast.ratio(c.onPrimary, fill), greaterThanOrEqualTo(4.5),
+            reason: 'onPrimary on $fill ($mode)');
+      }
+    });
+  }
 }

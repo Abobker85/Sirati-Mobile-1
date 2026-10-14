@@ -14,17 +14,17 @@ export 'package:sirati/shared/theme/sirati_colors.dart';
 /// Prefer [context.sirati] in widgets so dark mode resolves correctly.
 class AppColors {
   // ── Brand teal ──
-  static const primary = Color(0xFF00A898);
+  static const primary = Color(0xFF007F73);
   static const primaryDark = Color(0xFF006A60);
   static const primaryLight = Color(0xFFDDF6F3);
   static const primaryMid = Color(0xFF59DAC9);
-  static const primaryContainer = Color(0xFF00A898);
-  static const onPrimary = Color(0xFF00332D);
+  static const primaryContainer = Color(0xFF007F73);
+  static const onPrimary = Color(0xFFFFFFFF);
 
   /// Foreground-safe brand ink (see SiratiColors.primaryInk).
   static const primaryInk = Color(0xFF006A60);
 
-  static const teal = Color(0xFF00A898);
+  static const teal = Color(0xFF007F73);
   static const tealLight = Color(0xFFDDF6F3);
   static const tealDark = Color(0xFF006A60);
 

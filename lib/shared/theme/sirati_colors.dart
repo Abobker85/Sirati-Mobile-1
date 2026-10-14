@@ -131,14 +131,14 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   /// Prefer semantic names (error, warning, info) over raw (red, amber, teal)
   /// in new code so a future re-tune can move a single knob.
   static const light = SiratiColors(
-    primary: Color(0xFF00A898),
+    primary: Color(0xFF007F73),
     primaryDark: Color(0xFF006A60),
     primaryLight: Color(0xFFDDF6F3),
     primaryMid: Color(0xFF59DAC9),
-    primaryContainer: Color(0xFF00A898),
-    onPrimary: Color(0xFF00332D),
+    primaryContainer: Color(0xFF007F73),
+    onPrimary: Color(0xFFFFFFFF),
     primaryInk: Color(0xFF006A60),
-    teal: Color(0xFF00A898),
+    teal: Color(0xFF007F73),
     tealLight: Color(0xFFDDF6F3), // unified with primaryLight (SIRATI-101)
     tealDark: Color(0xFF006A60),
     amber: Color(0xFFC97F1B),
@@ -186,14 +186,14 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
 
   /// Dark palette — teal brand, WCAG-minded text/surface pairs.
   static const dark = SiratiColors(
-    primary: Color(0xFF2FC4B2),
+    primary: Color(0xFF007F73),
     primaryDark: Color(0xFF1A9E8F),
     primaryLight: Color(0xFF0E3B36),
     primaryMid: Color(0xFF3DD4C2),
-    primaryContainer: Color(0xFF2FC4B2),
-    onPrimary: Color(0xFF00332D),
+    primaryContainer: Color(0xFF007F73),
+    onPrimary: Color(0xFFFFFFFF),
     primaryInk: Color(0xFF2FC4B2),
-    teal: Color(0xFF2FC4B2),
+    teal: Color(0xFF007F73),
     tealLight: Color(0xFF0E3B36),
     tealDark: Color(0xFF1A9E8F),
     amber: Color(0xFFE0A03A),
