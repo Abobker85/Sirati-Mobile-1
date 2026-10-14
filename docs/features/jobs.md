@@ -5,7 +5,7 @@ Signed-in users browse job postings in the dashboard **Job News** tab (Arabic la
 ## User flow
 
 1. **List** (`JobNewsScreen`). Header title is the payload `title`, or "Job News" / "أخبار الوظائف". The bell opens `/notifications` (badge from `SessionCache.unreadCount`). The avatar opens `/settings`.
-   - If `profile_context.has_profile` is true, a banner shows `job_title_name` (fallback `career_field`) and `location` (fallback `city`). **Match** / **Matched** toggles the `matched` preset.
+   - If `profile_context.has_profile` is true, a banner shows `job_title_name` (fallback `career_field`) and `location` (fallback `city`). The toggle reads "Match 🎯" / "Matched ✓" (Arabic "المطابقة 🎯" / "المطابقة ✓") and calls `toggleMatched` (`matched` ↔ `all`). The active state uses white `onBrandSurface` on `brandSurface`.
    - Search field, debounced 350 ms. Hint: "Search for a job or company...". The query is trimmed before the request.
    - Preset chips: All, Best Match (`matched`), Government (`gov`), Enterprise (`enterprise`), Tamheer (`tamheer`), Remote (`remote`).
    - Category chips: All, Tech, Finance, Health (`all`, `tech`, `finance`, `health`).
@@ -67,9 +67,11 @@ There is no `/job-news/{id}` route.
 
 `MobileContentService` keeps a process-wide memory cache, TTL 60 seconds, or 30 seconds when `q` is non-empty. Key shape: `job-news:{lang}:{category}:{preset}:{city}:{jobTitleId}:{remote}:{verified}:{source}:{employment}:{query}`.
 
-Disk cache (`DiskCache`, SharedPreferences prefix `sirati_cache_`) is only the unfiltered feed. `DiskCache.newsKey` is `sirati_cache_news_ar` or `sirati_cache_news_en`; each stored envelope carries a session epoch. Filtered and searched responses are memory-only. On network failure the service returns the last memory entry, else a disk entry from the current epoch, and sets `__sirati_offline`. Schema or epoch mismatch, or a payload over about 200 KB, is not kept. Schema version 2 discards older envelopes that have no epoch.
+Disk cache (`DiskCache`, SharedPreferences prefix `sirati_cache_`) is only the unfiltered feed. `DiskCache.newsKey` is `sirati_cache_news_ar` or `sirati_cache_news_en`. Each envelope is `{ schemaVersion, cacheEpoch, savedAt, data }` at schema version 2. A different schema deletes that key. A missing or foreign `cacheEpoch` is left on disk and not returned. An envelope longer than `DiskCache.maxBytes` (`200 * 1024`) is not written. Filtered and searched responses are memory-only. On network failure the service returns the last memory entry, else a disk entry from the current epoch, and sets `__sirati_offline`.
 
-Logout (`AuthApiService._clearLocalSession`) and session expiry (`AuthSessionGuard`) await `MobileContentService.clearAllCaches()`. This advances the memory generation synchronously, clears memory, then rotates a persisted disk epoch and removes every `sirati_cache_*` entry, including legacy unscoped entries. All `_cached` endpoints capture the generation before fetching: an old response still reaches its original caller, but cannot populate either cache or use a stale offline fallback. Disk reads and writes awaiting preferences also check their generation. Already-dispatched platform writes can finish after the wipe, but retain the old epoch and cannot be read by the next session, even after an app restart. New disk operations wait for pending clears. The epoch marker (`sirati_content_cache_epoch`) survives entry removal and contains no account data.
+Sign-out, confirmed account deletion, and session expiry share `LocalSessionCleanup` (`lib/shared/services/local_session_cleanup.dart`). The `caches` step calls `MobileContentService.clearAllCaches()` (`lib/shared/services/mobile_content_service.dart:61`). `AuthApiService.logout` captures the bearer and FCM token, runs that cleanup, and always starts remote cleanup afterwards (`DELETE /fcm-tokens` when a device token exists, then `POST /auth/logout`) even when a local step failed. Every local step is attempted; failures are collected in `LocalSessionCleanupException`. `AuthSessionGuard.handleAuthExpired` (`lib/features/auth/data/auth_session_guard.dart:56`) uses the same cleanup on HTTP 401 only, then still leaves authenticated screens if a later step throws. A 401 whose bearer is no longer the stored token is ignored. Status 403 does not log out.
+
+`clearAllCaches` increments `_cacheGeneration` synchronously, clears memory, then `DiskCache.clear()` rotates `sirati_content_cache_epoch` (16 random bytes as hex, stored outside the `sirati_cache_` prefix) and removes every `sirati_cache_*` key, including a legacy unscoped key such as `sirati_cache_legacy`. All `_cached` endpoints capture the generation before fetching: an old response still reaches its original caller, but cannot populate either cache or use a stale offline fallback. Disk reads and writes awaiting preferences also check their generation. A platform `setString` that already passed that check can finish after the wipe; its envelope keeps the old epoch and cannot be read by the next session, even after an app restart. New disk operations wait on `_pendingClear`. The epoch marker survives entry removal and contains no account data.
 
 `JobNewsFeed.featured` is `items.first` or null. `latest` is `items.sublist(1)`, or empty when there is zero or one item, so a single job is not drawn twice.
 
@@ -88,7 +90,7 @@ Flags: `isGov` when `source_type == gov`; `isEnterprise` when `enterprise`; `isT
 
 Profile: `has_profile` must be boolean true. Career text prefers `job_title_name` over `career_field`. City text prefers `location` over `city`.
 
-Errors: a thrown `ApiException` or other error with no cached payload becomes the list error state. Malformed `items` entries that are not maps are skipped. A 401 clears caches via the session guard.
+Errors: a thrown `ApiException` or other error with no cached payload becomes the list error state. Malformed `items` entries that are not maps are skipped. A 401 runs `LocalSessionCleanup` through the session guard, which includes `clearAllCaches`. A 403 does not.
 
 ## Localization and RTL
 
@@ -96,7 +98,7 @@ Copy on this feature is inline from `AppLocale.isEnglish`, not ARB. `lang` on th
 
 `JobTitleDisplay` splits a title with `ParsedJobTitle`: Arabic primary on top (RTL), English secondary forced LTR. Company on the featured card and detail uses `LocaleFormat.mixedTitle` (Latin tokens protected in Arabic). The body uses `LocaleFormat.mixedBody`. Dates use `AppFormat.relativeTime` / `shortDate` from `published_at` / `valid_until`, with API label strings and `AppFormat.digits` as fallback.
 
-The search icon is a prefix in English and a suffix in Arabic (physical left vs right), not `DirectionalIcon`. List cards hard-code "Details →" and "التفاصيل ←" (`job_news_card.dart`). The bottom nav relies on ambient `Directionality`, so Job News sits at the start edge (right in Arabic).
+The search icon is a prefix in English and a suffix in Arabic so it stays on the physical left in both directions (`lib/features/jobs/presentation/widgets/job_news_filters_bar.dart:115`). It is not `DirectionalIcon`. `DirectionalIcon` (`lib/shared/widgets/directional_icon.dart`) mirrors a directional glyph once in RTL and skips an icon whose `matchTextDirection` is already true. This screen does not use it. List cards hard-code "Details →" and "التفاصيل ←" (`job_news_card.dart:311`). Selected preset and category chips use white `onPrimary` on primary `#007F73`. The detail **Tailor** button sets that same pair (`job_news_detail_screen.dart:339`). The outlined **Apply** button uses `primaryInk` text and a `borderStrong` side (`job_news_detail_screen.dart:368`); it is never disabled, so the theme's muted disabled outline does not apply. The bottom nav relies on ambient `Directionality`, so Job News sits at the start edge (right in Arabic).
 
 ## Tests
 
@@ -112,14 +114,15 @@ The search icon is a prefix in English and a suffix in Arabic (physical left vs 
 
 ## Known gaps
 
-- No saved jobs. The bookmark icon is decorative (`lib/features/jobs/presentation/widgets/job_news_card.dart:184`).
-- `jobNewsItem` is unused (`lib/shared/services/mobile_content_service.dart:201`). Detail can be stale and cannot be opened from a notification id.
-- JSON `action_url` and `is_featured` are not read (`lib/shared/models/job_news.dart:68`). Apply uses only `apply_url` and `url` (`lib/shared/models/job_news.dart:119`).
-- `missing_skills`, `experience_level`, `salary_min`, and `salary_max` are parsed (`lib/shared/models/job_news.dart:97`) and not shown. Salary on screen is `salary_range` only.
-- Featured "Apply Now" is not a separate control (`lib/features/jobs/presentation/widgets/featured_job_card.dart:227`). The card's tap opens details (`lib/features/jobs/presentation/job_news_screen.dart:67`).
+- No saved jobs. The bookmark icon is decorative (`lib/features/jobs/presentation/widgets/job_news_card.dart:185`).
+- `jobNewsItem` is unused (`lib/shared/services/mobile_content_service.dart:203`). Detail can be stale and cannot be opened from a notification id.
+- `JobNews.fromJson` does not read `action_url` or `is_featured` (`lib/shared/models/job_news.dart:68`). Apply uses only `apply_url` and `url` (`lib/shared/models/job_news.dart:119`).
+- `experience_level` (`lib/shared/models/job_news.dart:98`), `salary_min` (`:99`), `salary_max` (`:100`), and `missing_skills` (`:113`) are parsed and not shown. Salary on screen is `salary_range` only.
+- Featured "Apply Now" is a label, not a separate control (`lib/features/jobs/presentation/widgets/featured_job_card.dart:235`). The card's tap opens details (`lib/features/jobs/presentation/job_news_screen.dart:67`).
 - With exactly one posting, that card is featured and "Latest Postings" still shows the empty sentence (`lib/features/jobs/domain/job_news_feed.dart:64`, `lib/features/jobs/presentation/job_news_screen.dart:256`).
-- List-card skill highlight uses `contains` (`lib/features/jobs/presentation/widgets/job_news_card.dart:249`), which is looser than `isSkillMatched` on the detail screen (`lib/features/jobs/domain/job_news_feed.dart:106`).
-- Preset `IconData` values are stored and never drawn (`lib/features/jobs/presentation/widgets/job_news_filters_bar.dart:85`).
+- List-card skill highlight matches case-insensitively or with `contains` (`lib/features/jobs/presentation/widgets/job_news_card.dart:249`), which is looser than `isSkillMatched` on the detail screen (`lib/features/jobs/domain/job_news_feed.dart:106`).
+- Preset `IconData` values are stored (`lib/features/jobs/presentation/widgets/job_news_filters_bar.dart:85`) and the chip draws only `preset.label` (`lib/features/jobs/presentation/widgets/job_news_filters_bar.dart:45`).
 - Category and city lists are hard-coded (`lib/features/jobs/presentation/widgets/job_news_filters_bar.dart:157` and `:220`), not loaded from the API.
 - `AppAsyncBody` is given `fallbackOnEmptyError` (`lib/features/jobs/presentation/job_news_screen.dart:101`), but that value is used only when there is no error and no data (`lib/shared/widgets/loading/app_async_body.dart:69`). A failed first load shows the error state, not `JobNewsFeed.empty`.
 - "New" on the first latest card is positional (`isNew: index == 0` at `lib/features/jobs/presentation/job_news_screen.dart:279`), including after a filter change.
+- "New", "Details →" / "التفاصيل ←", and a highlighted `MetaChip` use fill token `primary` as text (`lib/features/jobs/presentation/widgets/job_news_card.dart:160` and `:316`, `lib/features/jobs/presentation/widgets/job_news_common.dart:19`). Detail match-percent text uses `primaryInk` (`lib/features/jobs/presentation/job_news_detail_screen.dart:200`). The dark walk checks the section heading and card title only (`test/dark_mode_12_screen_walk_test.dart:614`).

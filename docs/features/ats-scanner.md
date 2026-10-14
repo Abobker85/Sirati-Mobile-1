@@ -9,7 +9,7 @@ Job seekers score a CV against a target role. They upload a PDF or TXT, or paste
    - Job description, collapsed by default (optional, max 4000 characters). The header expands it.
    - Upload zone: "Tap to upload PDF or TXT", max 5 MB. A chosen file shows `SelectedFileTile` with Remove. Too large or not PDF/TXT shows an error snackbar and is not kept.
    - Paste resume text (about 12 lines, grows). An "OR" divider sits between upload and paste. One of file or non-blank text is required; both may be sent together.
-   - **Analyze CV** (`SubmitButton`). Disabled-looking loading label "Analyzing..." while the request runs. Invalid fields validate only after the first submit attempt.
+   - **Analyze CV** (`SubmitButton`, filled). The label is white `onPrimary` on primary `#007F73`. The loading label is "Analyzing..." / "جارٍ التحليل..." while the request runs. Invalid fields stay quiet until the first submit, then use `AutovalidateMode.onUserInteraction`.
 2. **Waiting.** `AiProgressOverlay` (`AiProgressKind.analysis`) covers the form. Cancel shows "Cancelled" / "تم الإلغاء" and ignores the late response. Polling pauses while the app is `paused`, `hidden`, or `detached`; that time does not count toward the timeout.
 3. **After the server answers**, the overlay closes and the result is pushed. Snackbars:
    - Poll timed out: score is ready, AI suggestions may still be running.
@@ -19,7 +19,7 @@ Job seekers score a CV against a target role. They upload a PDF or TXT, or paste
 4. **Result** (`AnalysisResultScreen`), two tabs:
    - **Score & Criteria**: animated ring (0–100, skipped when reduce-motion is on), grade chip, band sentence, target title, job-match percent and bar, benchmark category, keyword-source badge, criterion rows (`score / max` and a percent chip), found and missing keyword chips.
    - **Recommendations**: strengths (check marks) and numbered quick wins. Each list has an empty sentence when the array is empty. A static "Ready to upgrade your CV?" card sits under them. It does not navigate.
-   - App bar has `LanguageToggle`. Bottom bar: **Generate Improved CV**. Same overlay pattern (`AiProgressKind.generation`). Success opens `/cv/{id}`. Timeout or AI failure still opens that CV and shows a warning or a Retry snackbar. Cancel does nothing.
+   - App bar has `LanguageToggle`. Bottom bar: **Generate Improved CV** / "توليد سيرة محسّنة", the same filled `SubmitButton` (white `onPrimary` on primary `#007F73`). Same overlay pattern (`AiProgressKind.generation`). Success opens `/cv/{id}`. Timeout or AI failure still opens that CV and shows a warning or a Retry snackbar. Cancel does nothing.
 5. **History** (`HistoryScreen`, dashboard). Tabs: Analyses and Generated CVs (the second tab is the CV builder list). Analyses: skeleton while loading, `AppErrorState` with Retry, pull-to-refresh, empty state whose action opens `CvAnalysisScreen`. Each card shows title, score badge, score bar, input method, and date. Tap opens `AnalysisResultScreen` with the list payload (no extra fetch). A footer loads the next page; a failed page keeps the rows and offers retry. Refresh in the app bar reloads both tabs.
 6. **Open a saved id** (`CvAnalysisLoaderScreen` at `/analysis/{id}`): branded loader, then the result. Failure shows `ApiException.displayMessage` or "Could not open this analysis." with Retry.
 
@@ -71,7 +71,7 @@ No ATS Riverpod provider owns the form. Submit state (`_isLoading`, `_submitted`
 
 `analysesHistoryProvider` is an autoDispose `AsyncNotifier` of `HistoryPage<CvAnalysis>` (`retry` disabled). Page size is 20. `loadMore` appends and skips ids already shown. A failed next page sets `loadMoreFailed` and keeps current rows. A refresh bumps a generation so an in-flight load-more cannot append onto the new list.
 
-Analyses are not written to SharedPreferences or secure storage. Logout and session expiry do not need a dedicated ATS wipe. `MobileContentService.invalidateCvRelated()` runs after a successful improved CV (`my-cvs` and `dashboard` memory cache only).
+Analyses are not written to SharedPreferences, secure storage, or the mobile-content disk cache, so sign-out has no analysis entry to wipe. Logout, confirmed account deletion, and HTTP 401 all run `LocalSessionCleanup` (`lib/shared/services/local_session_cleanup.dart`). Its `caches` step is `MobileContentService.clearAllCaches()`, which bumps the memory generation and rotates the disk epoch for dashboard, CV-list, and job-news payloads only. After a successful improved CV, `invalidateCvRelated()` (`lib/shared/services/mobile_content_service.dart:55`) drops the `my-cvs` and `dashboard` memory entries and leaves their disk copies.
 
 Score bands from `scoreTotal`: excellent ≥ 80, very good ≥ 65, fair ≥ 50, otherwise weak. Criterion band from `score/max` clamped to 0–1: strong ≥ 0.8, good ≥ 0.6, otherwise needs work. `max <= 0` yields ratio 0. `keywordSource` is `job_description` only when the JSON says that; every other value becomes `category`.
 
@@ -89,13 +89,13 @@ All calls use `ApiClient` (`Authorization: Bearer` when a token exists, and `X-S
 
 `CvAnalysis.fromJson` reads: `id`, `target_job_title`, `original_filename`, `input_method` (default `paste`), `score_total`, `grade`, `job_match`, `category` (default `general`), `category_label`, `category_label_en`, `is_general_profile` (also true when category is `general`), `keyword_source`, `classification_warning`, `criteria[]` (`label`, `score`, `max`), `strengths[]`, `weaknesses[]` (`priority`, `issue`, `fix`), `keywords_found[]`, `keywords_missing[]`, `quick_wins[]`, `ai_status` (default `not_configured`), `ai_feedback`, `ai_error`, `created_at`.
 
-Errors: `ApiException` (including Laravel 422 `errors` as `displayMessage`) is shown on the form, the loader, history, and generation. Poll timeout is not an exception; the last payload is shown. A 401 is handled by the session guard, which clears the mobile-content caches.
+Errors: `ApiException` (including Laravel 422 `errors` as `displayMessage`) is shown on the form, the loader, history, and generation. Poll timeout is not an exception; the last payload is shown. Only HTTP 401 logs the user out. `AuthSessionGuard.handleAuthExpired` (`lib/features/auth/data/auth_session_guard.dart:56`) runs `LocalSessionCleanup` and still leaves authenticated screens if a later cleanup step throws. A 401 whose bearer is no longer the stored token is ignored. Status 403 is `ApiErrorType.auth` and does not log out (`lib/core/network/api_client.dart:157` and `:269`).
 
 ## Localization and RTL
 
 Form, result, and history chrome are inline English/Arabic from `AppLocale.isEnglish`, not ARB, except the history count `analysisCount` in `app_en.arb` / `app_ar.arb`. The result screen wraps itself in `AppLocale.direction` and adds `LanguageToggle`. The form does not.
 
-File names on the selected-file tile are forced LTR via `BidiText.isolateLtr`. History titles use `LocaleFormat.mixedTitle`. `CvAnalysis.inputMethodLabel` is Arabic only (`ملف`, `ملف ونص`, `لصق نص`); the history card uses `inputMethodLabel` in `history_page.dart`, which has both languages. Keyword and criterion labels are server strings and are not reshaped. The result screen does not use `DirectionalIcon`.
+File names on the selected-file tile are forced LTR via `BidiText.isolateLtr`. History titles use `LocaleFormat.mixedTitle`. `CvAnalysis.inputMethodLabel` is Arabic only (`ملف`, `ملف ونص`, `لصق نص`); the history card uses `inputMethodLabel` in `history_page.dart`, which has both languages. Keyword and criterion labels are server strings and are not reshaped. Analyze and Generate pass non-directional icons (`Icons.analytics_outlined`, `Icons.auto_awesome_rounded`) into `SubmitButton`, so `DirectionalIcon` (`lib/shared/widgets/directional_icon.dart`) does not mirror them. `DirectionalIcon` mirrors a directional glyph once in RTL and skips an icon whose `matchTextDirection` is already true. `SubmitButton` paints a directional icon through that widget (`lib/shared/widgets/submit_button.dart:49`).
 
 ## Tests
 
@@ -115,11 +115,11 @@ File names on the selected-file tile are forced LTR via `BidiText.isolateLtr`. H
 
 ## Known gaps
 
-- `weaknesses` is parsed (`lib/shared/models/cv_analysis.dart:78`) and never rendered. Recommendations show only `strengths` and `quick_wins` (`lib/features/ats_scanner/presentation/analysis_result/recommendations_tab.dart:30`).
+- `weaknesses` is parsed (`lib/shared/models/cv_analysis.dart:78`) and never rendered. `RecommendationsTab` takes only `strengths` and `quickWins` (`lib/features/ats_scanner/presentation/analysis_result/recommendations_tab.dart:8`, lists at `:30` and `:45`).
 - `CvAnalysis.inputMethodLabel` ignores locale (`lib/shared/models/cv_analysis.dart:105`). History uses `inputMethodLabel` in `lib/features/dashboard/domain/history_page.dart:53` instead. `test/cv_api_service_test.dart` expects the Arabic paste label from the model getter.
 - Notification route `analysis/{id}` opens History and discards the id (`lib/features/dashboard/domain/notification_target.dart:109`). The named route `/analysis/{id}` does load that analysis.
 - English classification copy ignores the server string; Arabic shows `classification_warning` as-is (`lib/features/ats_scanner/presentation/cv_analysis_screen.dart:206`).
 - History header uses `analysisCount(page.items.length)`, the rows loaded so far, not a server total (`lib/features/dashboard/presentation/history_screen.dart:179`).
-- Improved-CV generation sends an empty body and no idempotency key (`lib/features/ats_scanner/application/improved_cv_controller.dart:76`).
+- Improved-CV generation sends `overrides: const {}` and no idempotency key (`lib/features/ats_scanner/application/improved_cv_controller.dart:76`). `generateCvFromAnalysis` accepts a key (`lib/shared/services/cv_api_service.dart:197`); this caller does not pass one.
 - No on-disk cache for analyses. Offline history and deep links fail with the error state.
-- The upgrade card on the recommendations tab is not a button (`lib/features/ats_scanner/presentation/analysis_result/recommendations_tab.dart:200`). The only generate control is the bottom bar.
+- The upgrade card on the recommendations tab is a `Container`, not a button (`lib/features/ats_scanner/presentation/analysis_result/recommendations_tab.dart:208`). The only generate control is the bottom bar.
