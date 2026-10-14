@@ -16,6 +16,7 @@ import 'package:sirati/features/settings/presentation/delete_account_screen.dart
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 import '../../support/contrast_probe.dart';
@@ -79,15 +80,20 @@ void main() {
   group('screens', () {
     setUp(() => AppLocale.languageCode.value = 'en');
 
-    Widget app(Widget home, AuthApiService auth, ThemeData theme) =>
+    Widget app(Widget home, AuthApiService auth, ThemeData theme,
+            {String language = 'en'}) =>
         ProviderScope(
           overrides: [authApiServiceProvider.overrideWithValue(auth)],
           child: MaterialApp(
             theme: theme,
-            locale: const Locale('en'),
+            locale: Locale(language),
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: home,
+            onGenerateRoute: (settings) => MaterialPageRoute(
+              settings: settings,
+              builder: (_) => Scaffold(body: Text('route:${settings.name}')),
+            ),
           ),
         );
 
@@ -105,6 +111,57 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(AlertDialog), findsOneWidget);
     });
+
+    for (final language in ['en', 'ar']) {
+      testWidgets('delete: local cleanup failure is shown in $language',
+          (tester) async {
+        AppLocale.languageCode.value = language;
+        final en = language == 'en';
+        final requests = <String>[];
+        final calls = <String>[];
+        final auth = AuthApiService(
+          apiClient: ApiClient(httpClient: MockClient((request) async {
+            requests.add('${request.method} ${request.url.path}');
+            return http.Response('{}', 200);
+          })),
+          localSessionCleanup: LocalSessionCleanup(
+            clearToken: () => calls.add('token'),
+            clearSession: () => calls.add('session'),
+            clearCaches: () => throw StateError('cache locked'),
+            wipeStorage: () => calls.add('storage'),
+            forgetDevice: () => calls.add('device'),
+            clearAnalytics: () => calls.add('analytics'),
+          ),
+        );
+        await tester.pumpWidget(app(
+          const DeleteAccountScreen(),
+          auth,
+          AppTheme.lightFor(arabic: !en),
+          language: language,
+        ));
+        await tester.enterText(find.byType(TextField), 'secret');
+        await tester.tap(find.text(en ? 'Delete my account' : 'احذف حسابي'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(en ? 'Delete forever' : 'حذف نهائي'));
+        await tester.pumpAndSettle();
+
+        expect(requests, ['DELETE /api/auth/account']);
+        expect(calls, ['token', 'session', 'storage', 'device', 'analytics']);
+        expect(
+          find.text(en
+              ? 'Your account was deleted, but some data could not be cleared from this device.'
+              : 'تم حذف حسابك، لكن تعذر مسح بعض البيانات من هذا الجهاز.'),
+          findsOneWidget,
+        );
+        expect(
+          find.text(en ? 'Account deleted.' : 'تم حذف الحساب.'),
+          findsNothing,
+        );
+        expect(find.byType(DeleteAccountScreen), findsOneWidget);
+        expect(find.text('route:/'), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+    }
 
     testWidgets('change password: one request in flight', (tester) async {
       var calls = 0;

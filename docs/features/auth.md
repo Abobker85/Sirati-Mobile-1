@@ -50,6 +50,7 @@ The auth feature governs user onboarding, authentication, account registration, 
 - **Mid-Session Expiry (`AuthSessionGuard`)**:
   - Listens to HTTP 401 responses globally across `ApiClient`.
   - Debounces concurrent 401 events, unregisters device push tokens, clears secure tokens, flushes memory and disk caches, wipes all account-scoped data, rotates the device FCM token, and replaces the navigator stack with `LoginScreen(sessionExpiredNotice: true)`.
+  - Logout, account deletion, and expiry share `LocalSessionCleanup`: token, session cache, content caches, account storage, device push token, then analytics identity. Every step is attempted in order; thrown failures are collected in `LocalSessionCleanupException`. Expiry still redirects on cleanup failure; the installed API callback reports the error through Flutter.
 
 ## Entry points
 
@@ -80,6 +81,7 @@ The auth feature governs user onboarding, authentication, account registration, 
 | `lib/features/auth/data/auth_session_guard.dart` | `AuthSessionGuard` handling mid-session 401s, request token freshness checks, cache purges, and login redirect |
 | `lib/shared/models/auth_session.dart` | `AuthSession` and `AuthUser` domain models, JSON parsing, and localized job title resolution |
 | `lib/shared/services/auth_api_service.dart` | `AuthApiService` managing HTTP calls for authentication, password recovery, verification, and session teardown |
+| `lib/shared/services/local_session_cleanup.dart` | Ordered local teardown that attempts all steps and reports collected errors |
 | `lib/shared/services/auth_api_service_provider.dart` | `authApiServiceProvider` Riverpod provider |
 | `lib/shared/services/session_cache.dart` | `SessionCache` in-memory singleton holding reactive `AuthUser` and unread notification badge counts |
 | `lib/shared/services/session_user_provider.dart` | `sessionUserIdProvider` watching active user ID to invalidate user-scoped state on account switch |
@@ -189,6 +191,7 @@ The auth feature governs user onboarding, authentication, account registration, 
 - `test/features/auth/sign_out_wipe_test.dart`:
   - Verifies `logout()` and `AuthSessionGuard.handleAuthExpired(401)` wipe account-specific secure storage and SharedPreferences while preserving device-level settings (`sirati_lang`, `sirati_theme_mode`, `sirati_onboarding_completed`).
   - Verifies isolation of in-memory CV builder documents between consecutive user accounts and resilience against storage write failures.
+  - Injects synchronous and asynchronous failures into each cleanup step for logout, deletion, and expiry; checks remaining steps run, original errors are reported, and real account data is wiped even when token deletion fails. Checks that the installed expiry callback reports cleanup errors and still redirects to login.
 - `test/auth_session_guard_test.dart`:
   - Verifies a delayed 401 for an old token does not purge a newer token, failed account deletion preserves local credentials, logout clears token immediately, public login does not send stale bearer headers, and malformed responses become typed `ApiException` instances.
 - `test/login_layout_test.dart`:

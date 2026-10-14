@@ -6,6 +6,7 @@ import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
@@ -85,6 +86,14 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
         AppRoutes.splash,
         (route) => false,
       ));
+    } on LocalSessionCleanupException {
+      if (!mounted) return;
+      AppSnackBar.error(
+        context,
+        en
+            ? 'Your account was deleted, but some data could not be cleared from this device.'
+            : 'تم حذف حسابك، لكن تعذر مسح بعض البيانات من هذا الجهاز.',
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       final pwd = e.errors['password'];
