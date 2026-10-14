@@ -71,8 +71,8 @@ class ExperienceStep extends StatelessWidget {
                     icon: const Icon(Icons.auto_awesome_rounded, size: 18),
                     label: Text(
                       english
-                          ? '✨ XYZ Achievement Builder'
-                          : '✨ صانع الإنجازات المقاسة (معادلة XYZ)',
+                          ? 'XYZ Achievement Builder'
+                          : 'صانع الإنجازات المقاسة (معادلة XYZ)',
                       style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 13),
                     ),

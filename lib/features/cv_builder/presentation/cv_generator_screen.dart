@@ -317,9 +317,19 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       context: context,
       english: english,
       onInsert: (bullet) {
-        final current = _fields.experience.text.trim();
-        _fields.experience.text =
-            current.isEmpty ? bullet : '$current\n$bullet';
+        final updated = appendAchievement(_fields.experience.text, bullet);
+        if (updated == null) {
+          if (mounted) {
+            AppSnackBar.info(
+              context,
+              english
+                  ? 'This achievement is already in your experience.'
+                  : 'هذا الإنجاز موجود مسبقاً في خبراتك.',
+            );
+          }
+          return;
+        }
+        _fields.experience.text = updated;
         _markDirty();
         if (mounted) {
           AppSnackBar.success(

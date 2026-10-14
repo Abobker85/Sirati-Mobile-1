@@ -5,6 +5,56 @@ import 'package:sirati/core/utils/bidi_text.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 
+/// Starter verbs offered as one-tap chips for the action field.
+const achievementVerbsEn = [
+  'Developed',
+  'Led a team to deliver',
+  'Optimized',
+  'Automated',
+  'Increased revenue',
+  'Reduced costs',
+];
+const achievementVerbsAr = [
+  'طوّرت',
+  'قدت فريقاً لتنفيذ',
+  'حسّنت كفاءة',
+  'أتمتت عمليات',
+  'رفعت مبيعات',
+  'قلّصت زمن استجابة',
+];
+
+/// Put [verb] at the start of the action, replacing any starter verb that is
+/// already there, so repeated or successive taps never stack verbs.
+String applyAchievementVerb(String current, String verb, List<String> verbs) {
+  var rest = current.trim();
+  // Longest first, so a verb that prefixes another is not half-stripped.
+  final byLength = [...verbs]..sort((a, b) => b.length - a.length);
+  for (final v in byLength) {
+    if (rest == v || rest.startsWith('$v ')) {
+      rest = rest.substring(v.length).trim();
+      break;
+    }
+  }
+  return rest.isEmpty ? verb : '$verb $rest';
+}
+
+/// [experience] with [bullet] on a new line, or null when that achievement is
+/// already one of its lines.
+String? appendAchievement(String experience, String bullet) {
+  final line = bullet.trim();
+  final current = experience.trim();
+  if (current.isEmpty) return line;
+  final lines = current.split('\n').map((l) => l.trim());
+  if (lines.contains(line)) return null;
+  return '$current\n$line';
+}
+
+/// Whether [action] says more than a bare starter verb.
+bool isAchievementActionComplete(String action, List<String> verbs) {
+  final t = action.trim();
+  return t.isNotEmpty && !verbs.contains(t);
+}
+
 /// Modal bottom sheet that guides users to craft high-impact, ATS-optimized
 /// quantifiable achievements using the Google XYZ Formula:
 /// "Accomplished [X] as measured by [Y] by doing [Z]".
@@ -135,8 +185,9 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
   }
 
   void _insert() {
+    final verbs = widget.english ? achievementVerbsEn : achievementVerbsAr;
+    if (!isAchievementActionComplete(_actionCtrl.text, verbs)) return;
     final sentence = _formattedSentence;
-    if (sentence.isEmpty) return;
     HapticFeedback.mediumImpact();
     widget.onInsert(sentence);
     Navigator.of(context).pop();
@@ -147,25 +198,9 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
     final c = context.sirati;
     final english = widget.english;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final canInsert = _actionCtrl.text.trim().isNotEmpty;
-
-    final actionPills = english
-        ? [
-            'Developed',
-            'Led a team to deliver',
-            'Optimized',
-            'Automated',
-            'Increased revenue',
-            'Reduced costs'
-          ]
-        : [
-            'طوّرت',
-            'قدت فريقاً لتنفيذ',
-            'حسّنت كفاءة',
-            'أتمتت عمليات',
-            'رفعت مبيعات',
-            'قلّصت زمن استجابة'
-          ];
+    final actionVerbs = english ? achievementVerbsEn : achievementVerbsAr;
+    final canInsert =
+        isAchievementActionComplete(_actionCtrl.text, actionVerbs);
 
     final metricPills = english
         ? [
@@ -348,7 +383,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
-                children: actionPills
+                children: actionVerbs
                     .map((pill) => ActionChip(
                           label: Text(pill,
                               style: TextStyle(
@@ -357,11 +392,9 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                           visualDensity: VisualDensity.compact,
                           backgroundColor: c.surfaceLow,
                           side: BorderSide(color: c.border),
-                          onPressed: () {
-                            final current = _actionCtrl.text.trim();
-                            _actionCtrl.text =
-                                current.isEmpty ? pill : '$pill $current';
-                          },
+                          onPressed: () => _actionCtrl.text =
+                              applyAchievementVerb(
+                                  _actionCtrl.text, pill, actionVerbs),
                         ))
                     .toList(),
               ),

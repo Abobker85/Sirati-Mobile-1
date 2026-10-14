@@ -108,4 +108,93 @@ void main() {
     expect(insertedBullet!.contains('بنسبة 35%'), isTrue);
     expect(insertedBullet!.startsWith('•'), isTrue);
   });
+
+  group('starter verbs never stack', () {
+    const rests = [
+      '',
+      'REST APIs and payment gateway',
+      'واجهات برمجة التطبيقات'
+    ];
+    for (final (lang, verbs) in [
+      ('en', achievementVerbsEn),
+      ('ar', achievementVerbsAr),
+    ]) {
+      test('any tap sequence leaves exactly the last verb ($lang)', () {
+        for (final rest in rests) {
+          for (final first in verbs) {
+            for (final second in verbs) {
+              var text = rest;
+              // Tap twice, then another: order and repeats must not matter.
+              text = applyAchievementVerb(text, first, verbs);
+              text = applyAchievementVerb(text, first, verbs);
+              text = applyAchievementVerb(text, second, verbs);
+              final expected = rest.isEmpty ? second : '$second $rest';
+              expect(text, expected, reason: '$first → $second on "$rest"');
+            }
+          }
+        }
+      });
+
+      test('a bare verb is not an achievement ($lang)', () {
+        for (final v in verbs) {
+          expect(isAchievementActionComplete(v, verbs), isFalse);
+          expect(isAchievementActionComplete(' $v ', verbs), isFalse);
+          expect(isAchievementActionComplete('$v X', verbs), isTrue);
+        }
+        expect(isAchievementActionComplete('   ', verbs), isFalse);
+      });
+    }
+
+    test("text that merely starts with a verb's letters is kept", () {
+      // "Developed" must not be stripped out of "Developers ...".
+      expect(
+        applyAchievementVerb(
+            'Developers onboarding', 'Optimized', achievementVerbsEn),
+        'Optimized Developers onboarding',
+      );
+    });
+  });
+
+  group('appendAchievement', () {
+    test('adds each achievement once, whatever the spacing', () {
+      const bullet = '• Cut costs by 20%.';
+      expect(appendAchievement('', bullet), bullet);
+      expect(appendAchievement('  ', ' $bullet '), bullet);
+      final once = appendAchievement('Role — Co', bullet)!;
+      expect(once, 'Role — Co\n$bullet');
+      expect(appendAchievement(once, bullet), isNull);
+      expect(appendAchievement('$once\n', '  $bullet'), isNull);
+      expect(appendAchievement(once, '• Another.'), '$once\n• Another.');
+    });
+  });
+
+  testWidgets('tapping verb chips replaces the verb in the field',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_wrap(Builder(
+      builder: (context) => ElevatedButton(
+        onPressed: () => AchievementBuilderSheet.show(
+            context: context, english: false, onInsert: (_) {}),
+        child: const Text('Open Sheet'),
+      ),
+    )));
+    await tester.tap(find.text('Open Sheet'));
+    await tester.pumpAndSettle();
+
+    final action = find.byType(TextField).first;
+    for (final verb in ['طوّرت', 'طوّرت', 'حسّنت كفاءة']) {
+      await tester.tap(find.widgetWithText(ActionChip, verb));
+      await tester.pump();
+    }
+    expect(tester.widget<TextField>(action).controller!.text, 'حسّنت كفاءة');
+
+    // A bare verb cannot be inserted.
+    final insert = tester.widget<ButtonStyleButton>(find.ancestor(
+      of: find.text('إدراج في الخبرة'),
+      matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+    ));
+    expect(insert.onPressed, isNull);
+  });
 }
