@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_widgets.dart';
 import 'package:sirati/features/cv_builder/presentation/widgets/skill_chips_selector.dart';
 import 'package:sirati/shared/models/job_title.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ai_cv_field.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 
-/// Step 2: core skills (chip picker + free text) and professional summary.
+/// Step 2: core skills (chip picker) and professional summary.
 class SkillsStep extends StatelessWidget {
   const SkillsStep({super.key, required this.props, required this.jobTitles});
 
@@ -24,46 +25,46 @@ class SkillsStep extends StatelessWidget {
       children: [
         FieldGroup(
           label: english ? 'Core Skills *' : 'المهارات الأساسية *',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SkillChipsSelector(
-                controller: f.skills,
-                targetJobTitle: f.jobTitle.text,
-                english: english,
-                allJobTitles: jobTitles,
-                enabled: !props.isEnhancing('skills'),
+          // One editor for skills: the chips own the text the AI enhances,
+          // so a second raw field would only show the same list twice.
+          child: AiCvField(
+            field: 'skills',
+            controller: f.skills,
+            english: english,
+            isLoading: props.isEnhancing('skills'),
+            helperText: english
+                ? 'Tap a suggestion or type a skill, then press Add.'
+                : 'اختر من المقترحات أو اكتب مهارة واضغط إضافة.',
+            result: props.fieldResults['skills'],
+            onEnhance: () => props.onEnhance('skills'),
+            onDismissResult: () => props.onDismissResult('skills'),
+            child: FormField<String>(
+              validator: (_) => f.skills.text.trim().isEmpty
+                  ? (english
+                      ? 'Core skills are required.'
+                      : 'المهارات الأساسية مطلوبة.')
+                  : null,
+              builder: (state) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkillChipsSelector(
+                    controller: f.skills,
+                    targetJobTitle: f.jobTitle.text,
+                    english: english,
+                    allJobTitles: jobTitles,
+                    enabled: !props.isEnhancing('skills'),
+                    onChanged: () => state.didChange(f.skills.text),
+                  ),
+                  if (state.hasError) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      state.errorText!,
+                      style: AppFormStyles.errorTextStyle(context.sirati),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(height: 12),
-              AiCvField(
-                field: 'skills',
-                controller: f.skills,
-                english: english,
-                isLoading: props.isEnhancing('skills'),
-                helperText: english
-                    ? 'Example: Laravel, PHP, REST APIs, SQL, Git, Docker.'
-                    : 'مثال: Laravel، PHP، REST APIs، SQL، Git، Docker.',
-                result: props.fieldResults['skills'],
-                onEnhance: () => props.onEnhance('skills'),
-                onDismissResult: () => props.onDismissResult('skills'),
-                child: AppTextFormField(
-                  controller: f.skills,
-                  textAlign: TextAlign.start,
-                  maxLines: 4,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                  enabled: !props.isEnhancing('skills'),
-                  hintText: english
-                      ? 'PHP, Laravel, API, SQL, Git, Agile, Docker'
-                      : 'PHP، Laravel، API، SQL، Git، Agile، Docker',
-                  validator: (value) => (value?.trim().isEmpty ?? true)
-                      ? (english
-                          ? 'Core skills are required.'
-                          : 'المهارات الأساسية مطلوبة.')
-                      : null,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 18),

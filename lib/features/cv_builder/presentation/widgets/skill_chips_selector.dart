@@ -16,6 +16,9 @@ class SkillChipsSelector extends StatefulWidget {
   final List<JobTitle> allJobTitles;
   final bool enabled;
 
+  /// Called after the user adds, removes or clears skills.
+  final VoidCallback? onChanged;
+
   const SkillChipsSelector({
     super.key,
     required this.controller,
@@ -23,6 +26,7 @@ class SkillChipsSelector extends StatefulWidget {
     required this.english,
     this.allJobTitles = const [],
     this.enabled = true,
+    this.onChanged,
   });
 
   @override
@@ -37,22 +41,56 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
 
   // Curated fallback suggestions across common disciplines
   static const Map<String, List<String>> _curatedSkillPacks = {
-    'software': [
-      'Laravel',
-      'PHP',
+    'mobile': [
       'Flutter',
       'Dart',
-      'JavaScript',
-      'TypeScript',
-      'React',
+      'Kotlin',
+      'Swift',
+      'Firebase',
+      'Riverpod',
+      'Bloc',
+      'REST APIs',
+      'Git',
+      'CI/CD',
+      'Unit Testing',
+      'App Store & Google Play Publishing',
+    ],
+    'backend': [
+      'Laravel',
+      'PHP',
+      'Node.js',
       'REST APIs',
       'SQL',
+      'PostgreSQL',
+      'Redis',
       'Docker',
       'Git',
       'CI/CD',
       'Unit Testing',
-      'PostgreSQL',
-      'Redis',
+    ],
+    'frontend': [
+      'JavaScript',
+      'TypeScript',
+      'React',
+      'Next.js',
+      'HTML',
+      'CSS',
+      'Responsive Design',
+      'REST APIs',
+      'Git',
+      'Unit Testing',
+    ],
+    'software': [
+      'Git',
+      'REST APIs',
+      'SQL',
+      'Docker',
+      'CI/CD',
+      'Unit Testing',
+      'JavaScript',
+      'Python',
+      'Agile / Scrum',
+      'Problem Solving',
     ],
     'marketing': [
       'SEO',
@@ -192,6 +230,7 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
     _isUpdatingInternally = true;
     widget.controller.text = _skills.join(', ');
     _isUpdatingInternally = false;
+    widget.onChanged?.call();
   }
 
   void _addSkill(String skill) {
@@ -252,16 +291,34 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
 
     // 2. Infer pack from target job title keywords
     String? matchedCategory;
-    if (title.contains('برمج') ||
+    // Specific stacks first: "Flutter developer" must not get backend packs.
+    if (title.contains('flutter') ||
+        title.contains('mobile') ||
+        title.contains('android') ||
+        title.contains('ios') ||
+        title.contains('فلاتر') ||
+        title.contains('جوال') ||
+        title.contains('موبايل') ||
+        title.contains('تطبيقات')) {
+      matchedCategory = 'mobile';
+    } else if (title.contains('backend') ||
+        title.contains('back-end') ||
+        title.contains('laravel') ||
+        title.contains('php') ||
+        title.contains('node') ||
+        title.contains('خلفي')) {
+      matchedCategory = 'backend';
+    } else if (title.contains('frontend') ||
+        title.contains('front-end') ||
+        title.contains('react') ||
+        title.contains('web') ||
+        title.contains('واجهات')) {
+      matchedCategory = 'frontend';
+    } else if (title.contains('برمج') ||
         title.contains('مطور') ||
         title.contains('مهندس') ||
         title.contains('dev') ||
-        title.contains('software') ||
-        title.contains('backend') ||
-        title.contains('frontend') ||
-        title.contains('web') ||
-        title.contains('flutter') ||
-        title.contains('laravel')) {
+        title.contains('software')) {
       matchedCategory = 'software';
     } else if (title.contains('تسويق') ||
         title.contains('سوشيال') ||

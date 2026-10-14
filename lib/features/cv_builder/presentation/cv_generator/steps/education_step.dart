@@ -60,7 +60,7 @@ class EducationStep extends StatelessWidget {
             isLoading: props.isEnhancing('certifications'),
             helperText: english
                 ? 'Example: AWS Certified Cloud Practitioner — Amazon Web Services — 2023.'
-                : 'مثال: AWS Certified Cloud Practitioner — Amazon Web Services — 2023.',
+                : 'مثال: شهادة AWS Cloud Practitioner من Amazon عام 2023.',
             result: props.fieldResults['certifications'],
             onEnhance: () => props.onEnhance('certifications'),
             onDismissResult: () => props.onDismissResult('certifications'),

@@ -103,9 +103,8 @@ void main() {
   testWidgets('undo restores exact pre-enhance text', (tester) async {
     final api = _FakeCvApiService();
     await _openSkillsStep(tester, api);
-    final skills = _fieldWithHint('PHP, Laravel, API, SQL, Git, Agile, Docker');
     const original = 'Laravel, PHP, MySQL, REST APIs, Docker, Git, CI/CD';
-    await tester.enterText(skills, original);
+    await _addSkills(tester, original);
     await _tapEnhance(tester, 'skills');
 
     api.complete('skills', {
@@ -115,24 +114,23 @@ void main() {
       'ats_keywords_added': ['REST API'],
     });
     await tester.pumpAndSettle();
-    expect(tester.widget<TextField>(skills).controller!.text,
+    expect(_skillsText(tester),
         'Laravel, PHP, REST APIs, Docker, Git, PostgreSQL');
 
     await tester.tap(find.text('Undo'));
     await tester.pump();
-    expect(tester.widget<TextField>(skills).controller!.text, original);
+    expect(_skillsText(tester), original);
   });
 
   testWidgets('superseded field requests are discarded', (tester) async {
     final api = _FakeCvApiService();
     await _openSkillsStep(tester, api);
-    final skills = _fieldWithHint('PHP, Laravel, API, SQL, Git, Agile, Docker');
     final summary =
         _fieldWithHint('Briefly describe your experience and achievements...');
     const skillsText = 'Laravel, PHP, MySQL, REST APIs, Docker, Git, CI/CD';
     const summaryText =
         'Experienced backend developer focused on building scalable REST APIs and microservices architecture';
-    await tester.enterText(skills, skillsText);
+    await _addSkills(tester, skillsText);
     await tester.enterText(summary, summaryText);
 
     await _tapEnhance(tester, 'skills');
@@ -140,7 +138,7 @@ void main() {
 
     api.complete('skills', _result('stale skills response'));
     await tester.pump();
-    expect(tester.widget<TextField>(skills).controller!.text, skillsText);
+    expect(_skillsText(tester), skillsText);
 
     api.complete('summary', _result('current summary response'));
     await tester.pumpAndSettle();
@@ -151,15 +149,34 @@ void main() {
   testWidgets('overlay clears when enhancement fails', (tester) async {
     final api = _FakeCvApiService();
     await _openSkillsStep(tester, api);
-    final skills = _fieldWithHint('PHP, Laravel, API, SQL, Git, Agile, Docker');
-    await tester.enterText(
-        skills, 'Laravel, PHP, MySQL, REST APIs, Docker, Git, CI/CD');
+    await _addSkills(
+        tester, 'Laravel, PHP, MySQL, REST APIs, Docker, Git, CI/CD');
     await _tapEnhance(tester, 'skills');
     expect(find.byType(CircularProgressIndicator), findsWidgets);
 
     api.fail('skills');
     await tester.pumpAndSettle();
     expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('skills are required, and entered in one place only',
+      (tester) async {
+    await _openSkillsStep(tester, _FakeCvApiService());
+    // A single editable skills input: the chip entry, not a second raw field.
+    expect(_fieldWithHint('PHP, Laravel, API, SQL, Git, Agile, Docker'),
+        findsNothing);
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('Core skills are required.'), findsOneWidget);
+    expect(find.text('Skills & Summary'), findsOneWidget);
+
+    await _addSkills(tester, 'Flutter');
+    await tester.pumpAndSettle();
+    expect(find.text('Core skills are required.'), findsNothing);
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('Work Experience'), findsOneWidget);
   });
 
   group('AiCvField.isSufficientForEnhancement invariant tests', () {
@@ -272,6 +289,26 @@ Future<void> _openSkillsStep(
   await tester.tap(find.text('Next'));
   await tester.pumpAndSettle();
   expect(find.text('Skills & Summary'), findsOneWidget);
+}
+
+/// Skills are entered through the chip editor, the only skills input.
+Future<void> _addSkills(WidgetTester tester, String csv) async {
+  await tester.enterText(_fieldWithHint('Type a skill and press + ...'), csv);
+  await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+  await tester.pump();
+}
+
+/// The skills as the chips show them, in order.
+String _skillsText(WidgetTester tester) {
+  final chips = <String>[];
+  for (var i = 0;; i++) {
+    final chip = find.byKey(ValueKey('selected_skill_$i'));
+    if (chip.evaluate().isEmpty) break;
+    chips.add(tester
+        .widget<Text>(find.descendant(of: chip, matching: find.byType(Text)))
+        .data!);
+  }
+  return chips.join(', ');
 }
 
 Finder _fieldWithHint(String hint) => find.byWidgetPredicate(
