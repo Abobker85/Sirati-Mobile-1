@@ -8,3 +8,7 @@
 - `lib/l10n/generated` is gitignored and generated; never commit it.
 - Tests: `flutter test <path>`; goldens in `test/golden` (`--update-goldens` only when a visual change is intended).
 - Backend API base: `lib/core/network/api_config.dart` (`https://siratie.com/api`).
+- Feature docs live in `docs/features/*.md` (index: README.md); update the matching file when behaviour changes.
+- Analysis history lives in `lib/features/dashboard` (`analysesHistoryProvider`, `GET /cv-analyses`), not in ats_scanner.
+- Only HTTP 401 logs out; 403 is typed `auth` but never logs out. `AnalyticsService` is a debug-print no-op; `app_open` still goes to `POST /mobile/activity`.
+- Known open bugs (documented, not fixed): job-news disk cache is not user-scoped and writes are unawaited; `deleteAccount()` local wipe is best-effort; actionable notification `markRead` is fire-and-forget.
