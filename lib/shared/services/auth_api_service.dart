@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
-import 'package:sirati/core/storage/user_scoped_storage.dart';
 import 'package:sirati/shared/models/auth_session.dart';
-import 'package:sirati/shared/services/mobile_content_service.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/notification_service.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 
@@ -14,7 +13,10 @@ class AuthApiService {
     ApiClient? apiClient,
     ApiClient? publicApiClient,
     AuthTokenStore tokenStore = const AuthTokenStore(),
+    LocalSessionCleanup? localSessionCleanup,
   })  : _tokenStore = tokenStore,
+        _localSessionCleanup = localSessionCleanup ??
+            LocalSessionCleanup(clearToken: tokenStore.clearToken),
         _apiClient =
             apiClient ?? ApiClient(tokenProvider: tokenStore.readToken),
         _publicClient = publicApiClient ?? apiClient ?? ApiClient();
@@ -22,6 +24,7 @@ class AuthApiService {
   final ApiClient _apiClient;
   final ApiClient _publicClient;
   final AuthTokenStore _tokenStore;
+  final LocalSessionCleanup _localSessionCleanup;
 
   Future<AuthSession> login(
       {required String email, required String password}) async {
@@ -136,10 +139,14 @@ class AuthApiService {
     // Read the device token before the local wipe rotates it, so the server
     // cleanup removes the row that actually belongs to this account.
     final fcmToken = await NotificationService.instance.getToken();
-    await _clearLocalSession();
-
-    if (token == null || token.isEmpty) return;
-    unawaited(_remoteLogoutCleanup(token, fcmToken));
+    try {
+      await _clearLocalSession();
+    } finally {
+      // Local failures must not leave the captured bearer valid on the server.
+      if (token != null && token.isNotEmpty) {
+        unawaited(_remoteLogoutCleanup(token, fcmToken));
+      }
+    }
   }
 
   Future<void> _remoteLogoutCleanup(String token, String? fcmToken) async {
@@ -181,8 +188,8 @@ class AuthApiService {
   ///
   /// Nothing local is touched until the server confirms: a wrong password
   /// must leave the session — including push delivery — exactly as it was.
-  /// Once the account is gone, local cleanup is best effort and never turns
-  /// the success into a reported failure.
+  /// Once the account is gone, every local cleanup step is attempted; any
+  /// failures are reported separately from server deletion errors.
   Future<void> deleteAccount({required String password}) async {
     await _apiClient.deleteJson('/auth/account', body: {
       'password': password,
@@ -190,25 +197,13 @@ class AuthApiService {
     // No FCM unregister call here: the server already deleted this account's
     // tokens, and calling the API with the now-revoked bearer would 401 and
     // trigger the session-expired flow on top of this one.
-    try {
-      await _clearLocalSession();
-    } catch (_) {
-      // The account no longer exists server-side, so a leftover token can't
-      // authenticate; the next launch lands on the signed-out flow.
-    }
+    await _clearLocalSession();
   }
 
-  Future<void> _clearLocalSession() async {
-    await _tokenStore.clearToken();
-    SessionCache.instance.clear();
-    await MobileContentService.clearAllCaches();
-    // CV drafts and per-account preferences must not survive into the next
-    // account on this device.
-    await wipeUserScopedStorage();
-    // Detach push from this account (rotates the FCM token).
-    await NotificationService.instance.forgetDevice();
-    await AnalyticsService.clearUser();
-  }
+  Future<void> _clearLocalSession() => _localSessionCleanup.run();
+
+  /// Retries device cleanup without repeating confirmed server deletion.
+  Future<void> retryLocalSessionCleanup() => _clearLocalSession();
 
   Future<AuthUser> updateProfile({
     required String name,

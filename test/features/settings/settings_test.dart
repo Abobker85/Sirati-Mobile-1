@@ -12,6 +12,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
@@ -172,14 +173,15 @@ void main() {
           .setMockMethodCallHandler(secureStorage, null);
     });
 
-    Widget app(_FakeAuth auth, {ThemeData? theme}) => ProviderScope(
+    Widget app(_FakeAuth auth, {ThemeData? theme, String language = 'en'}) =>
+        ProviderScope(
           overrides: [
             authApiServiceProvider.overrideWithValue(auth),
             notificationPrefsGatewayProvider.overrideWithValue(_FakeGateway()),
           ],
           child: MaterialApp(
             theme: theme ?? AppTheme.lightFor(arabic: false),
-            locale: const Locale('en'),
+            locale: Locale(language),
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: const SettingsScreen(),
@@ -190,8 +192,9 @@ void main() {
           ),
         );
 
-    Future<void> confirmLogout(WidgetTester tester) async {
-      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    Future<void> confirmLogout(WidgetTester tester,
+        {String language = 'en'}) async {
+      final l10n = await AppLocalizations.delegate.load(Locale(language));
       await tester.scrollUntilVisible(find.text(l10n.logOut), 200);
       await tester.tap(find.text(l10n.logOut));
       await tester.pumpAndSettle();
@@ -222,6 +225,72 @@ void main() {
       await tester.pumpAndSettle();
       await confirmLogout(tester);
       expect(auth.logouts, 1);
+      expect(find.text('route:${AppRoutes.login}'), findsOneWidget);
+    });
+
+    for (final language in ['en', 'ar']) {
+      for (final step in [
+        'session',
+        'caches',
+        'storage',
+        'device',
+        'analytics'
+      ]) {
+        testWidgets(
+            '$step failure after token removal leaves Settings in $language',
+            (tester) async {
+          AppLocale.languageCode.value = language;
+          // Arabic metrics push the logout row past the default 800x600 view.
+          tester.view.physicalSize = const Size(1080, 2400);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          final auth = _FakeAuth()
+            ..logoutError = LocalSessionCleanupException([
+              (
+                step: step,
+                error: StateError('cleanup'),
+                stackTrace: StackTrace.current,
+              ),
+            ]);
+          await tester.pumpWidget(app(auth, language: language));
+          await tester.pumpAndSettle();
+          await confirmLogout(tester, language: language);
+
+          expect(auth.logouts, 1);
+          expect(find.byType(SettingsScreen), findsNothing);
+          final signedOut = find.text('route:${AppRoutes.login}');
+          expect(signedOut, findsOneWidget);
+          expect(Navigator.of(tester.element(signedOut)).canPop(), isFalse);
+          expect(
+            find.text(language == 'en'
+                ? 'Could not fully sign out on this device.'
+                : 'تعذر إكمال تسجيل الخروج على هذا الجهاز.'),
+            findsOneWidget,
+          );
+        });
+      }
+    }
+
+    testWidgets('a token failure keeps Settings open even if other steps fail',
+        (tester) async {
+      final auth = _FakeAuth()
+        ..logoutError = LocalSessionCleanupException([
+          for (final step in ['token', 'device'])
+            (
+              step: step,
+              error: StateError('cleanup'),
+              stackTrace: StackTrace.current,
+            ),
+        ]);
+      await tester.pumpWidget(app(auth));
+      await tester.pumpAndSettle();
+      await confirmLogout(tester);
+      expect(find.byType(SettingsScreen), findsOneWidget);
+      expect(find.text('route:${AppRoutes.login}'), findsNothing);
+      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.text(l10n.logOutFailed), findsOneWidget);
+      auth.logoutError = null;
+      await confirmLogout(tester);
       expect(find.text('route:${AppRoutes.login}'), findsOneWidget);
     });
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -269,13 +270,18 @@ class NotificationService {
   /// authenticated (e.g. after a 401). Forgetting the last registration
   /// makes the next account register immediately instead of being skipped
   /// by the 5-minute de-duplication.
-  Future<void> forgetDevice() async {
+  /// Privacy cleanup uses [reportFailure] to report failed token rotation.
+  /// With no Firebase app there is no device token to detach.
+  Future<void> forgetDevice({bool reportFailure = false}) async {
     _lastRegisteredToken = null;
     _lastRegisterAttemptAt = null;
     try {
       await _tokens.deleteToken();
     } catch (e) {
       debugPrint('[FCM] Token delete skipped: $e');
+      if (reportFailure && !(e is FirebaseException && e.code == 'no-app')) {
+        rethrow;
+      }
     }
   }
 

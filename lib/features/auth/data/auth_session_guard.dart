@@ -1,13 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
-import 'package:sirati/core/storage/user_scoped_storage.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
-import 'package:sirati/shared/services/mobile_content_service.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/notification_service.dart';
-import 'package:sirati/shared/services/session_cache.dart';
 
 /// Handles mid-session auth expiry (401) with a single redirect.
 class AuthSessionGuard {
@@ -16,6 +13,7 @@ class AuthSessionGuard {
   static bool _handling = false;
   static GlobalKey<NavigatorState>? _navigatorKey;
   static AuthTokenStore tokenStore = const AuthTokenStore();
+  static LocalSessionCleanup? _localSessionCleanup;
 
   static void install({
     required GlobalKey<NavigatorState> navigatorKey,
@@ -23,14 +21,31 @@ class AuthSessionGuard {
   }) {
     _navigatorKey = navigatorKey;
     if (store != null) tokenStore = store;
-    ApiClient.onAuthExpired = handleAuthExpired;
+    // ApiClient invokes this callback without awaiting it. Report cleanup
+    // failures through Flutter rather than leaving an unhandled future.
+    ApiClient.onAuthExpired = ({String? requestToken}) async {
+      try {
+        await handleAuthExpired(requestToken: requestToken);
+      } on LocalSessionCleanupException catch (error, stackTrace) {
+        FlutterError.reportError(FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'auth',
+          context: ErrorDescription('while clearing an expired local session'),
+        ));
+      }
+    };
   }
 
   /// Test hook — restores debounce and the default token store.
-  static void resetForTest({AuthTokenStore? store}) {
+  static void resetForTest({
+    AuthTokenStore? store,
+    LocalSessionCleanup? localSessionCleanup,
+  }) {
     _handling = false;
     _navigatorKey = null;
     tokenStore = store ?? const AuthTokenStore();
+    _localSessionCleanup = localSessionCleanup;
     ApiClient.onAuthExpired = null;
   }
 
@@ -50,28 +65,25 @@ class AuthSessionGuard {
       try {
         await NotificationService.instance.unregisterToken();
       } catch (_) {}
-      await tokenStore.clearToken();
-      SessionCache.instance.clear();
-      // Drop offline content so the next account never sees prior user data.
-      await MobileContentService.clearAllCaches();
-      await wipeUserScopedStorage();
-      // The unregister above ran with a revoked bearer and usually 401s;
-      // rotating the device token is what actually stops this account's
-      // pushes reaching the device.
-      await NotificationService.instance.forgetDevice();
-      await AnalyticsService.clearUser();
-
-      final nav = _navigatorKey?.currentState;
-      if (nav == null) return;
-
-      unawaited(nav.pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => LoginScreen(
-            sessionExpiredNotice: showMessage,
-          ),
-        ),
-        (route) => false,
-      ));
+      try {
+        await (_localSessionCleanup ??
+                LocalSessionCleanup(clearToken: tokenStore.clearToken))
+            .run();
+      } finally {
+        // An expired session must leave authenticated screens even when a
+        // local store fails. Preserve the cleanup error for the caller.
+        final nav = _navigatorKey?.currentState;
+        if (nav != null) {
+          unawaited(nav.pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => LoginScreen(
+                sessionExpiredNotice: showMessage,
+              ),
+            ),
+            (route) => false,
+          ));
+        }
+      }
     } finally {
       // Allow a future expiry after the user logs in again.
       Future<void>.delayed(const Duration(seconds: 2), () {

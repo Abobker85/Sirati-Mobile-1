@@ -6,6 +6,7 @@ import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
@@ -72,18 +73,28 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     if (second != true || !mounted) return;
 
     setState(() => _loading = true);
+    final auth = ref.read(authApiServiceProvider);
     try {
-      await ref
-          .read(authApiServiceProvider)
-          .deleteAccount(password: _passwordCtrl.text);
+      await auth.deleteAccount(password: _passwordCtrl.text);
       if (!mounted) return;
       AppSnackBar.success(
         context,
         en ? 'Account deleted.' : 'تم حذف الحساب.',
       );
-      unawaited(Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.splash,
+      unawaited(
+          Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+        AppRoutes.login,
         (route) => false,
+      ));
+    } on LocalSessionCleanupException {
+      if (!mounted) return;
+      unawaited(
+          Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+        AppRoutes.login,
+        (route) => false,
+        arguments: PendingLocalSessionCleanup(
+          retry: auth.retryLocalSessionCleanup,
+        ),
       ));
     } on ApiException catch (e) {
       if (!mounted) return;

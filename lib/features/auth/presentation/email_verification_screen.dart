@@ -10,6 +10,7 @@ import 'package:sirati/core/utils/latin_digits.dart';
 import 'package:sirati/core/utils/root_navigation.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
@@ -153,19 +154,26 @@ class _EmailVerificationScreenState
     _leaving = true;
     try {
       await ref.read(authApiServiceProvider).logout();
-    } catch (_) {
-      // Local credentials were not cleared: stay here rather than showing
-      // Login over a live session.
-      _leaving = false;
-      if (mounted) {
+    } catch (error) {
+      if (!mounted) return;
+      if (error is LocalSessionCleanupException && error.tokenCleared) {
+        AppSnackBar.error(
+          context,
+          AppLocale.isEnglish(context)
+              ? 'Could not fully sign out on this device.'
+              : 'تعذر إكمال تسجيل الخروج على هذا الجهاز.',
+        );
+      } else {
+        // Keep a session whose token could not be removed on this screen.
+        _leaving = false;
         AppSnackBar.error(
           context,
           AppLocale.isEnglish(context)
               ? "Couldn't sign out on this device. Please try again."
               : 'تعذّر تسجيل الخروج على هذا الجهاز. حاول مرة أخرى.',
         );
+        return;
       }
-      return;
     }
     if (!mounted) return;
     replaceRoot(context, const LoginScreen());

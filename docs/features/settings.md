@@ -16,6 +16,7 @@ The settings feature provides user management, app preferences configuration, ac
     - Loading: shows skeleton placeholders (`AppSkeletonScope`) during initial profile fetch when no cached user exists.
     - Error: renders `AppErrorState` with retry button on network failure if no cached session user is available.
     - Loaded: renders list view with cached or fresh user data.
+    - Logout cleanup failure: token-removal errors keep Settings open with retry feedback. If the token was removed but a later step failed, the full stack is replaced with login and a partial-sign-out message; server revocation still runs in the background.
 - **Profile Edit (`ProfileScreen`)**:
   - Pre-fills user details from `settingsUserProvider` or `SessionCache.instance.user`.
   - Fields:
@@ -34,7 +35,7 @@ The settings feature provides user management, app preferences configuration, ac
   - Collects account password for re-authentication.
   - "Delete my account" (`SubmitButton`): opens secondary confirmation dialog ("Delete forever" / "Cancel").
   - Confirmation triggers `AuthApiService.deleteAccount(password: ...)`.
-  - States: Server confirms deletion -> attempts best-effort local cleanup (swallowing any cleanup exceptions) -> routes to `AppRoutes.splash`. Note that local wipe is not guaranteed: `deleteAccount()` swallows cleanup failures, and an error while clearing the auth token skips the remaining cleanup steps (`wipeUserScopedStorage()`, `forgetDevice()`, `clearUser()`). Incorrect password -> displays error snackbar and retains local session.
+  - States: Server confirms deletion -> attempts every local cleanup step in order -> replaces the entire navigator stack with `AppRoutes.login`. On cleanup failure that route displays `DeletedAccountCleanupScreen`, with persistent Arabic/English feedback and a local-only retry. The deletion form and authenticated screens are removed, so Back cannot expose retained account state. A successful retry opens login without another server deletion; login is unavailable while cleanup is pending. Incorrect password -> displays error snackbar and retains local session.
 - **Notifications Inbox (`NotificationsScreen`)**:
   - Displays in-app notifications in a pull-to-refresh list.
   - AppBar provides "Read all" action button (enabled when unread notifications exist).
@@ -75,6 +76,7 @@ The settings feature provides user management, app preferences configuration, ac
 | `lib/features/settings/presentation/profile_screen.dart` | Profile editor screen, job title picker, name validation, read-only account details |
 | `lib/features/settings/presentation/change_password_screen.dart` | Password change form, current password verification, new password strength meter |
 | `lib/features/settings/presentation/delete_account_screen.dart` | Account deletion screen, warning banner, password verification, confirmation dialog |
+| `lib/features/settings/presentation/deleted_account_cleanup_screen.dart` | Signed-out local cleanup recovery with a single in-flight retry and no server deletion |
 | `lib/features/settings/presentation/notifications_screen.dart` | Notifications inbox screen, `NotificationCard`, pull-to-refresh, mark read routing |
 | `lib/features/settings/presentation/onboarding_screen.dart` | 3-page product tour, step counter, interactive dots, skip/finish persistence |
 | `lib/features/settings/presentation/privacy_policy_screen.dart` | Privacy policy disclosures, sub-processor list, and PDPL compliance information |
@@ -178,11 +180,11 @@ The settings feature provides user management, app preferences configuration, ac
 
 - `test/features/settings/settings_test.dart`:
   - Validates `NotificationPreferenceController`: server value preference over local, fallback handling on unreadable storage, device unregistration even if server sync fails, rapid toggle coalescing, and execution completion after screen disposal.
-  - Validates `SettingsScreen`: logout confirmation dialog, graceful recovery when local sign-out fails, navigation to login on success, and WCAG AA contrast compliance in light and dark themes.
+  - Validates `SettingsScreen`: logout confirmation dialog, token-removal failure recovery, navigation to login after successful token removal even if later cleanup fails, Arabic/English partial-sign-out feedback, and WCAG AA contrast compliance in light and dark themes.
   - Tests switch thumb vs track contrast >= 3.0:1 in both light and dark modes.
 - `test/features/settings/account_security_test.dart`:
   - Tests `AuthApiService.deleteAccount`: incorrect password preserves local session and push tokens without unregistering; success cleans up session without trailing API calls.
-  - Tests `DeleteAccountScreen`: keyboard Done and button clicks prevent duplicate confirmation dialogs.
+  - Tests `DeleteAccountScreen`: keyboard Done and button clicks prevent duplicate confirmation dialogs; successful or partially cleaned deletion removes authenticated routes. Arabic/English recovery retries only local cleanup, stays signed out on repeated failure, and allows only one retry in flight.
   - Tests `ChangePasswordScreen`: enforces single in-flight request, re-validates password confirmation when new password is typed, and passes WCAG AA contrast tests.
 - `test/features/settings/notifications_test.dart`:
   - Verifies `NotificationItem`: `opensSomething` logic (only non-empty url/screen), invalid row pruning.
@@ -202,5 +204,4 @@ The settings feature provides user management, app preferences configuration, ac
 - `lib/features/settings/presentation/settings_screen.dart:71-78`: Contact Us invokes a `mailto:` URI without checking whether an email client is installed; if launch fails, it shows a warning snackbar prompting the user to manually send an email.
 - `lib/features/settings/presentation/notifications_screen.dart:49-50`: Tapping a notification with `actionType == 'screen'` unconditionally pops the navigator before delegating to `onNotificationTap`, assuming the inbox was pushed over the target destination.
 - `lib/features/settings/application/settings_controllers.dart:87-109`: `NotificationPreferenceController.setEnabled`: if the device or server sync step fails, it returns `false` (triggering a warning snackbar), but retains the optimistic `AsyncData(enabled)` switch state without rolling back.
-- `lib/shared/services/auth_api_service.dart:186-211`: `deleteAccount()` does not guarantee a complete local storage wipe: it swallows cleanup failures in `_clearLocalSession()`, and because cleanup operations execute sequentially, an error while clearing the auth token skips subsequent cleanup steps (`wipeUserScopedStorage()`, `forgetDevice()`, `clearUser()`, and cache clearing).
 - `lib/features/settings/presentation/notifications_screen.dart:51`: For actionable notifications, `_open` initiates `inbox.markRead(item)` fire-and-forget using `unawaited()` and returns immediately without awaiting completion or providing failure feedback (no error snackbar) if the mark-read API request fails.

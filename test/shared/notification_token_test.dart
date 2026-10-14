@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -7,6 +9,7 @@ import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
 import 'package:sirati/features/auth/data/auth_session_guard.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/notification_service.dart';
 
 /// Device token that rotates when deleted, like FCM.
@@ -29,7 +32,7 @@ class _FakeTokens extends FcmTokenSource {
 final _secure = <String, String>{};
 final _requests = <String>[];
 
-void _mockSecureStorage() {
+void _mockSecureStorage({bool failTokenDelete = false}) {
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(
     const MethodChannel('plugins.it_nomads.com/flutter_secure_storage'),
@@ -42,6 +45,9 @@ void _mockSecureStorage() {
         case 'write':
           _secure[key!] = args['value']! as String;
         case 'delete':
+          if (failTokenDelete && key == 'sirati_auth_token') {
+            throw PlatformException(code: 'keystore_locked');
+          }
           _secure.remove(key);
         case 'readAll':
           return Map<String, String>.from(_secure);
@@ -142,6 +148,60 @@ void main() {
     expect(tokens.deletes, 1);
     expect(await const AuthTokenStore().readToken(), isNull);
   });
+
+  for (final failedStep in ['token', 'device']) {
+    test('logout still runs remote cleanup when $failedStep cleanup fails',
+        () async {
+      _mockSecureStorage(failTokenDelete: failedStep == 'token');
+      tokens.failDelete = failedStep == 'device';
+      final remoteRevoked = Completer<void>();
+      final releaseRemote = Completer<void>();
+      addTearDown(() {
+        if (!releaseRemote.isCompleted) releaseRemote.complete();
+      });
+      final requests = <http.Request>[];
+      final auth = AuthApiService(tokenStore: const AuthTokenStore());
+      await http.runWithClient(() async {
+        await expectLater(
+          auth.logout(),
+          throwsA(isA<LocalSessionCleanupException>().having(
+            (error) => error.failures.map((failure) => failure.step),
+            'failed steps',
+            [failedStep],
+          ).having(
+            (error) => error.tokenCleared,
+            'token removed',
+            failedStep != 'token',
+          )),
+        ).timeout(const Duration(seconds: 1));
+        // The local error must be reported without waiting for the server.
+        releaseRemote.complete();
+        await remoteRevoked.future.timeout(const Duration(seconds: 1));
+      },
+          () => MockClient((request) async {
+                requests.add(request);
+                if (request.url.path.endsWith('/auth/logout')) {
+                  await releaseRemote.future;
+                  remoteRevoked.complete();
+                }
+                // Even failed unregistration must not skip bearer revocation.
+                return http.Response(
+                    '{}', request.method == 'DELETE' ? 503 : 200);
+              }));
+      expect(
+          requests.map((request) => '${request.method} ${request.url.path}'), [
+        'DELETE /api/fcm-tokens',
+        'POST /api/auth/logout',
+      ]);
+      expect(requests.first.body, contains('fcm-1'));
+      for (final request in requests) {
+        expect(request.headers['authorization'], 'Bearer bearer-A');
+      }
+      expect(tokens.deletes, 1);
+      expect(await const AuthTokenStore().readToken(),
+          failedStep == 'token' ? 'bearer-A' : isNull);
+    });
+  }
 
   test('session expiry rotates the token even when unregister gets a 401',
       () async {
