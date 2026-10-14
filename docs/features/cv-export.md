@@ -46,7 +46,7 @@ These requests only run if a caller opens the dialog. The connected screens use 
 ## Tests
 
 - `test/features/cv_export/export_file_namer_test.dart`: Arabic/Latin names, illegal-character stripping, transliteration, and empty-input fallbacks.
-- `test/features/cv_export/pdf_export_controller_test.dart`: initial state, language changes, byte download, premium 403, preview HTML and watermark state.
+- `test/features/cv_export/pdf_export_controller_test.dart`: initial state, language/filename updates, byte download, premium 403, preview HTML and watermark state. The language test does not first load PDF bytes, so it does not verify cache invalidation.
 - `test/features/cv_builder/generated_cv_test.dart` and `test/features/cv_builder/my_cvs_controller_test.dart`: connected PDF-link fallback and template query behavior.
 
 ## Known gaps
@@ -54,4 +54,5 @@ These requests only run if a caller opens the dialog. The connected screens use 
 - `lib/features/cv_export/presentation/cv_export_dialog.dart:8`: no app screen instantiates the export dialog, so its preview and native PDF-share flow is not reachable through the current UI.
 - `lib/features/cv_export/presentation/cv_export_dialog.dart:64`: preview is fetched, but the dialog does not render `previewHtml`, a preview-loading indicator, or ordinary `errorMessage` text.
 - `lib/features/cv_export/controllers/pdf_export_controller.dart:46`: `copyWith(pdfBytes: null)` retains old bytes because it uses `pdfBytes ?? this.pdfBytes`; switching template/language may then share a stale PDF without downloading the new selection.
+- `lib/features/cv_export/controllers/pdf_export_controller.dart:151`: overlapping preview requests have no selection/version check; an older response can replace the current watermark or preview state.
 - `lib/features/cv_export/presentation/cv_export_dialog.dart:329`: Download fetches bytes and reports success but does not save them as a named file. The displayed progress values are fixed controller milestones rather than network progress (`lib/features/cv_export/controllers/pdf_export_controller.dart:185`).
