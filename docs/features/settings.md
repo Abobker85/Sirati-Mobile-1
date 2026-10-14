@@ -42,8 +42,9 @@ The settings feature provides user management, app preferences configuration, ac
   - Cards (`NotificationCard`) show title, body, relative timestamp (`notificationTimeLabel`), and unread indicator dot.
   - Tapping a notification:
     - Optimistically marks item as read via `NotificationsInboxController.markRead` and updates `SessionCache.instance.unreadCount`.
-    - If actionable (`actionType == 'screen'` or `'url'`), invokes `NotificationService.instance.onNotificationTap` (screen actions pop the inbox first so the destination is visible) and starts `inbox.markRead(item)` fire-and-forget (`unawaited`) without awaiting it and without error snackbar feedback.
-    - If non-actionable, awaits `inbox.markRead(item)` and shows an error snackbar if the API call fails, reverting the optimistic read state.
+    - If actionable (`actionType == 'screen'` or `'url'`), invokes `NotificationService.instance.onNotificationTap` (screen actions pop the inbox first so the destination is visible).
+    - Awaits `inbox.markRead(item)`. On failure, rolls back the optimistic read state, restores the unread count in `SessionCache`, and displays an error snackbar (shown through the surviving messenger if the inbox was popped).
+    - State rollback and failure feedback are guarded against session changes (`SessionCache.instance.generation` and `user.value`), ensuring an intervening sign-out cannot restore another account's badge count or show stale error banners.
   - States: Skeleton loader during initial load; empty state (`AppEmptyState`) when no items exist; pull-to-refresh reload.
 - **Onboarding Tour (`OnboardingScreen`)**:
   - 3-page product tour (`PageView.builder`) explaining ATS CV analysis, scoring, and AI CV building.
@@ -95,6 +96,8 @@ The settings feature provides user management, app preferences configuration, ac
 | `lib/shared/services/job_titles_provider.dart` | `jobTitlesProvider` providing job title taxonomy from `/mobile/job-titles` |
 | `lib/core/storage/preference_store.dart` | `PreferenceStore` storing language, theme, notification preference, and onboarding flags |
 | `lib/core/storage/user_scoped_storage.dart` | `UserScopedKeys` and `wipeUserScopedStorage` cleaning account data on logout/deletion |
+| `lib/shared/services/local_session_cleanup.dart` | `LocalSessionCleanup` orchestrating multi-step session teardown and `PendingLocalSessionCleanup` |
+| `lib/shared/widgets/directional_icon.dart` | `DirectionalIcon` mirroring direction-sensitive chevrons and icons once in RTL |
 | `lib/core/routing/app_routes.dart` | Named routes table (`AppRoutes.settings`, `AppRoutes.notifications`, `AppRoutes.privacy`) |
 
 ## State and data
@@ -116,13 +119,22 @@ The settings feature provides user management, app preferences configuration, ac
   - In-memory cache in `MobileContentService` for notifications (30-second TTL; never saved to disk).
   - In-memory cache for job titles (24-hour TTL; cached to disk under `sirati_cache_job_titles`).
   - `SessionCache.instance.unreadCount` synchronizes immediately with read/unread items.
+  - `MobileContentService.clearAllCaches()`: increments `_cacheGeneration`, invalidates memory caches, and calls `DiskCache.instance.clear()`.
+  - `DiskCache`: generation counter + rotating `sirati_content_cache_epoch` in `SharedPreferences` ensures late in-flight network writes and pre-wipe disk entries are discarded across sessions.
 - **Local storage keys**:
   - `FlutterSecureStorage`:
-    - `sirati_lang` (`PreferenceStore.langKey`): language preference (`ar` or `en`). Preserved across sessions.
-    - `sirati_theme_mode` (`PreferenceStore.themeModeKey`): theme selection (`system`, `light`, `dark`). Preserved across sessions.
-    - `sirati_onboarding_completed` (`PreferenceStore.onboardingKey`): tour status (`1` or `0`). Preserved across sessions.
-    - `sirati_notifications_enabled` (`PreferenceStore.notificationsKey`): push toggle preference (`1` or `0`). Account-scoped, wiped on logout and account deletion.
-  - Account data wiped on Account Deletion or Logout via `wipeUserScopedStorage()` and `_clearLocalSession()`.
+    - Preserved device settings (managed by `PreferenceStore`, never wiped on sign-out):
+      - `sirati_lang` (`PreferenceStore.langKey`): language preference (`ar` or `en`).
+      - `sirati_theme_mode` (`PreferenceStore.themeModeKey`): theme selection (`system`, `light`, `dark`).
+      - `sirati_onboarding_completed` (`PreferenceStore.onboardingKey`): tour status (`1` or `0`).
+      - `sirati_review_requested` (`PreferenceStore.reviewRequestedKey`): in-app review prompt status.
+      - `sirati_cv_generation_count` (`PreferenceStore.cvGenerationCountKey`): generation counter on device.
+    - Account-scoped:
+      - `sirati_notifications_enabled` (`PreferenceStore.notificationsKey`): push toggle preference (`1` or `0`). Wiped on logout and account deletion.
+  - `SharedPreferences`:
+    - `sirati_content_cache_epoch` (`DiskCache._epochKey`): random 16-byte hex epoch rotated on every cache wipe (`DiskCache.instance.clear()`).
+    - `sirati_cache_*` (`DiskCache.keyPrefix`): offline content cache entries.
+  - Account data wiped on Account Deletion or Logout via `LocalSessionCleanup` (running `wipeUserScopedStorage()`, `_tokenStore.clearToken()`, `NotificationService.instance.forgetDevice()`, `AnalyticsService.clearUser()`).
 
 ## API
 
@@ -171,10 +183,11 @@ The settings feature provides user management, app preferences configuration, ac
   - Tapping Language tile or `LanguageToggle` updates `AppLocale.languageCode`, persisting to secure storage and rebuilding all screens immediately.
 - Directional layout invariants:
   - List tiles, section headers, and switch controls align according to ambient `Directionality`.
-  - Chevrons automatically flip orientation based on reading direction.
+  - Chevrons and trailing list tile icons use `DirectionalIcon` (`lib/shared/widgets/directional_icon.dart`), mirroring exactly once based on ambient `Directionality` without double-flipping icons that already match text direction.
   - Numeric step counters ("1 / 3") and dates enforce Latin digits consistently across Arabic and English UI.
   - Email fields enforce `TextDirection.ltr`.
   - Onboarding `PageView` advances following reading direction (swipe right-to-left in RTL).
+  - Button theming: filled buttons (`ElevatedButton`, `SubmitButton`) use white `onPrimary` against primary brand teal `#007F73`; disabled outlined buttons resolve with a muted outline (`c.border`) rather than retaining active ink.
 
 ## Tests
 
@@ -190,6 +203,8 @@ The settings feature provides user management, app preferences configuration, ac
   - Verifies `NotificationItem`: `opensSomething` logic (only non-empty url/screen), invalid row pruning.
   - Verifies `NotificationsInboxController`: mark read updates item and unread badge simultaneously, prevents redundant calls for read items, rolls back optimistic state on API failure.
   - Verifies `NotificationsScreen`: tap navigation dispatch, screen action popping inbox first, and WCAG AA contrast for inbox, privacy, and learning detail screens.
+  - Verifies actionable notification markRead failure still navigates, reverts optimistic row state back to unread, and reports an error snackbar via the surviving messenger context.
+  - Verifies session change guard: if logout occurs while markRead is pending, failed requests do not restore the old account's unread badge count or display snackbars.
 - `test/features/settings/onboarding_test.dart`:
   - Verifies swipe direction in RTL vs LTR, page entrance direction, system Back stepping back page by page before exiting, Skip button hit-target size (>= 48dp), and WCAG AA text and 3:1 graphic contrast.
 - `test/features/settings/profile_test.dart`:
@@ -202,6 +217,5 @@ The settings feature provides user management, app preferences configuration, ac
 - `lib/features/settings/presentation/settings_screen.dart:43-47`: Navigation to `ProfileScreen`, `ChangePasswordScreen`, and `DeleteAccountScreen` uses direct `MaterialPageRoute` pushes rather than named routes from `AppRoutes`.
 - `lib/features/settings/presentation/profile_screen.dart:260-281`: Email is read-only, and phone/location cannot be updated from the profile editor even though they are collected during registration.
 - `lib/features/settings/presentation/settings_screen.dart:71-78`: Contact Us invokes a `mailto:` URI without checking whether an email client is installed; if launch fails, it shows a warning snackbar prompting the user to manually send an email.
-- `lib/features/settings/presentation/notifications_screen.dart:49-50`: Tapping a notification with `actionType == 'screen'` unconditionally pops the navigator before delegating to `onNotificationTap`, assuming the inbox was pushed over the target destination.
+- `lib/features/settings/presentation/notifications_screen.dart:56`: Tapping a notification with `actionType == 'screen'` unconditionally pops the navigator before delegating to `onNotificationTap`, assuming the inbox was pushed over the target destination.
 - `lib/features/settings/application/settings_controllers.dart:87-109`: `NotificationPreferenceController.setEnabled`: if the device or server sync step fails, it returns `false` (triggering a warning snackbar), but retains the optimistic `AsyncData(enabled)` switch state without rolling back.
-- `lib/features/settings/presentation/notifications_screen.dart:51`: For actionable notifications, `_open` initiates `inbox.markRead(item)` fire-and-forget using `unawaited()` and returns immediately without awaiting completion or providing failure feedback (no error snackbar) if the mark-read API request fails.
