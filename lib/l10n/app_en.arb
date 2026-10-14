@@ -142,6 +142,7 @@
   "logOutConfirmTitle": "Log out?",
   "logOutConfirmBody": "You will need to sign in again to access your CVs.",
   "logOutFailed": "Couldn't sign out on this device. Please try again.",
+  "logOutPartial": "Could not fully sign out on this device.",
   "deleteAccount": "Delete account",
   "couldNotLoadProfile": "Could not load your profile.",
   "notificationPrefUpdateFailed": "Could not update notification preference on server.",

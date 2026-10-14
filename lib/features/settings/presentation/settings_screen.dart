@@ -111,9 +111,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (error is LocalSessionCleanupException && error.tokenCleared) {
         AppSnackBar.error(
           context,
-          AppLocale.isEnglish(context)
-              ? 'Could not fully sign out on this device.'
-              : 'تعذر إكمال تسجيل الخروج على هذا الجهاز.',
+          AppLocalizations.of(context).logOutPartial,
         );
       } else {
         setState(() => _loggingOut = false);

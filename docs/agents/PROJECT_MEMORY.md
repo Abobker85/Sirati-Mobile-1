@@ -11,4 +11,6 @@
 - Feature docs live in `docs/features/*.md` (index: README.md); update the matching file when behaviour changes.
 - Analysis history lives in `lib/features/dashboard` (`analysesHistoryProvider`, `GET /cv-analyses`), not in ats_scanner.
 - Only HTTP 401 logs out; 403 is typed `auth` but never logs out. `AnalyticsService` is a debug-print no-op; `app_open` still goes to `POST /mobile/activity`.
-- Known open bugs (documented, not fixed): job-news disk cache is not user-scoped and writes are unawaited; `deleteAccount()` local wipe is best-effort; actionable notification `markRead` is fire-and-forget.
+- Sign-out teardown is `LocalSessionCleanup` (lib/shared/services/local_session_cleanup.dart): every step runs, failures are aggregated; remote logout always runs. Content caches use a generation counter + rotating disk epoch so late writes never reach the next account.
+- `settings_screen.dart` and other l10n-adopted screens must take copy from the ARB files (`test/localization/l10n_adoption_test.dart`).
+- Widget tests in Arabic may need a taller view (`tester.view.physicalSize`) or taps land off-screen.
