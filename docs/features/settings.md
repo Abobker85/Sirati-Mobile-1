@@ -34,15 +34,15 @@ The settings feature provides user management, app preferences configuration, ac
   - Collects account password for re-authentication.
   - "Delete my account" (`SubmitButton`): opens secondary confirmation dialog ("Delete forever" / "Cancel").
   - Confirmation triggers `AuthApiService.deleteAccount(password: ...)`.
-  - States: Server confirms deletion -> wipes all local credentials and account storage -> routes to `AppRoutes.splash`. Incorrect password -> displays error snackbar and retains local session.
+  - States: Server confirms deletion -> attempts best-effort local cleanup (swallowing any cleanup exceptions) -> routes to `AppRoutes.splash`. Note that local wipe is not guaranteed: `deleteAccount()` swallows cleanup failures, and an error while clearing the auth token skips the remaining cleanup steps (`wipeUserScopedStorage()`, `forgetDevice()`, `clearUser()`). Incorrect password -> displays error snackbar and retains local session.
 - **Notifications Inbox (`NotificationsScreen`)**:
   - Displays in-app notifications in a pull-to-refresh list.
   - AppBar provides "Read all" action button (enabled when unread notifications exist).
   - Cards (`NotificationCard`) show title, body, relative timestamp (`notificationTimeLabel`), and unread indicator dot.
   - Tapping a notification:
     - Optimistically marks item as read via `NotificationsInboxController.markRead` and updates `SessionCache.instance.unreadCount`.
-    - If actionable (`actionType == 'screen'` or `'url'`), invokes `NotificationService.instance.onNotificationTap`. Screen actions pop the inbox first so the destination is visible.
-    - Reverts optimistic read state if API call fails and shows an error snackbar.
+    - If actionable (`actionType == 'screen'` or `'url'`), invokes `NotificationService.instance.onNotificationTap` (screen actions pop the inbox first so the destination is visible) and starts `inbox.markRead(item)` fire-and-forget (`unawaited`) without awaiting it and without error snackbar feedback.
+    - If non-actionable, awaits `inbox.markRead(item)` and shows an error snackbar if the API call fails, reverting the optimistic read state.
   - States: Skeleton loader during initial load; empty state (`AppEmptyState`) when no items exist; pull-to-refresh reload.
 - **Onboarding Tour (`OnboardingScreen`)**:
   - 3-page product tour (`PageView.builder`) explaining ATS CV analysis, scoring, and AI CV building.
@@ -202,3 +202,5 @@ The settings feature provides user management, app preferences configuration, ac
 - `lib/features/settings/presentation/settings_screen.dart:71-78`: Contact Us invokes a `mailto:` URI without checking whether an email client is installed; if launch fails, it shows a warning snackbar prompting the user to manually send an email.
 - `lib/features/settings/presentation/notifications_screen.dart:49-50`: Tapping a notification with `actionType == 'screen'` unconditionally pops the navigator before delegating to `onNotificationTap`, assuming the inbox was pushed over the target destination.
 - `lib/features/settings/application/settings_controllers.dart:87-109`: `NotificationPreferenceController.setEnabled`: if the device or server sync step fails, it returns `false` (triggering a warning snackbar), but retains the optimistic `AsyncData(enabled)` switch state without rolling back.
+- `lib/shared/services/auth_api_service.dart:186-211`: `deleteAccount()` does not guarantee a complete local storage wipe: it swallows cleanup failures in `_clearLocalSession()`, and because cleanup operations execute sequentially, an error while clearing the auth token skips subsequent cleanup steps (`wipeUserScopedStorage()`, `forgetDevice()`, `clearUser()`, and cache clearing).
+- `lib/features/settings/presentation/notifications_screen.dart:51`: For actionable notifications, `_open` initiates `inbox.markRead(item)` fire-and-forget using `unawaited()` and returns immediately without awaiting completion or providing failure feedback (no error snackbar) if the mark-read API request fails.

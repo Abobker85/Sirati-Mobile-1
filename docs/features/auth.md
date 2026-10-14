@@ -111,17 +111,17 @@ The auth feature governs user onboarding, authentication, account registration, 
     - `sirati_cv_draft` (`PreferenceStore.cvDraftKey`): CV generator draft JSON. Wiped on logout via `wipeUserScopedStorage()`.
     - `sirati_education_interest` (`PreferenceStore.educationInterestKey`): education interest opt-in. Wiped on logout.
     - `sirati_notifications_enabled` (`PreferenceStore.notificationsKey`): notification opt-in. Wiped on logout.
+    - Preserved device settings (managed by `PreferenceStore`, never wiped on sign-out):
+      - `sirati_lang` (`PreferenceStore.langKey`): language preference (`ar` or `en`).
+      - `sirati_theme_mode` (`PreferenceStore.themeModeKey`): appearance mode (`system`, `light`, or `dark`).
+      - `sirati_onboarding_completed` (`PreferenceStore.onboardingKey`): product tour completion flag (`1` or `0`).
+      - `sirati_review_requested` (`PreferenceStore.reviewRequestedKey`): in-app review prompt status.
+      - `sirati_cv_generation_count` (`PreferenceStore.cvGenerationCountKey`): successful generation counter on device.
   - `SharedPreferences`:
     - `sirati_cv_draft_<id>` (`UserScopedKeys.builderDraftPrefix`): builder draft per CV ID. Wiped on logout.
     - `sirati_cv_doc_<id>` (`UserScopedKeys.builderDocPrefix`): builder document per CV ID. Wiped on logout.
     - `sirati_cv_ids` (`UserScopedKeys.builderIndexKey`): index of builder document IDs. Wiped on logout.
     - `sirati_cache_*` (`DiskCache.keyPrefix`): offline content cache. Wiped on logout via `DiskCache.instance.clear()`.
-  - **Preserved device settings** (never wiped on sign-out):
-    - `sirati_lang`: language preference (`ar` or `en`).
-    - `sirati_theme_mode`: appearance mode (`system`, `light`, or `dark`).
-    - `sirati_onboarding_completed`: product tour completion flag (`1` or `0`).
-    - `sirati_review_requested`: in-app review prompt status.
-    - `sirati_cv_generation_count`: successful generation counter on device.
 
 ## API
 
