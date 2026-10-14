@@ -109,7 +109,7 @@ The auth feature governs user onboarding, authentication, account registration, 
 - **In-memory caching**:
   - `SessionCache.instance.user`: `ValueNotifier<AuthUser?>` holding the current user profile.
   - `MobileContentService.clearAllCaches()`: increments `_cacheGeneration`, drops all in-memory content caches, and delegates to `DiskCache.instance.clear()`.
-  - `DiskCache`: generation counter + rotating `sirati_content_cache_epoch` ensures late network responses and disk writes cannot leak across sessions.
+  - `DiskCache`: generation counter + rotating `sirati_content_cache_epoch` stop late network responses and disk writes from being *stored* for the next session. A late response is still returned to the caller that requested it (`MobileContentService._cached`), so a widget still mounted after sign-out could show it; this relies on sign-out removing the authenticated routes.
 - **Local storage keys**:
   - `FlutterSecureStorage`:
     - `sirati_auth_token` (`AuthTokenStore`): bearer authorization token. Wiped on logout, 401 expiry, or account deletion.
