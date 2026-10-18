@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
@@ -14,6 +15,7 @@ import 'package:sirati/features/dashboard/presentation/home/dashboard_action_car
 import 'package:sirati/features/dashboard/presentation/home/dashboard_stat_card.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_list_tile.dart';
@@ -195,6 +197,27 @@ class _DashboardList extends StatelessWidget {
               icon: Icons.analytics_outlined,
               watermark: Icons.bar_chart_rounded,
               onTap: () => _push(context, const CvAnalysisScreen()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          MotionReveal(
+            order: 4,
+            child: Builder(
+              builder: (context) {
+                final l = AppLocalizations.of(context);
+                return DashboardActionCard(
+                  title: l.jobMatchEntryTitle,
+                  subtitle: l.jobMatchEntrySubtitle,
+                  buttonLabel: l.jobMatchEntryButton,
+                  tone: DashboardActionTone.neutral,
+                  icon: Icons.work_outline_rounded,
+                  watermark: Icons.compare_arrows_rounded,
+                  onTap: () async {
+                    await Navigator.pushNamed(context, AppRoutes.jobMatch);
+                    if (context.mounted) await onRefresh();
+                  },
+                );
+              },
             ),
           ),
           const SizedBox(height: 24),

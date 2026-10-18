@@ -19,6 +19,7 @@ import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
@@ -269,6 +270,13 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
                 style: AppTextStyles.bodySm(context.sirati),
               ),
               const SizedBox(height: AppSpacing.md),
+              _JobMatchEntryTile(
+                onTap: () async {
+                  await Navigator.of(context).pushNamed(AppRoutes.jobMatch);
+                  if (mounted) await _refresh();
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
             ],
           );
         }
@@ -323,4 +331,65 @@ final class _Chosen extends _TemplateChoice {
 
 final class _Cancelled extends _TemplateChoice {
   const _Cancelled();
+}
+
+/// Entry to Job Match (a separate feature, reached by route).
+class _JobMatchEntryTile extends StatelessWidget {
+  const _JobMatchEntryTile({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    final l = AppLocalizations.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: AppRadius.lgAll,
+        border: Border.all(color: c.border),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          key: const ValueKey('my-cvs-job-match'),
+          borderRadius: AppRadius.lgAll,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Icon(Icons.work_outline_rounded, color: c.primaryInk),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l.jobMatchEntryTitle,
+                        style: AppTypography.of(context, AppTypography.titleSm),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l.jobMatchEntrySubtitle,
+                        style: AppTypography.of(
+                          context,
+                          AppTypography.bodySm,
+                          color: c.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                DirectionalIcon(
+                  Icons.chevron_right_rounded,
+                  color: c.textSecondary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

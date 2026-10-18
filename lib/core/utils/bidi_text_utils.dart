@@ -24,6 +24,20 @@ class BidiTextUtils {
   // Regex identifying strong Latin / Western LTR script characters
   static final RegExp _ltrCharRegex = RegExp(r'[A-Za-z]');
 
+  // Strong L letters for direction detection, including accented Latin
+  // (Latin-1 Supplement and Extended-A/B, minus × and ÷).
+  static final RegExp _strongLatinChar = RegExp(
+    r'[A-Za-z\u00AA\u00B5\u00BA\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F]',
+  );
+
+  // Characters inside the Arabic block that are weak or neutral under UAX #9
+  // (digits AN/EN, separators CS/ET, and combining marks NSM), so they never
+  // decide the paragraph direction.
+  static final RegExp _weakArabicBlockChar = RegExp(
+    r'[\u0600-\u0607\u0609\u060A\u060C\u060E-\u061A\u064B-\u066C\u0670'
+    r'\u06D6-\u06E4\u06E7-\u06E9\u06EA-\u06ED\u06F0-\u06F9\u08D3-\u08FF]',
+  );
+
   // Common LTR token patterns that appear inside Arabic CV prose:
   // email, URL, phone numbers, tech acronyms, slash-separated paths/terms
   static final RegExp _embeddedLtrPattern = RegExp(
@@ -42,10 +56,11 @@ class BidiTextUtils {
 
     for (int i = 0; i < text.length; i++) {
       final char = text[i];
+      if (_weakArabicBlockChar.hasMatch(char)) continue;
       if (_rtlCharRegex.hasMatch(char)) {
         return TextDirection.rtl;
       }
-      if (_ltrCharRegex.hasMatch(char)) {
+      if (_strongLatinChar.hasMatch(char)) {
         return TextDirection.ltr;
       }
     }

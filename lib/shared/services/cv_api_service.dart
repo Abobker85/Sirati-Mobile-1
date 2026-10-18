@@ -247,6 +247,63 @@ class CvApiService {
     );
   }
 
+  /// Starts a Job Match for a saved CV. The deterministic score is in the
+  /// response; AI advice is always queued (`ai_status`). Returns the raw
+  /// `JobMatchResource` map — the job_match feature owns the typed model.
+  ///
+  /// The field is `job_description_input` (not `job_description`). Reusing
+  /// [idempotencyKey] replays the same match instead of spending quota.
+  Future<Map<String, dynamic>> createJobMatch({
+    required int generatedCvId,
+    required String jobDescription,
+    String? targetJobTitle,
+    String? language,
+    String? idempotencyKey,
+  }) async {
+    final title = targetJobTitle?.trim() ?? '';
+    final response = await _apiClient.postJson(
+      '/job-matches',
+      {
+        'generated_cv_id': generatedCvId,
+        'job_description_input': jobDescription.trim(),
+        if (title.isNotEmpty) 'target_job_title': title,
+        if (language == 'ar' || language == 'en') 'language': language,
+      },
+      extraHeaders: _idempotencyHeaders(idempotencyKey),
+    );
+    return _dataMap(response);
+  }
+
+  /// One refresh of a Job Match. This route shares the `ai-heavy` throttle
+  /// with create, so callers must poll sparingly.
+  Future<Map<String, dynamic>> getJobMatch(int id) async {
+    final response = await _apiClient.getJson('/job-matches/$id');
+    return _dataMap(response);
+  }
+
+  /// Applies the selected suggestions to a NEW CV copy (the source CV is not
+  /// modified) and returns it with the updated raw job match.
+  Future<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>
+      applyJobMatchSuggestions(int id, List<String> suggestionKeys) async {
+    final response = await _apiClient.postJson(
+      '/job-matches/$id/apply-suggestions',
+      {'suggestion_keys': suggestionKeys},
+    );
+    final data = _dataMap(response);
+    final cv = data['generated_cv'];
+    final match = data['job_match'];
+    if (cv is! Map<String, dynamic> || match is! Map<String, dynamic>) {
+      throw const FormatException('Malformed apply-suggestions response.');
+    }
+    return (generatedCv: GeneratedCv.fromJson(cv), jobMatch: match);
+  }
+
+  Map<String, dynamic> _dataMap(Map<String, dynamic> response) {
+    final data = response['data'];
+    if (data is Map<String, dynamic>) return data;
+    throw const FormatException('Response has no data object.');
+  }
+
   /// Opt-in header that makes the API queue AI work and return immediately.
   static const Map<String, String> asyncAiHeaders = {'X-Sirati-Async': '1'};
 
