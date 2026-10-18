@@ -416,6 +416,13 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         await progress.dismiss();
         if (!mounted) return;
 
+        if (!_isEditMode && (widget.targetJob?.handBackResult ?? false)) {
+          // The opener (e.g. Job Match) continues with this CV and reports
+          // its AI state itself; don't stack the preview on top of it.
+          Navigator.of(context).pop<GeneratedCv>(cv);
+          return;
+        }
+
         if (timedOut) {
           AppSnackBar.warning(
             context,

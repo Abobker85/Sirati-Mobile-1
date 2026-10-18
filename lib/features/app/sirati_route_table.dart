@@ -9,6 +9,7 @@ import 'package:sirati/features/auth/presentation/register_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_builder_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_loader_screen.dart';
+import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 import 'package:sirati/features/dashboard/presentation/education_detail_screen.dart';
 import 'package:sirati/features/dashboard/presentation/education_screen.dart';
 import 'package:sirati/features/dashboard/presentation/gallery_screen.dart';
@@ -17,12 +18,14 @@ import 'package:sirati/features/dashboard/presentation/home_screen.dart';
 import 'package:sirati/features/dashboard/presentation/not_found_screen.dart';
 import 'package:sirati/features/dashboard/presentation/premium_gate_screen.dart';
 import 'package:sirati/features/dashboard/presentation/splash_screen.dart';
+import 'package:sirati/features/job_match/presentation/job_match_screen.dart';
 import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
 import 'package:sirati/features/settings/presentation/deleted_account_cleanup_screen.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
 import 'package:sirati/shared/models/cv_target_job.dart';
+import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
 
 /// Composition root: maps route names onto feature screens.
@@ -67,6 +70,8 @@ Widget _widgetFor(ParsedRoute parsed) {
       return const PremiumGateScreen();
     case AppRoutes.gallery:
       return const ComponentGalleryScreen();
+    case AppRoutes.jobMatch:
+      return const JobMatchScreen();
     case AppRoutes.notFound:
       return const NotFoundScreen();
   }
@@ -76,6 +81,10 @@ Widget _widgetFor(ParsedRoute parsed) {
     return CvBuilderScreen(cvId: parsed.stringId);
   }
   if (parsed.name.startsWith(AppRoutes.cvPrefix) && parsed.id != null) {
+    final cv = parsed.arguments;
+    if (cv is GeneratedCv && cv.id == parsed.id) {
+      return GeneratedCvScreen(generatedCv: cv);
+    }
     return GeneratedCvLoaderScreen(cvId: parsed.id!);
   }
   if (parsed.name.startsWith(AppRoutes.analysisPrefix) && parsed.id != null) {

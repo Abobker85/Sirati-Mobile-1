@@ -29,6 +29,10 @@ class AuthUser {
   final Map<String, dynamic>? jobTitle;
   final bool emailVerified;
 
+  /// Server-computed entitlement state (`SubscriptionGate::stateFor`); null
+  /// when the payload did not include it.
+  final Map<String, dynamic>? subscription;
+
   const AuthUser({
     required this.id,
     required this.name,
@@ -39,6 +43,7 @@ class AuthUser {
     this.jobTitleOther,
     this.jobTitle,
     this.emailVerified = false,
+    this.subscription,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -54,6 +59,9 @@ class AuthUser {
       jobTitle: rawTitle is Map ? Map<String, dynamic>.from(rawTitle) : null,
       emailVerified:
           _asBool(json['email_verified'] ?? json['email_verified_at']),
+      subscription: json['subscription'] is Map
+          ? Map<String, dynamic>.from(json['subscription'] as Map)
+          : null,
     );
   }
 
@@ -76,6 +84,7 @@ class AuthUser {
       jobTitleOther: jobTitleOther ?? this.jobTitleOther,
       jobTitle: jobTitle ?? this.jobTitle,
       emailVerified: emailVerified ?? this.emailVerified,
+      subscription: subscription,
     );
   }
 

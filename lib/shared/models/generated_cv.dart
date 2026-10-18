@@ -27,6 +27,10 @@ class GeneratedCv {
   final String? templatePdfUrl;
   final DateTime? createdAt;
 
+  /// Canonical structured CV (`document` in GeneratedCvResource); null when
+  /// the server did not send one.
+  final Map<String, dynamic>? document;
+
   const GeneratedCv({
     required this.id,
     required this.fullName,
@@ -52,6 +56,7 @@ class GeneratedCv {
     required this.pdfUrl,
     required this.templatePdfUrl,
     required this.createdAt,
+    this.document,
   });
 
   factory GeneratedCv.fromJson(Map<String, dynamic> json) {
@@ -82,6 +87,9 @@ class GeneratedCv {
       pdfUrl: json['pdf_url']?.toString(),
       templatePdfUrl: json['template_pdf_url']?.toString(),
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
+      document: json['document'] is Map
+          ? Map<String, dynamic>.from(json['document'] as Map)
+          : null,
     );
   }
 }

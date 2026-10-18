@@ -279,5 +279,167 @@
   "invalidProjectUrl": "يجب أن يبدأ الرابط بـ https:// أو http://",
   "projectDescLabel": "وصف المشروع والتقنيات المستخدمة",
   "projectDescHint": "بناء نظام متكامل يعالج أكثر من 10,000 عملية يومياً باستخدام...",
-  "deleteItem": "حذف"
+  "deleteItem": "حذف",
+  "jobMatchTitle": "مطابقة الوظيفة",
+  "jobMatchPremiumBadge": "مميز",
+  "jobMatchEntryTitle": "طابق سيرتك مع وظيفة",
+  "jobMatchEntrySubtitle": "الصق إعلان الوظيفة لترى مدى توافقك واحصل على تعديلات مخصصة.",
+  "jobMatchEntryButton": "ابدأ المطابقة",
+  "jobMatchQuotaRemaining": "{count, plural, =0{لا توجد مطابقات متبقية اليوم} =1{مطابقة واحدة متبقية اليوم} =2{مطابقتان متبقيتان اليوم} few{{count} مطابقات متبقية اليوم} many{{count} مطابقة متبقية اليوم} other{{count} مطابقة متبقية اليوم}}",
+  "@jobMatchQuotaRemaining": {
+    "description": "Remaining Job Match quota for today.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "jobMatchJobTitleLabel": "المسمى الوظيفي (اختياري)",
+  "jobMatchJobTitleHint": "مثال: محلل بيانات",
+  "jobMatchDescriptionLabel": "الوصف الوظيفي",
+  "jobMatchDescriptionHint": "الصق نص إعلان الوظيفة كاملاً هنا...",
+  "jobMatchDescriptionRequired": "الصق الوصف الوظيفي أولاً.",
+  "jobMatchDescriptionTooLong": "يجب ألا يتجاوز الوصف الوظيفي {max} حرف. اختصره وحاول مرة أخرى.",
+  "@jobMatchDescriptionTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int",
+        "example": "4000"
+      }
+    }
+  },
+  "jobMatchTitleTooLong": "يجب ألا يتجاوز المسمى الوظيفي {max} حرفاً.",
+  "@jobMatchTitleTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int",
+        "example": "160"
+      }
+    }
+  },
+  "jobMatchCharCount": "{count} / {max}",
+  "@jobMatchCharCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "jobMatchPickCvTitle": "اختر سيرة محفوظة",
+  "jobMatchPickCvRequired": "اختر السيرة التي تريد مطابقتها.",
+  "jobMatchNoCvTitle": "لا توجد لديك سيرة محفوظة بعد",
+  "jobMatchNoCvBody": "أنشئ سيرة مخصصة لهذه الوظيفة وسنطابقها فور الانتهاء.",
+  "jobMatchCreateTailoredCv": "إنشاء سيرة مخصصة",
+  "jobMatchOrCreateTailored": "أو أنشئ سيرة جديدة مخصصة لهذه الوظيفة",
+  "jobMatchCvsLoadFailed": "تعذر تحميل سيرك الذاتية.",
+  "jobMatchRetry": "حاول مرة أخرى",
+  "jobMatchSubmit": "حلّل التوافق",
+  "jobMatchSubmitting": "جارٍ التحليل...",
+  "jobMatchCvStillPreparing": "لا تزال سيرتك الجديدة قيد التجهيز. ابدأ المطابقة عندما تصبح جاهزة.",
+  "jobMatchUntitledCv": "سيرة بدون عنوان",
+  "jobMatchPaywallTitle": "مطابقة الوظيفة ميزة للمشتركين",
+  "jobMatchPaywallBody": "اشترك لتعرف مدى توافق سيرتك مع الوظيفة والكلمات المفتاحية الناقصة، وطبّق التعديلات المقترحة على نسخة جديدة.",
+  "jobMatchPaywallTrial": "{days, plural, =1{يشمل تجربة مجانية ليوم واحد.} =2{يشمل تجربة مجانية ليومين.} few{يشمل تجربة مجانية لمدة {days} أيام.} other{يشمل تجربة مجانية لمدة {days} يوماً.}}",
+  "@jobMatchPaywallTrial": {
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "7"
+      }
+    }
+  },
+  "jobMatchPaywallRefresh": "اشتركت بالفعل - تحديث",
+  "jobMatchQuotaTitle": "وصلت إلى حد مطابقة الوظائف لليوم",
+  "jobMatchQuotaBody": "استخدمت كل مطابقات اليوم. يتجدد رصيدك غداً.",
+  "jobMatchUnavailableTitle": "مطابقة الوظيفة غير متاحة حالياً",
+  "jobMatchUnavailableBody": "تعذر التحقق من إمكانية الوصول إلى مطابقة الوظيفة. حاول مرة أخرى لاحقاً.",
+  "jobMatchEntitlementLoadFailed": "تعذر التحقق من اشتراكك.",
+  "jobMatchErrorSubscription": "تتطلب مطابقة الوظيفة اشتراكاً فعالاً.",
+  "jobMatchErrorLimit": "وصلت إلى حد مطابقة الوظائف حالياً. حاول لاحقاً.",
+  "jobMatchErrorConflict": "تغيّر هذا الطلب أثناء إرساله. اضغط على التحليل مرة أخرى.",
+  "jobMatchErrorStale": "تغيّرت سيرتك أو هذه الاقتراحات منذ هذه المطابقة. أنشئ مطابقة جديدة.",
+  "jobMatchErrorCvTooLong": "هذه السيرة أطول من الحد المسموح لمطابقة الوظيفة. اختصرها وحاول مرة أخرى.",
+  "jobMatchErrorInvalidDescription": "تعذر استخدام الوصف الوظيفي. راجعه وحاول مرة أخرى.",
+  "jobMatchErrorInvalidSelection": "بعض التعديلات المحددة لا يمكن تطبيقها تلقائياً. راجع اختيارك.",
+  "jobMatchErrorUnavailable": "مطابقة الوظيفة غير متاحة مؤقتاً. حاول لاحقاً.",
+  "jobMatchErrorNotFound": "لم تعد هذه المطابقة أو السيرة موجودة.",
+  "jobMatchErrorNetwork": "تحقق من اتصالك وحاول مرة أخرى.",
+  "jobMatchErrorUnknown": "حدث خطأ ما. حاول مرة أخرى.",
+  "jobMatchResultTitle": "نتيجة المطابقة",
+  "jobMatchScoreLabel": "درجة التوافق",
+  "jobMatchScoreSemantics": "درجة التوافق {score} من 100",
+  "@jobMatchScoreSemantics": {
+    "placeholders": {
+      "score": {
+        "type": "int",
+        "example": "72"
+      }
+    }
+  },
+  "jobMatchCoverage": "تغطية الكلمات المفتاحية: {percent}%",
+  "@jobMatchCoverage": {
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "64"
+      }
+    }
+  },
+  "jobMatchGrade": "التقدير: {grade}",
+  "@jobMatchGrade": {
+    "placeholders": {
+      "grade": {
+        "type": "String",
+        "example": "B"
+      }
+    }
+  },
+  "jobMatchMatchedKeywords": "كلمات مفتاحية متطابقة",
+  "jobMatchMissingKeywords": "كلمات مفتاحية ناقصة",
+  "jobMatchNoKeywords": "لا يوجد",
+  "jobMatchStrengths": "نقاط القوة",
+  "jobMatchGaps": "فجوات يجب سدّها",
+  "jobMatchSummary": "الخلاصة",
+  "jobMatchAiPreparing": "جارٍ تجهيز الاقتراحات المخصصة... درجتك جاهزة أدناه.",
+  "jobMatchAiStillProcessing": "لا تزال الاقتراحات قيد التجهيز. درجتك نهائية؛ تحقق مرة أخرى بعد دقيقة.",
+  "jobMatchCheckAgain": "تحقق مرة أخرى",
+  "jobMatchAiFailed": "تعذر توليد الاقتراحات هذه المرة. درجتك والفجوات لا تزال دقيقة.",
+  "jobMatchAiNotConfigured": "الاقتراحات المخصصة غير متاحة حالياً.",
+  "jobMatchSuggestionsTitle": "التعديلات المقترحة",
+  "jobMatchSuggestionsHint": "اختر التعديلات التي تريد تطبيقها. سنحفظها في نسخة جديدة وتبقى سيرتك الأصلية كما هي.",
+  "jobMatchNoSuggestions": "لا توجد تعديلات مقترحة - سيرتك تغطي هذه الوظيفة جيداً.",
+  "jobMatchBefore": "الحالي",
+  "jobMatchAfter": "المقترح",
+  "jobMatchAddition": "إضافة",
+  "jobMatchWhy": "لماذا يفيد",
+  "jobMatchTargets": "يستهدف",
+  "jobMatchNeedsUserFact": "يحتاج إلى معلومة لا يعرفها إلا أنت (مثل تاريخ أو رقم). عدّل هذا الجزء من سيرتك بنفسك.",
+  "jobMatchAppliedBadge": "مُطبّق",
+  "jobMatchApplySelected": "{count, plural, =1{تطبيق تعديل واحد} =2{تطبيق تعديلين} few{تطبيق {count} تعديلات} many{تطبيق {count} تعديلاً} other{تطبيق {count} تعديل}}",
+  "@jobMatchApplySelected": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "jobMatchSelectToApply": "اختر اقتراحات لتطبيقها على نسخة جديدة من سيرتك.",
+  "jobMatchApplying": "جارٍ التطبيق...",
+  "jobMatchAppliedSuccess": "نسختك المخصصة من السيرة جاهزة.",
+  "jobMatchOpenTailoredCv": "فتح السيرة المخصصة",
+  "jobMatchNewMatch": "مطابقة جديدة",
+  "jobMatchSectionName": "{section, select, summary{النبذة} skills{المهارات} experience{الخبرات} education{التعليم} certifications{الشهادات} projects{المشاريع} languages{اللغات} personal{البيانات الشخصية} other{أقسام أخرى}}",
+  "@jobMatchSectionName": {
+    "placeholders": {
+      "section": {
+        "type": "String"
+      }
+    }
+  },
+  "jobMatchLoading": "جارٍ التحميل..."
 }

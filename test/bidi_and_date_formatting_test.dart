@@ -47,6 +47,49 @@ void main() {
       );
     });
 
+    test('Arabic-block digits, separators and marks are weak (UAX #9)', () {
+      // AN/EN digits, CS/ET separators and NSM marks from the Arabic block.
+      const weak = [
+        '٠', '٣', '٩', '۰', '۵', '٪', '٫', '٬', '،', '\u064E', '\u0670', //
+        '0', '7', '+', '#', '.', ' ', '-', '(', '%',
+      ];
+      const strong = {
+        'م': TextDirection.rtl,
+        'ب': TextDirection.rtl,
+        'ی': TextDirection.rtl,
+        'E': TextDirection.ltr,
+        'q': TextDirection.ltr,
+        'é': TextDirection.ltr,
+        'Ö': TextDirection.ltr,
+      };
+      for (var seed = 0; seed < 300; seed++) {
+        final prefix = StringBuffer();
+        for (var i = 0; i < seed % 7; i++) {
+          prefix.write(weak[(seed * 31 + i * 17) % weak.length]);
+        }
+        for (final fallback in TextDirection.values) {
+          expect(
+            BidiTextUtils.detectBaseDirection(
+              prefix.toString(),
+              fallback: fallback,
+            ),
+            fallback,
+            reason: 'only weak characters in "$prefix"',
+          );
+          for (final MapEntry(key: char, value: dir) in strong.entries) {
+            expect(
+              BidiTextUtils.detectBaseDirection(
+                '$prefix$char${weak[seed % weak.length]}',
+                fallback: fallback,
+              ),
+              dir,
+              reason: 'first strong character of "$prefix$char"',
+            );
+          }
+        }
+      }
+    });
+
     test(
         'isolateEmbeddedLtrInArabic wraps technical terms, emails, URLs, and phones without reversing',
         () {

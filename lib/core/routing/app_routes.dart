@@ -17,6 +17,7 @@ class AppRoutes {
   static const premium = '/premium';
   static const gallery = '/gallery';
   static const cvBuilder = '/builder';
+  static const jobMatch = '/job-match';
   static const notFound = '/not-found';
 
   static const cvPrefix = '/cv/';

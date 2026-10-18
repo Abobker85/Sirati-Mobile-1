@@ -272,5 +272,167 @@
   "invalidProjectUrl": "The URL must start with https:// or http://",
   "projectDescLabel": "Description and technologies",
   "projectDescHint": "Built a system processing 10,000+ operations a day using...",
-  "deleteItem": "Delete"
+  "deleteItem": "Delete",
+  "jobMatchTitle": "Job Match",
+  "jobMatchPremiumBadge": "Premium",
+  "jobMatchEntryTitle": "Match your CV to a job",
+  "jobMatchEntrySubtitle": "Paste a job ad to see how well you fit and get tailored edits.",
+  "jobMatchEntryButton": "Start matching",
+  "jobMatchQuotaRemaining": "{count, plural, =0{No matches left today} =1{1 match left today} other{{count} matches left today}}",
+  "@jobMatchQuotaRemaining": {
+    "description": "Remaining Job Match quota for today.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "jobMatchJobTitleLabel": "Job title (optional)",
+  "jobMatchJobTitleHint": "e.g. Data Analyst",
+  "jobMatchDescriptionLabel": "Job description",
+  "jobMatchDescriptionHint": "Paste the full job ad here...",
+  "jobMatchDescriptionRequired": "Paste the job description first.",
+  "jobMatchDescriptionTooLong": "The job description must be {max} characters or fewer. Shorten it and try again.",
+  "@jobMatchDescriptionTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int",
+        "example": "4000"
+      }
+    }
+  },
+  "jobMatchTitleTooLong": "The job title must be {max} characters or fewer.",
+  "@jobMatchTitleTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int",
+        "example": "160"
+      }
+    }
+  },
+  "jobMatchCharCount": "{count} / {max}",
+  "@jobMatchCharCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "jobMatchPickCvTitle": "Choose a saved CV",
+  "jobMatchPickCvRequired": "Choose the CV to match.",
+  "jobMatchNoCvTitle": "You don't have a saved CV yet",
+  "jobMatchNoCvBody": "Create a CV tailored to this job and we'll match it right after.",
+  "jobMatchCreateTailoredCv": "Create tailored CV",
+  "jobMatchOrCreateTailored": "Or create a new CV tailored to this job",
+  "jobMatchCvsLoadFailed": "Couldn't load your CVs.",
+  "jobMatchRetry": "Try again",
+  "jobMatchSubmit": "Analyze match",
+  "jobMatchSubmitting": "Analyzing...",
+  "jobMatchCvStillPreparing": "Your new CV is still being prepared. Start the match once it's ready.",
+  "jobMatchUntitledCv": "Untitled CV",
+  "jobMatchPaywallTitle": "Job Match is a Premium feature",
+  "jobMatchPaywallBody": "Subscribe to see how well your CV fits a job, which keywords are missing, and apply suggested edits to a new copy.",
+  "jobMatchPaywallTrial": "{days, plural, =1{Includes a 1-day free trial.} other{Includes a {days}-day free trial.}}",
+  "@jobMatchPaywallTrial": {
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "7"
+      }
+    }
+  },
+  "jobMatchPaywallRefresh": "I've subscribed - refresh",
+  "jobMatchQuotaTitle": "Today's Job Match limit is reached",
+  "jobMatchQuotaBody": "You've used all of today's matches. Your quota resets tomorrow.",
+  "jobMatchUnavailableTitle": "Job Match is unavailable right now",
+  "jobMatchUnavailableBody": "We couldn't confirm access to Job Match. Please try again later.",
+  "jobMatchEntitlementLoadFailed": "Couldn't check your subscription.",
+  "jobMatchErrorSubscription": "Job Match needs an active subscription.",
+  "jobMatchErrorLimit": "You've reached the Job Match limit for now. Try again later.",
+  "jobMatchErrorConflict": "This request changed while it was being sent. Tap Analyze again.",
+  "jobMatchErrorStale": "Your CV or these suggestions changed since this match. Create a new Job Match.",
+  "jobMatchErrorCvTooLong": "This CV is too long for Job Match. Shorten it and try again.",
+  "jobMatchErrorInvalidDescription": "The job description couldn't be used. Check it and try again.",
+  "jobMatchErrorInvalidSelection": "Some selected edits can't be applied automatically. Review your selection.",
+  "jobMatchErrorUnavailable": "Job Match is temporarily unavailable. Please try later.",
+  "jobMatchErrorNotFound": "This match or CV no longer exists.",
+  "jobMatchErrorNetwork": "Check your connection and try again.",
+  "jobMatchErrorUnknown": "Something went wrong. Please try again.",
+  "jobMatchResultTitle": "Match results",
+  "jobMatchScoreLabel": "Match score",
+  "jobMatchScoreSemantics": "Match score {score} out of 100",
+  "@jobMatchScoreSemantics": {
+    "placeholders": {
+      "score": {
+        "type": "int",
+        "example": "72"
+      }
+    }
+  },
+  "jobMatchCoverage": "Keyword coverage: {percent}%",
+  "@jobMatchCoverage": {
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "64"
+      }
+    }
+  },
+  "jobMatchGrade": "Grade: {grade}",
+  "@jobMatchGrade": {
+    "placeholders": {
+      "grade": {
+        "type": "String",
+        "example": "B"
+      }
+    }
+  },
+  "jobMatchMatchedKeywords": "Matched keywords",
+  "jobMatchMissingKeywords": "Missing keywords",
+  "jobMatchNoKeywords": "None found",
+  "jobMatchStrengths": "Strengths",
+  "jobMatchGaps": "Gaps to close",
+  "jobMatchSummary": "Summary",
+  "jobMatchAiPreparing": "Preparing tailored suggestions... Your score is ready below.",
+  "jobMatchAiStillProcessing": "Suggestions are still being prepared. Your score is final; check again in a minute.",
+  "jobMatchCheckAgain": "Check again",
+  "jobMatchAiFailed": "Suggestions couldn't be generated this time. Your score and gaps are still accurate.",
+  "jobMatchAiNotConfigured": "Tailored suggestions aren't available right now.",
+  "jobMatchSuggestionsTitle": "Suggested edits",
+  "jobMatchSuggestionsHint": "Select the edits to apply. We'll save them to a new copy; your original CV stays unchanged.",
+  "jobMatchNoSuggestions": "No edits suggested - your CV already covers this job well.",
+  "jobMatchBefore": "Current",
+  "jobMatchAfter": "Suggested",
+  "jobMatchAddition": "Addition",
+  "jobMatchWhy": "Why it helps",
+  "jobMatchTargets": "Targets",
+  "jobMatchNeedsUserFact": "Needs a detail only you know (such as a date or number). Edit this part of your CV yourself.",
+  "jobMatchAppliedBadge": "Applied",
+  "jobMatchApplySelected": "{count, plural, =1{Apply 1 edit} other{Apply {count} edits}}",
+  "@jobMatchApplySelected": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "jobMatchSelectToApply": "Select suggestions to apply them to a new CV copy.",
+  "jobMatchApplying": "Applying...",
+  "jobMatchAppliedSuccess": "Your tailored CV copy is ready.",
+  "jobMatchOpenTailoredCv": "Open tailored CV",
+  "jobMatchNewMatch": "New match",
+  "jobMatchSectionName": "{section, select, summary{Summary} skills{Skills} experience{Experience} education{Education} certifications{Certifications} projects{Projects} languages{Languages} personal{Personal details} other{Other sections}}",
+  "@jobMatchSectionName": {
+    "placeholders": {
+      "section": {
+        "type": "String"
+      }
+    }
+  },
+  "jobMatchLoading": "Loading..."
 }
