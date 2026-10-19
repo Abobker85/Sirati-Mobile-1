@@ -36,47 +36,50 @@ class JobNewsDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (item.isVerified) ...[
-                    Row(
+                  if (item.isVerified || item.isTamheer) ...[
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: context.sirati.primaryLight,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color:
-                                  context.sirati.primary.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                item.isGov
-                                    ? Icons.account_balance_rounded
-                                    : item.isEnterprise
-                                        ? Icons.business_rounded
-                                        : Icons.verified_rounded,
-                                size: 14,
-                                color: context.sirati.primaryInk,
+                        if (item.isVerified)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: context.sirati.primaryLight,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: context.sirati.primary
+                                    .withValues(alpha: 0.3),
                               ),
-                              const SizedBox(width: 5),
-                              Text(
-                                item.sourceBadge ??
-                                    (english ? 'Verified' : 'جهة موثقة معتمدة'),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  item.isGov
+                                      ? Icons.account_balance_rounded
+                                      : item.isEnterprise
+                                          ? Icons.business_rounded
+                                          : Icons.verified_rounded,
+                                  size: 14,
                                   color: context.sirati.primaryInk,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 5),
+                                Text(
+                                  item.sourceBadge ??
+                                      (english ? 'Verified' : 'جهة موثقة معتمدة'),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.sirati.primaryInk,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        if (item.isTamheer) ...[
-                          const SizedBox(width: 8),
+                        if (item.isTamheer)
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
@@ -84,20 +87,19 @@ class JobNewsDetailScreen extends StatelessWidget {
                               color: context.sirati.warningLight,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color:
-                                    context.sirati.amber.withValues(alpha: 0.3),
+                                color: context.sirati.amber
+                                    .withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(
                               english ? 'Tamheer Program' : 'برنامج تمهير 🇸🇦',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: context.sirati.onWarningContainer,
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -165,22 +167,31 @@ class JobNewsDetailScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
                             children: [
-                              Icon(Icons.stars_rounded,
-                                  color: context.sirati.primary, size: 22),
-                              const SizedBox(width: 8),
-                              Text(
-                                english
-                                    ? 'Profile & CV Compatibility'
-                                    : 'توافق الوظيفة مع ملفك المهني',
-                                style: TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: context.sirati.textPrimary,
-                                ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.stars_rounded,
+                                      color: context.sirati.primaryInk,
+                                      size: 22),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    english
+                                        ? 'Profile & CV Compatibility'
+                                        : 'توافق الوظيفة مع ملفك المهني',
+                                    style: TextStyle(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: context.sirati.textPrimary,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const Spacer(),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 9, vertical: 3),
@@ -227,13 +238,13 @@ class JobNewsDetailScreen extends StatelessWidget {
                                   children: [
                                     Icon(Icons.check_circle_rounded,
                                         size: 15,
-                                        color: context.sirati.primary),
+                                        color: context.sirati.primaryInk),
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
                                         reason,
                                         style: TextStyle(
-                                          fontSize: 12.5,
+                                          fontSize: 13,
                                           fontWeight: FontWeight.w600,
                                           color: context.sirati.textSecondary,
                                         ),
@@ -288,7 +299,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                               Text(
                                 skill,
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 13,
                                   fontWeight: isMatched
                                       ? FontWeight.w700
                                       : FontWeight.w500,

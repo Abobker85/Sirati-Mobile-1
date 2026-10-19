@@ -229,6 +229,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 if (title?.isOther != true) _otherCtrl.clear();
               }),
             ),
+            if (titlesAsync.hasError && !titlesAsync.hasValue) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      en
+                          ? "Couldn't load job titles"
+                          : 'تعذر تحميل المسميات الوظيفية',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: context.sirati.error,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => ref.invalidate(jobTitlesProvider),
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      foregroundColor: context.sirati.primaryInk,
+                    ),
+                    child: Text(en ? 'Retry' : 'إعادة المحاولة'),
+                  ),
+                ],
+              ),
+            ],
             if (isOther) ...[
               const SizedBox(height: AppSpacing.md),
               label(en ? 'Your job title' : 'المسمى الوظيفي الخاص بك'),

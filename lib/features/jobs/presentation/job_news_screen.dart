@@ -247,13 +247,16 @@ class _JobNewsList extends ConsumerWidget {
                           ),
                           const SizedBox(height: AppSpacing.lg),
                         ],
-                        Text(
-                          english ? 'Latest Postings' : 'آخر الإعلانات',
-                          textAlign: TextAlign.start,
-                          style: AppTextStyles.titleMd(context.sirati),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        if (latest.isEmpty) EmptyJobNews(english: english),
+                        if (feed.items.isEmpty)
+                          EmptyJobNews(english: english)
+                        else if (latest.isNotEmpty) ...[
+                          Text(
+                            english ? 'Latest Postings' : 'آخر الإعلانات',
+                            textAlign: TextAlign.start,
+                            style: AppTextStyles.titleMd(context.sirati),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
                       ],
                     ),
                   ),

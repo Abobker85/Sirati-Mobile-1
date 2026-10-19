@@ -176,7 +176,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             color: context.sirati.textSecondary,
                           ),
                           tooltip: en ? 'Previous' : 'السابق',
-                          visualDensity: VisualDensity.compact,
                         ),
                       ),
                     const Spacer(),
@@ -194,7 +193,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               horizontal: 14, vertical: 6),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(999)),
-                          minimumSize: const Size(48, 36),
+                          minimumSize: const Size(48, 48),
                           tapTargetSize: MaterialTapTargetSize.padded,
                         ),
                         child: Text(
@@ -482,14 +481,16 @@ class _PageDots extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reduce = MotionSettings.reduce(context);
+    final en = AppLocale.isEnglish(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (i) {
         final active = i == index;
+        final label = en ? 'Page ${i + 1} of $count' : 'الصفحة ${i + 1} من $count';
         final dot = AnimatedContainer(
           duration: reduce ? Duration.zero : MotionDurations.medium,
           curve: MotionCurves.state,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
+          margin: const EdgeInsets.symmetric(horizontal: 2),
           width: active ? 22 : 8,
           height: 8,
           decoration: BoxDecoration(
@@ -499,16 +500,29 @@ class _PageDots extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
         );
-        if (onTap == null) return dot;
-        // Enlarged hit-target: the dot itself is 8px tall (below WCAG's
-        // 24px minimum), so wrap it in a padded InkWell that keeps the
-        // small visual while giving fingers a real target.
-        return InkWell(
-          onTap: () => onTap!(i),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-            child: dot,
+        if (onTap == null) {
+          return Semantics(
+            label: label,
+            selected: active,
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(child: dot),
+            ),
+          );
+        }
+        return Semantics(
+          button: true,
+          label: label,
+          selected: active,
+          child: InkWell(
+            onTap: () => onTap!(i),
+            borderRadius: BorderRadius.circular(24),
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(child: dot),
+            ),
           ),
         );
       }),

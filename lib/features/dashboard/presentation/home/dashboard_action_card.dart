@@ -9,8 +9,11 @@ enum DashboardActionTone {
   /// Dark brand fill with light text — the primary call to action.
   brand,
 
-  /// Surface card with a warm accent — secondary actions.
+  /// Surface card with a warm amber accent — secondary actions (Job Match).
   neutral,
+
+  /// Surface card with a teal accent — secondary actions (ATS Scanner).
+  teal,
 }
 
 class _TonePalette {
@@ -44,6 +47,15 @@ class _TonePalette {
             icon: c.amber,
             button: c.warningLight,
             buttonText: c.onWarningContainer,
+          ),
+        DashboardActionTone.teal => _TonePalette(
+            background: c.surface,
+            border: c.border,
+            title: c.textPrimary,
+            subtitle: c.textSecondary,
+            icon: c.primaryInk,
+            button: c.primaryLight,
+            buttonText: c.primaryInk,
           ),
       };
 
@@ -129,9 +141,9 @@ class DashboardActionCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.start,
                             style: TextStyle(
-                              fontSize: 17,
-                              height: 1.35,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 18,
+                              height: 1.52,
+                              fontWeight: FontWeight.w700,
                               color: colors.title,
                             ),
                           ),
@@ -144,7 +156,7 @@ class DashboardActionCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 13,
                               height: 1.55,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w400,
                               color: colors.subtitle,
                             ),
                           ),

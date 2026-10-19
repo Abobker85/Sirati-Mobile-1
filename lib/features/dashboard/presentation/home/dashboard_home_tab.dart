@@ -193,7 +193,7 @@ class _DashboardList extends StatelessWidget {
               subtitle:
                   LocaleFormat.mixedBody(analysis.subtitle, english: english),
               buttonLabel: analysis.buttonLabel,
-              tone: DashboardActionTone.neutral,
+              tone: DashboardActionTone.teal,
               icon: Icons.analytics_outlined,
               watermark: Icons.bar_chart_rounded,
               onTap: () => _push(context, const CvAnalysisScreen()),

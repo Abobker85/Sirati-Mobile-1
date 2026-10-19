@@ -93,6 +93,9 @@ class NotificationsScreen extends ConsumerWidget {
                     if (!ok && context.mounted) _reportFailure(context);
                   }
                 : null,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(48, 48),
+            ),
             child: Text(english ? 'Read all' : 'قراءة الكل'),
           ),
         ],
@@ -112,13 +115,16 @@ class NotificationsScreen extends ConsumerWidget {
           padding: EdgeInsets.fromLTRB(AppSpacing.lg, 18, AppSpacing.lg, 32),
         ),
         isEmpty: (items) => items.isEmpty,
-        empty: AppEmptyState(
-          icon: Icons.notifications_none_rounded,
-          title: english ? 'No notifications yet' : 'لا توجد إشعارات حالياً',
-          subtitle: english
-              ? 'Updates about jobs and CV activity will show up here.'
-              : 'ستظهر هنا التحديثات حول الوظائف ونشاط سيرتك.',
-          scrollable: true,
+        empty: RefreshIndicator(
+          onRefresh: () => _refresh(ref),
+          child: AppEmptyState(
+            icon: Icons.notifications_none_rounded,
+            title: english ? 'No notifications yet' : 'لا توجد إشعارات حالياً',
+            subtitle: english
+                ? 'Updates about jobs and CV activity will show up here.'
+                : 'ستظهر هنا التحديثات حول الوظائف ونشاط سيرتك.',
+            scrollable: true,
+          ),
         ),
         builder: (items) => RefreshIndicator(
           onRefresh: () => _refresh(ref),

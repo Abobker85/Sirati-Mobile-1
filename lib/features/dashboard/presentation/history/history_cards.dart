@@ -181,15 +181,18 @@ class AnalysisHistoryCard extends StatelessWidget {
             borderRadius: 4,
           ),
           const SizedBox(height: AppSpacing.xs),
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
+            runSpacing: 4,
             children: [
               _MetaChip(
                 label: inputMethodLabel(analysis.inputMethod, english: english),
               ),
-              const Spacer(),
               Text(
                 _dateLabel(analysis.createdAt, english: english),
-                style: TextStyle(fontSize: 11, color: c.textSecondary),
+                style: TextStyle(fontSize: 12, color: c.textSecondary),
               ),
             ],
           ),
@@ -217,6 +220,7 @@ class GeneratedCvHistoryCard extends StatelessWidget {
     return _CardShell(
       onTap: onTap,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 44,
@@ -246,7 +250,7 @@ class GeneratedCvHistoryCard extends StatelessWidget {
                 Text(
                   LocaleFormat.mixedTitle(cv.fullName, english: english),
                   textAlign: TextAlign.start,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.titleSm(c),
                 ),
@@ -254,18 +258,20 @@ class GeneratedCvHistoryCard extends StatelessWidget {
                 Text(
                   LocaleFormat.mixedTitle(cv.targetJobTitle, english: english),
                   textAlign: TextAlign.start,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodySm(c),
                 ),
                 const SizedBox(height: 4),
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     _MetaChip(label: cv.language == 'ar' ? 'عربي' : 'English'),
-                    const SizedBox(width: 5),
                     Text(
                       _dateLabel(cv.createdAt, english: english),
-                      style: TextStyle(fontSize: 11, color: c.textSecondary),
+                      style: TextStyle(fontSize: 12, color: c.textSecondary),
                     ),
                   ],
                 ),

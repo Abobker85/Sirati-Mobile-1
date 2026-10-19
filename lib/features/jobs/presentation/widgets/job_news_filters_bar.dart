@@ -47,7 +47,7 @@ class PresetChips extends StatelessWidget {
                     onSelected: (_) => onSelected(preset.key),
                     showCheckmark: false,
                     labelStyle: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: selectedPreset == preset.key
                           ? FontWeight.w700
                           : FontWeight.w500,
@@ -66,8 +66,8 @@ class PresetChips extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   ),
                 ),
               ),
@@ -176,7 +176,7 @@ class CategoryChips extends StatelessWidget {
                 onSelected: (_) => onSelected(option.key),
                 showCheckmark: false,
                 labelStyle: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: selectedCategory == option.key
                       ? context.sirati.onPrimary
@@ -186,8 +186,7 @@ class CategoryChips extends StatelessWidget {
                 backgroundColor: context.sirati.primaryLight,
                 side: BorderSide.none,
                 shape: const StadiumBorder(),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               ),
             ),
         ],
@@ -245,13 +244,25 @@ class CityChips extends StatelessWidget {
                     onSelected: (_) => onSelected(option.key),
                     showCheckmark: false,
                     avatar: option.key == 'remote'
-                        ? const Icon(Icons.public_rounded, size: 14)
-                        : const Icon(Icons.location_on_outlined, size: 14),
+                        ? Icon(
+                            Icons.public_rounded,
+                            size: 14,
+                            color: selectedCity == option.key
+                                ? context.sirati.primaryInk
+                                : context.sirati.textSecondary,
+                          )
+                        : Icon(
+                            Icons.location_on_outlined,
+                            size: 14,
+                            color: selectedCity == option.key
+                                ? context.sirati.primaryInk
+                                : context.sirati.textSecondary,
+                          ),
                     labelStyle: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: selectedCity == option.key
-                          ? context.sirati.primaryDark
+                          ? context.sirati.primaryInk
                           : context.sirati.textSecondary,
                     ),
                     selectedColor: context.sirati.primaryLight,
@@ -264,8 +275,8 @@ class CityChips extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   ),
                 ),
               ),

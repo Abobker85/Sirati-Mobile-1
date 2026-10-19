@@ -382,11 +382,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     hintText: '••••••••',
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
+                      tooltip: _obscurePassword
+                          ? (en ? 'Show password' : 'إظهار كلمة المرور')
+                          : (en ? 'Hide password' : 'إخفاء كلمة المرور'),
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: context.sirati.textHint,
+                        color: context.sirati.textSecondary,
                       ),
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),
