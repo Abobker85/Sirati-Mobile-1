@@ -61,7 +61,7 @@ class WelcomeBody extends StatelessWidget {
                     MotionReveal(
                       order: 2,
                       child: Text(
-                        en ? 'Sirati' : 'سيرتي',
+                        en ? 'Siratie' : 'سيرتي',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 28,

@@ -266,7 +266,7 @@ class _CvLivePreviewPaneState extends State<CvLivePreviewPane> {
                           child: Text(
                             isAr
                                 ? 'معاينة سيرتي · للاطلاع فقط'
-                                : 'SIRATI PREVIEW · FOR EVALUATION',
+                                : 'SIRATIE PREVIEW · FOR EVALUATION',
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,

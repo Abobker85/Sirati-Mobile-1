@@ -266,7 +266,7 @@ class SiratiApp extends StatelessWidget {
           builder: (context, themeMode, _) {
             return MaterialApp(
               navigatorKey: siratiNavigatorKey,
-              title: language == 'en' ? 'Sirati' : 'سيرتي',
+              title: language == 'en' ? 'Siratie' : 'سيرتي',
               debugShowCheckedModeBanner: false,
               onGenerateTitle: (context) {
                 final l10n = AppLocalizations.of(context);

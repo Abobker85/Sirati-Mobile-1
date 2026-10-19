@@ -133,7 +133,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
     final en = AppLocale.isEnglish(context);
     final reduceMotion = MotionSettings.reduce(context);
     final wordmark = Text(
-      en ? 'Sirati' : 'سيرتي',
+      en ? 'Siratie' : 'سيرتي',
       textAlign: TextAlign.center,
       style: TextStyle(
         fontSize: 34,
@@ -159,7 +159,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
             const SiratiMark(size: 64, elevated: true),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              en ? 'Sirati' : 'سيرتي',
+              en ? 'Siratie' : 'سيرتي',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -204,7 +204,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
                 child: Opacity(
                   opacity: _brandTextOpacity.value,
                   child: Text(
-                    en ? 'Sirati' : 'سيرتي',
+                    en ? 'Siratie' : 'سيرتي',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
