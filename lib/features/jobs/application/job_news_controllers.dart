@@ -18,6 +18,7 @@ class JobNewsFiltersController extends Notifier<JobNewsFilters> {
       state = state.copyWith(category: category);
   void setCity(String city) => state = state.copyWith(city: city);
   void setQuery(String query) => state = state.copyWith(query: query.trim());
+  void clear() => state = const JobNewsFilters();
 
   /// Toggles the "matched to my profile" preset from the profile banner.
   void toggleMatched() => setPreset(

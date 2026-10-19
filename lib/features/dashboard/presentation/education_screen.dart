@@ -7,6 +7,7 @@ import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart
 import 'package:sirati/features/dashboard/application/education_interest_controller.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -279,7 +280,7 @@ class _ComingSoonHero extends StatelessWidget {
               label: Text(
                 notified
                     ? (english ? 'Interest Registered' : 'تم تسجيل اهتمامك')
-                    : (english ? 'Notify Me on Launch' : 'أبلغني عند الإطلاق'),
+                    : AppLocalizations.of(context).wp2bRegisterInterest,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),

@@ -41,20 +41,12 @@ class ScoreBadge extends StatelessWidget {
           children: [
             Text(
               AppFormat.digits('$score', english: english),
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: band.onContainer(c),
-              ),
+              style: AppTypography.of(context, AppTypography.titleLg, color: band.onContainer(c)),
             ),
             if (grade.trim().isNotEmpty && grade != '-')
               Text(
                 grade,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: band.onContainer(c),
-                ),
+                style: AppTypography.of(context, AppTypography.labelLg, color: band.onContainer(c)),
               ),
           ],
         ),
@@ -79,11 +71,7 @@ class _MetaChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: c.primaryInk,
-        ),
+        style: AppTypography.of(context, AppTypography.bodySm, color: c.primaryInk),
       ),
     );
   }
@@ -166,7 +154,7 @@ class AnalysisHistoryCard extends StatelessWidget {
                   textAlign: TextAlign.start,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.titleSm(c),
+                  style: AppTypography.of(context, AppTypography.titleSm),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -192,7 +180,7 @@ class AnalysisHistoryCard extends StatelessWidget {
               ),
               Text(
                 _dateLabel(analysis.createdAt, english: english),
-                style: TextStyle(fontSize: 12, color: c.textSecondary),
+                style: AppTypography.of(context, AppTypography.bodySm, color: c.textSecondary),
               ),
             ],
           ),
@@ -233,11 +221,7 @@ class GeneratedCvHistoryCard extends StatelessWidget {
               child: ExcludeSemantics(
                 child: Text(
                   name.isEmpty ? 'س' : BidiText.avatarInitial(name),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: c.primaryInk,
-                  ),
+                  style: AppTypography.of(context, AppTypography.titleLg, color: c.primaryInk),
                 ),
               ),
             ),
@@ -252,7 +236,7 @@ class GeneratedCvHistoryCard extends StatelessWidget {
                   textAlign: TextAlign.start,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.titleSm(c),
+                  style: AppTypography.of(context, AppTypography.titleSm),
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -260,7 +244,7 @@ class GeneratedCvHistoryCard extends StatelessWidget {
                   textAlign: TextAlign.start,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodySm(c),
+                  style: AppTypography.of(context, AppTypography.bodySm, color: c.textSecondary),
                 ),
                 const SizedBox(height: 4),
                 Wrap(
@@ -271,7 +255,7 @@ class GeneratedCvHistoryCard extends StatelessWidget {
                     _MetaChip(label: cv.language == 'ar' ? 'عربي' : 'English'),
                     Text(
                       _dateLabel(cv.createdAt, english: english),
-                      style: TextStyle(fontSize: 12, color: c.textSecondary),
+                      style: AppTypography.of(context, AppTypography.bodySm, color: c.textSecondary),
                     ),
                   ],
                 ),

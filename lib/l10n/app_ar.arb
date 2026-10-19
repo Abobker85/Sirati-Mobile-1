@@ -444,5 +444,19 @@
   "jobMatchRetrySuggestions": "إعادة محاولة الاقتراحات",
   "jobMatchLoading": "جارٍ التحميل...",
   "jm4ConfirmFact": "أؤكد أن هذه المعلومة صحيحة عني",
-  "jm4HonestyHint": "أكد فقط المعلومات التي يمكنك إثبات صحتها بصدق. سيُضاف هذا النص إلى سيرتك الذاتية."
+  "jm4HonestyHint": "أكد فقط المعلومات التي يمكنك إثبات صحتها بصدق. سيُضاف هذا النص إلى سيرتك الذاتية.",
+  "wp2bRegisterInterest": "سجّل اهتمامك",
+  "wp2bNoMatchingJobs": "لا توجد وظائف مطابقة",
+  "wp2bClearFilters": "مسح عوامل التصفية",
+  "wp2bScoreLabel": "درجة توافق السيرة الذاتية مع نظام تتبع المتقدمين",
+  "wp2bScoreValue": "{score} من 100",
+  "wp2bShowPassword": "إظهار كلمة المرور",
+  "wp2bHidePassword": "إخفاء كلمة المرور",
+  "@wp2bScoreValue": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  }
 }

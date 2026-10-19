@@ -1,342 +1,391 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_ring.dart';
 import 'package:sirati/features/cv_builder/domain/cv_list.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
+import 'package:sirati/features/dashboard/application/education_interest_controller.dart';
 import 'package:sirati/features/dashboard/presentation/education_screen.dart';
 import 'package:sirati/features/dashboard/presentation/history/history_cards.dart';
-import 'package:sirati/features/jobs/domain/job_news_feed.dart';
+import 'package:sirati/features/jobs/application/job_news_controllers.dart';
+import 'package:sirati/features/jobs/domain/job_news_filters.dart';
+import 'package:sirati/features/jobs/presentation/job_news_detail_screen.dart';
+import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
 import 'package:sirati/features/jobs/presentation/widgets/featured_job_card.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_card.dart';
+import 'package:sirati/features/jobs/presentation/widgets/job_news_common.dart';
+import 'package:sirati/features/jobs/presentation/widgets/job_news_filters_bar.dart';
 import 'package:sirati/features/settings/presentation/onboarding_screen.dart';
 import 'package:sirati/features/settings/presentation/settings/settings_widgets.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/models/job_news.dart';
+import 'package:sirati/shared/services/mobile_content_service.dart';
+import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
-JobNews _sampleJob({
-  int id = 1,
-  String title = 'Senior Cloud Solutions Architect & Enterprise Lead',
-  bool isVerified = true,
-  bool isTamheer = true,
-  int? matchScore = 92,
-  String salary = 'SAR 28,000 - 38,000',
-}) =>
-    JobNews.fromJson({
-      'id': id,
-      'title': title,
-      'body': 'Lead cloud infrastructure transformation across teams.',
-      'category': 'tech',
-      'is_verified': isVerified,
-      'is_tamheer': isTamheer,
-      'skills_required': ['AWS', 'Kubernetes', 'Terraform', 'System Architecture'],
-      'matched_skills': ['AWS', 'Kubernetes'],
-      'match_score': matchScore,
-      'match_reasons': ['Role aligns with your CV profile'],
-      'company': 'Riyadh Tech Group',
-      'action_url': 'https://example.com/jobs/$id',
-      'salary': salary,
-      'published_at': '2026-10-19T08:00:00Z',
-    });
+Map<String, dynamic> _jobJson(String content, {int? score = 92}) => {
+  'id': 1,
+  'title': content,
+  'body': content,
+  'company': content,
+  'location': content,
+  'source_badge': content,
+  'is_verified': true,
+  'is_tamheer': true,
+  'match_score': score,
+  'match_reasons': [content],
+  'skills_required': [content, 'TypeScript', 'إدارة المشاريع'],
+  'matched_skills': [content],
+  // Use the actual API field; `salary` is silently ignored by the model.
+  'salary_range': content,
+  'published_at': '2026-10-19T08:00:00Z',
+};
 
-Widget _wrapWithScale({
-  required Widget child,
-  double textScale = 2.0,
-  ThemeData? theme,
-  String lang = 'ar',
-  Size size = const Size(360, 800),
-}) {
+Widget _app(Widget child, {required String lang, required bool dark,
+    double scale = 2, bool scroll = false}) {
   AppLocale.languageCode.value = lang;
   return MaterialApp(
-    theme: theme ?? AppTheme.lightFor(arabic: lang == 'ar'),
+    theme: dark ? AppTheme.darkFor(arabic: lang == 'ar')
+        : AppTheme.lightFor(arabic: lang == 'ar'),
     locale: Locale(lang),
     supportedLocales: AppLocalizations.supportedLocales,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
-    home: MediaQuery(
-      data: MediaQueryData(
-        size: size,
-        textScaler: TextScaler.linear(textScale),
-      ),
-      child: Scaffold(
-        body: SingleChildScrollView(
-          child: SizedBox(
-            width: size.width,
-            child: child,
-          ),
-        ),
-      ),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.linear(scale), disableAnimations: true),
+      child: child!,
     ),
+    home: Scaffold(body: scroll ? SingleChildScrollView(child: child) : child),
   );
 }
 
+void _narrow(WidgetTester tester) {
+  tester.view.physicalSize = const Size(320, 800);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+}
+
+void _target(WidgetTester tester, Finder finder) {
+  expect(finder, findsOneWidget);
+  final size = tester.getSize(finder);
+  expect(size.width, greaterThanOrEqualTo(48));
+  expect(size.height, greaterThanOrEqualTo(48));
+}
+
+// Resolve painted ancestors including Ink gradients and translucent layers.
+// Every gradient endpoint must pass; no literal palette pair stands in for UI.
+List<Color> _backgrounds(Element element) {
+  var colors = <Color>[Colors.transparent];
+  element.visitAncestorElements((ancestor) {
+    final widget = ancestor.widget;
+    Decoration? decoration;
+    Color? fill;
+    if (widget is DecoratedBox) decoration = widget.decoration;
+    if (widget is Ink) decoration = widget.decoration;
+    if (widget is Material && widget.type != MaterialType.transparency) {
+      fill = widget.color ?? Theme.of(ancestor).canvasColor;
+    }
+    if (widget is Scaffold) fill = widget.backgroundColor ?? Theme.of(ancestor).scaffoldBackgroundColor;
+    List<Color> layer = fill == null ? [] : [fill];
+    if (decoration is BoxDecoration) {
+      layer = decoration.gradient?.colors ??
+          (decoration.color == null ? [] : [decoration.color!]);
+    }
+    if (layer.isNotEmpty) {
+      colors = [for (final top in colors) for (final below in layer)
+        Color.alphaBlend(top, below)];
+    }
+    return colors.any((color) => color.a < 1);
+  });
+  expect(colors.every((color) => color.a == 1), isTrue);
+  return colors;
+}
+
+void _contrast(WidgetTester tester, Finder textFinder) {
+  expect(textFinder, findsWidgets);
+  for (final element in textFinder.evaluate()) {
+    final paragraph = element.findRenderObject()! as RenderParagraph;
+    final ink = paragraph.text.style!.color!;
+    for (final background in _backgrounds(element)) {
+      expect(AppContrast.ratio(Color.alphaBlend(ink, background), background),
+          greaterThanOrEqualTo(4.5), reason: '${paragraph.text.toPlainText()} on $background');
+    }
+  }
+}
+
+class _Filters extends JobNewsFiltersController {
+  _Filters(this.initial);
+  final JobNewsFilters initial;
+  @override
+  JobNewsFilters build() => initial;
+}
+
+class _Content extends MobileContentService {
+  _Content({this.items = const []});
+  final List<Map<String, dynamic>> items;
+  final calls = <JobNewsFilters>[];
+  @override
+  Future<Map<String, dynamic>> jobNews(bool english, {
+    String? category, String? preset, String? city, int? jobTitleId,
+    bool? isRemote, bool? isVerified, String? sourceType,
+    String? employmentType, String? query, bool force = false,
+  }) async {
+    calls.add(JobNewsFilters(category: category ?? 'all', preset: preset ?? 'all',
+        city: city ?? 'all', query: query ?? ''));
+    return {'title': 'Jobs', 'items': items};
+  }
+}
+
+class _Interest extends EducationInterestStore {
+  @override
+  Future<bool> read() async => false;
+  @override
+  Future<void> save() async {}
+}
+
+Future<List<int>> _pixels(WidgetTester tester, GlobalKey key) async {
+  final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+  return (await tester.runAsync(() async {
+    final image = await boundary.toImage(pixelRatio: 1);
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final pixels = bytes!.buffer.asUint8List().toList();
+    image.dispose();
+    return pixels;
+  }))!;
+}
+
 void main() {
-  group('WP2 Contrast Invariants (Strict >= 4.5:1 Mathematical Evaluation)', () {
-    test('primaryInk meets WCAG AA in both Light and Dark palettes', () {
-      const light = SiratiColors.light;
-      const dark = SiratiColors.dark;
-
-      // Light theme: primaryInk (#006A60) on white surface and on primaryLight (#E0F2EE)
-      final lightOnWhite = AppContrast.ratio(light.primaryInk, light.surface);
-      final lightOnContainer = AppContrast.ratio(light.primaryInk, light.primaryLight);
-      expect(lightOnWhite, greaterThanOrEqualTo(4.5), reason: 'Light primaryInk on white');
-      expect(lightOnContainer, greaterThanOrEqualTo(4.5), reason: 'Light primaryInk on primaryLight');
-
-      // Dark theme: primaryInk (#2FC4B2) on dark surface and on primaryLight
-      final darkOnSurface = AppContrast.ratio(dark.primaryInk, dark.surface);
-      final darkOnContainer = AppContrast.ratio(dark.primaryInk, dark.primaryLight);
-      expect(darkOnSurface, greaterThanOrEqualTo(4.5), reason: 'Dark primaryInk on surface');
-      expect(darkOnContainer, greaterThanOrEqualTo(4.5), reason: 'Dark primaryInk on primaryLight');
-    });
-
-    test('onWarningContainer meets WCAG AA on warning backgrounds in both themes', () {
-      const light = SiratiColors.light;
-      const dark = SiratiColors.dark;
-
-      final lightRatio = AppContrast.ratio(light.onWarningContainer, light.amberLight);
-      expect(lightRatio, greaterThanOrEqualTo(4.5), reason: 'Light onWarningContainer on amberLight');
-
-      final darkRatio = AppContrast.ratio(dark.onWarningContainer, const Color(0xFF3D2E14));
-      expect(darkRatio, greaterThanOrEqualTo(4.5), reason: 'Dark onWarningContainer on warning container');
-    });
-
-    test('FeaturedJobCard permanent white containers use Color(0xFF006A60) (>= 4.5:1)', () {
-      const darkSafePrimary = Color(0xFF006A60);
-      const whiteBackground = Colors.white;
-      final ratio = AppContrast.ratio(darkSafePrimary, whiteBackground);
-      expect(ratio, greaterThanOrEqualTo(4.5), reason: 'Featured card white badge foreground');
-    });
-  });
-
-  group('WP2 Reflow at 200% Text Scale (No Overflow)', () {
-    testWidgets('JobNewsCard reflows cleanly without overflow at 200% text scale', (tester) async {
-      tester.view.physicalSize = const Size(720, 1600); // 360dp @ 2.0 DPR
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.reset);
-
-      final job = _sampleJob();
-      await tester.pumpWidget(_wrapWithScale(
-        child: JobNewsCard(item: job, english: false, isNew: true, onTap: () {}),
-        textScale: 2.0,
-      ));
-      await tester.pumpAndSettle();
-
-      expect(tester.takeException(), isNull, reason: 'JobNewsCard must not overflow at 200% text scale');
-      expect(find.byType(JobNewsCard), findsOneWidget);
-    });
-
-    testWidgets('FeaturedJobCard reflows cleanly without overflow at 200% text scale', (tester) async {
-      tester.view.physicalSize = const Size(720, 1600);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.reset);
-
-      final job = _sampleJob();
-      await tester.pumpWidget(_wrapWithScale(
-        child: FeaturedJobCard(item: job, english: false, onTap: () {}),
-        textScale: 2.0,
-      ));
-      await tester.pumpAndSettle();
-
-      expect(tester.takeException(), isNull, reason: 'FeaturedJobCard must not overflow at 200% text scale');
-      expect(find.byType(FeaturedJobCard), findsOneWidget);
-    });
-
-    testWidgets('AnalysisHistoryCard reflows cleanly without overflow at 200% text scale', (tester) async {
-      tester.view.physicalSize = const Size(720, 1600);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.reset);
-
-      final item = CvAnalysis.fromJson({
-        'id': 101,
-        'target_job_title': 'Chief Technology Officer & Lead Infrastructure Architect',
-        'score_total': 88,
-        'grade': 'A',
-        'input_method': 'paste',
-        'created_at': '2026-10-19T10:00:00Z',
-      });
-
-      await tester.pumpWidget(_wrapWithScale(
-        child: AnalysisHistoryCard(analysis: item, onTap: () {}),
-        textScale: 2.0,
-      ));
-      await tester.pumpAndSettle();
-
-      expect(tester.takeException(), isNull, reason: 'AnalysisHistoryCard must not overflow at 200% text scale');
-    });
-
-    testWidgets('GeneratedCvHistoryCard reflows cleanly without overflow at 200% text scale', (tester) async {
-      tester.view.physicalSize = const Size(720, 1600);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.reset);
-
-      final item = GeneratedCv.fromJson({
-        'id': 202,
-        'full_name': 'Dr. Abdulaziz Al-Mansoor',
-        'target_job_title': 'Executive Vice President of Artificial Intelligence',
-        'score_total': 95,
-        'grade': 'A+',
-        'language': 'ar',
-        'created_at': '2026-10-19T11:00:00Z',
-      });
-
-      await tester.pumpWidget(_wrapWithScale(
-        child: GeneratedCvHistoryCard(cv: item, onTap: () {}),
-        textScale: 2.0,
-      ));
-      await tester.pumpAndSettle();
-
-      expect(tester.takeException(), isNull, reason: 'GeneratedCvHistoryCard must not overflow at 200% text scale');
-    });
-
-    testWidgets('EducationScreen reflows cleanly without overflow at 200% text scale', (tester) async {
-      tester.view.physicalSize = const Size(720, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.reset);
-
-      await tester.pumpWidget(const ProviderScope(
-        child: MaterialApp(
-          locale: Locale('ar'),
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          home: MediaQuery(
-            data: MediaQueryData(
-              size: Size(360, 1200),
-              textScaler: TextScaler.linear(2.0),
-            ),
-            child: Scaffold(body: EducationScreen()),
-          ),
-        ),
-      ));
-      await tester.pumpAndSettle();
-
-      expect(tester.takeException(), isNull, reason: 'EducationScreen must not overflow at 200% text scale');
-    });
-  });
-
-  group('WP2 Minimum Tap Targets (>= 48x48dp) and Semantics', () {
-    testWidgets('Onboarding dots have >= 48x48dp tap target and page semantics', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        locale: const Locale('en'),
-        supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: Scaffold(body: OnboardingScreen(onFinished: () {})),
-      ));
-      await tester.pumpAndSettle();
-
-      final page1Semantics = find.bySemanticsLabel('Page 1 of 3');
-      expect(page1Semantics, findsOneWidget);
-
-      final dotBox = tester.getSize(page1Semantics);
-      expect(dotBox.width, greaterThanOrEqualTo(48.0));
-      expect(dotBox.height, greaterThanOrEqualTo(48.0));
-    });
-
-    testWidgets('CvDocumentCard circle action buttons have >= 48x48dp tap target and semantics', (tester) async {
-      final cvItem = CvListItem(
-        id: 10,
-        title: 'Backend Engineer CV',
-        badge: 'جاهزة',
-        isDraft: false,
-        canDownload: true,
-        pdfUrl: 'https://example.com/cv.pdf',
-        templatePdfUrl: '',
-        updatedAt: DateTime.now(),
-        updatedLabel: 'اليوم',
-      );
-
-      await tester.pumpWidget(MaterialApp(
-        locale: const Locale('en'),
-        supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: Scaffold(
-          body: CvDocumentCard(
-            item: cvItem,
-            onEdit: () {},
-            onDownload: () {},
-            onDelete: () {},
-          ),
-        ),
-      ));
-      await tester.pumpAndSettle();
-
-      final downloadBtn = find.bySemanticsLabel('Download');
-      expect(downloadBtn, findsOneWidget);
-      final downloadSize = tester.getSize(downloadBtn);
-      expect(downloadSize.width, greaterThanOrEqualTo(48.0));
-      expect(downloadSize.height, greaterThanOrEqualTo(48.0));
-
-      final deleteBtn = find.bySemanticsLabel('Delete');
-      expect(deleteBtn, findsOneWidget);
-      final deleteSize = tester.getSize(deleteBtn);
-      expect(deleteSize.width, greaterThanOrEqualTo(48.0));
-      expect(deleteSize.height, greaterThanOrEqualTo(48.0));
-    });
-
-    testWidgets('AnimatedScoreRing exposes descriptive accessibility semantics', (tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        locale: Locale('ar'),
-        supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: Scaffold(
-          body: AnimatedScoreRing(
-            score: 85,
-            scoreColor: Color(0xFF006A60),
-          ),
-        ),
-      ));
-      await tester.pumpAndSettle();
-
-      final ringSemantics = find.byWidgetPredicate(
-        (w) => w is Semantics && (w.properties.value == '85 من 100'),
-      );
-      expect(ringSemantics, findsOneWidget);
-    });
-
-    testWidgets('ThemeModeSelector options have minHeight >= 48dp', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        locale: const Locale('ar'),
-        supportedLocales: AppLocalizations.supportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: Scaffold(
-          body: ThemeModeSelector(
-            mode: ThemeMode.system,
-            onChanged: (_) {},
-          ),
-        ),
-      ));
-      await tester.pumpAndSettle();
-
-      final boxes = tester.widgetList<ConstrainedBox>(
-        find.descendant(of: find.byType(ThemeModeSelector), matching: find.byType(ConstrainedBox)),
-      );
-      expect(boxes, hasLength(3));
-      for (final box in boxes) {
-        expect(box.constraints.minHeight, greaterThanOrEqualTo(48.0));
+  for (final lang in ['en', 'ar']) {
+    for (final dark in [false, true]) {
+      final variant = '$lang dark=$dark';
+      for (final content in [
+        'Senior platform engineering and distributed systems specialist',
+        'مسؤول تطوير الخدمات الرقمية وإدارة المشاريع التقنية',
+        'مهندس Infrastructure Architecture وتطوير الخدمات المتقدمة',
+        'X' * 100,
+      ]) {
+        for (final screen in ['card', 'featured', 'detail']) {
+          testWidgets('$screen reflows at 200%: $variant / $content', (tester) async {
+            _narrow(tester);
+            final job = JobNews.fromJson(_jobJson(content));
+            final widget = switch (screen) {
+              'card' => JobNewsCard(item: job, english: lang == 'en', isNew: true, onTap: () {}),
+              'featured' => FeaturedJobCard(item: job, english: lang == 'en', onTap: () {}),
+              _ => JobNewsDetailScreen(item: job),
+            };
+            await tester.pumpWidget(_app(widget, lang: lang, dark: dark, scroll: screen != 'detail'));
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+            // Also lay out the bottom of the actual scrollable screen.
+            await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+          });
+        }
       }
-    });
-  });
 
-  group('WP2 Job News Empty State Logic (C-U-13)', () {
-    test('JobNewsFeed empty check treats presence of featured as non-empty feed', () {
-      final featured = _sampleJob(id: 99);
-      final feedWithFeaturedOnly = JobNewsFeed(
-        title: 'Job News',
-        items: [featured],
-      );
+      testWidgets('rendered featured text and warning badges meet AA: $variant', (tester) async {
+        final job = JobNews.fromJson(_jobJson('Engineering', score: 58));
+        await tester.pumpWidget(_app(
+          FeaturedJobCard(item: job, english: lang == 'en', onTap: () {}),
+          lang: lang, dark: dark, scale: 1, scroll: true));
+        await tester.pumpAndSettle();
+        _contrast(tester, find.descendant(of: find.byType(FeaturedJobCard), matching: find.byType(Text)));
+        for (final widget in [
+          JobNewsCard(item: job, english: lang == 'en', isNew: true, onTap: () {}),
+          JobNewsDetailScreen(item: job),
+        ]) {
+          await tester.pumpWidget(_app(widget, lang: lang, dark: dark, scale: 1,
+              scroll: widget is JobNewsCard));
+          await tester.pumpAndSettle();
+          final warning = find.byWidgetPredicate((w) => w is Text &&
+              (w.data?.contains(lang == 'en' ? 'Tamheer' : 'تمهير') ?? false));
+          _contrast(tester, warning);
+        }
+      });
 
-      expect(feedWithFeaturedOnly.featured, isNotNull);
-      expect(feedWithFeaturedOnly.latest, isEmpty);
-      expect(feedWithFeaturedOnly.items.isNotEmpty, isTrue,
-          reason: 'feed is non-empty when featured job is present');
+      testWidgets('history uses readable shipped typography: $variant', (tester) async {
+        _narrow(tester);
+        await tester.pumpWidget(_app(Column(children: [
+          AnalysisHistoryCard(analysis: CvAnalysis.fromJson({
+            'id': 1, 'target_job_title': 'مدير Technology Services والعمليات',
+            'score_total': 88, 'grade': 'A', 'input_method': 'paste',
+            'created_at': '2026-10-19T10:00:00Z',
+          }), onTap: () {}),
+          GeneratedCvHistoryCard(cv: GeneratedCv.fromJson({
+            'id': 2, 'full_name': 'Sara أحمد',
+            'target_job_title': 'مدير Technology Services والعمليات',
+            'score_total': 95, 'grade': 'A+', 'language': lang,
+            'created_at': '2026-10-19T10:00:00Z',
+          }), onTap: () {}),
+        ]), lang: lang, dark: dark, scroll: true));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final texts = find.byType(Text).evaluate();
+        expect(texts, isNotEmpty);
+        for (final element in texts) {
+          final style = (element.findRenderObject()! as RenderParagraph).text.style!;
+          expect(style.fontSize, greaterThanOrEqualTo(13));
+          expect([FontWeight.w400, FontWeight.w600, FontWeight.w700], contains(style.fontWeight));
+        }
+      });
 
-      const emptyFeed = JobNewsFeed(
-        title: 'Job News',
-        items: [],
-      );
-      expect(emptyFeed.items.isEmpty, isTrue);
-    });
+      for (final filters in [
+        const JobNewsFilters(),
+        const JobNewsFilters(preset: 'gov'),
+        const JobNewsFilters(category: 'finance'),
+        const JobNewsFilters(city: 'jeddah'),
+        const JobNewsFilters(query: 'علم البيانات'),
+        const JobNewsFilters(preset: 'remote', category: 'tech', city: 'riyadh', query: 'platform'),
+      ]) {
+        testWidgets('real empty feed ${filters.preset}/${filters.category}/${filters.city}/${filters.query}: $variant', (tester) async {
+          _narrow(tester);
+          final content = _Content();
+          await tester.pumpWidget(ProviderScope(
+            overrides: [
+              mobileContentServiceProvider.overrideWithValue(content),
+              jobNewsFiltersProvider.overrideWith(() => _Filters(filters)),
+            ],
+            child: _app(const JobNewsScreen(), lang: lang, dark: dark),
+          ));
+          await tester.pumpAndSettle();
+          final l10n = await AppLocalizations.delegate.load(Locale(lang));
+          final clear = find.widgetWithText(TextButton, l10n.wp2bClearFilters);
+          expect(find.text(l10n.wp2bNoMatchingJobs), filters.isActive ? findsOneWidget : findsNothing);
+          if (filters.isActive) {
+            // A pending debounce must not reapply a search after clearing.
+            await tester.enterText(find.byType(TextField), 'pending search');
+            await tester.ensureVisible(clear);
+            _target(tester, clear);
+            await tester.tap(clear);
+            await tester.pumpAndSettle();
+            expect(content.calls.last, const JobNewsFilters());
+            expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+          }
+          expect(find.byType(EmptyJobNews), findsOneWidget);
+          expect(find.text(lang == 'en' ? 'No job news is published yet.' : 'لا توجد أخبار وظائف منشورة حالياً.'), findsOneWidget);
+          expect(clear, findsNothing);
+          expect(tester.takeException(), isNull);
+        });
+      }
+
+      testWidgets('a featured-only real feed is not empty: $variant', (tester) async {
+        _narrow(tester);
+        await tester.pumpWidget(ProviderScope(overrides: [
+          mobileContentServiceProvider.overrideWithValue(_Content(items: [_jobJson('Data engineer')])),
+        ], child: _app(const JobNewsScreen(), lang: lang, dark: dark)));
+        await tester.pumpAndSettle();
+        expect(find.byType(FeaturedJobCard), findsOneWidget);
+        expect(find.byType(EmptyJobNews), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('every filter chip has a rendered 48dp target: $variant', (tester) async {
+        _narrow(tester);
+        final selected = <String>[];
+        await tester.pumpWidget(_app(Column(children: [
+          PresetChips(english: lang == 'en', selectedPreset: 'all', onSelected: selected.add),
+          CategoryChips(english: lang == 'en', selectedCategory: 'all', onSelected: selected.add),
+          CityChips(english: lang == 'en', selectedCity: 'all', onSelected: selected.add),
+        ]), lang: lang, dark: dark, scale: 1, scroll: true));
+        await tester.pumpAndSettle();
+        final chips = find.byWidgetPredicate((w) => w is ChoiceChip || w is FilterChip);
+        expect(chips, findsWidgets);
+        for (final element in chips.evaluate().toList()) {
+          final chip = find.byElementPredicate((e) => e == element);
+          _target(tester, chip);
+          await tester.ensureVisible(chip);
+          await tester.tap(chip);
+          await tester.pumpAndSettle();
+        }
+        expect(selected.length, chips.evaluate().length);
+      });
+
+      testWidgets('education registers interest with a 48dp action: $variant', (tester) async {
+        _narrow(tester);
+        await tester.pumpWidget(ProviderScope(overrides: [
+          educationInterestStoreProvider.overrideWithValue(_Interest()),
+        ], child: _app(const EducationScreen(), lang: lang, dark: dark)));
+        await tester.pumpAndSettle();
+        final l10n = await AppLocalizations.delegate.load(Locale(lang));
+        final action = find.widgetWithText(ElevatedButton, l10n.wp2bRegisterInterest);
+        await tester.ensureVisible(action);
+        _target(tester, action);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('theme options measure 48dp: $variant', (tester) async {
+        _narrow(tester);
+        await tester.pumpWidget(_app(ThemeModeSelector(mode: ThemeMode.system,
+            onChanged: (_) {}), lang: lang, dark: dark, scale: 1, scroll: true));
+        await tester.pumpAndSettle();
+        final options = find.descendant(of: find.byType(ThemeModeSelector), matching: find.byType(InkWell));
+        expect(options, findsNWidgets(3));
+        for (final element in options.evaluate()) {
+          _target(tester, find.byElementPredicate((e) => e == element));
+        }
+      });
+
+      testWidgets('CV action ink and focus paint above the card: $variant', (tester) async {
+        final semantics = tester.ensureSemantics();
+        addTearDown(semantics.dispose);
+        final key = GlobalKey();
+        var downloads = 0;
+        await tester.pumpWidget(_app(RepaintBoundary(key: key, child: CvDocumentCard(
+          item: const CvListItem(id: 10, title: 'Engineer', badge: '', isDraft: false,
+            canDownload: true, pdfUrl: '', templatePdfUrl: '', updatedAt: null, updatedLabel: ''),
+          onEdit: () {}, onDelete: () {}, onDownload: () => downloads++,
+        )), lang: lang, dark: dark, scale: 1));
+        await tester.pumpAndSettle();
+        final action = find.bySemanticsLabel(lang == 'en' ? 'Download' : 'تنزيل').first;
+        _target(tester, action);
+        _target(tester, find.bySemanticsLabel(lang == 'en' ? 'Delete' : 'حذف').first);
+        final before = await _pixels(tester, key);
+        final oldStrategy = FocusManager.instance.highlightStrategy;
+        addTearDown(() => FocusManager.instance.highlightStrategy = oldStrategy);
+        FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
+        Focus.of(tester.element(find.byIcon(Icons.download_rounded))).requestFocus();
+        await tester.pumpAndSettle();
+        final focused = await _pixels(tester, key);
+        expect(focused, isNot(equals(before)), reason: 'focus must visibly paint over the opaque card');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        final gesture = await tester.startGesture(tester.getCenter(action));
+        await tester.pump(const Duration(milliseconds: 100));
+        final pressed = await _pixels(tester, key);
+        expect(pressed, isNot(equals(before)), reason: 'tap ink must be visible');
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(downloads, 1);
+      });
+
+      testWidgets('score semantics announce one localized value: $variant', (tester) async {
+        final semantics = tester.ensureSemantics();
+        addTearDown(semantics.dispose);
+        final l10n = await AppLocalizations.delegate.load(Locale(lang));
+        for (final score in [0, 37, 100]) {
+          await tester.pumpWidget(_app(Builder(builder: (context) => AnimatedScoreRing(
+            score: score, scoreColor: context.sirati.primaryInk)), lang: lang, dark: dark));
+          await tester.pumpAndSettle();
+          final ring = find.bySemanticsLabel(l10n.wp2bScoreLabel);
+          expect(ring, findsOneWidget);
+          expect(tester.getSemantics(ring).getSemanticsData().value, l10n.wp2bScoreValue(score));
+        }
+      });
+    }
+  }
+
+  testWidgets('onboarding dots render 48dp semantic targets', (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+    await tester.pumpWidget(_app(OnboardingScreen(onFinished: () {}), lang: 'en', dark: false, scale: 1));
+    await tester.pumpAndSettle();
+    _target(tester, find.bySemanticsLabel('Page 1 of 3'));
   });
 }

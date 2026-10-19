@@ -67,13 +67,16 @@ class JobNewsDetailScreen extends StatelessWidget {
                                   color: context.sirati.primaryInk,
                                 ),
                                 const SizedBox(width: 5),
-                                Text(
-                                  item.sourceBadge ??
-                                      (english ? 'Verified' : 'جهة موثقة معتمدة'),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: context.sirati.primaryInk,
+                                Flexible(
+                                  child: Text(
+                                    item.sourceBadge ??
+                                        (english ? 'Verified' : 'جهة موثقة معتمدة'),
+                                    softWrap: true,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: context.sirati.primaryInk,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -111,7 +114,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                     primaryStyle: TextStyle(
                       fontSize: 25,
                       height: 1.35,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: context.sirati.textPrimary,
                     ),
                     secondaryStyle: TextStyle(
@@ -180,14 +183,17 @@ class JobNewsDetailScreen extends StatelessWidget {
                                       color: context.sirati.primaryInk,
                                       size: 22),
                                   const SizedBox(width: 8),
-                                  Text(
-                                    english
-                                        ? 'Profile & CV Compatibility'
-                                        : 'توافق الوظيفة مع ملفك المهني',
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: context.sirati.textPrimary,
+                                  Flexible(
+                                    child: Text(
+                                      english
+                                          ? 'Profile & CV Compatibility'
+                                          : 'توافق الوظيفة مع ملفك المهني',
+                                      softWrap: true,
+                                      style: TextStyle(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: context.sirati.textPrimary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -205,7 +211,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                                   '$matchScore%',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                     color: highMatch
                                         ? context.sirati.onSuccessContainer
                                         : context.sirati.primaryInk,
@@ -296,16 +302,19 @@ class JobNewsDetailScreen extends StatelessWidget {
                                     size: 13, color: context.sirati.primaryInk),
                                 const SizedBox(width: 4),
                               ],
-                              Text(
-                                skill,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: isMatched
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: isMatched
-                                      ? context.sirati.primaryInk
-                                      : context.sirati.textSecondary,
+                              Flexible(
+                                child: Text(
+                                  skill,
+                                  softWrap: true,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: isMatched
+                                        ? FontWeight.w700
+                                        : FontWeight.w400,
+                                    color: isMatched
+                                        ? context.sirati.primaryInk
+                                        : context.sirati.textSecondary,
+                                  ),
                                 ),
                               ),
                             ],

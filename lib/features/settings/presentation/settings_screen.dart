@@ -238,23 +238,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Semantics(
-            label: l10n.pushNotifications,
-            toggled: notifications.value ?? true,
-            child: AppListTile(
-              leadingIcon: Icons.notifications_none_rounded,
-              title: l10n.pushNotifications,
-              showChevron: false,
-              trailing: Switch.adaptive(
-                value: notifications.value ?? true,
-                // Disabled until the stored value is known, so a quick tap
-                // can't be overwritten by the late load.
-                onChanged: notifications.hasValue
-                    ? (v) => unawaited(_toggleNotifications(v))
-                    : null,
-              ),
-              onTap: notifications.hasValue
-                  ? () => unawaited(_toggleNotifications(!notifications.value!))
+          Material(
+            color: context.sirati.surface,
+            borderRadius: BorderRadius.circular(14),
+            child: SwitchListTile.adaptive(
+              secondary: Icon(Icons.notifications_none_rounded,
+                  color: context.sirati.primaryInk),
+              title: Text(l10n.pushNotifications),
+              value: notifications.value ?? true,
+              // Wait for the persisted value before accepting changes.
+              onChanged: notifications.hasValue
+                  ? (value) => unawaited(_toggleNotifications(value))
                   : null,
             ),
           ),

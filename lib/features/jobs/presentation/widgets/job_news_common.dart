@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 class MetaChip extends StatelessWidget {
@@ -35,7 +36,9 @@ class MetaChip extends StatelessWidget {
 class EmptyJobNews extends StatelessWidget {
   final bool english;
 
-  const EmptyJobNews({super.key, required this.english});
+  final VoidCallback? onClearFilters;
+
+  const EmptyJobNews({super.key, required this.english, this.onClearFilters});
 
   @override
   Widget build(BuildContext context) {
@@ -46,12 +49,30 @@ class EmptyJobNews extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: context.sirati.border),
       ),
-      child: Text(
-        english
-            ? 'No job news is published yet.'
-            : 'لا توجد أخبار وظائف منشورة حالياً.',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 15, color: context.sirati.textSecondary),
+      child: Column(
+        children: [
+          Text(
+            onClearFilters != null
+                ? AppLocalizations.of(context).wp2bNoMatchingJobs
+                : english
+                    ? 'No job news is published yet.'
+                    : 'لا توجد أخبار وظائف منشورة حالياً.',
+            textAlign: TextAlign.center,
+            style: AppTypography.of(context, AppTypography.bodyMd,
+                color: context.sirati.textSecondary),
+          ),
+          if (onClearFilters != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            TextButton(
+              onPressed: onClearFilters,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                foregroundColor: context.sirati.primaryInk,
+              ),
+              child: Text(AppLocalizations.of(context).wp2bClearFilters),
+            ),
+          ],
+        ],
       ),
     );
   }

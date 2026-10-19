@@ -23,6 +23,8 @@ class JobNewsFilters {
   String? get categoryParam => category == all ? null : category;
   String? get cityParam => city == all ? null : city;
   bool get isRemote => city == remote || preset == remote;
+  bool get isActive =>
+      preset != all || category != all || city != all || query.trim().isNotEmpty;
 
   JobNewsFilters copyWith({
     String? preset,

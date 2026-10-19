@@ -227,20 +227,16 @@ class _CircleActionButton extends StatelessWidget {
         child: SizedBox(
           width: 48,
           height: 48,
-          child: InkResponse(
-            onTap: onTap,
-            radius: 24,
-            child: Center(
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: fillColor ?? context.sirati.surface,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: borderColor, width: 1.5),
-                ),
-                child: Icon(icon, color: iconColor, size: 18),
-              ),
+          child: Material(
+            color: fillColor ?? context.sirati.surface,
+            shape: CircleBorder(side: BorderSide(color: borderColor, width: 1.5)),
+            clipBehavior: Clip.antiAlias,
+            child: InkResponse(
+              onTap: onTap,
+              containedInkWell: true,
+              highlightShape: BoxShape.circle,
+              radius: 24,
+              child: Icon(icon, color: iconColor, size: 18),
             ),
           ),
         ),

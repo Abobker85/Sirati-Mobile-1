@@ -78,13 +78,16 @@ class JobNewsCard extends StatelessWidget {
                               color: context.sirati.primaryInk,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              item.sourceBadge ??
-                                  (english ? 'Verified' : 'موثقة'),
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: context.sirati.primaryInk,
+                            Flexible(
+                              child: Text(
+                                item.sourceBadge ??
+                                    (english ? 'Verified' : 'موثقة'),
+                                softWrap: true,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.sirati.primaryInk,
+                                ),
                               ),
                             ),
                           ],
@@ -128,14 +131,17 @@ class JobNewsCard extends StatelessWidget {
                                   : context.sirati.primaryInk,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              '${item.matchScore}% ${english ? 'Match' : 'تطابق'}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                color: highMatch
-                                    ? context.sirati.onSuccessContainer
-                                    : context.sirati.primaryInk,
+                            Flexible(
+                              child: Text(
+                                '${item.matchScore}% ${english ? 'Match' : 'تطابق'}',
+                                softWrap: true,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: highMatch
+                                      ? context.sirati.onSuccessContainer
+                                      : context.sirati.primaryInk,
+                                ),
                               ),
                             ),
                           ],
@@ -182,7 +188,7 @@ class JobNewsCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       height: 1.35,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                       color: context.sirati.textSecondary,
                     ),
                   ),
@@ -253,7 +259,7 @@ class JobNewsCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight:
-                                isMatched ? FontWeight.w700 : FontWeight.w500,
+                                isMatched ? FontWeight.w700 : FontWeight.w400,
                             color: isMatched
                                 ? context.sirati.primaryInk
                                 : context.sirati.textSecondary,
@@ -272,32 +278,18 @@ class JobNewsCard extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 4,
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (item.salaryRange != null &&
-                            item.salaryRange!.isNotEmpty) ...[
-                          Text(
-                            item.salaryRange!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: context.sirati.primaryInk,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text('·',
-                              style: TextStyle(color: context.sirati.textHint)),
-                          const SizedBox(width: 8),
-                        ],
-                        Text(
-                          jobPublishedText(item, english: english),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: context.sirati.textSecondary,
-                          ),
-                        ),
-                      ],
+                    if (item.salaryRange != null && item.salaryRange!.isNotEmpty)
+                      Text(
+                        item.salaryRange!,
+                        softWrap: true,
+                        style: AppTypography.of(context, AppTypography.bodySm,
+                            color: context.sirati.primaryInk),
+                      ),
+                    Text(
+                      jobPublishedText(item, english: english),
+                      softWrap: true,
+                      style: AppTypography.of(context, AppTypography.bodySm,
+                          color: context.sirati.textSecondary),
                     ),
                     Text(
                       english ? 'Details →' : 'التفاصيل ←',

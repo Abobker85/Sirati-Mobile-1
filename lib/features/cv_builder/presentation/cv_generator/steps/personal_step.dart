@@ -218,8 +218,8 @@ class _JobDescriptionField extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.info_outline_rounded,
-                        size: 14,
-                        color: context.sirati.textSecondary,
+                        size: 13,
+                        color: context.sirati.textHint,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -228,8 +228,8 @@ class _JobDescriptionField extends StatelessWidget {
                               ? 'Write more than a line for accurate AI enhancement'
                               : 'اكتب أكثر من سطر لتوجيه الذكاء الاصطناعي بدقة',
                           style: TextStyle(
-                            color: context.sirati.textSecondary,
-                            fontSize: 13,
+                            color: context.sirati.textHint,
+                            fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

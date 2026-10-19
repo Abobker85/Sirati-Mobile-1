@@ -42,6 +42,8 @@ class PresetChips extends StatelessWidget {
                 child: PressScale(
                   pressedScale: 0.96,
                   child: ChoiceChip(
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
+                    visualDensity: VisualDensity.standard,
                     label: Text(preset.label),
                     selected: selectedPreset == preset.key,
                     onSelected: (_) => onSelected(preset.key),
@@ -50,7 +52,7 @@ class PresetChips extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: selectedPreset == preset.key
                           ? FontWeight.w700
-                          : FontWeight.w500,
+                          : FontWeight.w400,
                       color: selectedPreset == preset.key
                           ? context.sirati.onPrimary
                           : context.sirati.textSecondary,
@@ -171,6 +173,8 @@ class CategoryChips extends StatelessWidget {
             PressScale(
               pressedScale: .98,
               child: ChoiceChip(
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
+                    visualDensity: VisualDensity.standard,
                 label: Text(option.label),
                 selected: selectedCategory == option.key,
                 onSelected: (_) => onSelected(option.key),
@@ -239,6 +243,8 @@ class CityChips extends StatelessWidget {
                 child: PressScale(
                   pressedScale: .98,
                   child: FilterChip(
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
+                    visualDensity: VisualDensity.standard,
                     label: Text(option.label),
                     selected: selectedCity == option.key,
                     onSelected: (_) => onSelected(option.key),

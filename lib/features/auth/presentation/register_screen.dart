@@ -16,6 +16,7 @@ import 'package:sirati/features/auth/domain/registration_rules.dart';
 import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/features/auth/presentation/register/register_widgets.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/services/job_titles_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -383,13 +384,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
                       tooltip: _obscurePassword
-                          ? (en ? 'Show password' : 'إظهار كلمة المرور')
-                          : (en ? 'Hide password' : 'إخفاء كلمة المرور'),
+                          ? AppLocalizations.of(context).wp2bShowPassword
+                          : AppLocalizations.of(context).wp2bHidePassword,
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: context.sirati.textSecondary,
+                        color: context.sirati.textHint,
                       ),
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),

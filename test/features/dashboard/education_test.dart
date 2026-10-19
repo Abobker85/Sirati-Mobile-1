@@ -87,7 +87,7 @@ void main() {
           ),
         );
 
-    testWidgets('Notify me records interest without promising a message',
+    testWidgets('Register interest records interest without promising a message',
         (tester) async {
       tester.view.physicalSize = const Size(1080, 3200);
       tester.view.devicePixelRatio = 1;
@@ -96,7 +96,7 @@ void main() {
       await tester.pumpWidget(app(store, AppTheme.lightFor(arabic: false)));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Notify Me on Launch'));
+      await tester.tap(find.text('Register interest'));
       await tester.pumpAndSettle();
 
       expect(store.saved, isTrue);

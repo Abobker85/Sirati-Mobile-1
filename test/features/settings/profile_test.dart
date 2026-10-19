@@ -136,6 +136,8 @@ void main() {
       WidgetTester tester,
       _FakeAuth auth, {
       required Future<List<JobTitle>> Function() titles,
+      String language = 'en',
+      bool dark = false,
     }) async {
       tester.view.physicalSize = const Size(1080, 3000);
       tester.view.devicePixelRatio = 1;
@@ -146,8 +148,9 @@ void main() {
           jobTitlesProvider.overrideWith((ref) => titles()),
         ],
         child: MaterialApp(
-          theme: AppTheme.lightFor(arabic: false),
-          locale: const Locale('en'),
+          theme: dark ? AppTheme.darkFor(arabic: language == 'ar')
+              : AppTheme.lightFor(arabic: language == 'ar'),
+          locale: Locale(language),
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const ProfileScreen(),
@@ -175,6 +178,32 @@ void main() {
         expect(auth.calls.single.touchesJobTitle, isFalse,
             reason: 'the saved job title must survive ($label)');
       });
+    }
+
+    for (final language in ['en', 'ar']) {
+      for (final dark in [false, true]) {
+        testWidgets('title catalogue retry is actionable ($language, dark=$dark)', (tester) async {
+          AppLocale.languageCode.value = language;
+          var requests = 0;
+          await pump(tester, _FakeAuth(user: _user), language: language, dark: dark,
+              titles: () async {
+                requests++;
+                if (requests == 1) throw StateError('offline');
+                return [_title(5, 'Platform engineer')];
+              });
+          final retry = find.widgetWithText(TextButton,
+              language == 'en' ? 'Retry' : 'إعادة المحاولة');
+          expect(retry, findsOneWidget);
+          final size = tester.getSize(retry);
+          expect(size.width, greaterThanOrEqualTo(48));
+          expect(size.height, greaterThanOrEqualTo(48));
+          await tester.tap(retry);
+          await tester.pumpAndSettle();
+          expect(requests, 2);
+          expect(retry, findsNothing);
+          expect(tester.takeException(), isNull);
+        });
+      }
     }
 
     testWidgets('a late profile response does not overwrite typed edits',
