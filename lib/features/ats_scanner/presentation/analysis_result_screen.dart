@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
@@ -36,11 +35,18 @@ class AnalysisResultScreen extends ConsumerWidget {
           backgroundColor: context.sirati.background,
           appBar: AppBar(
             title: Text(english ? 'Analysis Results' : 'نتائج التحليل'),
+            toolbarHeight:
+                56 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 2),
             actions: const [LanguageToggle()],
             bottom: TabBar(
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
               tabs: [
-                Tab(text: english ? 'Score & Criteria' : 'الدرجة والمعايير'),
-                Tab(text: english ? 'Recommendations' : 'التوصيات'),
+                Tab(
+                  height: 56,
+                  text: english ? 'Score & Criteria' : 'الدرجة والمعايير',
+                ),
+                Tab(height: 56, text: english ? 'Recommendations' : 'التوصيات'),
               ],
             ),
           ),
@@ -65,6 +71,7 @@ class AnalysisResultScreen extends ConsumerWidget {
             children: [
               ScoreTab(analysis: analysis, english: english),
               RecommendationsTab(
+                weaknesses: analysis.weaknesses,
                 strengths: analysis.strengths,
                 quickWins: analysis.quickWins,
                 english: english,
@@ -79,8 +86,9 @@ class AnalysisResultScreen extends ConsumerWidget {
   Future<void> _generate(BuildContext context, WidgetRef ref) async {
     if (!context.mounted) return;
     final english = AppLocale.isEnglish(context);
-    final controller =
-        ref.read(improvedCvControllerProvider(analysis.id).notifier);
+    final controller = ref.read(
+      improvedCvControllerProvider(analysis.id).notifier,
+    );
 
     final progress = await AiProgressOverlay.show(
       context,
@@ -88,8 +96,9 @@ class AnalysisResultScreen extends ConsumerWidget {
       english: english,
       onCancelled: controller.cancel,
     );
-    final outcome =
-        await controller.generate(isCancelled: () => progress.isCancelled);
+    final outcome = await controller.generate(
+      isCancelled: () => progress.isCancelled,
+    );
     await progress.dismiss();
     if (!context.mounted) return;
 
@@ -108,11 +117,11 @@ class AnalysisResultScreen extends ConsumerWidget {
           );
         }
       case ImprovedCvReady(
-          :final generatedCvId,
-          :final timedOut,
-          :final aiFailed,
-          :final aiError,
-        ):
+        :final generatedCvId,
+        :final timedOut,
+        :final aiFailed,
+        :final aiError,
+      ):
         if (timedOut) {
           AppSnackBar.warning(
             context,

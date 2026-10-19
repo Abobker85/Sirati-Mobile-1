@@ -104,9 +104,15 @@
   "summaryWordCountLine": "{words} words ({chars} chars) • {advice}",
   "@summaryWordCountLine": {
     "placeholders": {
-      "words": {"type": "int"},
-      "chars": {"type": "int"},
-      "advice": {"type": "String"}
+      "words": {
+        "type": "int"
+      },
+      "chars": {
+        "type": "int"
+      },
+      "advice": {
+        "type": "String"
+      }
     }
   },
   "viewProfile": "View profile",
@@ -437,5 +443,92 @@
   "jobMatchRetrySuggestions": "Retry suggestions",
   "jobMatchLoading": "Loading...",
   "jm4ConfirmFact": "I confirm this is true for me",
-  "jm4HonestyHint": "Only confirm facts you can honestly support. This text will be added to your CV."
+  "jm4HonestyHint": "Only confirm facts you can honestly support. This text will be added to your CV.",
+  "atsInputTitle": "ATS compatibility check",
+  "atsInputIntroduction": "Compare your CV with a job posting to find improvements and missing keywords.",
+  "atsInputCvSource": "CV source",
+  "atsInputSavedCv": "My saved CV",
+  "atsInputUploadFile": "Upload file",
+  "atsInputPasteText": "Paste text",
+  "atsInputNoSavedCvs": "No saved CV yet. Create a CV, upload a file, or paste text.",
+  "atsInputSavedCvsError": "Could not load saved CVs. Retry or choose another source.",
+  "atsInputSavedCvHint": "We will analyze the current text of your saved CV, with no upload needed.",
+  "atsInputSelectCv": "Select a CV",
+  "atsInputCvTextUnavailable": "This CV has no ready text yet. Choose another CV or paste text.",
+  "atsInputJobTitle": "Target job title",
+  "atsInputJobTitleHint": "e.g. Laravel Backend Developer",
+  "atsInputJobTitleRequired": "Please enter a target job title",
+  "atsInputJobDescription": "Job description (optional)",
+  "atsInputJobDescriptionHint": "Paste the full job posting here...",
+  "atsInputJobDescriptionTooLong": "Job description must be {max} characters or fewer.",
+  "atsInputResumeTextHint": "Paste the full resume text here...",
+  "atsInputResumeTextRequired": "Paste resume text or upload a PDF/TXT file.",
+  "atsInputAnalyze": "Analyze CV",
+  "atsInputAnalyzing": "Analyzing...",
+  "atsInputPrivacy": "Your CV and job description are used for this analysis.",
+  "atsResultPrioritizedImprovements": "Prioritized improvements",
+  "atsResultImprovementsAvailability": "Review the recommendations below. You can generate an improved copy; applying individual fixes and estimating their gains are unavailable.",
+  "atsResultHighPriority": "High priority",
+  "atsResultMediumPriority": "Medium priority",
+  "atsResultLowPriority": "Low priority",
+  "homeHeroFirstCvTitle": "Create your first CV",
+  "homeHeroFirstCvDescription": "Build your CV step by step, then check its fit for the job you want.",
+  "homeHeroCreateCv": "Create CV",
+  "homeHeroLatestCv": "Latest CV",
+  "homeHeroNextStep": "Your next step",
+  "homeHeroAnalyzeNextStep": "Compare your latest CV with a job posting for targeted recommendations.",
+  "homeHeroReviewNextStep": "Review your latest CV and confirm your information before applying.",
+  "homeHeroReviewCv": "Review CV",
+  "homeHeroAtsScore": "ATS score",
+  "homeHeroScoreUnavailable": "Score not available yet",
+  "homeToolsTitle": "Smart CV tools",
+  "homeToolsAtsDescription": "Check your CV and discover improvements",
+  "homeToolsJobMatchDescription": "Compare your CV with a specific role",
+  "homeActivityTitle": "Recent activity",
+  "homeHeroLatestCvError": "Could not load the latest CV. Retry or open your saved CVs.",
+  "homeHeroSavedCvs": "Saved CVs",
+  "savedCvsLoading": "Loading CVs…",
+  "homeActivityEmpty": "No recent activity yet. Create a CV or run an analysis to get started.",
+  "atsInputJobTitleTooLong": "Job title must be {max} characters or fewer.",
+  "atsInputSelectSourceRequired": "Choose a saved CV, upload a PDF/TXT file, or paste CV text.",
+  "@atsInputJobTitleTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@atsInputJobDescriptionTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "homeHeroUpdatedAt": "Updated {time}",
+  "homeHeroBandExcellent": "Excellent",
+  "homeHeroBandVeryGood": "Very good",
+  "homeHeroBandFair": "Fair",
+  "homeHeroBandWeak": "Needs improvement",
+  "homeStatsCvs": "My CVs",
+  "homeStatsAnalyses": "Analyses",
+  "homeActivitySavedCv": "Saved CV",
+  "atsResultKeywordSummary": "{matched} matched · {missing} missing keywords",
+  "@homeHeroUpdatedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@atsResultKeywordSummary": {
+    "placeholders": {
+      "matched": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  }
 }

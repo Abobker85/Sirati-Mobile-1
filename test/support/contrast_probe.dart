@@ -7,38 +7,32 @@ import 'package:sirati/shared/theme/app_contrast.dart';
 /// button's resolved fill. A gradient yields every stop, so text must pass
 /// against the worst one.
 List<Color> paintedBackgroundsOf(Element element) {
-  List<Color>? found;
+  var accumulated = <Color>[Colors.transparent];
+  var found = false;
   element.visitAncestorElements((ancestor) {
     final widget = ancestor.widget;
-    Color? candidate;
-    if (widget is DecoratedBox) {
-      final d = widget.decoration;
-      if (d is BoxDecoration) {
-        final gradient = d.gradient;
-        if (gradient != null) {
-          found = gradient.colors;
-          return false;
-        }
-        candidate = d.color;
-      }
+    List<Color> candidates = [];
+    if (widget is DecoratedBox && widget.decoration is BoxDecoration) {
+      final decoration = widget.decoration as BoxDecoration;
+      candidates =
+          decoration.gradient?.colors ??
+          [if (decoration.color != null) decoration.color!];
     } else if (widget is Material && widget.type != MaterialType.transparency) {
-      candidate = widget.color;
-    } else if (widget is ButtonStyleButton) {
-      final theme = Theme.of(ancestor);
-      final themed = switch (widget) {
-        ElevatedButton() => theme.elevatedButtonTheme.style,
-        FilledButton() => theme.filledButtonTheme.style,
-        OutlinedButton() => theme.outlinedButtonTheme.style,
-        TextButton() => theme.textButtonTheme.style,
-        _ => null,
-      };
-      candidate = widget.style?.backgroundColor?.resolve({}) ??
-          themed?.backgroundColor?.resolve({});
+      candidates = [if (widget.color != null) widget.color!];
     }
-    if (candidate != null && candidate.a > 0) found = [candidate];
-    return found == null;
+    if (candidates.isNotEmpty) {
+      accumulated = [
+        for (final foreground in accumulated)
+          for (final background in candidates)
+            Color.alphaBlend(foreground, background),
+      ];
+      found = accumulated.every((color) => color.a == 1);
+    }
+    return !found;
   });
-  return found ?? fail('no painted background above ${element.widget}');
+  return found
+      ? accumulated
+      : fail('no opaque painted background above ${element.widget}');
 }
 
 /// Asserts every [Text] currently on screen meets WCAG AA (4.5:1) against

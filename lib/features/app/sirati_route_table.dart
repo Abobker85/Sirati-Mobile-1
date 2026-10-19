@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/ats_scanner/application/saved_analysis_cvs.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_loader_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/features/auth/presentation/register_screen.dart';
+import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_builder_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_loader_screen.dart';
@@ -91,11 +94,30 @@ Widget _widgetFor(ParsedRoute parsed) {
     return CvAnalysisLoaderScreen(analysisId: parsed.id!);
   }
   if (parsed.name.startsWith(AppRoutes.analysisPrefix)) {
-    return const CvAnalysisScreen();
+    return const _SavedCvAnalysisEntry();
   }
   if (parsed.name.startsWith(AppRoutes.educationItemPrefix) &&
       parsed.id != null) {
     return EducationDetailScreen(id: parsed.id, fallback: const {});
   }
   return const NotFoundScreen();
+}
+
+/// Compose the saved list here so ATS never imports the CV builder feature.
+class _SavedCvAnalysisEntry extends ConsumerWidget {
+  const _SavedCvAnalysisEntry();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final english = AppLocale.isEnglish(context);
+    final saved = ref.watch(myCvsProvider(english));
+    return CvAnalysisScreen(
+      savedCvs: saved.whenData(
+        (list) => [
+          for (final cv in list.items)
+            if (cv.id != null) SavedAnalysisCv(id: cv.id!, title: cv.title),
+        ],
+      ),
+      onRetrySaved: () => ref.invalidate(myCvsProvider(english)),
+    );
+  }
 }

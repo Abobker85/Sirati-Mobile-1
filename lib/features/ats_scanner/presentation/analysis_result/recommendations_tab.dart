@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result/prioritized_fixes.dart';
+import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Second tab: strengths, numbered quick wins, and the upgrade CTA.
@@ -8,18 +10,28 @@ class RecommendationsTab extends StatelessWidget {
     required this.strengths,
     required this.quickWins,
     required this.english,
+    this.embedded = false,
+    this.weaknesses = const [],
   });
 
+  final List<AnalysisWeakness> weaknesses;
   final List<String> strengths;
   final List<String> quickWins;
   final bool english;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
     return ListView(
+      shrinkWrap: embedded,
+      physics: embedded ? const NeverScrollableScrollPhysics() : null,
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
       children: [
+        if (weaknesses.isNotEmpty) ...[
+          PrioritizedFixes(weaknesses: weaknesses),
+          const SizedBox(height: 24),
+        ],
         _SectionHeader(
           icon: Icons.thumb_up_alt_rounded,
           iconColor: c.tealDark,
@@ -37,7 +49,7 @@ class RecommendationsTab extends StatelessWidget {
         const SizedBox(height: 24),
         _SectionHeader(
           icon: Icons.bolt_rounded,
-          iconColor: c.amber,
+          iconColor: c.onWarningContainer,
           iconBg: c.amberLight,
           label: english ? 'Quick Wins' : 'تحسينات سريعة',
         ),
@@ -184,12 +196,14 @@ class _SectionHeader extends StatelessWidget {
           child: Icon(icon, size: 16, color: iconColor),
         ),
         const SizedBox(width: 10),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: context.sirati.textPrimary,
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: context.sirati.textPrimary,
+            ),
           ),
         ),
       ],
@@ -221,8 +235,11 @@ class _UpgradeCta extends StatelessWidget {
               color: c.primary.withValues(alpha: .10),
               borderRadius: BorderRadius.circular(10),
             ),
-            child:
-                Icon(Icons.auto_awesome_rounded, size: 20, color: c.primaryInk),
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              size: 20,
+              color: c.primaryInk,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

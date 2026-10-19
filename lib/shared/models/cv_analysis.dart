@@ -6,6 +6,9 @@ class CvAnalysis {
   final String? originalFilename;
   final String inputMethod;
   final int scoreTotal;
+  final bool hasScore;
+  final bool hasJobMatch;
+  final bool hasKeywordSummary;
   final String grade;
   final int jobMatch;
   final List<ScoreCriterion> criteria;
@@ -35,6 +38,9 @@ class CvAnalysis {
     required this.originalFilename,
     required this.inputMethod,
     required this.scoreTotal,
+    this.hasScore = true,
+    this.hasJobMatch = true,
+    this.hasKeywordSummary = true,
     required this.grade,
     required this.jobMatch,
     this.category = 'general',
@@ -62,6 +68,10 @@ class CvAnalysis {
       originalFilename: json['original_filename']?.toString(),
       inputMethod: json['input_method']?.toString() ?? 'paste',
       scoreTotal: _asInt(json['score_total']),
+      hasScore: _hasPercentage(json['score_total']),
+      hasJobMatch: _hasPercentage(json['job_match']),
+      hasKeywordSummary:
+          json['keywords_found'] is List && json['keywords_missing'] is List,
       grade: json['grade']?.toString() ?? '-',
       jobMatch: _asInt(json['job_match']),
       category: json['category']?.toString() ?? 'general',
@@ -75,8 +85,9 @@ class CvAnalysis {
       classificationWarning: json['classification_warning']?.toString(),
       criteria: _asList(json['criteria']).map(ScoreCriterion.fromJson).toList(),
       strengths: _asStringList(json['strengths']),
-      weaknesses:
-          _asList(json['weaknesses']).map(AnalysisWeakness.fromJson).toList(),
+      weaknesses: _asList(
+        json['weaknesses'],
+      ).map(AnalysisWeakness.fromJson).toList(),
       keywordsFound: _asStringList(json['keywords_found']),
       keywordsMissing: _asStringList(json['keywords_missing']),
       quickWins: _asStringList(json['quick_wins']),
@@ -116,8 +127,11 @@ class ScoreCriterion {
   final int score;
   final int max;
 
-  const ScoreCriterion(
-      {required this.label, required this.score, required this.max});
+  const ScoreCriterion({
+    required this.label,
+    required this.score,
+    required this.max,
+  });
 
   factory ScoreCriterion.fromJson(Map<String, dynamic> json) {
     return ScoreCriterion(
@@ -133,12 +147,15 @@ class AnalysisWeakness {
   final String issue;
   final String fix;
 
-  const AnalysisWeakness(
-      {required this.priority, required this.issue, required this.fix});
+  const AnalysisWeakness({
+    required this.priority,
+    required this.issue,
+    required this.fix,
+  });
 
   factory AnalysisWeakness.fromJson(Map<String, dynamic> json) {
     return AnalysisWeakness(
-      priority: json['priority']?.toString() ?? 'medium',
+      priority: json['priority']?.toString() ?? '',
       issue: json['issue']?.toString() ?? '',
       fix: json['fix']?.toString() ?? '',
     );
@@ -160,6 +177,12 @@ List<String> _asStringList(dynamic value) {
 
 int _asInt(dynamic value, {int fallback = 0}) {
   if (value is int) return value;
-  if (value is num) return value.round();
+  if (value is num) return value.isFinite ? value.round() : fallback;
   return int.tryParse(value?.toString() ?? '') ?? fallback;
+}
+
+// Missing percentages must remain distinguishable from a measured zero.
+bool _hasPercentage(Object? raw) {
+  final value = num.tryParse(raw?.toString() ?? '');
+  return value != null && value.isFinite && value >= 0 && value <= 100;
 }
