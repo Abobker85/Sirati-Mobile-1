@@ -532,7 +532,7 @@ class _AtsScoreCard extends StatelessWidget {
                       value: value / 100,
                       strokeWidth: 6,
                       color: c.primaryInk,
-                      backgroundColor: c.surface,
+                      backgroundColor: c.borderStrong,
                     ),
                     Center(
                       child: Padding(

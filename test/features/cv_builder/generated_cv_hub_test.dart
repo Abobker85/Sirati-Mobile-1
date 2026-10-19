@@ -225,6 +225,12 @@ void main() {
           expect(find.descendant(of: ring, matching: find.byType(FittedBox)),
               findsNothing);
           expectPaintedControlsAa('$language/$dark score $score');
+          expect(
+              await expectRenderedControlsAa(
+                  tester, '$language/$dark score $score'),
+              1,
+              reason:
+                  'The hub ring must be raster-checked, including 0 and 100.');
           expect(tester.takeException(), isNull);
         }
       });

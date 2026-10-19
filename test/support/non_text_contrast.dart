@@ -1,9 +1,11 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/features/job_match/presentation/widgets/job_match_widgets.dart';
 import 'package:sirati/shared/theme/app_contrast.dart';
 
 import 'contrast_probe.dart';
@@ -86,10 +88,10 @@ Future<void> inspectPhoneScreen(WidgetTester tester, String label) async {
 
 const phonePaintKey = ValueKey('phone-paint');
 
-/// Sample actual raster paint as well as resolved styles. Stroke cores are
-/// sampled by nearest ink within the control, avoiding antialiased edge pixels.
-/// Contrast remains a strict 3:1 assertion on the sampled pixels themselves.
-Future<void> expectRenderedControlsAa(WidgetTester tester, String label) async {
+/// Sample actual raster paint as well as resolved styles. Ring samples use
+/// separate angular positions in a bounded stroke annulus, without consulting
+/// the declared colours. Returns the number of fully visible rings checked.
+Future<int> expectRenderedControlsAa(WidgetTester tester, String label) async {
   final boundary =
       tester.renderObject<RenderRepaintBoundary>(find.byKey(phonePaintKey));
   final snapshot =
@@ -105,9 +107,9 @@ Future<void> expectRenderedControlsAa(WidgetTester tester, String label) async {
           box.getTransformTo(boundary), Offset.zero & box.size);
     }
 
-    Rect visibleOf(Element element) {
+    Rect clipOf(Element element) {
       final box = element.findRenderObject()!;
-      var visible = rectOf(element).intersect(viewport);
+      var visible = viewport;
       var child = box;
       while (child != boundary && child.parent is RenderObject) {
         final parent = child.parent!;
@@ -123,10 +125,11 @@ Future<void> expectRenderedControlsAa(WidgetTester tester, String label) async {
       return visible;
     }
 
-    Color sample(Rect region, Color expected,
-            {bool Function(Offset)? include}) =>
-        _nearestPaint(bytes, snapshot.width, snapshot.height, region, expected,
-            include: include);
+    Rect visibleOf(Element element) =>
+        rectOf(element).intersect(clipOf(element));
+
+    Color sample(Rect region, Color expected) =>
+        _nearestPaint(bytes, snapshot.width, snapshot.height, region, expected);
 
     for (final element in find.byType(DecoratedBox).evaluate()) {
       final decoration = (element.widget as DecoratedBox).decoration;
@@ -197,33 +200,143 @@ Future<void> expectRenderedControlsAa(WidgetTester tester, String label) async {
       }
     }
 
-    for (final element in find.byType(CircularProgressIndicator).evaluate()) {
-      final indicator = element.widget as CircularProgressIndicator;
-      if (indicator.value == null ||
-          indicator.value == 0 ||
-          indicator.value == 1 ||
-          indicator.color == null ||
-          indicator.backgroundColor == null) {
-        continue;
+    var ringsChecked = 0;
+    for (final ring in _scoreRings()) {
+      final rect = rectOf(ring.element);
+      if (visibleOf(ring.element) != rect) continue;
+      final box = ring.element.findRenderObject()! as RenderBox;
+      final center = box.size.center(Offset.zero);
+      final radius =
+          box.size.shortestSide / 2 + ring.strokeAlign * ring.strokeWidth / 2;
+      final sweep = ring.progress * ring.fullSweep;
+      const start = -math.pi / 2;
+
+      Color segment(double from, double to) => _ringSegmentPixel(
+            bytes,
+            snapshot.width,
+            snapshot.height,
+            box: box,
+            boundary: boundary,
+            radius: radius,
+            strokeWidth: ring.strokeWidth,
+            from: start + from,
+            sweep: to - from,
+          );
+
+      final arc = ring.progress > 0 ? segment(0, sweep) : null;
+      final track = ring.progress < 1 ? segment(sweep, 2 * math.pi) : null;
+      // Sample the clear card above the stroke, away from the centre label.
+      final cardPoint = box.localToGlobal(
+          center - Offset(0, radius + ring.strokeWidth / 2 + 4),
+          ancestor: boundary);
+      if (!clipOf(ring.element).contains(cardPoint)) continue;
+      final card = _pixelAt(bytes, snapshot.width, snapshot.height, cardPoint);
+      if (arc != null) {
+        _nonTextPair(arc, card, '$label raster ring arc versus card');
       }
-      final rect = rectOf(element);
-      if (visibleOf(element) != rect) continue;
-      final radius = rect.shortestSide / 2;
-      bool stroke(Offset point) =>
-          (point - rect.center).distance >=
-          radius - (indicator.strokeWidth ?? 4) - 2;
-      final arc = sample(rect, indicator.color!, include: stroke);
-      final track = sample(rect, indicator.backgroundColor!, include: stroke);
-      _nonTextPair(arc, track, '$label raster ATS arc versus track');
+      if (track != null) {
+        expect(AppContrast.ratio(track, card), greaterThanOrEqualTo(1.3),
+            reason: '$label raster ring track versus card');
+      }
+      if (arc != null && track != null) {
+        _nonTextPair(arc, track, '$label raster ring arc versus track');
+      }
+      ringsChecked++;
     }
+    return ringsChecked;
   } finally {
     snapshot.dispose();
   }
 }
 
+class _ScoreRing {
+  const _ScoreRing(this.element, this.progress, this.strokeWidth,
+      this.strokeAlign, this.fullSweep);
+
+  final Element element;
+  final double progress;
+  final double strokeWidth;
+  final double strokeAlign;
+  final double fullSweep;
+}
+
+Iterable<_ScoreRing> _scoreRings() sync* {
+  for (final element in find.byType(CircularProgressIndicator).evaluate()) {
+    final indicator = element.widget as CircularProgressIndicator;
+    if (indicator.value == null || indicator.backgroundColor == null) continue;
+    final theme = ProgressIndicatorTheme.of(element);
+    // Flutter's determinate painter starts at twelve o'clock and leaves a
+    // .001-radian seam; its default stroke alignment is centred in this theme.
+    yield _ScoreRing(
+        element,
+        indicator.value!.clamp(0, 1),
+        indicator.strokeWidth ?? theme.strokeWidth ?? 4,
+        indicator.strokeAlign ?? theme.strokeAlign ?? 0,
+        2 * math.pi - .001);
+  }
+  for (final element in find.byType(JobMatchScoreRing).evaluate()) {
+    final ring = element.widget as JobMatchScoreRing;
+    // _RingPainter uses a ten-pixel stroke inset by half its width.
+    yield _ScoreRing(
+        element, ring.score.clamp(0, 100) / 100, 10, -1, 2 * math.pi);
+  }
+}
+
+Color _pixelAt(ByteData bytes, int width, int height, Offset point) {
+  final x = point.dx.floor();
+  final y = point.dy.floor();
+  if (x < 0 || x >= width || y < 0 || y >= height) {
+    throw StateError('Raster point outside frame: $point');
+  }
+  final index = (y * width + x) * 4;
+  return Color.fromARGB(bytes.getUint8(index + 3), bytes.getUint8(index),
+      bytes.getUint8(index + 1), bytes.getUint8(index + 2));
+}
+
+Color _ringSegmentPixel(
+  ByteData bytes,
+  int width,
+  int height, {
+  required RenderBox box,
+  required RenderObject boundary,
+  required double radius,
+  required double strokeWidth,
+  required double from,
+  required double sweep,
+}) {
+  final center = box.size.center(Offset.zero);
+  final midpoint = from + sweep / 2;
+  final target = box.localToGlobal(
+      center + Offset(math.cos(midpoint), math.sin(midpoint)) * radius,
+      ancestor: boundary);
+  // Stay in the central half of the stroke, with BOTH radial bounds enforced.
+  final inner = radius - strokeWidth / 4;
+  final outer = radius + strokeWidth / 4;
+  Offset? closest;
+  var distance = double.infinity;
+  for (var y = target.dy.floor() - 2; y <= target.dy.ceil() + 2; y++) {
+    for (var x = target.dx.floor() - 2; x <= target.dx.ceil() + 2; x++) {
+      final point = Offset(x + .5, y + .5);
+      final delta = box.globalToLocal(point, ancestor: boundary) - center;
+      final angle = (math.atan2(delta.dy, delta.dx) - from) % (2 * math.pi);
+      if (delta.distance < inner || delta.distance > outer || angle > sweep) {
+        continue;
+      }
+      final current = (point - target).distanceSquared;
+      if (current < distance) {
+        distance = current;
+        closest = point;
+      }
+    }
+  }
+  if (closest == null) {
+    throw StateError('No pixel inside ring segment $from + $sweep');
+  }
+  return _pixelAt(bytes, width, height, closest);
+}
+
 Color _nearestPaint(
-    ByteData bytes, int width, int height, Rect region, Color expected,
-    {bool Function(Offset)? include}) {
+    ByteData bytes, int width, int height, Rect region, Color expected) {
   var distance = double.infinity;
   Color? nearest;
   for (var y = region.top.floor().clamp(0, height).toInt();
@@ -232,7 +345,6 @@ Color _nearestPaint(
     for (var x = region.left.floor().clamp(0, width).toInt();
         x < region.right.ceil().clamp(0, width);
         x++) {
-      if (include != null && !include(Offset(x + .5, y + .5))) continue;
       final index = (y * width + x) * 4;
       final color = Color.fromARGB(
           bytes.getUint8(index + 3),
@@ -331,6 +443,13 @@ void expectPaintedControlsAa(String label) {
     }
     if (indicator.backgroundColor case final track?) {
       _nonTextPair(arc, track, '$label progress arc versus track');
+      if (indicator.value != null) {
+        for (final background in paintedBackgroundsOf(element)) {
+          expect(
+              AppContrast.ratio(track, background), greaterThanOrEqualTo(1.3),
+              reason: '$label progress track versus card');
+        }
+      }
     }
   }
 }

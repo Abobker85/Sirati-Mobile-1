@@ -68,6 +68,15 @@ void main() {
               language == 'ar' ? TextDirection.rtl : TextDirection.ltr);
           await inspectPhoneScreen(tester, '$language/$dark/$status');
           await revealPhoneWidget(tester, find.byType(JobMatchScoreRing));
+          await Scrollable.ensureVisible(
+              tester.element(find.byType(JobMatchScoreRing)),
+              alignment: .5);
+          await settle(tester);
+          expect(
+              await expectRenderedControlsAa(
+                  tester, '$language/$dark/$status score'),
+              1,
+              reason: 'The CustomPaint Job Match ring must be raster-checked.');
           await revealPhoneWidget(
               tester, find.byKey(const ValueKey('jm-keywords-matched')));
           await revealPhoneWidget(
@@ -147,10 +156,14 @@ void main() {
           expectAllTextAa(label);
           expectAllIconsNonTextAa(label);
           expectPaintedControlsAa(label);
-          // The score arc is meaningful, the track is decoration.
+          // Both the score and the remaining portion must stay visible.
           final c = context.sirati;
           expect(AppContrast.ratio(c.primaryInk, c.surface),
               greaterThanOrEqualTo(3));
+          expect(AppContrast.ratio(c.primaryInk, c.borderStrong),
+              greaterThanOrEqualTo(3));
+          expect(AppContrast.ratio(c.borderStrong, c.surface),
+              greaterThanOrEqualTo(1.3));
           // Fact confirmation paints on the warning container.
           expect(AppContrast.ratio(c.onWarningContainer, c.warningLight),
               greaterThanOrEqualTo(4.5));
