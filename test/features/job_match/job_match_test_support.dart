@@ -15,6 +15,8 @@ import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
+import '../../support/non_text_contrast.dart';
+
 GeneratedCv savedCv(
   int id, {
   String title = 'Data Analyst',
@@ -133,8 +135,8 @@ class FakeJobMatchApi extends CvApiService {
   final applyCalls = <List<String>>[];
   final confirmedFactCalls = <List<String>>[];
   final applyResponses = <Object>[];
-  Future<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>
-      Function()? applyOverride;
+  Future<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})> Function()?
+      applyOverride;
 
   static Object _next(List<Object> queue, String what) {
     if (queue.isEmpty) fail('unexpected $what call');
@@ -177,9 +179,11 @@ class FakeJobMatchApi extends CvApiService {
 
   @override
   Future<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>
-      applyJobMatchSuggestions(int id, List<String> suggestionKeys, {
-        List<String> confirmedFactKeys = const [],
-      }) async {
+      applyJobMatchSuggestions(
+    int id,
+    List<String> suggestionKeys, {
+    List<String> confirmedFactKeys = const [],
+  }) async {
     confirmedFactCalls.add(List.of(confirmedFactKeys));
     applyCalls.add(List.of(suggestionKeys));
     if (applyOverride != null) return applyOverride!();
@@ -292,6 +296,7 @@ Future<void> pumpJobMatch(
         jobMatchPollScheduleProvider.overrideWithValue(schedule),
     ],
     child: MaterialApp(
+      builder: (_, child) => RepaintBoundary(key: phonePaintKey, child: child!),
       theme: theme ?? AppTheme.lightFor(arabic: arabic),
       locale: Locale(language),
       supportedLocales: AppLocalizations.supportedLocales,
@@ -315,7 +320,10 @@ Future<void> enterJob(
   String title = 'Data Analyst',
   String description = 'We need SQL, Power BI and C++ skills.',
 }) async {
+  await revealPhoneWidget(tester, find.byKey(JobMatchScreen.titleFieldKey));
   await tester.enterText(find.byKey(JobMatchScreen.titleFieldKey), title);
+  await revealPhoneWidget(
+      tester, find.byKey(JobMatchScreen.descriptionFieldKey));
   await tester.enterText(
     find.byKey(JobMatchScreen.descriptionFieldKey),
     description,
@@ -324,7 +332,7 @@ Future<void> enterJob(
 }
 
 Future<void> tapVisible(WidgetTester tester, Finder finder) async {
-  await tester.ensureVisible(finder);
+  await revealPhoneWidget(tester, finder);
   await tester.pump();
   await tester.tap(finder);
   await tester.pump();

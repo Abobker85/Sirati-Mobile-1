@@ -100,17 +100,15 @@ class JobMatchResultScreen extends ConsumerWidget {
         );
       }
     } else if (match.aiStatus == AiStatus.failed) {
-      notice = JobMatchNotice(
-        tone: JobMatchTone.warning,
-        message: l.jobMatchAiFailed,
-        detail: state.retryFailure == null
-            ? null
-            : l.jobMatchFailureMessage(state.retryFailure!),
-        actionLabel: l.jobMatchRetrySuggestions,
-        busy: state.retryingAdvice,
-        onAction: () =>
-            ref.read(jobMatchControllerProvider.notifier).retryAdvice(),
-      );
+      return [
+        _AdviceFailedCard(
+          retrying: state.retryingAdvice,
+          retryFailure: state.retryFailure,
+          onRetry: () =>
+              ref.read(jobMatchControllerProvider.notifier).retryAdvice(),
+        ),
+        const SizedBox(height: AppSpacing.md),
+      ];
     } else if (match.aiStatus == AiStatus.notConfigured) {
       notice = JobMatchNotice(
         tone: JobMatchTone.info,
@@ -352,9 +350,11 @@ class _ApplyBar extends ConsumerWidget {
     final c = context.sirati;
     final count = state.appliableSelections.length;
     final busy = state.applying || match.aiPending;
-    final content = SizedBox(
-      height: 48,
-      width: double.infinity,
+    final content = ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: 48,
+        minWidth: double.infinity,
+      ),
       child: ElevatedButton(
         key: const ValueKey('jm-apply'),
         style: ElevatedButton.styleFrom(
@@ -399,7 +399,7 @@ class _ApplyBar extends ConsumerWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: c.surface,
-        border: Border(top: BorderSide(color: c.border)),
+        border: Border(top: BorderSide(color: c.textSecondary, width: 2)),
       ),
       child: SafeArea(
         top: false,
@@ -440,5 +440,103 @@ class _ApplyBar extends ConsumerWidget {
           AppSnackBar.error(context, l.jobMatchFailureMessage(failure));
         }
     }
+  }
+}
+
+/// AI advice failed. The score and keywords stay valid, so this is a calm
+/// neutral card rather than an alarm: retry, or add keywords by hand.
+class _AdviceFailedCard extends StatelessWidget {
+  const _AdviceFailedCard({
+    required this.retrying,
+    required this.retryFailure,
+    required this.onRetry,
+  });
+
+  final bool retrying;
+  final JobMatchFailure? retryFailure;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final c = context.sirati;
+    return DecoratedBox(
+      key: const ValueKey('jm-advice-failed'),
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: AppRadius.lgAll,
+        border: Border.all(color: c.textSecondary),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Icon(Icons.cloud_off_rounded, size: 36, color: c.textSecondary),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              l.jobMatchFailedTitle,
+              textAlign: TextAlign.center,
+              style: AppTypography.of(context, AppTypography.titleMd),
+            ),
+            const SizedBox(height: AppSpacing.xxs),
+            Text(
+              l.jobMatchAiFailed,
+              textAlign: TextAlign.center,
+              style: AppTypography.of(
+                context,
+                AppTypography.bodySm,
+                color: c.textSecondary,
+              ),
+            ),
+            if (retryFailure != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              JobMatchNotice(
+                tone: JobMatchTone.error,
+                message: l.jobMatchFailureMessage(retryFailure!),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.xs),
+            ElevatedButton(
+              key: const ValueKey('jm-retry-advice'),
+              onPressed: retrying ? null : onRetry,
+              style: ElevatedButton.styleFrom(
+                // Change fill and foreground together when entering busy state.
+                animationDuration: Duration.zero,
+                disabledBackgroundColor: c.surface,
+                disabledForegroundColor: c.textSecondary,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (retrying) ...[
+                    SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(
+                        key: const ValueKey('jm-retry-progress'),
+                        strokeWidth: 2,
+                        color: c.primaryInk,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                  ],
+                  Flexible(
+                    child: Text(
+                      l.jobMatchRetrySuggestions,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            JobMatchNotice(
+              tone: JobMatchTone.info,
+              message: l.jobMatchFailedManualHint,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

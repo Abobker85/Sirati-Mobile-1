@@ -53,6 +53,12 @@ class JobMatchSuggestionCard extends StatelessWidget {
               Checkbox(
                 key: checkboxKey(suggestion.key),
                 value: selected || applied,
+                fillColor: WidgetStateProperty.resolveWith((states) =>
+                    states.contains(WidgetState.selected)
+                        ? c.primaryInk
+                        : c.primaryInk.withValues(alpha: 0)),
+                checkColor: c.surface,
+                side: BorderSide(color: c.textSecondary, width: 2),
                 onChanged: canToggle ? (_) => onToggle() : null,
               ),
               Expanded(
@@ -131,27 +137,56 @@ class JobMatchSuggestionCard extends StatelessWidget {
           ],
           if (suggestion.needsUserFact) ...[
             const SizedBox(height: AppSpacing.sm),
-            Material(
-              color: c.surface,
-              child: CheckboxListTile(
-                key: confirmationKey(suggestion.key),
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                value: factConfirmed || applied,
-                onChanged:
-                    enabled && !applied && suggestion.after.trim().isNotEmpty
-                        ? (value) => onConfirmFact(value ?? false)
-                        : null,
-                title: Text(
-                  l.jm4ConfirmFact,
-                  style: AppTypography.of(context, AppTypography.bodyMd),
-                ),
-                subtitle: Text(
-                  l.jm4HonestyHint,
-                  style: AppTypography.of(
-                    context,
-                    AppTypography.bodySm,
-                    color: c.textSecondary,
+            // Warning tint: the user vouches for a fact the CV did not state.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: c.warningLight,
+                borderRadius: AppRadius.mdAll,
+              ),
+              child: Material(
+                type: MaterialType.transparency,
+                child: CheckboxListTile(
+                  key: confirmationKey(suggestion.key),
+                  contentPadding: const EdgeInsetsDirectional.only(
+                    start: AppSpacing.xxs,
+                    end: AppSpacing.sm,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.mdAll,
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  activeColor: c.onWarningContainer,
+                  checkColor: c.warningLight,
+                  fillColor: WidgetStateProperty.resolveWith((states) =>
+                      states.contains(WidgetState.selected)
+                          ? c.onWarningContainer
+                          : c.onWarningContainer.withValues(alpha: 0)),
+                  side: WidgetStateBorderSide.resolveWith(
+                    (states) => BorderSide(
+                      color: c.onWarningContainer,
+                      width: 2,
+                    ),
+                  ),
+                  value: factConfirmed || applied,
+                  onChanged:
+                      enabled && !applied && suggestion.after.trim().isNotEmpty
+                          ? (value) => onConfirmFact(value ?? false)
+                          : null,
+                  title: Text(
+                    l.jm4ConfirmFact,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.titleSm,
+                      color: c.onWarningContainer,
+                    ),
+                  ),
+                  subtitle: Text(
+                    l.jm4HonestyHint,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.bodySm,
+                      color: c.onWarningContainer,
+                    ),
                   ),
                 ),
               ),

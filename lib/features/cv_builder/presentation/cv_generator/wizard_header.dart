@@ -42,7 +42,8 @@ class WizardHeader extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              Expanded(
+                  child: Text(
                 english
                     ? 'Step ${step + 1} of ${steps.length}'
                     : 'خطوة ${step + 1} من ${steps.length}',
@@ -52,15 +53,17 @@ class WizardHeader extends StatelessWidget {
                   // primaryInk: primary is a fill colour and fails AA as text.
                   color: c.primaryInk,
                 ),
-              ),
-              Text(
+              )),
+              Expanded(
+                  child: Text(
                 steps[step],
+                textAlign: TextAlign.end,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: c.textSecondary,
                 ),
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 12),
@@ -89,14 +92,16 @@ class WizardHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               for (var i = 0; i < steps.length; i++)
-                Text(
+                Expanded(
+                    child: Text(
                   steps[i],
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: i <= step ? c.primaryInk : c.textHint,
                   ),
-                ),
+                )),
             ],
           ),
         ],

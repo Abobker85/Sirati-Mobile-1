@@ -36,7 +36,7 @@ class CvDocumentBlocks extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Divider(height: 1, color: c.border),
+                    Divider(height: 1, color: c.textSecondary),
                   ],
                 ),
               ),
@@ -90,11 +90,15 @@ class CvStatusBanner extends StatelessWidget {
     super.key,
     required this.message,
     this.trailing,
+    this.margin = _defaultMargin,
   })  : _success = true,
         icon = Icons.auto_awesome;
 
-  const CvStatusBanner.warning({super.key, required this.message})
-      : _success = false,
+  const CvStatusBanner.warning({
+    super.key,
+    required this.message,
+    this.margin = _defaultMargin,
+  })  : _success = false,
         trailing = null,
         icon = Icons.info_outline;
 
@@ -102,6 +106,9 @@ class CvStatusBanner extends StatelessWidget {
   final String message;
   final IconData icon;
   final Widget? trailing;
+  final EdgeInsetsGeometry margin;
+
+  static const _defaultMargin = EdgeInsets.fromLTRB(16, 12, 16, 0);
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +117,7 @@ class CvStatusBanner extends StatelessWidget {
     final background = _success ? c.successLight : c.warningLight;
     final ink = _success ? c.onSuccessContainer : c.onWarningContainer;
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      margin: margin,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: background,

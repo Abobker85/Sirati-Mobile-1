@@ -19,7 +19,9 @@ import 'package:sirati/shared/widgets/app_snack_bar.dart';
 /// Job Match entry: server-gated (paywall / quota / unavailable), then job
 /// details + CV choice → match → [JobMatchResultScreen].
 class JobMatchScreen extends ConsumerStatefulWidget {
-  const JobMatchScreen({super.key});
+  const JobMatchScreen({super.key, this.initialCvId});
+
+  final int? initialCvId;
 
   static const titleFieldKey = ValueKey('jm-title');
   static const descriptionFieldKey = ValueKey('jm-description');
@@ -34,7 +36,7 @@ class JobMatchScreen extends ConsumerStatefulWidget {
 class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
   final _title = TextEditingController();
   final _description = TextEditingController();
-  int? _selectedCvId;
+  late int? _selectedCvId = widget.initialCvId;
   JobMatchInputError? _inputError;
   bool _pickError = false;
   bool _cvPreparing = false;
@@ -79,6 +81,13 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
               detail: access.trialDays > 0
                   ? l.jobMatchPaywallTrial(access.trialDays)
                   : null,
+              benefits: [
+                l.premiumGateJobMatchBenefitScore,
+                l.premiumGateJobMatchBenefitKeywords,
+                l.premiumGateJobMatchBenefitEdits,
+              ],
+              primaryLabel: l.premiumGateJobMatchSeePlans,
+              onPrimary: _openPlans,
               actionLabel: l.jobMatchPaywallRefresh,
               onAction: _refreshEntitlement,
             ),
@@ -102,6 +111,13 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
   }
 
   void _refreshEntitlement() => ref.invalidate(jobMatchEntitlementProvider);
+
+  /// The plans screen never grants access locally; the server is re-asked
+  /// when the user comes back.
+  Future<void> _openPlans() async {
+    await Navigator.of(context).pushNamed(AppRoutes.premium);
+    if (mounted) _refreshEntitlement();
+  }
 
   Widget _form(
     BuildContext context,
@@ -295,6 +311,7 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
             ),
           if (_pickError)
             JobMatchNotice(
+              key: const ValueKey('jm-pick-error'),
               tone: JobMatchTone.error,
               message: l.jobMatchPickCvRequired,
             ),
@@ -315,7 +332,9 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
   /// The chosen CV, or the only one when there is a single saved CV.
   int? _effectiveCvId(List<GeneratedCv> list) {
     final chosen = _selectedCvId;
-    if (chosen != null && list.any((cv) => cv.id == chosen)) return chosen;
+    if (chosen != null) {
+      return list.any((cv) => cv.id == chosen) ? chosen : null;
+    }
     return list.length == 1 ? list.single.id : null;
   }
 
@@ -398,6 +417,10 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
   }
 }
 
+/// Server gate (paywall / quota / unavailable / load failure).
+///
+/// [actionLabel] always re-asks the server (`jm-gate-action`). The paywall
+/// adds benefits and a primary [primaryLabel] that opens the plans screen.
 class _GateView extends StatelessWidget {
   const _GateView({
     required this.icon,
@@ -406,32 +429,42 @@ class _GateView extends StatelessWidget {
     required this.onAction,
     this.body,
     this.detail,
+    this.benefits = const [],
+    this.primaryLabel,
+    this.onPrimary,
   });
 
   final IconData icon;
   final String title;
   final String? body;
   final String? detail;
+  final List<String> benefits;
   final String actionLabel;
   final VoidCallback onAction;
+  final String? primaryLabel;
+  final VoidCallback? onPrimary;
 
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
+    final hasPrimary = primaryLabel != null && onPrimary != null;
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         JobMatchSection(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: c.primaryLight,
-                  shape: BoxShape.circle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Icon(icon, size: 32, color: c.primaryInk),
+              Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: c.primaryLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Icon(icon, size: 32, color: c.primaryInk),
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -452,23 +485,64 @@ class _GateView extends StatelessWidget {
                   ),
                 ),
               ],
+              if (benefits.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
+                for (final benefit in benefits)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 20,
+                          color: c.primaryInk,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            benefit,
+                            style: AppTypography.of(
+                              context,
+                              AppTypography.bodyMd,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
               if (detail != null) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   detail!,
                   textAlign: TextAlign.center,
-                  style: AppTypography.of(context, AppTypography.labelLg),
+                  style: AppTypography.of(
+                    context,
+                    AppTypography.labelLg,
+                    color: c.primaryInk,
+                  ),
                 ),
               ],
               const SizedBox(height: AppSpacing.lg),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
+              if (hasPrimary) ...[
+                ElevatedButton(
+                  key: const ValueKey('jm-gate-plans'),
+                  onPressed: onPrimary,
+                  child: Text(primaryLabel!),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                OutlinedButton(
+                  key: const ValueKey('jm-gate-action'),
+                  onPressed: onAction,
+                  child: Text(actionLabel, textAlign: TextAlign.center),
+                ),
+              ] else
+                ElevatedButton(
                   key: const ValueKey('jm-gate-action'),
                   onPressed: onAction,
                   child: Text(actionLabel),
                 ),
-              ),
             ],
           ),
         ),
@@ -584,7 +658,7 @@ class _CvOption extends StatelessWidget {
             color: c.surface,
             borderRadius: AppRadius.mdAll,
             border: Border.all(
-              color: selected ? c.primaryInk : c.border,
+              color: selected ? c.primaryInk : c.textSecondary,
               width: selected ? 2 : 1,
             ),
           ),

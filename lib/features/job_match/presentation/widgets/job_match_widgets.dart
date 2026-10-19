@@ -55,7 +55,7 @@ class JobMatchSection extends StatelessWidget {
         color: c.surface,
         borderRadius: AppRadius.lgAll,
         border: Border.all(
-          color: highlighted ? c.primaryInk : c.border,
+          color: highlighted ? c.primaryInk : c.textSecondary,
           width: highlighted ? 1.5 : 1,
         ),
       ),
@@ -286,15 +286,18 @@ class JobMatchScoreRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.sirati;
     final l = AppLocalizations.of(context);
+    final textScale =
+        MediaQuery.textScalerOf(context).scale(AppTypography.displayMd.size) /
+            AppTypography.displayMd.size;
     return Semantics(
       label: l.jobMatchScoreSemantics(score),
       excludeSemantics: true,
       child: SizedBox.square(
-        dimension: size,
+        dimension: size * textScale.clamp(1.0, double.infinity),
         child: CustomPaint(
           painter: _RingPainter(
             progress: score.clamp(0, 100) / 100,
-            track: c.border,
+            track: c.borderStrong,
             arc: c.primaryInk,
           ),
           child: Center(
@@ -332,7 +335,8 @@ class _RingPainter extends CustomPainter {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
+      // Keep even a one-point remainder visible near a complete score.
+      ..strokeCap = StrokeCap.butt;
     canvas.drawArc(ring, 0, math.pi * 2, false, paint..color = track);
     if (progress > 0) {
       canvas.drawArc(

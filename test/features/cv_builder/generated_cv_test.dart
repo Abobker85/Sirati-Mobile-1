@@ -184,10 +184,17 @@ void main() {
         app(_cv(markdown: '  '), AppTheme.lightFor(arabic: false)),
       );
       await tester.pumpAndSettle();
-      final share = tester.widget<ButtonStyleButton>(find.ancestor(
-        of: find.text('Share'),
-        matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
-      ));
+      await tester.scrollUntilVisible(
+        find.byKey(GeneratedCvScreen.shareKey),
+        200,
+        scrollable: find.descendant(
+          of: find.byType(ListView).first,
+          matching: find.byType(Scrollable),
+        ).first,
+      );
+      final share = tester.widget<OutlinedButton>(
+        find.byKey(GeneratedCvScreen.shareKey),
+      );
       expect(share.onPressed, isNull);
     });
 

@@ -537,5 +537,117 @@
         "type": "int"
       }
     }
-  }
+  },
+  "premiumGateAppBar": "سيرتي المميز",
+  "premiumGateHeroTitle": "افتح كامل إمكانات مسارك المهني",
+  "premiumGateHeroBody": "أدوات ذكاء اصطناعي مصممة لأنظمة تتبع المتقدمين (ATS) التي تستخدمها جهات التوظيف.",
+  "premiumGateBenefitsTitle": "مزايا اشتراكك",
+  "premiumGateBenefitPdf": "تحميل PDF بدون علامة مائية",
+  "premiumGateBenefitPdfBody": "مستندات احترافية جاهزة للإرسال إلى جهات التوظيف.",
+  "premiumGateBenefitAi": "تحسين الكتابة بالذكاء الاصطناعي",
+  "premiumGateBenefitAiBody": "حسّن صياغة نبذتك وإنجازاتك المهنية.",
+  "premiumGateBenefitAts": "توصيات ATS كاملة",
+  "premiumGateBenefitAtsBody": "اطّلع على جميع توصيات التحليل، وليس التوصية الأولى فقط.",
+  "premiumGateBenefitJobMatch": "مطابقة الوظائف",
+  "premiumGateBenefitJobMatchBody": "قارن سيرتك بأي إعلان وظيفي واحفظ التعديلات المخصصة في نسخة جديدة.",
+  "premiumGateBenefitLimits": "بلا حدود يومية للسير والتحليلات",
+  "premiumGateBenefitLimitsBody": "أنشئ وحلّل ما تحتاجه من السير الذاتية.",
+  "premiumGatePlansTitle": "معلومات الخطط",
+  "premiumGatePrice": "{price} {currency}",
+  "@premiumGatePrice": {
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "99"
+      },
+      "currency": {
+        "type": "String",
+        "example": "SAR"
+      }
+    }
+  },
+  "premiumGateCurrencySar": "ر.س",
+  "premiumGatePeriodYear": "سنوياً",
+  "premiumGatePeriod": "{months, plural, =1{شهرياً} =2{كل شهرين} few{كل {months} أشهر} other{كل {months} شهراً}}",
+  "@premiumGatePeriod": {
+    "placeholders": {
+      "months": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "premiumGatePerMonth": "حوالي {price} {currency} شهرياً",
+  "@premiumGatePerMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "16.50"
+      },
+      "currency": {
+        "type": "String",
+        "example": "SAR"
+      }
+    }
+  },
+  "premiumGatePriceNote": "الأسعار المعروضة استرشادية. سيعرض المتجر السعر النهائي عند إتاحة الاشتراكات.",
+  "premiumGatePlansFailed": "تعذر تحميل الخطط.",
+  "premiumGateNoPlans": "لا توجد خطط متاحة حالياً.",
+  "premiumGateRetry": "إعادة المحاولة",
+  "premiumGateRefresh": "لدي اشتراك بالفعل: تحديث صلاحية الوصول",
+  "premiumGateRefreshing": "جارٍ التحقق من اشتراكك...",
+  "premiumGateNotFound": "لم نجد اشتراكاً فعالاً مرتبطاً بحسابك بعد.",
+  "premiumGateRefreshFailed": "تعذر التحقق من اشتراكك. حاول مجدداً.",
+  "premiumGateActiveTitle": "اشتراكك المميز فعال",
+  "premiumGateActiveBody": "اشتراكك مرتبط بهذا الحساب.",
+  "premiumGateContinue": "متابعة",
+  "premiumGateNotNow": "ليس الآن",
+  "premiumGatePrivacy": "سياسة الخصوصية",
+  "premiumGateJobMatchSeePlans": "عرض خطط الاشتراك المميز",
+  "premiumGateJobMatchBenefitScore": "درجة تطابق سيرتك مع الإعلان الوظيفي",
+  "premiumGateJobMatchBenefitKeywords": "الكلمات المفتاحية المطابقة والناقصة",
+  "premiumGateJobMatchBenefitEdits": "تعديلات مخصصة تُحفظ في نسخة جديدة",
+  "jobMatchFailedTitle": "الاقتراحات غير متاحة حالياً",
+  "jobMatchFailedManualHint": "يمكنك إضافة الكلمات المفتاحية الناقصة بنفسك في محرر السيرة.",
+  "cvHubTitle": "سيرتك الذاتية جاهزة",
+  "cvHubReady": "جاهزة للتقديم: منظمة لأنظمة تتبع المتقدمين.",
+  "cvHubAtsLabel": "التوافق مع أنظمة ATS",
+  "cvHubAtsScore": "{score}%",
+  "@cvHubAtsScore": {
+    "placeholders": {
+      "score": {
+        "type": "int",
+        "example": "88"
+      }
+    }
+  },
+  "cvHubGrade": "التقدير {grade}",
+  "@cvHubGrade": {
+    "placeholders": {
+      "grade": {
+        "type": "String",
+        "example": "B"
+      }
+    }
+  },
+  "cvHubPreview": "معاينة",
+  "cvHubShowFull": "عرض السيرة كاملة",
+  "cvHubShowLess": "عرض أقل",
+  "cvHubDownload": "تحميل السيرة الذاتية (PDF)",
+  "cvHubPreparing": "جارٍ التجهيز...",
+  "cvHubShare": "مشاركة",
+  "cvHubNextSteps": "الخطوات التالية",
+  "cvHubCheckAts": "فحص التوافق بالتفصيل (ATS)",
+  "cvHubCheckAtsBody": "يفتح فحص ATS جديداً؛ لن تُملأ هذه السيرة تلقائياً بعد.",
+  "cvHubMatchJob": "مطابقة مع وظيفة",
+  "cvHubMatchJobBody": "قارن هذه السيرة بإعلان وظيفي واحصل على تعديلات مخصصة.",
+  "cvHubEdit": "تعديل سيرتك الذاتية",
+  "cvHubEditBody": "حدّث خبراتك أو مهاراتك أو نبذتك في أي وقت.",
+  "cvHubEmpty": "لا يوجد محتوى للسيرة حالياً.",
+  "cvHubAppBar": "سيرتك الذاتية",
+  "cvHubRecommended": "موصى به",
+  "premiumGateAvailabilityNote": "الاشتراكات داخل التطبيق ستتاح قريباً. لا يمكنك شراء اشتراك في هذا الإصدار.",
+  "cvHubAtsNewFormNotice": "سيُفتح نموذج ATS جديد. لن تُملأ سيرتك تلقائياً بعد؛ الصق نصها أو ارفع ملفاً للمتابعة.",
+  "cvHubAtsStay": "البقاء في هذه السيرة",
+  "cvHubAtsOpenNewForm": "فتح نموذج ATS جديد"
 }
