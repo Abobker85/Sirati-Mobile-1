@@ -72,7 +72,7 @@ void main() {
         'document': document,
       };
       final suggestion = {
-        ...suggestionJson('rewrite', before: before, after: after),
+        ...suggestionJson('rewrite', before: before, after: after, needsUserFact: true),
         'target': {'section': 'summary', 'field': 'text'},
       };
       final completed = matchJson(
@@ -120,7 +120,7 @@ void main() {
           data = completed;
         } else if (path == '/api/job-matches/39/apply-suggestions') {
           expect(request.method, 'POST');
-          expect(jsonDecode(request.body), {'suggestion_keys': ['rewrite']});
+          expect(jsonDecode(request.body), {'suggestion_keys': ['rewrite'], 'confirmed_fact_keys': ['rewrite']});
           applied = true;
           data = {
             'generated_cv': copy,
@@ -178,6 +178,10 @@ void main() {
       await enterJob(tester, title: title, description: jd);
       await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
       await settle(tester, frames: 20);
+      await tapVisible(
+        tester,
+        find.byKey(JobMatchSuggestionCard.confirmationKey('rewrite')),
+      );
       await tapVisible(
         tester,
         find.byKey(JobMatchSuggestionCard.checkboxKey('rewrite')),

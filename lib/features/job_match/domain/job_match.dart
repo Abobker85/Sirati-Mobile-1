@@ -46,8 +46,7 @@ class JobMatch {
 
   bool get aiPending => AiStatus.isPending(aiStatus);
 
-  List<JobMatchSuggestion> get suggestions =>
-      feedback?.suggestions ?? const [];
+  List<JobMatchSuggestion> get suggestions => feedback?.suggestions ?? const [];
 
   factory JobMatch.fromJson(Map<String, dynamic> json) {
     final feedback = json['ai_feedback'];
@@ -145,11 +144,13 @@ class JobMatchSuggestion {
   final List<String> jdTerms;
 
   /// The edit depends on a fact only the user knows (dates, numbers,
-  /// employers); the server refuses to apply it automatically.
+  /// employers); applying it requires explicit user confirmation.
   final bool needsUserFact;
 
   /// Whether the user may select this suggestion for automatic apply.
-  bool get selectable => !needsUserFact && after.trim().isNotEmpty;
+  bool get selectable => canApply(factConfirmed: false);
+  bool canApply({required bool factConfirmed}) =>
+      after.trim().isNotEmpty && (!needsUserFact || factConfirmed);
 
   factory JobMatchSuggestion.fromJson(Map<String, dynamic> json) {
     final target = json['target'];
@@ -161,8 +162,8 @@ class JobMatchSuggestion {
       after: json['after']?.toString() ?? '',
       rationale: json['rationale']?.toString().trim() ?? '',
       jdTerms: _strings(json['jd_terms']),
-      // The apply endpoint accepts only an explicit false. Missing or
-      // malformed safety metadata must never enable an automatic edit.
+      // Only an explicit false allows applying without confirmation.
+      // Missing or malformed metadata requires the user's confirmation.
       needsUserFact: json['needs_user_fact'] != false,
     );
   }

@@ -292,10 +292,15 @@ class CvApiService {
   /// Applies the selected suggestions to a NEW CV copy (the source CV is not
   /// modified) and returns it with the updated raw job match.
   Future<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>
-      applyJobMatchSuggestions(int id, List<String> suggestionKeys) async {
+      applyJobMatchSuggestions(int id, List<String> suggestionKeys, {
+        List<String> confirmedFactKeys = const [],
+      }) async {
     final response = await _apiClient.postJson(
       '/job-matches/$id/apply-suggestions',
-      {'suggestion_keys': suggestionKeys},
+      {
+        'suggestion_keys': suggestionKeys,
+        'confirmed_fact_keys': confirmedFactKeys,
+      },
     );
     final data = _dataMap(response);
     final cv = data['generated_cv'];

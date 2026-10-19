@@ -768,9 +768,9 @@ void main() {
       final l = l10n(tester);
 
       expect(box(tester, 's2').onChanged, isNull);
-      expect(find.text(l.jobMatchNeedsUserFact), findsOneWidget);
+      expect(find.text(l.jm4ConfirmFact), findsOneWidget);
       expect(find.text(l.jobMatchSelectToApply), findsOneWidget);
-      expect(find.byKey(const ValueKey('jm-apply')), findsNothing);
+      expect(tester.widget<ElevatedButton>(find.byKey(const ValueKey('jm-apply'))).onPressed, isNull);
 
       await tapVisible(tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s2')));
       expect(box(tester, 's2').value, isFalse);
@@ -805,6 +805,10 @@ void main() {
       await settle(tester);
       expect(find.byType(JobMatchResultScreen), findsNothing);
       expect(find.byKey(JobMatchScreen.descriptionFieldKey), findsOneWidget);
+      await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
+      await settle(tester);
+      expect(api.createCalls, hasLength(2));
+      expect(api.createCalls[0]['key'], isNot(api.createCalls[1]['key']));
     });
 
     testWidgets('an invalid selection (422) keeps the user on the result',

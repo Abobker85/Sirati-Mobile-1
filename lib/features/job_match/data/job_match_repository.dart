@@ -15,13 +15,14 @@ class JobMatchRepository {
     required String jobDescription,
     String? targetJobTitle,
     required String idempotencyKey,
-  }) async =>
-      JobMatch.fromJson(await _api.createJobMatch(
-        generatedCvId: generatedCvId,
-        jobDescription: jobDescription,
-        targetJobTitle: targetJobTitle,
-        idempotencyKey: idempotencyKey,
-      ));
+  }) async => JobMatch.fromJson(
+    await _api.createJobMatch(
+      generatedCvId: generatedCvId,
+      jobDescription: jobDescription,
+      targetJobTitle: targetJobTitle,
+      idempotencyKey: idempotencyKey,
+    ),
+  );
 
   Future<JobMatch> fetch(int id) async =>
       JobMatch.fromJson(await _api.getJobMatch(id));
@@ -31,9 +32,14 @@ class JobMatchRepository {
 
   Future<({GeneratedCv cv, JobMatch match})> apply(
     int id,
-    List<String> suggestionKeys,
-  ) async {
-    final result = await _api.applyJobMatchSuggestions(id, suggestionKeys);
+    List<String> suggestionKeys, {
+    required List<String> confirmedFactKeys,
+  }) async {
+    final result = await _api.applyJobMatchSuggestions(
+      id,
+      suggestionKeys,
+      confirmedFactKeys: confirmedFactKeys,
+    );
     return (cv: result.generatedCv, match: JobMatch.fromJson(result.jobMatch));
   }
 

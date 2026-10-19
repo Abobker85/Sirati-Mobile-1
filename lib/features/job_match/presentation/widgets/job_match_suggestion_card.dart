@@ -14,6 +14,8 @@ class JobMatchSuggestionCard extends StatelessWidget {
     required this.applied,
     required this.enabled,
     required this.onToggle,
+    required this.factConfirmed,
+    required this.onConfirmFact,
   });
 
   final JobMatchSuggestion suggestion;
@@ -23,15 +25,22 @@ class JobMatchSuggestionCard extends StatelessWidget {
   /// False while an apply is in flight.
   final bool enabled;
   final VoidCallback onToggle;
+  final bool factConfirmed;
+  final ValueChanged<bool> onConfirmFact;
 
   static Key checkboxKey(String suggestionKey) =>
       ValueKey('jm-suggestion-$suggestionKey');
+
+  static Key confirmationKey(String suggestionKey) =>
+      ValueKey('jm-confirm-fact-$suggestionKey');
 
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
     final l = AppLocalizations.of(context);
-    final canToggle = suggestion.selectable && !applied && enabled;
+    final canToggle = suggestion.canApply(factConfirmed: factConfirmed) &&
+        !applied &&
+        enabled;
     final before = suggestion.before;
 
     return JobMatchSection(
@@ -122,9 +131,30 @@ class JobMatchSuggestionCard extends StatelessWidget {
           ],
           if (suggestion.needsUserFact) ...[
             const SizedBox(height: AppSpacing.sm),
-            JobMatchNotice(
-              tone: JobMatchTone.info,
-              message: l.jobMatchNeedsUserFact,
+            Material(
+              color: c.surface,
+              child: CheckboxListTile(
+                key: confirmationKey(suggestion.key),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: factConfirmed || applied,
+                onChanged:
+                    enabled && !applied && suggestion.after.trim().isNotEmpty
+                        ? (value) => onConfirmFact(value ?? false)
+                        : null,
+                title: Text(
+                  l.jm4ConfirmFact,
+                  style: AppTypography.of(context, AppTypography.bodyMd),
+                ),
+                subtitle: Text(
+                  l.jm4HonestyHint,
+                  style: AppTypography.of(
+                    context,
+                    AppTypography.bodySm,
+                    color: c.textSecondary,
+                  ),
+                ),
+              ),
             ),
           ],
         ],

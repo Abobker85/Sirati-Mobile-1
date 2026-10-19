@@ -131,6 +131,7 @@ class FakeJobMatchApi extends CvApiService {
   }
 
   final applyCalls = <List<String>>[];
+  final confirmedFactCalls = <List<String>>[];
   final applyResponses = <Object>[];
   Future<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>
       Function()? applyOverride;
@@ -176,7 +177,10 @@ class FakeJobMatchApi extends CvApiService {
 
   @override
   Future<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>
-      applyJobMatchSuggestions(int id, List<String> suggestionKeys) async {
+      applyJobMatchSuggestions(int id, List<String> suggestionKeys, {
+        List<String> confirmedFactKeys = const [],
+      }) async {
+    confirmedFactCalls.add(List.of(confirmedFactKeys));
     applyCalls.add(List.of(suggestionKeys));
     if (applyOverride != null) return applyOverride!();
     final next = _next(applyResponses, 'apply');
@@ -273,7 +277,7 @@ Future<void> pumpJobMatch(
   String language = 'en',
   ThemeData? theme,
   FakeGeneratorRoute? routes,
-  List<Duration> schedule = const [
+  List<Duration>? schedule = const [
     Duration(milliseconds: 100),
     Duration(milliseconds: 100),
   ],
@@ -284,7 +288,8 @@ Future<void> pumpJobMatch(
     overrides: [
       cvApiServiceProvider.overrideWithValue(api),
       authApiServiceProvider.overrideWithValue(auth),
-      jobMatchPollScheduleProvider.overrideWithValue(schedule),
+      if (schedule != null)
+        jobMatchPollScheduleProvider.overrideWithValue(schedule),
     ],
     child: MaterialApp(
       theme: theme ?? AppTheme.lightFor(arabic: arabic),

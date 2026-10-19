@@ -40,11 +40,21 @@ class JobMatchResultScreen extends ConsumerWidget {
               children: [
                 _ScoreCard(match: match),
                 const SizedBox(height: AppSpacing.md),
-                ..._statusBanner(context, ref, state, match),
                 _KeywordsCard(match: match),
                 const SizedBox(height: AppSpacing.md),
+                ConstrainedBox(
+                  key: const ValueKey('jm-suggestions-region'),
+                  constraints: const BoxConstraints(minHeight: 420),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ..._suggestions(context, ref, state, match),
+                      ..._statusBanner(context, ref, state, match),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 ..._insights(context, match),
-                ..._suggestions(context, ref, state, match),
                 if (match.appliedGeneratedCvId != null) ...[
                   const SizedBox(height: AppSpacing.md),
                   OutlinedButton.icon(
@@ -157,8 +167,44 @@ class JobMatchResultScreen extends ConsumerWidget {
     JobMatchState state,
     JobMatch match,
   ) {
-    if (match.feedback == null) return const [];
     final l = AppLocalizations.of(context);
+    if (match.aiPending) {
+      return [
+        JobMatchSection(
+          title: l.jobMatchSuggestionsTitle,
+          child: Semantics(
+            label: l.jobMatchAiPreparing,
+            child: ExcludeSemantics(
+              child: SizedBox(
+                key: const ValueKey('jm-suggestions-skeleton'),
+                height: 220,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final width in [0.55, 1.0, 0.85, 1.0, 0.7])
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: FractionallySizedBox(
+                          alignment: AlignmentDirectional.centerStart,
+                          widthFactor: width,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: context.sirati.border,
+                              borderRadius: AppRadius.smAll,
+                            ),
+                            child: const SizedBox(height: 22),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+    if (match.feedback == null) return const [];
     final c = context.sirati;
     final suggestions = match.suggestions;
     return [
@@ -182,6 +228,10 @@ class JobMatchResultScreen extends ConsumerWidget {
           selected: state.selected.contains(suggestion.key),
           applied: match.appliedSuggestionKeys.contains(suggestion.key),
           enabled: !state.applying,
+          factConfirmed: state.confirmedFactKeys.contains(suggestion.key),
+          onConfirmFact: (confirmed) => ref
+              .read(jobMatchControllerProvider.notifier)
+              .confirmFact(suggestion.key, confirmed),
           onToggle: () => ref
               .read(jobMatchControllerProvider.notifier)
               .toggle(suggestion.key),
@@ -290,48 +340,61 @@ class _ApplyBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hasSelectable = match.suggestions.any(
-      (s) => s.selectable && !match.appliedSuggestionKeys.contains(s.key),
+      (s) =>
+          s.after.trim().isNotEmpty &&
+          !match.appliedSuggestionKeys.contains(s.key),
     );
-    if (!hasSelectable && !state.applying) return const SizedBox.shrink();
+    if (!hasSelectable && !state.applying && !match.aiPending) {
+      return const SizedBox.shrink();
+    }
 
     final l = AppLocalizations.of(context);
     final c = context.sirati;
-    final Widget content;
-    if (state.applying) {
-      content = Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox.square(
-            dimension: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: c.primaryInk,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            l.jobMatchApplying,
-            style: AppTypography.of(context, AppTypography.labelLg),
-          ),
-        ],
-      );
-    } else if (state.selected.isEmpty) {
-      content = Text(
-        l.jobMatchSelectToApply,
-        textAlign: TextAlign.center,
-        style: AppTypography.of(
-          context,
-          AppTypography.bodySm,
-          color: c.textSecondary,
-        ),
-      );
-    } else {
-      content = ElevatedButton(
+    final count = state.appliableSelections.length;
+    final busy = state.applying || match.aiPending;
+    final content = SizedBox(
+      height: 48,
+      width: double.infinity,
+      child: ElevatedButton(
         key: const ValueKey('jm-apply'),
-        onPressed: () => _apply(context, ref),
-        child: Text(l.jobMatchApplySelected(state.selected.length)),
-      );
-    }
+        style: ElevatedButton.styleFrom(
+          disabledBackgroundColor: c.surface,
+          disabledForegroundColor: c.textSecondary,
+        ),
+        onPressed: busy || count == 0 ? null : () => _apply(context, ref),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (busy) ...[
+              SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(
+                  key: const ValueKey('jm-apply-progress'),
+                  strokeWidth: 2,
+                  color: c.primaryInk,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+            ],
+            Flexible(
+              child: Text(
+                state.applying
+                    ? l.jobMatchApplying
+                    : count == 0
+                        ? l.jobMatchSelectToApply
+                        : l.jobMatchApplySelected(count),
+                style: AppTypography.of(
+                  context,
+                  AppTypography.labelLg,
+                  color: busy || count == 0 ? c.textSecondary : c.onPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -356,8 +419,7 @@ class _ApplyBar extends ConsumerWidget {
   Future<void> _apply(BuildContext context, WidgetRef ref) async {
     final l = AppLocalizations.of(context);
     final navigator = Navigator.of(context);
-    final outcome =
-        await ref.read(jobMatchControllerProvider.notifier).apply();
+    final outcome = await ref.read(jobMatchControllerProvider.notifier).apply();
     if (!context.mounted || outcome == null) return;
     switch (outcome) {
       case JobMatchApplied(:final cv):

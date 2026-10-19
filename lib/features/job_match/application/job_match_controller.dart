@@ -16,33 +16,24 @@ import 'package:sirati/shared/services/mobile_content_service.dart';
 /// Never derived from a local premium flag. Errors surface at once (no
 /// automatic retry) so the screen can offer its own Retry.
 final jobMatchEntitlementProvider =
-    FutureProvider.autoDispose<JobMatchEntitlement>(
-  (ref) async {
-    final user = await ref.read(authApiServiceProvider).me();
-    return JobMatchEntitlement.fromSubscription(user?.subscription);
-  },
-  retry: (_, __) => null,
-);
+    FutureProvider.autoDispose<JobMatchEntitlement>((ref) async {
+  final user = await ref.read(authApiServiceProvider).me();
+  return JobMatchEntitlement.fromSubscription(user?.subscription);
+}, retry: (_, __) => null);
 
 /// The user's saved CVs to match against.
-final jobMatchSavedCvsProvider =
-    FutureProvider.autoDispose<List<GeneratedCv>>(
+final jobMatchSavedCvsProvider = FutureProvider.autoDispose<List<GeneratedCv>>(
   (ref) => ref.read(jobMatchRepositoryProvider).savedCvs(),
   retry: (_, __) => null,
 );
 
-/// Waits between automatic refreshes while AI advice is pending.
-///
-/// `GET /job-matches/{id}` shares the `ai-heavy` limiter (10/hour) with
-/// create and apply, so the schedule is short and sparse: after it runs out
-/// the screen reports "still processing" and refreshes only on request.
+/// Increasing waits, capped at five seconds, within one overall deadline.
 final jobMatchPollScheduleProvider = Provider<List<Duration>>(
-  (ref) => const [
-    Duration(seconds: 6),
-    Duration(seconds: 10),
-    Duration(seconds: 15),
-    Duration(seconds: 20),
-  ],
+  (ref) => List.generate(15, (i) => Duration(seconds: (i + 1).clamp(1, 5))),
+);
+
+final jobMatchPollTimeoutProvider = Provider<Duration>(
+  (ref) => const Duration(minutes: 1),
 );
 
 enum JobMatchPollPhase {
@@ -64,6 +55,7 @@ class JobMatchState {
     this.pollPhase = JobMatchPollPhase.idle,
     this.refreshFailure,
     this.selected = const {},
+    this.confirmedFactKeys = const {},
     this.applying = false,
     this.retryingAdvice = false,
     this.retryFailure,
@@ -76,6 +68,17 @@ class JobMatchState {
   /// Why the last refresh failed, when it did.
   final JobMatchFailure? refreshFailure;
   final Set<String> selected;
+  final Set<String> confirmedFactKeys;
+
+  /// Exactly the edits that may be sent to apply, in server order.
+  List<JobMatchSuggestion> get appliableSelections => [
+        for (final s in match?.suggestions ?? <JobMatchSuggestion>[])
+          if (selected.contains(s.key) && _canApplySelection(s)) s,
+      ];
+
+  bool _canApplySelection(JobMatchSuggestion s) =>
+      !match!.appliedSuggestionKeys.contains(s.key) &&
+      s.canApply(factConfirmed: confirmedFactKeys.contains(s.key));
   final bool applying;
   final bool retryingAdvice;
   final JobMatchFailure? retryFailure;
@@ -87,6 +90,7 @@ class JobMatchState {
     JobMatchFailure? refreshFailure,
     bool clearRefreshFailure = false,
     Set<String>? selected,
+    Set<String>? confirmedFactKeys,
     bool? applying,
     bool? retryingAdvice,
     JobMatchFailure? retryFailure,
@@ -96,9 +100,11 @@ class JobMatchState {
         submitting: submitting ?? this.submitting,
         match: match ?? this.match,
         pollPhase: pollPhase ?? this.pollPhase,
-        refreshFailure:
-            clearRefreshFailure ? null : (refreshFailure ?? this.refreshFailure),
+        refreshFailure: clearRefreshFailure
+            ? null
+            : (refreshFailure ?? this.refreshFailure),
         selected: selected ?? this.selected,
+        confirmedFactKeys: confirmedFactKeys ?? this.confirmedFactKeys,
         applying: applying ?? this.applying,
         retryingAdvice: retryingAdvice ?? this.retryingAdvice,
         retryFailure:
@@ -133,6 +139,7 @@ class JobMatchController extends Notifier<JobMatchState> {
   /// Bumped to abandon an in-flight refresh loop.
   int _pollGeneration = 0;
   Timer? _pollTimer;
+  Timer? _pollTimeoutTimer;
   Completer<bool>? _pollWait;
 
   /// Reused while the request is unchanged so a retry (or a second tap)
@@ -149,6 +156,8 @@ class JobMatchController extends Notifier<JobMatchState> {
   /// Abandons the refresh loop and cancels its pending wait.
   void _stopPolling() {
     _pollGeneration++;
+    _pollTimeoutTimer?.cancel();
+    _pollTimeoutTimer = null;
     _pollTimer?.cancel();
     _pollTimer = null;
     final wait = _pollWait;
@@ -205,8 +214,9 @@ class JobMatchController extends Notifier<JobMatchState> {
       ref.invalidate(jobMatchEntitlementProvider);
       state = JobMatchState(
         match: match,
-        pollPhase:
-            match.aiPending ? JobMatchPollPhase.polling : JobMatchPollPhase.idle,
+        pollPhase: match.aiPending
+            ? JobMatchPollPhase.polling
+            : JobMatchPollPhase.idle,
       );
       if (match.aiPending) unawaited(_pollUntilSettled());
       return null;
@@ -233,14 +243,23 @@ class JobMatchController extends Notifier<JobMatchState> {
     _stopPolling();
     final generation = _pollGeneration;
     final schedule = ref.read(jobMatchPollScheduleProvider);
+    _pollTimeoutTimer = Timer(ref.read(jobMatchPollTimeoutProvider), () {
+      if (!ref.mounted || generation != _pollGeneration) return;
+      _stopPolling();
+      state = state.copyWith(pollPhase: JobMatchPollPhase.stillProcessing);
+    });
     for (final delay in schedule) {
       if (!await _sleep(delay)) return;
       if (!ref.mounted || generation != _pollGeneration) return;
       if (!await _refreshOnce(generation)) return;
       if (!ref.mounted || generation != _pollGeneration) return;
-      if (state.pollPhase != JobMatchPollPhase.polling) return;
+      if (state.pollPhase != JobMatchPollPhase.polling) {
+        _stopPolling();
+        return;
+      }
     }
     if (ref.mounted && generation == _pollGeneration) {
+      _stopPolling();
       state = state.copyWith(pollPhase: JobMatchPollPhase.stillProcessing);
     }
   }
@@ -270,7 +289,10 @@ class JobMatchController extends Notifier<JobMatchState> {
       if (retried.aiPending) unawaited(_pollUntilSettled());
     } catch (error) {
       if (!ref.mounted || generation != _pollGeneration) return;
-      final failure = JobMatchFailure.from(error, JobMatchOperation.retryAdvice);
+      final failure = JobMatchFailure.from(
+        error,
+        JobMatchOperation.retryAdvice,
+      );
       if (failure.affectsEntitlement) {
         ref.invalidate(jobMatchEntitlementProvider);
       }
@@ -289,11 +311,16 @@ class JobMatchController extends Notifier<JobMatchState> {
         match: match,
         pollPhase: match.aiPending ? null : JobMatchPollPhase.idle,
         clearRefreshFailure: true,
-        selected: _keepSelectable(state.selected, match),
+        selected: _keepSelectable(
+          state.selected,
+          match,
+          state.confirmedFactKeys,
+        ),
       );
       return true;
     } catch (error) {
       if (!ref.mounted || generation != _pollGeneration) return false;
+      _stopPolling();
       state = state.copyWith(
         pollPhase: JobMatchPollPhase.stillProcessing,
         refreshFailure: JobMatchFailure.from(error, JobMatchOperation.refresh),
@@ -320,11 +347,35 @@ class JobMatchController extends Notifier<JobMatchState> {
     }
   }
 
+  void confirmFact(String key, bool confirmed) {
+    final match = state.match;
+    if (match == null || state.applying) return;
+    final suggestion = match.suggestions.where((s) => s.key == key).firstOrNull;
+    if (suggestion == null ||
+        !suggestion.needsUserFact ||
+        suggestion.after.trim().isEmpty ||
+        match.appliedSuggestionKeys.contains(key)) {
+      return;
+    }
+    final facts = {...state.confirmedFactKeys};
+    final selected = {...state.selected};
+    if (confirmed) {
+      facts.add(key);
+    } else {
+      facts.remove(key);
+      selected.remove(key);
+    }
+    state = state.copyWith(confirmedFactKeys: facts, selected: selected);
+  }
+
   void toggle(String key) {
     final match = state.match;
     if (match == null || state.applying) return;
     final suggestion = match.suggestions.where((s) => s.key == key).firstOrNull;
-    if (suggestion == null || !_canApply(suggestion, match)) return;
+    if (suggestion == null ||
+        !_canApply(suggestion, match, state.confirmedFactKeys)) {
+      return;
+    }
     final next = {...state.selected};
     if (!next.remove(key)) next.add(key);
     state = state.copyWith(selected: next);
@@ -334,15 +385,21 @@ class JobMatchController extends Notifier<JobMatchState> {
     final match = state.match;
     if (match == null || state.applying || state.selected.isEmpty) return null;
     // Server order = suggestion order; keeps the request deterministic.
-    final keys = [
-      for (final s in match.suggestions)
-        if (state.selected.contains(s.key) && _canApply(s, match)) s.key,
+    final selected = state.appliableSelections;
+    final keys = [for (final s in selected) s.key];
+    final facts = [
+      for (final s in selected)
+        if (s.needsUserFact) s.key,
     ];
     if (keys.isEmpty) return null;
 
     state = state.copyWith(applying: true);
     try {
-      final result = await _repository.apply(match.id, keys);
+      final result = await _repository.apply(
+        match.id,
+        keys,
+        confirmedFactKeys: facts,
+      );
       MobileContentService.invalidateCvRelated();
       if (ref.mounted) {
         ref.invalidate(jobMatchSavedCvsProvider);
@@ -351,28 +408,38 @@ class JobMatchController extends Notifier<JobMatchState> {
             match: result.match,
             applying: false,
             selected: const {},
+            confirmedFactKeys: const {},
           );
         }
       }
       return JobMatchApplied(result.cv);
     } catch (error) {
+      final failure = JobMatchFailure.from(error, JobMatchOperation.apply);
       if (ref.mounted && state.match?.id == match.id) {
+        if (failure.kind == JobMatchFailureKind.stale) _keyFingerprint = null;
         state = state.copyWith(applying: false);
       }
-      return JobMatchApplyFailed(
-        JobMatchFailure.from(error, JobMatchOperation.apply),
-      );
+      return JobMatchApplyFailed(failure);
     }
   }
 
-  static bool _canApply(JobMatchSuggestion s, JobMatch match) =>
-      s.selectable && !match.appliedSuggestionKeys.contains(s.key);
+  static bool _canApply(
+    JobMatchSuggestion s,
+    JobMatch match,
+    Set<String> facts,
+  ) =>
+      s.canApply(factConfirmed: facts.contains(s.key)) &&
+      !match.appliedSuggestionKeys.contains(s.key);
 
-  static Set<String> _keepSelectable(Set<String> selected, JobMatch match) {
+  static Set<String> _keepSelectable(
+    Set<String> selected,
+    JobMatch match,
+    Set<String> facts,
+  ) {
     if (selected.isEmpty) return selected;
     final allowed = {
       for (final s in match.suggestions)
-        if (_canApply(s, match)) s.key,
+        if (_canApply(s, match, facts)) s.key,
     };
     return selected.where(allowed.contains).toSet();
   }
