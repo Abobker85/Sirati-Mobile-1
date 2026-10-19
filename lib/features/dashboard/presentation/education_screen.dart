@@ -265,6 +265,7 @@ class _ComingSoonHero extends StatelessWidget {
                 disabledForegroundColor: context.sirati.onSuccessContainer,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                minimumSize: const Size(0, 48),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -370,9 +371,14 @@ class _CvCtaCard extends StatelessWidget {
           color: context.sirati.primary.withValues(alpha: 0.3),
         ),
       ),
-      child: Row(
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
+        runSpacing: 12,
         children: [
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 200, maxWidth: 500),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -396,7 +402,6 @@ class _CvCtaCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
           PressScale(
             child: ElevatedButton(
               onPressed: () => Navigator.of(context).push(
@@ -407,7 +412,7 @@ class _CvCtaCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.sirati.primary,
                 foregroundColor: context.sirati.onPrimary,
-                minimumSize: const Size(0, 44),
+                minimumSize: const Size(0, 48),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),

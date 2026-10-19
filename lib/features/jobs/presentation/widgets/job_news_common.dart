@@ -10,13 +10,19 @@ class MetaChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!highlight) {
-      return Chip(label: Text(text));
+      return Chip(
+        label: Text(
+          text,
+          style: const TextStyle(fontSize: 13),
+        ),
+      );
     }
     return Chip(
       label: Text(
         text,
         style: TextStyle(
-          color: context.sirati.primary,
+          fontSize: 13,
+          color: context.sirati.primaryInk,
           fontWeight: FontWeight.w700,
         ),
       ),

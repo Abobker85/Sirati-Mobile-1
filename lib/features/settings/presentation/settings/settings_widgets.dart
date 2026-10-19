@@ -140,12 +140,12 @@ class ThemeModeSelector extends StatelessWidget {
                 borderRadius: radius,
                 onTap: () => onChanged(m),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 44),
+                  constraints: const BoxConstraints(minHeight: 48),
                   child: Center(
                     child: Text(
                       label,
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                         // primaryInk / primaryLight is the gated chip pair.
                         color: selected ? c.primaryInk : c.textSecondary,

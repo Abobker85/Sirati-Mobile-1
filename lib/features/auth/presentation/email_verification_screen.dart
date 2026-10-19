@@ -196,7 +196,7 @@ class _EmailVerificationScreenState
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 12, 0),
+                  padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 12, 0),
                   child: Row(
                     children: [
                       IconButton(

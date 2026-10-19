@@ -130,7 +130,7 @@ class CvDocumentCard extends StatelessWidget {
                   icon: Icons.download_rounded,
                   label: english ? 'Download' : 'تنزيل',
                   iconColor:
-                      item.canDownload ? colors.primary : colors.textHint,
+                      item.canDownload ? colors.primaryInk : colors.textHint,
                   borderColor:
                       item.canDownload ? colors.borderStrong : colors.border,
                   onTap: item.canDownload ? onDownload : null,
@@ -190,7 +190,7 @@ class _StatusBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 11.5,
+          fontSize: 13,
           fontWeight: FontWeight.w800,
           color: isDraft ? colors.textSecondary : colors.primaryInk,
         ),
@@ -224,16 +224,23 @@ class _CircleActionButton extends StatelessWidget {
         label: label,
         button: true,
         enabled: onTap != null,
-        child: Material(
-          color: fillColor ?? context.sirati.surface,
-          shape: CircleBorder(side: BorderSide(color: borderColor, width: 1.5)),
-          child: InkWell(
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: InkResponse(
             onTap: onTap,
-            customBorder: const CircleBorder(),
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: Icon(icon, color: iconColor, size: 18),
+            radius: 24,
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: fillColor ?? context.sirati.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: borderColor, width: 1.5),
+                ),
+                child: Icon(icon, color: iconColor, size: 18),
+              ),
             ),
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -17,10 +18,19 @@ class AnimatedScoreRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final target = score.clamp(0, 100) / 100.0;
     final reduce = MotionSettings.reduce(context);
+    final english = AppLocale.isEnglish(context);
+    final label = english
+        ? 'ATS compatibility score'
+        : 'درجة توافق السيرة الذاتية مع نظام تتبع المتقدمين';
+    final valueText = english ? '$score out of 100' : '$score من 100';
 
     // RepaintBoundary keeps the per-frame ring animation from repainting the
     // rest of the score card.
-    return RepaintBoundary(
+    return Semantics(
+      label: label,
+      value: valueText,
+      excludeSemantics: true,
+      child: RepaintBoundary(
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: reduce ? target : 0, end: target),
         duration: reduce ? Duration.zero : MotionDurations.slow * 2,
@@ -76,6 +86,7 @@ class AnimatedScoreRing extends StatelessWidget {
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 }

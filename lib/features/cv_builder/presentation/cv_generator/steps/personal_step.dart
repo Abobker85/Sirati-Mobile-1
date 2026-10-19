@@ -208,7 +208,7 @@ class _JobDescriptionField extends StatelessWidget {
                   loadingLabel: english ? 'Enhancing...' : 'جارٍ التحسين...',
                   isLoading: isEnhancing,
                   outlined: true,
-                  height: 44,
+                  height: 48,
                   icon: Icons.auto_fix_high_rounded,
                   onPressed: enabled ? onEnhance : null,
                 ),
@@ -218,8 +218,8 @@ class _JobDescriptionField extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.info_outline_rounded,
-                        size: 13,
-                        color: context.sirati.textHint,
+                        size: 14,
+                        color: context.sirati.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -228,8 +228,8 @@ class _JobDescriptionField extends StatelessWidget {
                               ? 'Write more than a line for accurate AI enhancement'
                               : 'اكتب أكثر من سطر لتوجيه الذكاء الاصطناعي بدقة',
                           style: TextStyle(
-                            color: context.sirati.textHint,
-                            fontSize: 11,
+                            color: context.sirati.textSecondary,
+                            fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -299,6 +299,7 @@ class _LanguageOption extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
+          constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: selected ? context.sirati.primary : null,
