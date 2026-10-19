@@ -80,7 +80,7 @@ class AppButton extends StatelessWidget {
                   ? c.onPrimary
                   : variant == AppButtonVariant.destructive
                       ? c.onError
-                      : c.primary,
+                      : c.primaryInk,
             ),
           )
         else if (icon != null)
@@ -89,19 +89,17 @@ class AppButton extends StatelessWidget {
         Flexible(
           child: Text(
             label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: style.copyWith(
-              color: _foreground(c),
-            ),
+            style: style.copyWith(color: _foreground(c)),
           ),
         ),
       ],
     );
 
-    final minSize =
-        Size(expand ? double.infinity : AppTouchTarget.min, AppTouchTarget.min);
+    final minSize = Size(
+      expand ? double.infinity : AppTouchTarget.min,
+      AppTouchTarget.min,
+    );
 
     late final Widget button;
     switch (variant) {
@@ -111,6 +109,8 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             minimumSize: minSize,
             backgroundColor: c.primary,
+            disabledBackgroundColor: c.primary,
+            disabledForegroundColor: c.onPrimary,
             foregroundColor: c.onPrimary,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
           ),
@@ -121,8 +121,8 @@ class AppButton extends StatelessWidget {
           onPressed: enabled ? onPressed : null,
           style: OutlinedButton.styleFrom(
             minimumSize: minSize,
-            foregroundColor: c.primary,
-            side: BorderSide(color: c.primary, width: 1.5),
+            foregroundColor: c.primaryInk,
+            side: BorderSide(color: c.primaryInk, width: 1.5),
             shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
           ),
           child: child,
@@ -132,7 +132,7 @@ class AppButton extends StatelessWidget {
           onPressed: enabled ? onPressed : null,
           style: TextButton.styleFrom(
             minimumSize: minSize,
-            foregroundColor: c.primary,
+            foregroundColor: c.primaryInk,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
           ),
           child: child,
@@ -143,6 +143,8 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             minimumSize: minSize,
             backgroundColor: c.error,
+            disabledBackgroundColor: c.error,
+            disabledForegroundColor: c.onError,
             foregroundColor: c.onError,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
           ),
@@ -151,14 +153,8 @@ class AppButton extends StatelessWidget {
     }
 
     return Semantics(
-      button: true,
-      enabled: enabled,
-      label: isLoading ? '$label, loading' : label,
-      excludeSemantics: true,
-      child: PressScale(
-        enabled: enabled,
-        child: button,
-      ),
+      liveRegion: isLoading,
+      child: PressScale(enabled: enabled, child: button),
     );
   }
 
@@ -170,7 +166,7 @@ class AppButton extends StatelessWidget {
         return c.onError;
       case AppButtonVariant.secondary:
       case AppButtonVariant.text:
-        return c.primary;
+        return c.primaryInk;
     }
   }
 }

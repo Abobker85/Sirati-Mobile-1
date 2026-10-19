@@ -2,43 +2,56 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/shared/theme/app_contrast.dart';
 
-/// Nearest opaque background painted behind [element] in a pumped tree:
-/// a coloured or gradient [DecoratedBox], a non-transparent [Material], or a
-/// button's resolved fill. A gradient yields every stop, so text must pass
-/// against the worst one.
+/// Backgrounds resolved from the mounted paint widgets, compositing translucent
+/// layers before comparing ink. PhysicalModel/PhysicalShape carry Material's
+/// resolved button state (including disabled fills). Gradients check every stop.
 List<Color> paintedBackgroundsOf(Element element) {
-  List<Color>? found;
+  var layers = <Color>[];
+  var opaque = false;
   element.visitAncestorElements((ancestor) {
     final widget = ancestor.widget;
-    Color? candidate;
+    List<Color> candidates = [];
     if (widget is DecoratedBox) {
       final d = widget.decoration;
       if (d is BoxDecoration) {
-        final gradient = d.gradient;
-        if (gradient != null) {
-          found = gradient.colors;
-          return false;
-        }
-        candidate = d.color;
+        candidates = d.gradient?.colors ?? [if (d.color != null) d.color!];
       }
-    } else if (widget is Material && widget.type != MaterialType.transparency) {
-      candidate = widget.color;
-    } else if (widget is ButtonStyleButton) {
-      final theme = Theme.of(ancestor);
-      final themed = switch (widget) {
-        ElevatedButton() => theme.elevatedButtonTheme.style,
-        FilledButton() => theme.filledButtonTheme.style,
-        OutlinedButton() => theme.outlinedButtonTheme.style,
-        TextButton() => theme.textButtonTheme.style,
-        _ => null,
-      };
-      candidate = widget.style?.backgroundColor?.resolve({}) ??
-          themed?.backgroundColor?.resolve({});
+    } else if (widget is ColoredBox) {
+      candidates = [widget.color];
+    } else if (widget is PhysicalModel) {
+      candidates = [widget.color];
+    } else if (widget is PhysicalShape) {
+      candidates = [widget.color];
+    } else if (widget is InputDecorator) {
+      // Helper/error copy sits outside the input's painted fill.
+      final container = InputDecorator.containerOf(element);
+      final target = element.findRenderObject();
+      if (container != null && target is RenderBox && target.hasSize) {
+        final bounds = container.localToGlobal(Offset.zero) & container.size;
+        final center = target.localToGlobal(target.size.center(Offset.zero));
+        final decoration = widget.decoration.applyDefaults(
+          Theme.of(ancestor).inputDecorationTheme,
+        );
+        if (bounds.contains(center) && decoration.filled == true) {
+          candidates = [if (decoration.fillColor != null) decoration.fillColor!];
+        }
+      }
     }
-    if (candidate != null && candidate.a > 0) found = [candidate];
-    return found == null;
+    if (candidates.isEmpty || candidates.every((color) => color.a == 0)) {
+      return true;
+    }
+    layers = layers.isEmpty
+        ? candidates
+        : [
+            for (final layer in layers)
+              for (final background in candidates)
+                Color.alphaBlend(layer, background),
+          ];
+    opaque = layers.every((color) => color.a == 1);
+    return !opaque;
   });
-  return found ?? fail('no painted background above ${element.widget}');
+  if (!opaque) fail('no opaque painted background above ${element.widget}');
+  return layers;
 }
 
 /// Asserts every [Text] currently on screen meets WCAG AA (4.5:1) against
@@ -55,6 +68,44 @@ void expectAllTextAa(String label) {
         AppContrast.ratio(Color.alphaBlend(color, background), background),
         greaterThanOrEqualTo(4.5),
         reason: '"${text.data}" on $background ($label)',
+      );
+    }
+  }
+}
+
+void expectAllIconsAa(String label) {
+  for (final element in find.byType(Icon).evaluate()) {
+    final icon = element.widget as Icon;
+    final theme = IconTheme.of(element);
+    final ink = icon.color ?? theme.color!;
+    final color = ink.withValues(alpha: ink.a * (theme.opacity ?? 1));
+    for (final background in paintedBackgroundsOf(element)) {
+      expect(
+        AppContrast.ratio(Color.alphaBlend(color, background), background),
+        greaterThanOrEqualTo(3),
+        reason: '${icon.icon} on $background ($label)',
+      );
+    }
+  }
+}
+
+void expectAllProgressIndicatorsAa(String label) {
+  for (final element in find.byWidgetPredicate((widget) =>
+      widget is CircularProgressIndicator ||
+      widget is LinearProgressIndicator).evaluate()) {
+    final indicator = element.widget as ProgressIndicator;
+    final ink = indicator.valueColor?.value ??
+        indicator.color ??
+        ProgressIndicatorTheme.of(element).color ??
+        Theme.of(element).colorScheme.primary;
+    final backgrounds = indicator.backgroundColor == null
+        ? paintedBackgroundsOf(element)
+        : [indicator.backgroundColor!];
+    for (final background in backgrounds) {
+      expect(
+        AppContrast.ratio(Color.alphaBlend(ink, background), background),
+        greaterThanOrEqualTo(3),
+        reason: '${indicator.runtimeType} on $background ($label)',
       );
     }
   }

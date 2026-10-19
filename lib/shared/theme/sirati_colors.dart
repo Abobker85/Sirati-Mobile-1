@@ -42,6 +42,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     required this.surfaceHigh,
     required this.border,
     required this.borderStrong,
+    required this.outline,
     required this.textPrimary,
     required this.textSecondary,
     required this.textHint,
@@ -93,6 +94,9 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   final Color surfaceHigh;
   final Color border;
   final Color borderStrong;
+
+  /// Visible control boundaries, distinct from decorative dividers.
+  final Color outline;
   final Color textPrimary;
   final Color textSecondary;
   final Color textHint;
@@ -109,7 +113,6 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   Color get onSurface => textPrimary;
   Color get onSurfaceVariant => textSecondary;
   Color get onSurfaceMuted => textHint;
-  Color get outline => border;
   Color get outlineVariant => borderStrong;
 
   /// Text/icons sitting on [error] fills. Pick the ink with higher contrast.
@@ -167,6 +170,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     surfaceHigh: Color(0xFFE7E5DE),
     border: Color(0xFFD3E3DF),
     borderStrong: Color(0xFFBBC9C6),
+    outline: Color(0xFF778A84),
     textPrimary: Color(0xFF171D1B),
     textSecondary: Color(0xFF3C4947),
     // Was #64726F (~4.7:1 on background, borderline AA). Darkened to ~6:1
@@ -176,11 +180,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     brandSurfaceDeep: Color(0xFF004A43),
     onBrandSurface: Color(0xFFFFFFFF),
     softShadow: [
-      BoxShadow(
-        color: Color(0x0D000000),
-        blurRadius: 12,
-        offset: Offset(0, 4),
-      ),
+      BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 4)),
     ],
   );
 
@@ -222,18 +222,15 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     surfaceHigh: Color(0xFF2B332E),
     border: Color(0xFF31423E),
     borderStrong: Color(0xFF445753),
+    outline: Color(0xFF71857C),
     textPrimary: Color(0xFFE6EAE7),
     textSecondary: Color(0xFFAEB8B4),
-    textHint: Color(0xFF7E8985),
+    textHint: Color(0xFF95A19B),
     brandSurface: Color(0xFF0F5C54),
     brandSurfaceDeep: Color(0xFF0A3D38),
     onBrandSurface: Color(0xFFFFFFFF),
     softShadow: [
-      BoxShadow(
-        color: Color(0x14000000),
-        blurRadius: 8,
-        offset: Offset(0, 2),
-      ),
+      BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 2)),
     ],
   );
 
@@ -275,6 +272,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     Color? surfaceHigh,
     Color? border,
     Color? borderStrong,
+    Color? outline,
     Color? textPrimary,
     Color? textSecondary,
     Color? textHint,
@@ -320,6 +318,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       surfaceHigh: surfaceHigh ?? this.surfaceHigh,
       border: border ?? this.border,
       borderStrong: borderStrong ?? this.borderStrong,
+      outline: outline ?? this.outline,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       textHint: textHint ?? this.textHint,
@@ -371,6 +370,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       surfaceHigh: l(surfaceHigh, other.surfaceHigh),
       border: l(border, other.border),
       borderStrong: l(borderStrong, other.borderStrong),
+      outline: l(outline, other.outline),
       textPrimary: l(textPrimary, other.textPrimary),
       textSecondary: l(textSecondary, other.textSecondary),
       textHint: l(textHint, other.textHint),

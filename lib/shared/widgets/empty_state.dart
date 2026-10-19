@@ -50,7 +50,7 @@ class AppEmptyState extends StatelessWidget {
                 borderRadius: BorderRadius.circular(22),
               ),
               child: Icon(icon,
-                  size: 32, color: iconColor ?? context.sirati.primary),
+                  size: 32, color: iconColor ?? context.sirati.primaryInk),
             ),
             const SizedBox(height: AppSpacing.md + 2),
             Text(

@@ -51,8 +51,11 @@ class PasswordStrengthMeter extends StatelessWidget {
     };
     // The empty track color is intentionally subtle, but using it for text
     // fails contrast on the app's light surfaces. Keep the label readable.
-    final labelColor =
-        level == PasswordStrength.empty ? context.sirati.textSecondary : color;
+    final labelColor = switch (level) {
+      PasswordStrength.empty => context.sirati.textSecondary,
+      PasswordStrength.medium => context.sirati.onWarningContainer,
+      _ => color,
+    };
     final label = switch (level) {
       PasswordStrength.empty =>
         english ? 'Enter a password' : 'أدخل كلمة المرور',
@@ -93,8 +96,9 @@ class PasswordStrengthMeter extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.start,
-              style: AppTextStyles.labelMd(context.sirati)
-                  .copyWith(color: labelColor),
+              style: AppTextStyles.labelMd(
+                context.sirati,
+              ).copyWith(color: labelColor),
             ),
           ],
         ),

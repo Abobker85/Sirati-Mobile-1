@@ -4,7 +4,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
-/// Primary/outlined action with fixed height so spinner swap never collapses layout.
+/// Primary/outlined action with a minimum height and room for scaled text.
 class SubmitButton extends StatelessWidget {
   final String label;
   final String? loadingLabel;
@@ -30,7 +30,7 @@ class SubmitButton extends StatelessWidget {
     final enabled = onPressed != null && !isLoading;
     final text = isLoading ? (loadingLabel ?? label) : label;
     final spinnerColor =
-        outlined ? context.sirati.primary : context.sirati.onPrimary;
+        outlined ? context.sirati.primaryInk : context.sirati.onPrimary;
 
     final content = Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -50,14 +50,7 @@ class SubmitButton extends StatelessWidget {
               ? DirectionalIcon(icon!, size: 18)
               : Icon(icon, size: 18),
         if (isLoading || icon != null) const SizedBox(width: AppSpacing.xs),
-        Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-        ),
+        Flexible(child: Text(text, textAlign: TextAlign.center)),
       ],
     );
 
@@ -66,7 +59,11 @@ class SubmitButton extends StatelessWidget {
         ? OutlinedButton(
             onPressed: enabled ? onPressed : null,
             style: OutlinedButton.styleFrom(
-              minimumSize: Size(double.infinity, height),
+              minimumSize: Size(
+                double.infinity,
+                height.clamp(AppTouchTarget.min, double.infinity),
+              ),
+              disabledForegroundColor: context.sirati.primaryInk,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             child: content,
@@ -74,12 +71,14 @@ class SubmitButton extends StatelessWidget {
         : ElevatedButton(
             onPressed: enabled ? onPressed : null,
             style: ElevatedButton.styleFrom(
-              minimumSize: Size(double.infinity, height),
+              minimumSize: Size(
+                double.infinity,
+                height.clamp(AppTouchTarget.min, double.infinity),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               backgroundColor: context.sirati.primary,
               foregroundColor: context.sirati.onPrimary,
-              disabledBackgroundColor:
-                  context.sirati.primary.withValues(alpha: .55),
+              disabledBackgroundColor: context.sirati.primary,
               disabledForegroundColor: context.sirati.onPrimary,
             ),
             child: content,

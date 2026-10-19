@@ -42,7 +42,7 @@ class ScreenHeader extends StatelessWidget {
     this.subtitle,
     this.status,
     this.unreadCount = 0,
-    this.titleSize = 21,
+    this.titleSize = 20,
     this.avatarLabel,
     this.icon,
     this.onAvatarTap,
@@ -56,8 +56,6 @@ class ScreenHeader extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 340;
-        final resolvedTitleSize =
-            compact ? titleSize.clamp(18.0, 19.0) : titleSize;
 
         final avatar = ProfileAvatar(
           icon: icon,
@@ -82,11 +80,13 @@ class ScreenHeader extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.start,
-                    style: TextStyle(
-                      fontSize: resolvedTitleSize,
-                      height: 1.22,
-                      fontWeight: FontWeight.w800,
-                      color: context.sirati.textPrimary,
+                    style: AppTypography.of(
+                      context,
+                      compact || titleSize < AppTypography.headlineMd.size
+                          ? AppTypography.titleLg
+                          : titleSize >= AppTypography.headlineLg.size
+                              ? AppTypography.headlineLg
+                              : AppTypography.headlineMd,
                     ),
                   ),
                   if (hasSubtitle) ...[
@@ -96,19 +96,16 @@ class ScreenHeader extends StatelessWidget {
                       maxLines: compact ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.start,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        height: 1.4,
-                        fontWeight: FontWeight.w500,
+                      style: AppTypography.of(
+                        context,
+                        AppTypography.bodySm,
                         color: context.sirati.textSecondary,
                       ),
                     ),
                   ],
                   if (hasStatus) ...[
                     const SizedBox(height: 6),
-                    _StatusDotChip(
-                      label: status!,
-                    ),
+                    _StatusDotChip(label: status!),
                   ],
                 ],
               ),
@@ -177,14 +174,17 @@ class NotificationBellButton extends StatelessWidget {
                 onTap: onTap,
                 customBorder: const CircleBorder(),
                 child: Container(
-                  width: 42,
-                  height: 42,
+                  width: AppTouchTarget.min,
+                  height: AppTouchTarget.min,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: context.sirati.border),
                   ),
-                  child: Icon(Icons.notifications_none_rounded,
-                      color: context.sirati.textPrimary, size: 21),
+                  child: Icon(
+                    Icons.notifications_none_rounded,
+                    color: context.sirati.textPrimary,
+                    size: 21,
+                  ),
                 ),
               ),
             ),
@@ -194,10 +194,14 @@ class NotificationBellButton extends StatelessWidget {
                 end: -2,
                 child: ExcludeSemantics(
                   child: Container(
-                    constraints:
-                        const BoxConstraints(minWidth: 16, minHeight: 16),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: context.sirati.error,
@@ -206,11 +210,10 @@ class NotificationBellButton extends StatelessWidget {
                     child: Text(
                       unreadCount > 9 ? '9+' : '$unreadCount',
                       // Gated pair: onError on error.
-                      style: TextStyle(
+                      style: AppTypography.of(
+                        context,
+                        AppTypography.labelSm,
                         color: context.sirati.onError,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        height: 1.1,
                       ),
                     ),
                   ),
@@ -258,9 +261,9 @@ class ProfileAvatar extends StatelessWidget {
           padding: EdgeInsets.all(size * 0.12),
           child: Text(
             label ?? 'S',
-            style: TextStyle(
-              fontSize: size * 0.35,
-              fontWeight: FontWeight.w800,
+            style: AppTypography.of(
+              context,
+              AppTypography.titleMd,
               color: context.sirati.onBrandSurface,
             ),
           ),
@@ -309,7 +312,13 @@ class ProfileAvatar extends StatelessWidget {
             child: InkWell(
               onTap: onTap,
               customBorder: const CircleBorder(),
-              child: face,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minWidth: AppTouchTarget.min,
+                  minHeight: AppTouchTarget.min,
+                ),
+                child: Center(widthFactor: 1, heightFactor: 1, child: face),
+              ),
             ),
           ),
         ),
@@ -343,12 +352,14 @@ class _StatusDotChip extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: context.sirati.amber,
+          Flexible(
+            child: Text(
+              label,
+              style: AppTypography.of(
+                context,
+                AppTypography.bodySm,
+                color: context.sirati.onWarningContainer,
+              ),
             ),
           ),
         ],

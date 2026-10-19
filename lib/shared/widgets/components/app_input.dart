@@ -51,9 +51,8 @@ class AppInput extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget buildField(TextDirection effectiveDirection) {
       return Semantics(
-        textField: true,
-        label: semanticLabel ?? label ?? hint,
-        excludeSemantics: true,
+        label: semanticLabel,
+        liveRegion: errorText != null,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
           child: TextField(
@@ -70,12 +69,30 @@ class AppInput extends StatelessWidget {
             onTap: onTap,
             style: AppTypography.of(context, AppTypography.bodyMd),
             decoration: InputDecoration(
-              labelText: label,
+              label: label == null
+                  ? null
+                  : Text(
+                      label!,
+                      style: AppTypography.of(context, AppTypography.bodyMd),
+                    ),
               hintText: hint,
               errorText: errorText,
+              errorMaxLines: 100,
               helperText: helperText,
               prefixIcon: prefixIcon,
-              suffixIcon: suffixIcon,
+              suffixIcon: errorText == null
+                  ? suffixIcon
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (suffixIcon != null) suffixIcon!,
+                        Icon(
+                          Icons.error_outline_rounded,
+                          color: context.sirati.error,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                      ],
+                    ),
             ),
           ),
         ),

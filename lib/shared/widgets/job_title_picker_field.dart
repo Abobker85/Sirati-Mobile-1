@@ -92,7 +92,7 @@ class JobTitlePickerField extends StatelessWidget {
                     ),
               enabled: enabled && !loading,
               errorText: hasError ? errorText : null,
-              errorMaxLines: 2,
+              errorMaxLines: 100,
             ),
             child: value == null
                 ? null
@@ -104,21 +104,15 @@ class JobTitlePickerField extends StatelessWidget {
                             ? (label ?? '')
                             : BidiText.isolateLtr(label ?? ''),
                         textAlign: TextAlign.start,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: context.sirati.textPrimary,
-                        ),
+                        style: AppTypography.of(context, AppTypography.bodyLg),
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
                         Text(
                           BidiText.isolateLtr(subtitle),
                           textAlign: TextAlign.start,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: context.sirati.textSecondary,
-                          ),
+                          style: AppTypography.of(context, AppTypography.bodySm,
+                              color: context.sirati.textSecondary),
                         ),
                       ],
                     ],
@@ -206,9 +200,9 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                       child: Text(
                         en ? 'Job title' : 'المسمى الوظيفي',
                         textAlign: TextAlign.start,
-                        style: AppTextStyles.titleMd(context.sirati).copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: AppTextStyles.titleMd(
+                          context.sirati,
+                        ).copyWith(fontWeight: FontWeight.w700),
                       ),
                     ),
                     if (widget.selected != null)
@@ -249,14 +243,15 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                           final subtitle = title.subtitle(english: en);
                           return ListTile(
                             selected: selected,
+                            selectedColor: context.sirati.primaryInk,
                             title: Text(
                               title.label(english: en),
                               textAlign: TextAlign.start,
-                              style: TextStyle(
-                                fontWeight: selected
-                                    ? FontWeight.w800
-                                    : FontWeight.w600,
-                              ),
+                              style: AppTypography.of(
+                                  context, AppTypography.bodyLg,
+                                  color: selected
+                                      ? context.sirati.primaryInk
+                                      : context.sirati.textPrimary),
                             ),
                             subtitle: subtitle == null
                                 ? null
@@ -265,8 +260,10 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                                     textAlign: TextAlign.start,
                                   ),
                             trailing: selected
-                                ? Icon(Icons.check_rounded,
-                                    color: context.sirati.primary)
+                                ? Icon(
+                                    Icons.check_rounded,
+                                    color: context.sirati.primaryInk,
+                                  )
                                 : null,
                             onTap: () => Navigator.pop(context, title),
                           );

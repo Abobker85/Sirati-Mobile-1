@@ -6,7 +6,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
-/// Semi-opaque veil over a text field while an AI operation runs.
+/// Opaque status surface over a text field while an AI operation runs.
 ///
 /// When [isLoading] is false, returns [child] unchanged.
 /// While loading, cycles [statusMessages] (or [statusStream]) with a smooth
@@ -42,19 +42,9 @@ class AiFieldLoadingOverlay extends StatelessWidget {
   /// Default English / Arabic micro-copy for CV AI work.
   static List<String> defaultStatusMessages({required bool english}) {
     if (english) {
-      return const [
-        'Parsing formatting structure…',
-        'Extracting technical keywords…',
-        'Benchmarking against market trends…',
-        'Scoring ATS compatibility…',
-      ];
+      return const ['Improving wording…'];
     }
-    return const [
-      'جارٍ تحليل بنية التنسيق…',
-      'جارٍ استخراج الكلمات المفتاحية التقنية…',
-      'جارٍ المقارنة مع اتجاهات السوق…',
-      'جارٍ تقييم التوافق مع أنظمة ATS…',
-    ];
+    return const ['جارٍ تحسين الصياغة…'];
   }
 
   @override
@@ -78,17 +68,16 @@ class AiFieldLoadingOverlay extends StatelessWidget {
       child: Stack(
         children: [
           // Stable child: not rebuilt when status text changes.
-          IgnorePointer(
-            child: RepaintBoundary(child: child),
+          ExcludeSemantics(
+            child: IgnorePointer(child: RepaintBoundary(child: child)),
           ),
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppFormStyles.radius),
-              child: _AiCoPilotVeil(
-                messages: messages,
-                statusStream: statusStream,
-                messageInterval: messageInterval,
-              ),
+          Positioned.fill(child: ColoredBox(color: context.sirati.surface)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppFormStyles.radius),
+            child: _AiCoPilotVeil(
+              messages: messages,
+              statusStream: statusStream,
+              messageInterval: messageInterval,
             ),
           ),
         ],
@@ -184,64 +173,60 @@ class _AiCoPilotVeilState extends State<_AiCoPilotVeil> {
     final reduce = MotionSettings.reduce(context);
 
     return ColoredBox(
-      color: c.surface.withValues(alpha: .82),
+      color: c.surface,
       child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.2,
-                  color: c.primary,
-                ),
-              ),
-              if (_current.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.sm - 2),
-                // Only this node animates on message change.
-                AnimatedSwitcher(
-                  duration: reduce ? Duration.zero : MotionDurations.slow,
-                  switchInCurve: MotionCurves.enter,
-                  switchOutCurve: MotionCurves.exit,
-                  layoutBuilder: (current, previous) => Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ...previous,
-                      if (current != null) current,
-                    ],
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    color: c.primaryInk,
                   ),
-                  transitionBuilder: (child, animation) {
-                    if (reduce) return child;
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.08),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
+                ),
+                if (_current.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm - 2),
+                  // Only this node animates on message change.
+                  AnimatedSwitcher(
+                    duration: reduce ? Duration.zero : MotionDurations.slow,
+                    switchInCurve: MotionCurves.enter,
+                    switchOutCurve: MotionCurves.exit,
+                    layoutBuilder: (current, previous) => Stack(
+                      alignment: Alignment.center,
+                      children: [...previous, if (current != null) current],
+                    ),
+                    transitionBuilder: (child, animation) {
+                      if (reduce) return child;
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.08),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      _current,
+                      key: ValueKey<String>(_current),
+                      textAlign: TextAlign.center,
+                      style: AppTypography.of(
+                        context,
+                        AppTypography.bodySm,
+                        color: c.textSecondary,
                       ),
-                    );
-                  },
-                  child: Text(
-                    _current,
-                    key: ValueKey<String>(_current),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      height: 1.4,
-                      fontWeight: FontWeight.w600,
-                      color: c.textSecondary,
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

@@ -43,12 +43,8 @@ class _OfflineCacheBannerState extends State<OfflineCacheBanner> {
               widget.english
                   ? 'Offline — showing saved data'
                   : 'غير متصل — عرض بيانات محفوظة',
-              style: TextStyle(
-                fontSize: 12,
-                height: 1.3,
-                fontWeight: FontWeight.w500,
-                color: c.textHint,
-              ),
+              style: AppTypography.of(context, AppTypography.bodySm,
+                  color: c.textHint),
             ),
           ),
         ],

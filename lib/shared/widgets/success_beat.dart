@@ -112,7 +112,7 @@ class _SuccessBeatOverlayState extends State<_SuccessBeatOverlay>
             child: Icon(
               Icons.check_rounded,
               size: 48,
-              color: context.sirati.primary,
+              color: context.sirati.primaryInk,
             ),
           ),
         ),

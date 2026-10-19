@@ -146,74 +146,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
     final isLoading = ref.watch(loginControllerProvider);
-    final compactHeader = MediaQuery.sizeOf(context).height < 520;
-
     return Scaffold(
       backgroundColor: context.sirati.background,
       body: AuthFormConstraint(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: context.sirati.surface,
-                border: Border(
-                  bottom: BorderSide(
-                      color: context.sirati.border.withValues(alpha: .5)),
-                ),
-              ),
-              padding: EdgeInsetsDirectional.only(
-                top: MediaQuery.of(context).padding.top +
-                    (compactHeader ? 10 : 16),
-                start: 20,
-                end: 12,
-                bottom: compactHeader ? 14 : 24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      if (Navigator.of(context).canPop())
-                        IconButton(
-                          onPressed: () => Navigator.maybePop(context),
-                          tooltip: MaterialLocalizations.of(context)
-                              .backButtonTooltip,
-                          icon: DirectionalIcon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: context.sirati.textPrimary,
-                            size: 18,
+        child: SafeArea(
+          child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        if (Navigator.of(context).canPop())
+                          IconButton(
+                            onPressed: () => Navigator.maybePop(context),
+                            tooltip: MaterialLocalizations.of(context)
+                                .backButtonTooltip,
+                            icon: DirectionalIcon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: context.sirati.textPrimary,
+                              size: 18,
+                            ),
                           ),
-                        ),
-                      const Spacer(),
-                      const LanguageToggle(),
-                    ],
-                  ),
-                  SizedBox(height: compactHeader ? 4 : 8),
-                  SiratiMark(size: compactHeader ? 44 : 56, elevated: true),
-                  SizedBox(height: compactHeader ? 8 : 14),
-                  Text(
-                    english ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: compactHeader ? 20 : 22,
-                        fontWeight: FontWeight.w800,
-                        color: context.sirati.primaryInk),
-                  ),
-                  SizedBox(height: compactHeader ? 4 : 6),
-                  Text(
-                    english ? 'Sign in to continue' : 'سجّل دخولك للمتابعة',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 14, color: context.sirati.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                child: AutofillGroup(
+                        const Spacer(),
+                        const LanguageToggle(),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    const Center(child: SiratiMark(size: 56)),
+                    const SizedBox(height: AppSpacing.xl),
+                    Text(
+                      english ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.of(
+                        context,
+                        AppTypography.headlineMd,
+                        color: context.sirati.primaryInk,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      english ? 'Sign in to continue' : 'سجّل دخولك للمتابعة',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.of(
+                        context,
+                        AppTypography.bodyMd,
+                        color: context.sirati.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    AutofillGroup(
                   child: Form(
                     key: _formKey,
                     autovalidateMode: _submitted
@@ -389,9 +371,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
+                  ],
+                ),
               ),
-            ),
-          ],
         ),
       ),
     );

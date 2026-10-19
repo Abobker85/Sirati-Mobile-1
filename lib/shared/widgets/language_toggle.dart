@@ -24,8 +24,8 @@ class LanguageToggle extends StatelessWidget {
           },
           customBorder: const CircleBorder(),
           child: SizedBox(
-            width: 42,
-            height: 42,
+            width: AppTouchTarget.min,
+            height: AppTouchTarget.min,
             child: Center(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
@@ -33,12 +33,11 @@ class LanguageToggle extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
                     english ? 'AR' : 'EN',
-                    style: TextStyle(
-                      // `primary` is a fill; ink is the AA text tone.
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.bodySm,
                       color: context.sirati.primaryInk,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    ).copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),
               ),

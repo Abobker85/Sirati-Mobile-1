@@ -43,9 +43,7 @@ class AppSnackBar {
         padding: EdgeInsets.zero,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         duration: duration,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: _AppSnackBarContent(
           message: message,
           icon: resolvedIcon,
@@ -71,23 +69,14 @@ class AppSnackBar {
         onAction: onAction,
       );
 
-  static void success(BuildContext context, String message) => show(
-        context,
-        message: message,
-        variant: AppSnackBarVariant.success,
-      );
+  static void success(BuildContext context, String message) =>
+      show(context, message: message, variant: AppSnackBarVariant.success);
 
-  static void info(BuildContext context, String message) => show(
-        context,
-        message: message,
-        variant: AppSnackBarVariant.info,
-      );
+  static void info(BuildContext context, String message) =>
+      show(context, message: message, variant: AppSnackBarVariant.info);
 
-  static void warning(BuildContext context, String message) => show(
-        context,
-        message: message,
-        variant: AppSnackBarVariant.warning,
-      );
+  static void warning(BuildContext context, String message) =>
+      show(context, message: message, variant: AppSnackBarVariant.warning);
 
   /// Show a snackbar for an [ApiException], picking the correct icon and
   /// offering a Retry action when the underlying error is retryable.
@@ -110,7 +99,9 @@ class AppSnackBar {
   }
 
   static _SnackBarScheme _scheme(
-      BuildContext context, AppSnackBarVariant variant) {
+    BuildContext context,
+    AppSnackBarVariant variant,
+  ) {
     final c = context.sirati;
     switch (variant) {
       case AppSnackBarVariant.error:
@@ -121,7 +112,7 @@ class AppSnackBar {
           iconBackground: c.onErrorContainer,
           iconColor: c.errorLight,
           textColor: c.textPrimary,
-          accent: c.error,
+          accent: c.onErrorContainer,
         );
       case AppSnackBarVariant.success:
         return _SnackBarScheme(
@@ -131,7 +122,7 @@ class AppSnackBar {
           iconBackground: c.onSuccessContainer,
           iconColor: c.successLight,
           textColor: c.textPrimary,
-          accent: c.success,
+          accent: c.onSuccessContainer,
         );
       case AppSnackBarVariant.warning:
         return _SnackBarScheme(
@@ -141,7 +132,7 @@ class AppSnackBar {
           iconBackground: c.onWarningContainer,
           iconColor: c.warningLight,
           textColor: c.textPrimary,
-          accent: c.warning,
+          accent: c.onWarningContainer,
         );
       case AppSnackBarVariant.info:
         return _SnackBarScheme(
@@ -151,7 +142,7 @@ class AppSnackBar {
           iconBackground: c.onInfoContainer,
           iconColor: c.infoLight,
           textColor: c.textPrimary,
-          accent: c.info,
+          accent: c.onInfoContainer,
         );
     }
   }
@@ -244,33 +235,37 @@ class _AppSnackBarContent extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: scheme.iconBackground,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 20, color: scheme.iconColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  height: 1.4,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.textColor,
+            Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: scheme.iconBackground,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 20, color: scheme.iconColor),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    message,
+                    textAlign: TextAlign.start,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.bodySm,
+                      color: scheme.textColor,
+                    ),
+                  ),
+                ),
+              ],
             ),
             if (showAction) ...[
-              const SizedBox(width: 8),
+              const SizedBox(height: 8),
               TextButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -278,14 +273,15 @@ class _AppSnackBarContent extends StatelessWidget {
                 },
                 style: TextButton.styleFrom(
                   foregroundColor: scheme.accent,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  minimumSize: const Size(0, 32),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  textStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
+                  minimumSize: const Size(
+                    AppTouchTarget.min,
+                    AppTouchTarget.min,
+                  ),
+                  textStyle: AppTypography.of(context, AppTypography.labelLg),
                 ),
                 child: Text(actionLabel!),
               ),

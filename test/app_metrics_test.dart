@@ -15,7 +15,7 @@ void main() {
     expect(AppRadius.lg, 16);
     expect(AppRadius.xl, 18);
     expect(AppElevation.none, 0);
-    expect(AppElevation.card, 1);
+    expect(AppElevation.card, 0);
     expect(AppElevation.raised, 3);
     expect(AppElevation.sheet, 6);
     expect(AppElevation.dialog, 12);
