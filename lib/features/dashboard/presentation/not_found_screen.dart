@@ -12,7 +12,7 @@ class NotFoundScreen extends StatelessWidget {
     final english = AppLocale.isEnglish(context);
     return Scaffold(
       backgroundColor: context.sirati.background,
-      appBar: AppBar(title: Text(english ? 'Sirati' : 'سيرتي')),
+      appBar: AppBar(title: Text(english ? 'Siratie' : 'سيرتي')),
       body: AppEmptyState(
         icon: Icons.map_outlined,
         title: english ? 'Page not found' : 'الصفحة غير موجودة',

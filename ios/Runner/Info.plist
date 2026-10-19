@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Sirati</string>
+	<string>Siratie</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>sirati</string>
+	<string>Siratie</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -51,11 +51,11 @@
 		<string>remote-notification</string>
 	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Sirati needs access to your photo library so you can select a profile photo or attach images to your CV.</string>
+	<string>Siratie needs access to your photo library so you can select a profile photo or attach images to your CV.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Sirati needs access to your camera so you can take a profile photo directly within the app.</string>
+	<string>Siratie needs access to your camera so you can take a profile photo directly within the app.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Sirati uses your location to show job opportunities and CV templates relevant to your area.</string>
+	<string>Siratie uses your location to show job opportunities and CV templates relevant to your area.</string>
 	<key>MinimumOSVersion</key>
 	<string>15.0</string>
 	<key>CFBundleURLTypes</key>

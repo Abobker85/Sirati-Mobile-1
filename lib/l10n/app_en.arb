@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "Sirati",
+  "appTitle": "Siratie",
   "switchToEnglish": "Switch to English",
   "switchToArabic": "Switch to Arabic",
   "languageEnglish": "English",
@@ -54,7 +54,7 @@
       }
     }
   },
-  "welcomeToSirati": "Welcome to Sirati",
+  "welcomeToSirati": "Welcome to Siratie",
   "buildCvProfessionally": "Build your CV professionally",
   "createAccount": "Create New Account",
   "signIn": "Sign In",
@@ -131,7 +131,7 @@
   "privacyPolicy": "Privacy policy",
   "contactUs": "Contact us",
   "contactUsSubtitle": "Technical support & inquiries",
-  "contactUsEmailSubject": "Sirati Support Inquiry",
+  "contactUsEmailSubject": "Siratie Support Inquiry",
   "contactUsFallback": "Please email support at: {email}",
   "@contactUsFallback": {
     "placeholders": {
@@ -531,7 +531,7 @@
       }
     }
   },
-  "premiumGateAppBar": "Sirati Premium",
+  "premiumGateAppBar": "Siratie Premium",
   "premiumGateHeroTitle": "Unlock your full career toolkit",
   "premiumGateHeroBody": "AI tools built for the applicant tracking systems (ATS) employers use to screen CVs.",
   "premiumGateBenefitsTitle": "What you get",
