@@ -467,7 +467,7 @@
   "atsInputJobTitleRequired": "يرجى إدخال المسمى الوظيفي المستهدف",
   "atsInputJobDescription": "وصف الوظيفة (اختياري)",
   "atsInputJobDescriptionHint": "الصق نص الإعلان الكامل هنا...",
-  "atsInputJobDescriptionTooLong": "يجب ألا يزيد وصف الوظيفة عن {max} حرفاً.",
+  "atsInputJobDescriptionTooLong": "يجب ألا يزيد وصف الوظيفة عن {max} حرف.",
   "atsInputResumeTextHint": "الصق نص السيرة الذاتية كاملاً هنا...",
   "atsInputResumeTextRequired": "الصق نص السيرة أو ارفع ملف PDF/TXT.",
   "atsInputAnalyze": "تحليل السيرة الذاتية",

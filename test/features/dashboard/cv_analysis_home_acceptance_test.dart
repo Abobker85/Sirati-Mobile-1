@@ -878,7 +878,7 @@ void additionalTests() {
       await tester.pumpAndSettle();
       expect(
         find.text(
-          'يجب ألا يزيد وصف الوظيفة عن ${AnalysisLimits.jobDescriptionMax} حرفاً.',
+          'يجب ألا يزيد وصف الوظيفة عن ${AnalysisLimits.jobDescriptionMax} حرف.',
         ),
         findsOneWidget,
       );
