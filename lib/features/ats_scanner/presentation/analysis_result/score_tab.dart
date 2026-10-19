@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/features/ats_scanner/domain/score_band.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/keyword_group.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/keyword_source_badge.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result/prioritized_fixes.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_band_style.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_ring.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
@@ -10,10 +11,16 @@ import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
 
 /// First tab: score hero, per-criterion breakdown, and keyword coverage.
 class ScoreTab extends StatelessWidget {
-  const ScoreTab({super.key, required this.analysis, required this.english});
+  const ScoreTab({
+    super.key,
+    required this.analysis,
+    required this.english,
+    this.trailing,
+  });
 
   final CvAnalysis analysis;
   final bool english;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +29,8 @@ class ScoreTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
       children: [
         _ScoreHero(analysis: analysis, english: english),
+        const SizedBox(height: 24),
+        PrioritizedFixes(weaknesses: analysis.weaknesses),
         const SizedBox(height: 24),
         SectionTitle(english ? 'Criteria Details' : 'تفاصيل المعايير'),
         const SizedBox(height: 12),
@@ -34,6 +43,7 @@ class ScoreTab extends StatelessWidget {
           missing: analysis.keywordsMissing,
           english: english,
         ),
+        if (trailing != null) trailing!,
       ],
     );
   }
@@ -89,8 +99,11 @@ class _ScoreHero extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              Icon(Icons.work_outline_rounded,
-                  size: 16, color: c.textSecondary),
+              Icon(
+                Icons.work_outline_rounded,
+                size: 16,
+                color: c.textSecondary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -214,10 +227,14 @@ class _CriterionRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
                   criterion.label,
                   style: TextStyle(
                     fontSize: 13,
@@ -225,29 +242,30 @@ class _CriterionRow extends StatelessWidget {
                     color: c.textPrimary,
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${criterion.score} / ${criterion.max}',
-                style: TextStyle(fontSize: 12, color: c.textSecondary),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: criterionBand.container(c),
-                  borderRadius: BorderRadius.circular(5),
+                Text(
+                  '${criterion.score} / ${criterion.max}',
+                  style: TextStyle(fontSize: 12, color: c.textSecondary),
                 ),
-                child: Text(
-                  '${(ratio * 100).round()}%',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: criterionBand.onContainer(c),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: criterionBand.container(c),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    '${(ratio * 100).round()}%',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: criterionBand.onContainer(c),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 7),
           AnimatedAtsScoreBar(

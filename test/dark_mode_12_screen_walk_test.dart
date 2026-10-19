@@ -13,6 +13,7 @@ import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/features/dashboard/presentation/education_detail_screen.dart';
 import 'package:sirati/features/dashboard/presentation/education_screen.dart';
 import 'package:sirati/features/dashboard/presentation/history_screen.dart';
+import 'package:sirati/features/dashboard/presentation/home/dashboard_tool_card.dart';
 import 'package:sirati/features/dashboard/presentation/home_screen.dart';
 import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_title_display.dart';
@@ -23,6 +24,8 @@ import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/job_title_picker_field.dart';
+
+import 'support/contrast_probe.dart';
 
 /// Exhaustive dark-mode walk across all 12 audited screens and shared components (SIRATI-80).
 ///
@@ -341,32 +344,29 @@ void main() {
       );
       await tester.pump();
 
-      final jobTitleLabel = tester.widget<Text>(find.text('Target job title'));
-      final uploadLabel = tester.widget<Text>(find.text('Upload resume file'));
-      // Below the fold since the JD card was added; build it by scrolling.
+      for (final source in AnalysisCvSource.values) {
+        final button = tester.widget<OutlinedButton>(
+          find.byKey(ValueKey(source)),
+        );
+        final foreground = button.style!.foregroundColor!.resolve({})!;
+        final background = button.style!.backgroundColor!.resolve({})!;
+        expect(
+          AppContrast.ratio(foreground, background),
+          greaterThanOrEqualTo(4.5),
+        );
+      }
       await tester.scrollUntilVisible(
-        find.text('Paste resume text'),
-        300,
+        find.text('Target job title'),
+        250,
         scrollable: find.byType(Scrollable).first,
       );
-      final pasteLabel = tester.widget<Text>(find.text('Paste resume text'));
-
+      final jobTitleLabel = tester.widget<Text>(find.text('Target job title'));
       expect(jobTitleLabel.style?.color, SiratiColors.dark.textPrimary);
-      expect(uploadLabel.style?.color, SiratiColors.dark.textPrimary);
-      expect(pasteLabel.style?.color, SiratiColors.dark.textPrimary);
-
       assertDarkAaContrast(
         jobTitleLabel.style!.color!,
         contextDescription: 'CvAnalysisScreen target job title label',
       );
-      assertDarkAaContrast(
-        uploadLabel.style!.color!,
-        contextDescription: 'CvAnalysisScreen upload file label',
-      );
-      assertDarkAaContrast(
-        pasteLabel.style!.color!,
-        contextDescription: 'CvAnalysisScreen paste text label',
-      );
+
     });
 
     http.Client createMockClient() {
@@ -706,7 +706,7 @@ void main() {
     });
 
     testWidgets(
-        '12. HomeScreen renders dashboard quick stat labels with AA contrast',
+        '12. HomeScreen renders tool labels with AA contrast',
         (tester) async {
       await http.runWithClient(() async {
         await tester.pumpWidget(
@@ -714,15 +714,32 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Audited line 646: Quick stat card label in HomeScreen
-        final statLabelFinder = find.text('Analyses');
-        expect(statLabelFinder, findsOneWidget);
-        final statLabel = tester.widget<Text>(statLabelFinder);
-        expect(statLabel.style?.color, SiratiColors.dark.textSecondary);
-        assertDarkAaContrast(
-          statLabel.style!.color!,
-          contextDescription: 'HomeScreen dashboard stat card label (line 646)',
+        // The redesigned Home replaces the stat cards with compact tools.
+        // Audit every label against its actual painted surface in both cards.
+        await tester.scrollUntilVisible(
+          find.byType(DashboardToolCard).first,
+          250,
+          scrollable: find.byType(Scrollable).first,
         );
+        expect(find.byType(DashboardToolCard), findsNWidgets(2));
+        final labels = find.descendant(
+          of: find.byType(DashboardToolCard),
+          matching: find.byType(Text),
+        ).evaluate();
+        expect(labels, isNotEmpty);
+        for (final element in labels) {
+          final text = element.widget as Text;
+          final color = text.style?.color ??
+              DefaultTextStyle.of(element).style.color!;
+          for (final background in paintedBackgroundsOf(element)) {
+            assertDarkAaContrast(
+              color,
+              surface: background,
+              contextDescription: 'Home tool label: ${text.data}',
+            );
+          }
+        }
+
       }, createMockClient);
     });
   });

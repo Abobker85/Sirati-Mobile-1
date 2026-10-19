@@ -103,15 +103,23 @@ Future<void> _submitAnalysis(
   );
   await tester.pump();
 
+  // Paste is an explicit source in the redesigned input screen. Keep all
+  // polling/cancellation assertions and original field copy unchanged.
+  await tester.tap(find.byKey(const ValueKey(AnalysisCvSource.paste)));
+  await tester.pump();
+  await tester.scrollUntilVisible(
+    _fieldWithHint('e.g. Laravel Backend Developer'),
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
   await tester.enterText(
     _fieldWithHint('e.g. Laravel Backend Developer'),
     'Laravel Developer',
   );
-  // The paste field sits below the fold (JD card + 12-line textarea), and
-  // ListView doesn't build off-screen children — scroll it into view first.
+  // Return to the selected source panel to enter the resume text.
   await tester.scrollUntilVisible(
     _fieldWithHint('Paste the full resume text here...'),
-    300,
+    -300,
     scrollable: find.byType(Scrollable).first,
   );
   await tester.enterText(

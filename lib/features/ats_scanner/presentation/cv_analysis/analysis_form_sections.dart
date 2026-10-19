@@ -101,7 +101,7 @@ class UploadDropZone extends StatelessWidget {
         color: colors.primaryLight,
         shape: RoundedRectangleBorder(
           borderRadius: radius,
-          side: BorderSide(color: colors.primaryMid, width: 1.5),
+          side: BorderSide(color: colors.primaryInk, width: 1.5),
         ),
         child: InkWell(
           onTap: onTap,
@@ -121,7 +121,7 @@ class UploadDropZone extends StatelessWidget {
                     child: Icon(
                       Icons.cloud_upload_outlined,
                       size: 28,
-                      color: colors.primary,
+                      color: colors.primaryInk,
                     ),
                   ),
                 ),

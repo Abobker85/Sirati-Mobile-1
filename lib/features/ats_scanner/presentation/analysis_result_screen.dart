@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
@@ -30,46 +29,37 @@ class AnalysisResultScreen extends ConsumerWidget {
 
     return Directionality(
       textDirection: AppLocale.direction(context),
-      child: DefaultTabController(
-        length: 2,
-        child: Scaffold(
-          backgroundColor: context.sirati.background,
-          appBar: AppBar(
-            title: Text(english ? 'Analysis Results' : 'نتائج التحليل'),
-            actions: const [LanguageToggle()],
-            bottom: TabBar(
-              tabs: [
-                Tab(text: english ? 'Score & Criteria' : 'الدرجة والمعايير'),
-                Tab(text: english ? 'Recommendations' : 'التوصيات'),
-              ],
+      child: Scaffold(
+        backgroundColor: context.sirati.background,
+        appBar: AppBar(
+          title: Text(english ? 'Analysis Results' : 'نتائج التحليل'),
+          actions: const [LanguageToggle()],
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+            decoration: BoxDecoration(
+              color: context.sirati.surface,
+              border: Border(top: BorderSide(color: context.sirati.border)),
+              boxShadow: context.sirati.softShadow,
+            ),
+            child: SubmitButton(
+              label: english ? 'Generate Improved CV' : 'توليد سيرة محسّنة',
+              loadingLabel: english ? 'Generating...' : 'جارٍ التوليد...',
+              isLoading: isGenerating,
+              icon: Icons.auto_awesome_rounded,
+              onPressed: isGenerating ? null : () => _generate(context, ref),
             ),
           ),
-          bottomNavigationBar: SafeArea(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-              decoration: BoxDecoration(
-                color: context.sirati.surface,
-                border: Border(top: BorderSide(color: context.sirati.border)),
-                boxShadow: context.sirati.softShadow,
-              ),
-              child: SubmitButton(
-                label: english ? 'Generate Improved CV' : 'توليد سيرة محسّنة',
-                loadingLabel: english ? 'Generating...' : 'جارٍ التوليد...',
-                isLoading: isGenerating,
-                icon: Icons.auto_awesome_rounded,
-                onPressed: isGenerating ? null : () => _generate(context, ref),
-              ),
-            ),
-          ),
-          body: TabBarView(
-            children: [
-              ScoreTab(analysis: analysis, english: english),
-              RecommendationsTab(
-                strengths: analysis.strengths,
-                quickWins: analysis.quickWins,
-                english: english,
-              ),
-            ],
+        ),
+        body: ScoreTab(
+          analysis: analysis,
+          english: english,
+          trailing: RecommendationsTab(
+            strengths: analysis.strengths,
+            quickWins: analysis.quickWins,
+            english: english,
+            embedded: true,
           ),
         ),
       ),
@@ -79,8 +69,9 @@ class AnalysisResultScreen extends ConsumerWidget {
   Future<void> _generate(BuildContext context, WidgetRef ref) async {
     if (!context.mounted) return;
     final english = AppLocale.isEnglish(context);
-    final controller =
-        ref.read(improvedCvControllerProvider(analysis.id).notifier);
+    final controller = ref.read(
+      improvedCvControllerProvider(analysis.id).notifier,
+    );
 
     final progress = await AiProgressOverlay.show(
       context,
@@ -88,8 +79,9 @@ class AnalysisResultScreen extends ConsumerWidget {
       english: english,
       onCancelled: controller.cancel,
     );
-    final outcome =
-        await controller.generate(isCancelled: () => progress.isCancelled);
+    final outcome = await controller.generate(
+      isCancelled: () => progress.isCancelled,
+    );
     await progress.dismiss();
     if (!context.mounted) return;
 
@@ -108,11 +100,11 @@ class AnalysisResultScreen extends ConsumerWidget {
           );
         }
       case ImprovedCvReady(
-          :final generatedCvId,
-          :final timedOut,
-          :final aiFailed,
-          :final aiError,
-        ):
+        :final generatedCvId,
+        :final timedOut,
+        :final aiFailed,
+        :final aiError,
+      ):
         if (timedOut) {
           AppSnackBar.warning(
             context,
