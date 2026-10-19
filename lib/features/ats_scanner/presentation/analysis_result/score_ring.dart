@@ -36,7 +36,7 @@ class AnimatedScoreRing extends StatelessWidget {
                 CircularProgressIndicator(
                   value: value,
                   strokeWidth: 10,
-                  backgroundColor: context.sirati.border,
+                  backgroundColor: context.sirati.surface,
                   valueColor: AlwaysStoppedAnimation(scoreColor),
                 ),
                 Center(

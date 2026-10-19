@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:sirati/features/ats_scanner/domain/score_band.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/keyword_group.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/keyword_source_badge.dart';
-import 'package:sirati/features/ats_scanner/presentation/analysis_result/prioritized_fixes.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_band_style.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_ring.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
@@ -30,19 +30,29 @@ class ScoreTab extends StatelessWidget {
       children: [
         _ScoreHero(analysis: analysis, english: english),
         const SizedBox(height: 24),
-        PrioritizedFixes(weaknesses: analysis.weaknesses),
+        if (analysis.hasKeywordSummary)
+          Text(
+            AppLocalizations.of(context).atsResultKeywordSummary(
+              analysis.keywordsFound.length,
+              analysis.keywordsMissing.length,
+            ),
+            key: const ValueKey('ats-result-keyword-summary'),
+            style: TextStyle(color: context.sirati.textSecondary),
+          ),
         const SizedBox(height: 24),
         SectionTitle(english ? 'Criteria Details' : 'تفاصيل المعايير'),
         const SizedBox(height: 12),
         _CriteriaCard(criteria: analysis.criteria),
         const SizedBox(height: 24),
-        SectionTitle(english ? 'Keywords' : 'الكلمات المفتاحية'),
+        if (analysis.hasKeywordSummary)
+          SectionTitle(english ? 'Keywords' : 'الكلمات المفتاحية'),
         const SizedBox(height: 12),
-        _KeywordsCard(
-          found: analysis.keywordsFound,
-          missing: analysis.keywordsMissing,
-          english: english,
-        ),
+        if (analysis.hasKeywordSummary)
+          _KeywordsCard(
+            found: analysis.keywordsFound,
+            missing: analysis.keywordsMissing,
+            english: english,
+          ),
         if (trailing != null) trailing!,
       ],
     );
@@ -59,7 +69,7 @@ class _ScoreHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.sirati;
     final band = ScoreBand.of(analysis.scoreTotal);
-    final scoreColor = band.color(c);
+    final scoreColor = band.onContainer(c);
     final jobMatch = analysis.jobMatch.clamp(0, 100);
 
     return Container(
@@ -71,29 +81,44 @@ class _ScoreHero extends StatelessWidget {
       ),
       child: Column(
         children: [
-          AnimatedScoreRing(score: analysis.scoreTotal, scoreColor: scoreColor),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: band.container(c),
-              borderRadius: BorderRadius.circular(10),
+          if (analysis.hasScore) ...[
+            AnimatedScoreRing(
+              score: analysis.scoreTotal,
+              scoreColor: scoreColor,
             ),
-            child: Text(
-              english ? 'Grade  ${analysis.grade}' : 'تقدير  ${analysis.grade}',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: band.onContainer(c),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: band.container(c),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                english
+                    ? 'Grade  ${analysis.grade}'
+                    : 'تقدير  ${analysis.grade}',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: band.onContainer(c),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            band.description(english: english),
-            style: TextStyle(fontSize: 12, color: c.textSecondary, height: 1.4),
-            textAlign: TextAlign.center,
-          ),
+            const SizedBox(height: 6),
+            Text(
+              band.description(english: english),
+              style: TextStyle(
+                fontSize: 12,
+                color: c.textSecondary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ] else
+            Text(
+              AppLocalizations.of(context).homeHeroScoreUnavailable,
+              style: TextStyle(color: c.textSecondary),
+            ),
           const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 14),
@@ -116,42 +141,50 @@ class _ScoreHero extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: c.primaryLight,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '$jobMatch%',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: c.primaryInk,
+              if (analysis.hasJobMatch) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: c.primaryLight,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '$jobMatch%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: c.primaryInk,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
-          const SizedBox(height: 8),
-          AnimatedAtsScoreBar(
-            value: jobMatch / 100,
-            color: c.primary,
-            height: 7,
-            borderRadius: 6,
-            // Primary score: haptic the moment the elastic fill settles.
-            celebrateOnComplete: true,
-            semanticLabel: english ? 'Job match' : 'تطابق الوظيفة',
-          ),
-          const SizedBox(height: 6),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              english ? 'Job match percentage' : 'نسبة التطابق مع الوظيفة',
-              style: TextStyle(fontSize: 11, color: c.textHint),
+          if (analysis.hasJobMatch) ...[
+            const SizedBox(height: 8),
+            AnimatedAtsScoreBar(
+              value: jobMatch / 100,
+              color: c.primaryInk,
+              trackColor: c.surface,
+              height: 7,
+              borderRadius: 6,
+              // Primary score: haptic the moment the elastic fill settles.
+              celebrateOnComplete: true,
+              semanticLabel: english ? 'Job match' : 'تطابق الوظيفة',
             ),
-          ),
+            const SizedBox(height: 6),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                english ? 'Job match percentage' : 'نسبة التطابق مع الوظيفة',
+                style: TextStyle(fontSize: 11, color: c.textHint),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
@@ -221,7 +254,7 @@ class _CriterionRow extends StatelessWidget {
     final c = context.sirati;
     final ratio = criterionRatio(criterion.score, criterion.max);
     final criterionBand = CriterionBand.of(ratio);
-    final barColor = criterionBand.color(c);
+    final barColor = criterionBand.onContainer(c);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -271,6 +304,7 @@ class _CriterionRow extends StatelessWidget {
           AnimatedAtsScoreBar(
             value: ratio,
             color: barColor,
+            trackColor: c.surface,
             height: 6,
             borderRadius: 6,
           ),

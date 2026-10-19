@@ -10,12 +10,14 @@ class PrioritizedFixes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (weaknesses.isEmpty) return const SizedBox.shrink();
     final l = AppLocalizations.of(context);
     final c = context.sirati;
     int rank(String p) => switch (p) {
       'high' => 0,
+      'medium' => 1,
       'low' => 2,
-      _ => 1,
+      _ => 3,
     };
     final ordered = weaknesses.indexed.toList()
       ..sort((a, b) {
@@ -45,28 +47,29 @@ class PrioritizedFixes extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: c.primaryLight,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    switch (weakness.priority) {
-                      'high' => l.atsResultHighPriority,
-                      'low' => l.atsResultLowPriority,
-                      _ => l.atsResultMediumPriority,
-                    },
-                    style: TextStyle(
-                      color: c.primaryInk,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                if (const {'high', 'medium', 'low'}.contains(weakness.priority))
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: c.primaryLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      switch (weakness.priority) {
+                        'high' => l.atsResultHighPriority,
+                        'low' => l.atsResultLowPriority,
+                        _ => l.atsResultMediumPriority,
+                      },
+                      style: TextStyle(
+                        color: c.primaryInk,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
                 if (weakness.issue.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(

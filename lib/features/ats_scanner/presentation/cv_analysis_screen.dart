@@ -32,10 +32,16 @@ bool pausesPolling(AppLifecycleState state) =>
 enum AnalysisCvSource { saved, upload, paste }
 
 class CvAnalysisScreen extends ConsumerStatefulWidget {
-  const CvAnalysisScreen({super.key, this.savedCvs, this.onRetrySaved});
+  const CvAnalysisScreen({
+    super.key,
+    this.savedCvs,
+    this.onRetrySaved,
+    this.initialCvId,
+  });
 
   final AsyncValue<List<SavedAnalysisCv>>? savedCvs;
   final VoidCallback? onRetrySaved;
+  final int? initialCvId;
 
   @override
   ConsumerState<CvAnalysisScreen> createState() => _CvAnalysisScreenState();
@@ -61,6 +67,7 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
   @override
   void initState() {
     super.initState();
+    _selectedCvId = widget.initialCvId;
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -109,8 +116,8 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
         AppSnackBar.error(
           context,
           english
-              ? 'File must be 5 MB or smaller.'
-              : 'يجب أن يكون حجم الملف 5 ميغابايت أو أقل.',
+              ? 'File must be ${AnalysisLimits.maxUploadBytes ~/ (1024 * 1024)} MB or smaller.'
+              : 'يجب أن يكون حجم الملف ${AnalysisLimits.maxUploadBytes ~/ (1024 * 1024)} ميغابايت أو أقل.',
         );
       case UploadRejection.unsupportedType:
         AppSnackBar.error(
@@ -132,8 +139,11 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       unawaited(HapticFeedback.selectionClick());
       return;
     }
+    final AsyncValue<List<SavedAnalysisCv>> saved =
+        widget.savedCvs ?? ref.read(analysisSavedCvsProvider(english));
     if (_source == AnalysisCvSource.saved &&
         (_selectedCvId == null ||
+            saved.value?.any((cv) => cv.id == _selectedCvId) != true ||
             ref
                     .read(analysisSavedCvProvider(_selectedCvId!))
                     .value
@@ -312,10 +322,12 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
     final AsyncValue<List<SavedAnalysisCv>> saved =
         widget.savedCvs ?? ref.watch(analysisSavedCvsProvider(english));
     final rows = saved.value ?? const <SavedAnalysisCv>[];
+    // An explicit CV must never silently fall back to a different record.
+    _selectedCvId ??=
+        widget.initialCvId ?? (rows.isEmpty ? null : rows.first.id);
     final selectedId = rows.any((cv) => cv.id == _selectedCvId)
         ? _selectedCvId
-        : (rows.isEmpty ? null : rows.first.id);
-    _selectedCvId = selectedId;
+        : null;
     final detail = _source == AnalysisCvSource.saved && selectedId != null
         ? ref.watch(analysisSavedCvProvider(selectedId))
         : null;
@@ -362,199 +374,225 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
             56 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 2),
         title: Text(l.atsInputTitle),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-          children: [
-            Text(l.atsInputIntroduction, style: TextStyle(color: c.textSecondary)),
-            const SizedBox(height: 20),
-            section(
-              l.atsInputCvSource,
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final stacked =
-                          MediaQuery.textScalerOf(context).scale(14) > 21;
-                      final buttons = [
-                        for (final source in AnalysisCvSource.values)
-                          Semantics(
-                            selected: _source == source,
-                            child: OutlinedButton(
-                              key: ValueKey(source),
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: _source == source
-                                    ? c.primaryLight
-                                    : c.surface,
-                                foregroundColor: _source == source
-                                    ? c.primaryInk
-                                    : c.textSecondary,
-                                side: BorderSide(
-                                  color: _source == source
-                                      ? c.primaryInk
-                                      : c.textSecondary,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 12,
-                                ),
-                              ),
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => setState(() => _source = source),
-                              child: Text(switch (source) {
-                                AnalysisCvSource.saved => l.atsInputSavedCv,
-                                AnalysisCvSource.upload => l.atsInputUploadFile,
-                                AnalysisCvSource.paste => l.atsInputPasteText,
-                              }, textAlign: TextAlign.center),
-                            ),
-                          ),
-                      ];
-                      return stacked
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: buttons,
-                            )
-                          : Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (var i = 0; i < buttons.length; i++) ...[
-                                  if (i > 0) const SizedBox(width: 6),
-                                  Expanded(child: buttons[i]),
-                                ],
-                              ],
-                            );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  if (_source == AnalysisCvSource.saved) ...[
-                    if (saved.isLoading) Text(l.savedCvsLoading),
-                    if (saved.hasError) ...[
-                      Text(l.atsInputSavedCvsError),
-                      TextButton(onPressed: retry, child: Text(l.retry)),
-                    ] else if (!saved.isLoading && rows.isEmpty)
-                      Text(l.atsInputNoSavedCvs),
-                    if (rows.isNotEmpty) ...[
-                      DropdownButtonFormField<int>(
-                        key: ValueKey(selectedId),
-                        initialValue: selectedId,
-                        isExpanded: true,
-                        decoration: decoration(l.atsInputSelectCv),
-                        items: [
-                          for (final cv in rows)
-                            DropdownMenuItem(
-                              value: cv.id,
-                              child: Text(
-                                cv.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                        ],
-                        onChanged: _isLoading
-                            ? null
-                            : (id) => setState(() => _selectedCvId = id),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        l.atsInputSavedCvHint,
-                        style: TextStyle(color: c.textSecondary),
-                      ),
-                      if (detail?.isLoading == true) Text(l.savedCvsLoading),
-                      if (detail?.hasError == true) ...[
-                        Text(l.atsInputSavedCvsError),
-                        TextButton(onPressed: retry, child: Text(l.retry)),
-                      ] else if (detail?.value?.generatedMarkdown
-                              .trim()
-                              .isEmpty ==
-                          true)
-                        Text(l.atsInputCvTextUnavailable),
-                    ],
-                  ],
-                  if (_source == AnalysisCvSource.upload)
-                    if (file == null)
-                      UploadDropZone(onTap: () => unawaited(_pickFile()))
-                    else
-                      SelectedFileTile(
-                        fileName: file.name,
-                        onRemove: () => setState(() => _uploadedFile = null),
-                      ),
-                  if (_source == AnalysisCvSource.paste)
-                    TextFormField(
-                      key: const ValueKey('ats-input-resume-text'),
-                      controller: _resumeTextController,
-                      autovalidateMode: _autovalidate,
-                      minLines: 8,
-                      maxLines: null,
-                      decoration: decoration(l.atsInputResumeTextHint),
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? l.atsInputResumeTextRequired
-                          : null,
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            section(
-              l.atsInputJobTitle,
-              TextFormField(
-                key: const ValueKey('ats-input-job-title'),
-                controller: _jobTitleController,
-                autovalidateMode: _autovalidate,
-                textInputAction: TextInputAction.next,
-                decoration: decoration(l.atsInputJobTitleHint),
-                validator: (v) => switch (AnalysisRules.jobTitle(v)) {
-                  AnalysisFieldError.required => l.atsInputJobTitleRequired,
-                  AnalysisFieldError.tooLong => l.atsInputJobTitleTooLong,
-                  null => null,
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-            section(
-              l.atsInputJobDescription,
-              Column(
-                children: [
-                  TextFormField(
-                    key: const ValueKey('ats-input-job-description'),
-                    controller: _jobDescriptionController,
-                    minLines: 5,
-                    maxLines: null,
-                    autovalidateMode: _autovalidate,
-                    decoration: decoration(l.atsInputJobDescriptionHint),
-                    onChanged: (_) => setState(() {}),
-                    validator: (v) => AnalysisRules.jobDescription(v) == null
-                        ? null
-                        : l.atsInputJobDescriptionTooLong,
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: Text(
-                      '${_jobDescriptionController.text.length} / ${AnalysisLimits.jobDescriptionMax}',
-                      style: TextStyle(color: c.textSecondary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            SubmitButton(
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+            child: SubmitButton(
+              key: const ValueKey('ats-input-docked-analyze'),
               label: l.atsInputAnalyze,
               loadingLabel: l.atsInputAnalyzing,
               isLoading: _isLoading,
               icon: Icons.analytics_outlined,
               onPressed: () => unawaited(_submit()),
             ),
-            const SizedBox(height: 12),
-            Text(
-              l.atsInputPrivacy,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: c.textSecondary, fontSize: 12),
-            ),
-          ],
+          ),
+        ),
+      ),
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l.atsInputIntroduction,
+                style: TextStyle(color: c.textSecondary),
+              ),
+              const SizedBox(height: 20),
+              section(
+                l.atsInputCvSource,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final stacked =
+                            MediaQuery.textScalerOf(context).scale(14) > 21;
+                        final buttons = [
+                          for (final source in AnalysisCvSource.values)
+                            Semantics(
+                              selected: _source == source,
+                              child: OutlinedButton(
+                                key: ValueKey(source),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size(48, 48),
+                                  backgroundColor: _source == source
+                                      ? c.primaryLight
+                                      : c.surface,
+                                  foregroundColor: _source == source
+                                      ? c.primaryInk
+                                      : c.textSecondary,
+                                  side: BorderSide(
+                                    color: _source == source
+                                        ? c.primaryInk
+                                        : c.textSecondary,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 12,
+                                  ),
+                                ),
+                                onPressed: _isLoading
+                                    ? null
+                                    : () => setState(() => _source = source),
+                                child: Text(switch (source) {
+                                  AnalysisCvSource.saved => l.atsInputSavedCv,
+                                  AnalysisCvSource.upload =>
+                                    l.atsInputUploadFile,
+                                  AnalysisCvSource.paste => l.atsInputPasteText,
+                                }, textAlign: TextAlign.center),
+                              ),
+                            ),
+                        ];
+                        return stacked
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: buttons,
+                              )
+                            : Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  for (var i = 0; i < buttons.length; i++) ...[
+                                    if (i > 0) const SizedBox(width: 6),
+                                    Expanded(child: buttons[i]),
+                                  ],
+                                ],
+                              );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    if (_source == AnalysisCvSource.saved) ...[
+                      if (saved.isLoading) Text(l.savedCvsLoading),
+                      if (saved.hasError) ...[
+                        Text(l.atsInputSavedCvsError),
+                        TextButton(onPressed: retry, child: Text(l.retry)),
+                      ] else if (!saved.isLoading && rows.isEmpty)
+                        Text(l.atsInputNoSavedCvs),
+                      if (rows.isNotEmpty) ...[
+                        DropdownButtonFormField<int>(
+                          key: ValueKey(selectedId),
+                          initialValue: selectedId,
+                          isExpanded: true,
+                          itemHeight: null,
+                          decoration: decoration(l.atsInputSelectCv),
+                          items: [
+                            for (final cv in rows)
+                              DropdownMenuItem(
+                                value: cv.id,
+                                child: Text(
+                                  cv.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
+                          onChanged: _isLoading
+                              ? null
+                              : (id) => setState(() => _selectedCvId = id),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          l.atsInputSavedCvHint,
+                          style: TextStyle(color: c.textSecondary),
+                        ),
+                        if (detail?.isLoading == true) Text(l.savedCvsLoading),
+                        if (detail?.hasError == true) ...[
+                          Text(l.atsInputSavedCvsError),
+                          TextButton(onPressed: retry, child: Text(l.retry)),
+                        ] else if (detail?.value?.generatedMarkdown
+                                .trim()
+                                .isEmpty ==
+                            true)
+                          Text(l.atsInputCvTextUnavailable),
+                      ],
+                    ],
+                    if (_source == AnalysisCvSource.upload)
+                      if (file == null)
+                        UploadDropZone(onTap: () => unawaited(_pickFile()))
+                      else
+                        SelectedFileTile(
+                          fileName: file.name,
+                          onRemove: () => setState(() => _uploadedFile = null),
+                        ),
+                    if (_source == AnalysisCvSource.paste)
+                      TextFormField(
+                        key: const ValueKey('ats-input-resume-text'),
+                        controller: _resumeTextController,
+                        autovalidateMode: _autovalidate,
+                        minLines: 8,
+                        maxLines: null,
+                        decoration: decoration(l.atsInputResumeTextHint),
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? l.atsInputResumeTextRequired
+                            : null,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              section(
+                l.atsInputJobTitle,
+                TextFormField(
+                  key: const ValueKey('ats-input-job-title'),
+                  controller: _jobTitleController,
+                  autovalidateMode: _autovalidate,
+                  textInputAction: TextInputAction.next,
+                  decoration: decoration(l.atsInputJobTitleHint),
+                  validator: (v) => switch (AnalysisRules.jobTitle(v)) {
+                    AnalysisFieldError.required => l.atsInputJobTitleRequired,
+                    AnalysisFieldError.tooLong => l.atsInputJobTitleTooLong(
+                      AnalysisLimits.jobTitleMax,
+                    ),
+                    null => null,
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              section(
+                l.atsInputJobDescription,
+                Column(
+                  children: [
+                    TextFormField(
+                      key: const ValueKey('ats-input-job-description'),
+                      controller: _jobDescriptionController,
+                      minLines: 5,
+                      maxLines: null,
+                      autovalidateMode: _autovalidate,
+                      decoration: decoration(l.atsInputJobDescriptionHint),
+                      onChanged: (_) => setState(() {}),
+                      validator: (v) => AnalysisRules.jobDescription(v) == null
+                          ? null
+                          : l.atsInputJobDescriptionTooLong(
+                              AnalysisLimits.jobDescriptionMax,
+                            ),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: Text(
+                        '${_jobDescriptionController.text.length} / ${AnalysisLimits.jobDescriptionMax}',
+                        style: TextStyle(color: c.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              const SizedBox(height: 12),
+              Text(
+                l.atsInputPrivacy,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: c.textSecondary, fontSize: 12),
+              ),
+            ],
+          ),
         ),
       ),
     );

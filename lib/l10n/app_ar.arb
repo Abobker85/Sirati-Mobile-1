@@ -111,9 +111,15 @@
   "summaryWordCountLine": "{words} كلمة ({chars} حرف) • {advice}",
   "@summaryWordCountLine": {
     "placeholders": {
-      "words": {"type": "int"},
-      "chars": {"type": "int"},
-      "advice": {"type": "String"}
+      "words": {
+        "type": "int"
+      },
+      "chars": {
+        "type": "int"
+      },
+      "advice": {
+        "type": "String"
+      }
     }
   },
   "viewProfile": "عرض الملف الشخصي",
@@ -461,7 +467,7 @@
   "atsInputJobTitleRequired": "يرجى إدخال المسمى الوظيفي المستهدف",
   "atsInputJobDescription": "وصف الوظيفة (اختياري)",
   "atsInputJobDescriptionHint": "الصق نص الإعلان الكامل هنا...",
-  "atsInputJobDescriptionTooLong": "يجب ألا يزيد وصف الوظيفة عن 4000 حرف.",
+  "atsInputJobDescriptionTooLong": "يجب ألا يزيد وصف الوظيفة عن {max} حرفاً.",
   "atsInputResumeTextHint": "الصق نص السيرة الذاتية كاملاً هنا...",
   "atsInputResumeTextRequired": "الصق نص السيرة أو ارفع ملف PDF/TXT.",
   "atsInputAnalyze": "تحليل السيرة الذاتية",
@@ -490,6 +496,46 @@
   "homeHeroSavedCvs": "السير المحفوظة",
   "savedCvsLoading": "جارٍ تحميل السير…",
   "homeActivityEmpty": "لا يوجد نشاط أخير بعد. أنشئ سيرة أو نفّذ تحليلاً للبدء.",
-  "atsInputJobTitleTooLong": "يجب ألا يزيد المسمى الوظيفي عن 160 حرفاً.",
-  "atsInputSelectSourceRequired": "اختر سيرة محفوظة أو ارفع ملف PDF/TXT أو الصق نص السيرة."
+  "atsInputJobTitleTooLong": "يجب ألا يزيد المسمى الوظيفي عن {max} حرفاً.",
+  "atsInputSelectSourceRequired": "اختر سيرة محفوظة أو ارفع ملف PDF/TXT أو الصق نص السيرة.",
+  "@atsInputJobTitleTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@atsInputJobDescriptionTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "homeHeroUpdatedAt": "آخر تحديث {time}",
+  "homeHeroBandExcellent": "ممتاز",
+  "homeHeroBandVeryGood": "جيد جداً",
+  "homeHeroBandFair": "مقبول",
+  "homeHeroBandWeak": "يحتاج إلى تحسين",
+  "homeStatsCvs": "السير الذاتية",
+  "homeStatsAnalyses": "التحليلات",
+  "homeActivitySavedCv": "سيرة ذاتية محفوظة",
+  "atsResultKeywordSummary": "الكلمات المفتاحية: {matched} موجودة · {missing} ناقصة",
+  "@homeHeroUpdatedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@atsResultKeywordSummary": {
+    "placeholders": {
+      "matched": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  }
 }

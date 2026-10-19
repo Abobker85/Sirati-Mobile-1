@@ -21,6 +21,7 @@ class GeneratedCv {
   final Map<String, dynamic>? aiOutput;
   final String? aiError;
   final int scoreTotal;
+  final bool hasScore;
   final String grade;
   final List<ScoreCriterion> criteria;
   final String? pdfUrl;
@@ -51,6 +52,7 @@ class GeneratedCv {
     required this.aiOutput,
     required this.aiError,
     required this.scoreTotal,
+    this.hasScore = true,
     required this.grade,
     required this.criteria,
     required this.pdfUrl,
@@ -82,6 +84,11 @@ class GeneratedCv {
           : null,
       aiError: json['ai_error']?.toString(),
       scoreTotal: _asInt(json['score_total']),
+      hasScore: switch (num.tryParse(json['score_total']?.toString() ?? '')) {
+        final num value when value.isFinite && value >= 0 && value <= 100 =>
+          true,
+        _ => false,
+      },
       grade: json['grade']?.toString() ?? '-',
       criteria: _asList(json['criteria']).map(ScoreCriterion.fromJson).toList(),
       pdfUrl: json['pdf_url']?.toString(),
@@ -101,6 +108,6 @@ List<Map<String, dynamic>> _asList(dynamic value) {
 
 int _asInt(dynamic value, {int fallback = 0}) {
   if (value is int) return value;
-  if (value is num) return value.round();
+  if (value is num) return value.isFinite ? value.round() : fallback;
   return int.tryParse(value?.toString() ?? '') ?? fallback;
 }

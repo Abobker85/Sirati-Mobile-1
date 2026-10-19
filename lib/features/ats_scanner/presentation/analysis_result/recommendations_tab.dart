@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result/prioritized_fixes.dart';
+import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Second tab: strengths, numbered quick wins, and the upgrade CTA.
@@ -9,8 +11,10 @@ class RecommendationsTab extends StatelessWidget {
     required this.quickWins,
     required this.english,
     this.embedded = false,
+    this.weaknesses = const [],
   });
 
+  final List<AnalysisWeakness> weaknesses;
   final List<String> strengths;
   final List<String> quickWins;
   final bool english;
@@ -24,6 +28,10 @@ class RecommendationsTab extends StatelessWidget {
       physics: embedded ? const NeverScrollableScrollPhysics() : null,
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
       children: [
+        if (weaknesses.isNotEmpty) ...[
+          PrioritizedFixes(weaknesses: weaknesses),
+          const SizedBox(height: 24),
+        ],
         _SectionHeader(
           icon: Icons.thumb_up_alt_rounded,
           iconColor: c.tealDark,

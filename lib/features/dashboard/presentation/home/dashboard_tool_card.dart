@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
+enum DashboardToolTone { ats, jobMatch }
+
 /// Compact tool entry. Height follows content, including at 2x text size.
 class DashboardToolCard extends StatelessWidget {
   const DashboardToolCard({
@@ -10,7 +12,9 @@ class DashboardToolCard extends StatelessWidget {
     required this.action,
     required this.icon,
     required this.onTap,
+    this.tone = DashboardToolTone.ats,
   });
+  final DashboardToolTone tone;
   final String title;
   final String subtitle;
   final String action;
@@ -20,11 +24,15 @@ class DashboardToolCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
+    final ink = tone == DashboardToolTone.ats ? c.primaryInk : c.tertiary;
+    final tint = tone == DashboardToolTone.ats
+        ? c.primaryLight
+        : c.tertiaryLight;
     return Material(
       color: c.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: c.border),
+        side: BorderSide(color: ink),
       ),
       child: InkWell(
         onTap: onTap,
@@ -37,10 +45,10 @@ class DashboardToolCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: c.primaryLight,
+                  color: tint,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: c.primaryInk),
+                child: Icon(icon, color: ink),
               ),
               const SizedBox(height: 12),
               Text(
@@ -60,7 +68,7 @@ class DashboardToolCard extends StatelessWidget {
               Text(
                 action,
                 style: TextStyle(
-                  color: c.primaryInk,
+                  color: ink,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),

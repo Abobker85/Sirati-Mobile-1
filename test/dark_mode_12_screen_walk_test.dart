@@ -714,10 +714,11 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // The redesigned Home replaces the stat cards with compact tools.
+        // Home retains its server stats above the compact tools.
         // Audit every label against its actual painted surface in both cards.
         await tester.scrollUntilVisible(
-          find.byType(DashboardToolCard).first,
+          find.byWidgetPredicate((widget) => widget is DashboardToolCard &&
+              widget.tone == DashboardToolTone.ats),
           250,
           scrollable: find.byType(Scrollable).first,
         );

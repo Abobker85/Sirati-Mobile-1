@@ -54,7 +54,7 @@ class DashboardStatCard extends StatelessWidget {
                     color: context.sirati.primaryLight,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, size: 16, color: context.sirati.primary),
+                  child: Icon(icon, size: 16, color: context.sirati.primaryInk),
                 ),
               ),
             ],
@@ -101,12 +101,12 @@ class _CountUpValueState extends State<CountUpValue> {
 
     final style = AppTextStyles.displayStat(context.sirati);
     Text label(int n) => Text(
-          AppFormat.digits(n.toString(), english: english),
-          textAlign: TextAlign.start,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: style,
-        );
+      AppFormat.digits(n.toString(), english: english),
+      textAlign: TextAlign.start,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: style,
+    );
 
     if (MotionSettings.reduce(context) || _hasPlayed) return label(count);
 

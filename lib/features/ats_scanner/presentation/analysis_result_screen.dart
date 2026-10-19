@@ -29,37 +29,54 @@ class AnalysisResultScreen extends ConsumerWidget {
 
     return Directionality(
       textDirection: AppLocale.direction(context),
-      child: Scaffold(
-        backgroundColor: context.sirati.background,
-        appBar: AppBar(
-          title: Text(english ? 'Analysis Results' : 'نتائج التحليل'),
-          actions: const [LanguageToggle()],
-        ),
-        bottomNavigationBar: SafeArea(
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            decoration: BoxDecoration(
-              color: context.sirati.surface,
-              border: Border(top: BorderSide(color: context.sirati.border)),
-              boxShadow: context.sirati.softShadow,
-            ),
-            child: SubmitButton(
-              label: english ? 'Generate Improved CV' : 'توليد سيرة محسّنة',
-              loadingLabel: english ? 'Generating...' : 'جارٍ التوليد...',
-              isLoading: isGenerating,
-              icon: Icons.auto_awesome_rounded,
-              onPressed: isGenerating ? null : () => _generate(context, ref),
+      child: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          backgroundColor: context.sirati.background,
+          appBar: AppBar(
+            title: Text(english ? 'Analysis Results' : 'نتائج التحليل'),
+            toolbarHeight:
+                56 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 2),
+            actions: const [LanguageToggle()],
+            bottom: TabBar(
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              tabs: [
+                Tab(
+                  height: 56,
+                  text: english ? 'Score & Criteria' : 'الدرجة والمعايير',
+                ),
+                Tab(height: 56, text: english ? 'Recommendations' : 'التوصيات'),
+              ],
             ),
           ),
-        ),
-        body: ScoreTab(
-          analysis: analysis,
-          english: english,
-          trailing: RecommendationsTab(
-            strengths: analysis.strengths,
-            quickWins: analysis.quickWins,
-            english: english,
-            embedded: true,
+          bottomNavigationBar: SafeArea(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+              decoration: BoxDecoration(
+                color: context.sirati.surface,
+                border: Border(top: BorderSide(color: context.sirati.border)),
+                boxShadow: context.sirati.softShadow,
+              ),
+              child: SubmitButton(
+                label: english ? 'Generate Improved CV' : 'توليد سيرة محسّنة',
+                loadingLabel: english ? 'Generating...' : 'جارٍ التوليد...',
+                isLoading: isGenerating,
+                icon: Icons.auto_awesome_rounded,
+                onPressed: isGenerating ? null : () => _generate(context, ref),
+              ),
+            ),
+          ),
+          body: TabBarView(
+            children: [
+              ScoreTab(analysis: analysis, english: english),
+              RecommendationsTab(
+                weaknesses: analysis.weaknesses,
+                strengths: analysis.strengths,
+                quickWins: analysis.quickWins,
+                english: english,
+              ),
+            ],
           ),
         ),
       ),

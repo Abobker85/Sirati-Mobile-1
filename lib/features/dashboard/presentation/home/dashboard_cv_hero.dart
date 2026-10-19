@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/ats_scanner/domain/score_band.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -36,7 +37,25 @@ class DashboardCvHero extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
     final cv = state.value;
-    final ready = cv != null && !AiStatus.isPending(cv.aiStatus);
+    final ready =
+        cv != null &&
+        cv.hasScore &&
+        cv.scoreTotal >= 0 &&
+        cv.scoreTotal <= 100 &&
+        !AiStatus.isPending(cv.aiStatus);
+    final rows = ref.watch(myCvsProvider(english)).value?.items;
+    final savedRow = rows?.where((item) => item.id == cv?.id).firstOrNull;
+    final updatedAt = savedRow?.updatedAt;
+    final updatedLabel = updatedAt == null
+        ? savedRow?.updatedLabel ?? ''
+        : '${MaterialLocalizations.of(context).formatCompactDate(updatedAt.toLocal())} ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(updatedAt.toLocal()))}';
+    final band = cv == null ? null : ScoreBand.of(cv.scoreTotal);
+    final bandLabel = switch (band) {
+      ScoreBand.excellent => l.homeHeroBandExcellent,
+      ScoreBand.veryGood => l.homeHeroBandVeryGood,
+      ScoreBand.fair => l.homeHeroBandFair,
+      _ => l.homeHeroBandWeak,
+    };
     final review = ready && cv.scoreTotal >= 80;
     return AppCard(
       padding: const EdgeInsets.all(20),
@@ -47,7 +66,10 @@ class DashboardCvHero extends ConsumerWidget {
           if (state.isLoading)
             Text(l.savedCvsLoading, style: TextStyle(color: c.textSecondary))
           else if (state.hasError) ...[
-            Text(l.homeHeroLatestCvError, style: TextStyle(color: c.textSecondary)),
+            Text(
+              l.homeHeroLatestCvError,
+              style: TextStyle(color: c.textSecondary),
+            ),
             Wrap(
               spacing: 8,
               children: [
@@ -84,7 +106,10 @@ class DashboardCvHero extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(l.homeHeroFirstCvDescription, style: TextStyle(color: c.textSecondary)),
+            Text(
+              l.homeHeroFirstCvDescription,
+              style: TextStyle(color: c.textSecondary),
+            ),
             const SizedBox(height: 16),
             SubmitButton(
               label: l.homeHeroCreateCv,
@@ -109,6 +134,13 @@ class DashboardCvHero extends ConsumerWidget {
                 fontSize: 20,
               ),
             ),
+            if (updatedLabel.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                l.homeHeroUpdatedAt(updatedLabel),
+                style: TextStyle(color: c.textSecondary),
+              ),
+            ],
             const SizedBox(height: 16),
             if (ready) ...[
               Center(
@@ -128,12 +160,17 @@ class DashboardCvHero extends ConsumerWidget {
                           strokeWidth: 7,
                         ),
                         Center(
-                          child: Text(
-                            '${cv.scoreTotal.clamp(0, 100)}%',
-                            style: TextStyle(
-                              color: c.textPrimary,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: FittedBox(
+                              child: Text(
+                                '${cv.scoreTotal.clamp(0, 100)}%',
+                                style: TextStyle(
+                                  color: c.textPrimary,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -144,7 +181,7 @@ class DashboardCvHero extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                l.homeHeroAtsScore,
+                '${l.homeHeroAtsScore} · $bandLabel',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: c.textSecondary),
               ),
@@ -172,7 +209,9 @@ class DashboardCvHero extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    review ? l.homeHeroReviewNextStep : l.homeHeroAnalyzeNextStep,
+                    review
+                        ? l.homeHeroReviewNextStep
+                        : l.homeHeroAnalyzeNextStep,
                     style: TextStyle(color: c.primaryInk),
                   ),
                   const SizedBox(height: 12),
@@ -184,7 +223,8 @@ class DashboardCvHero extends ConsumerWidget {
                           : Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const CvAnalysisScreen(),
+                                builder: (_) =>
+                                    CvAnalysisScreen(initialCvId: cv.id),
                               ),
                             ),
                     ),

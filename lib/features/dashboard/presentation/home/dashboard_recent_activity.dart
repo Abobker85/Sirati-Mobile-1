@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/dashboard/application/history_controllers.dart';
+import 'package:sirati/features/dashboard/presentation/home/dashboard_cv_hero.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
@@ -17,13 +19,19 @@ class DashboardRecentActivity extends ConsumerWidget {
     final analyses = ref.watch(analysesHistoryProvider);
     final l = AppLocalizations.of(context);
     final c = context.sirati;
+    final latestId = ref
+        .watch(latestDashboardCvProvider(AppLocale.isEnglish(context)))
+        .value
+        ?.id;
     final entries =
         [
           for (final cv in cvs.value?.items ?? const <GeneratedCv>[])
             (
               date: cv.createdAt,
               title: cv.targetJobTitle,
-              kind: l.homeHeroLatestCv,
+              kind: cv.id == latestId
+                  ? l.homeHeroLatestCv
+                  : l.homeActivitySavedCv,
               route: AppRoutes.cv(cv.id),
               icon: Icons.description_outlined,
             ),
