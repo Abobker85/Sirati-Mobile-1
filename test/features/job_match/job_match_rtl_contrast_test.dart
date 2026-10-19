@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -295,6 +296,53 @@ void main() {
             expectAllTextAa('$label $status');
           });
         }
+
+        testWidgets('$label: advice failed with retry error', (tester) async {
+          useTallView(tester);
+          final api = FakeJobMatchApi()
+            ..createResponses.add(matchJson(aiStatus: 'failed'))
+            ..retryResponses.add(ApiException.fromStatus(503, message: ''));
+          await pumpJobMatch(
+            tester,
+            api: api,
+            auth: FakeAuth(subscription()),
+            language: language,
+            theme: theme,
+          );
+          await enterJob(tester);
+          await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
+          await settle(tester);
+          await tapVisible(
+            tester,
+            find.text(l10n(tester).jobMatchRetrySuggestions),
+          );
+          await settle(tester);
+          expectAllTextAa('$label retry error');
+        });
+
+        testWidgets('$label: advice failed with retry in flight (busy)',
+            (tester) async {
+          useTallView(tester);
+          final retryCompleter = Completer<Map<String, dynamic>>();
+          final api = FakeJobMatchApi()
+            ..createResponses.add(matchJson(aiStatus: 'failed'))
+            ..retryOverride = (_) => retryCompleter.future;
+          await pumpJobMatch(
+            tester,
+            api: api,
+            auth: FakeAuth(subscription()),
+            language: language,
+            theme: theme,
+          );
+          await enterJob(tester);
+          await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
+          await settle(tester);
+          await tester.tap(find.text(l10n(tester).jobMatchRetrySuggestions));
+          await tester.pump();
+          expectAllTextAa('$label retry busy');
+          retryCompleter.complete(matchJson(aiStatus: 'completed'));
+          await settle(tester);
+        });
 
         testWidgets('$label: still processing after a refresh failure',
             (tester) async {

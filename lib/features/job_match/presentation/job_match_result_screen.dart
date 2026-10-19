@@ -93,6 +93,13 @@ class JobMatchResultScreen extends ConsumerWidget {
       notice = JobMatchNotice(
         tone: JobMatchTone.warning,
         message: l.jobMatchAiFailed,
+        detail: state.retryFailure == null
+            ? null
+            : l.jobMatchFailureMessage(state.retryFailure!),
+        actionLabel: l.jobMatchRetrySuggestions,
+        busy: state.retryingAdvice,
+        onAction: () =>
+            ref.read(jobMatchControllerProvider.notifier).retryAdvice(),
       );
     } else if (match.aiStatus == AiStatus.notConfigured) {
       notice = JobMatchNotice(

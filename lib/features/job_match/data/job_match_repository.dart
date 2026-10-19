@@ -26,6 +26,9 @@ class JobMatchRepository {
   Future<JobMatch> fetch(int id) async =>
       JobMatch.fromJson(await _api.getJobMatch(id));
 
+  Future<JobMatch> retryAdvice(int id) async =>
+      JobMatch.fromJson(await _api.retryJobMatchAdvice(id));
+
   Future<({GeneratedCv cv, JobMatch match})> apply(
     int id,
     List<String> suggestionKeys,

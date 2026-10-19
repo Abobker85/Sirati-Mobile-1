@@ -281,6 +281,14 @@ class CvApiService {
     return _dataMap(response);
   }
 
+  /// Requeues failed advice without creating a match or spending quota.
+  Future<Map<String, dynamic>> retryJobMatchAdvice(int id) async {
+    final response = await _apiClient.postJson(
+      '/job-matches/$id/retry-advice',
+      const <String, dynamic>{},
+    );
+    return _dataMap(response);
+  }
   /// Applies the selected suggestions to a NEW CV copy (the source CV is not
   /// modified) and returns it with the updated raw job match.
   Future<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>

@@ -169,9 +169,10 @@ class JobMatchNotice extends StatelessWidget {
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: TextButton(
-                        onPressed: onAction,
+                        onPressed: busy ? null : onAction,
                         style: TextButton.styleFrom(
                           foregroundColor: fg,
+                          disabledForegroundColor: fg,
                           padding: EdgeInsets.zero,
                           minimumSize: const Size(48, 40),
                         ),

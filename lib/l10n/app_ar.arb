@@ -441,5 +441,6 @@
       }
     }
   },
+  "jobMatchRetrySuggestions": "إعادة محاولة الاقتراحات",
   "jobMatchLoading": "جارٍ التحميل..."
 }

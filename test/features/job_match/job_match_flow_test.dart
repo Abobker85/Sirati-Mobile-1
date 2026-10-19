@@ -119,6 +119,33 @@ void main() {
       expect(api.createCalls, hasLength(1));
       expect(find.text(l10n(tester).jobMatchPaywallTitle), findsOneWidget);
     });
+
+    testWidgets('the counter reflects a refreshed quota after create',
+        (tester) async {
+      useTallView(tester);
+      final auth = FakeAuth(subscription(limit: 5, used: 1));
+      final api = FakeJobMatchApi()..createResponses.add(matchJson());
+      await pumpJobMatch(tester, api: api, auth: auth);
+      final l = l10n(tester);
+
+      expect(find.text(l.jobMatchQuotaRemaining(4)), findsOneWidget);
+
+      await enterJob(tester);
+      // Simulate backend updating the user's quota used when the match is created.
+      auth.subscriptionState = subscription(limit: 5, used: 2);
+      await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
+      await settle(tester);
+
+      expect(find.byType(JobMatchResultScreen), findsOneWidget);
+
+      // Return to the entry screen; the quota counter reflects the decrement.
+      await tester.pageBack();
+      await settle(tester);
+
+      expect(find.byType(JobMatchScreen), findsOneWidget);
+      expect(find.text(l.jobMatchQuotaRemaining(3)), findsOneWidget);
+      expect(find.text(l.jobMatchQuotaRemaining(4)), findsNothing);
+    });
   });
 
   group('input validation happens before any request or generator push', () {
@@ -519,6 +546,133 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 5));
       expect(api.fetchCalls, isEmpty);
+    });
+
+    testWidgets(
+        'failed -> tap retry -> pending -> completed shows suggestion cards '
+        'and hides retry button', (tester) async {
+      useTallView(tester);
+      final api = FakeJobMatchApi()
+        ..createResponses.add(matchJson(id: 7, aiStatus: 'failed'))
+        ..retryResponses.add(matchJson(id: 7, aiStatus: 'processing'))
+        ..fetchResponses.add(matchJson(id: 7, aiStatus: 'completed'));
+      final auth = FakeAuth(subscription());
+      await pumpJobMatch(
+        tester,
+        api: api,
+        auth: auth,
+        schedule: const [Duration(milliseconds: 100)],
+      );
+      await enterJob(tester);
+      await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
+      await settle(tester);
+
+      final l = l10n(tester);
+      expect(find.byType(JobMatchResultScreen), findsOneWidget);
+      expect(find.text(l.jobMatchAiFailed), findsOneWidget);
+      expect(find.text(l.jobMatchRetrySuggestions), findsOneWidget);
+      expect(find.text(l.jobMatchSuggestionsTitle), findsNothing);
+
+      await tapVisible(tester, find.text(l.jobMatchRetrySuggestions));
+      expect(api.retryCalls, [7]);
+
+      await tester.pump();
+      expect(find.text(l.jobMatchAiPreparing), findsOneWidget);
+      expect(find.text(l.jobMatchRetrySuggestions), findsNothing);
+
+      await settle(tester, frames: 10);
+      expect(api.fetchCalls, [7]);
+      expect(find.text(l.jobMatchAiPreparing), findsNothing);
+      expect(find.text(l.jobMatchAiFailed), findsNothing);
+      expect(find.text(l.jobMatchRetrySuggestions), findsNothing);
+      expect(find.text(l.jobMatchSuggestionsTitle), findsOneWidget);
+      expect(find.byType(JobMatchSuggestionCard), findsWidgets);
+    });
+
+    testWidgets('retry button is disabled while request is in flight',
+        (tester) async {
+      useTallView(tester);
+      final retryCompleter = Completer<Map<String, dynamic>>();
+      final api = FakeJobMatchApi()
+        ..createResponses.add(matchJson(id: 7, aiStatus: 'failed'))
+        ..retryOverride = (_) => retryCompleter.future;
+      await pumpJobMatch(tester, api: api, auth: FakeAuth(subscription()));
+      await enterJob(tester);
+      await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
+      await settle(tester);
+
+      final l = l10n(tester);
+      final retryFinder =
+          find.widgetWithText(TextButton, l.jobMatchRetrySuggestions);
+      expect(retryFinder, findsOneWidget);
+      expect(tester.widget<TextButton>(retryFinder).enabled, isTrue);
+
+      await tester.tap(retryFinder);
+      await tester.pump();
+
+      expect(api.retryCalls, [7]);
+      expect(tester.widget<TextButton>(retryFinder).enabled, isFalse);
+
+      retryCompleter.complete(matchJson(id: 7, aiStatus: 'completed'));
+      await settle(tester);
+      expect(find.text(l.jobMatchRetrySuggestions), findsNothing);
+      expect(find.text(l.jobMatchSuggestionsTitle), findsOneWidget);
+    });
+
+    testWidgets('retry error shows message and keeps the retry button',
+        (tester) async {
+      useTallView(tester);
+      final api = FakeJobMatchApi()
+        ..createResponses.add(matchJson(id: 7, aiStatus: 'failed'))
+        ..retryResponses.add(_status(503));
+      await pumpJobMatch(tester, api: api, auth: FakeAuth(subscription()));
+      await enterJob(tester);
+      await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
+      await settle(tester);
+
+      final l = l10n(tester);
+      expect(find.text(l.jobMatchAiFailed), findsOneWidget);
+      expect(find.text(l.jobMatchRetrySuggestions), findsOneWidget);
+
+      await tapVisible(tester, find.text(l.jobMatchRetrySuggestions));
+      await settle(tester);
+
+      expect(api.retryCalls, [7]);
+      expect(find.text(l.jobMatchErrorUnavailable), findsOneWidget);
+      expect(find.text(l.jobMatchAiFailed), findsOneWidget);
+      expect(find.text(l.jobMatchRetrySuggestions), findsOneWidget);
+      expect(
+        tester
+            .widget<TextButton>(
+              find.widgetWithText(TextButton, l.jobMatchRetrySuggestions),
+            )
+            .enabled,
+        isTrue,
+      );
+
+      // Subsequent retry succeeds
+      api.retryResponses
+        ..clear()
+        ..add(matchJson(id: 7, aiStatus: 'completed'));
+      await tapVisible(tester, find.text(l.jobMatchRetrySuggestions));
+      await settle(tester);
+      expect(find.text(l.jobMatchSuggestionsTitle), findsOneWidget);
+      expect(find.text(l.jobMatchRetrySuggestions), findsNothing);
+    });
+
+    testWidgets('retry button is hidden when initial status is completed',
+        (tester) async {
+      useTallView(tester);
+      final api = FakeJobMatchApi()..createResponses.add(matchJson());
+      await pumpJobMatch(tester, api: api, auth: FakeAuth(subscription()));
+      await enterJob(tester);
+      await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
+      await settle(tester);
+
+      final l = l10n(tester);
+      expect(find.byType(JobMatchResultScreen), findsOneWidget);
+      expect(find.text(l.jobMatchRetrySuggestions), findsNothing);
+      expect(find.text(l.jobMatchAiFailed), findsNothing);
     });
   });
 

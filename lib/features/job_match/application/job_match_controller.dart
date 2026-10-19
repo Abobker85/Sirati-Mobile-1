@@ -7,6 +7,7 @@ import 'package:sirati/features/job_match/domain/job_match.dart';
 import 'package:sirati/features/job_match/domain/job_match_entitlement.dart';
 import 'package:sirati/features/job_match/domain/job_match_failure.dart';
 import 'package:sirati/features/job_match/domain/job_match_input.dart';
+import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
@@ -64,6 +65,8 @@ class JobMatchState {
     this.refreshFailure,
     this.selected = const {},
     this.applying = false,
+    this.retryingAdvice = false,
+    this.retryFailure,
   });
 
   final bool submitting;
@@ -74,6 +77,8 @@ class JobMatchState {
   final JobMatchFailure? refreshFailure;
   final Set<String> selected;
   final bool applying;
+  final bool retryingAdvice;
+  final JobMatchFailure? retryFailure;
 
   JobMatchState copyWith({
     bool? submitting,
@@ -83,6 +88,9 @@ class JobMatchState {
     bool clearRefreshFailure = false,
     Set<String>? selected,
     bool? applying,
+    bool? retryingAdvice,
+    JobMatchFailure? retryFailure,
+    bool clearRetryFailure = false,
   }) =>
       JobMatchState(
         submitting: submitting ?? this.submitting,
@@ -92,6 +100,9 @@ class JobMatchState {
             clearRefreshFailure ? null : (refreshFailure ?? this.refreshFailure),
         selected: selected ?? this.selected,
         applying: applying ?? this.applying,
+        retryingAdvice: retryingAdvice ?? this.retryingAdvice,
+        retryFailure:
+            clearRetryFailure ? null : (retryFailure ?? this.retryFailure),
       );
 }
 
@@ -182,7 +193,7 @@ class JobMatchController extends Notifier<JobMatchState> {
     }
 
     _stopPolling();
-    state = state.copyWith(submitting: true);
+    state = state.copyWith(submitting: true, retryingAdvice: false);
     try {
       final match = await _repository.create(
         generatedCvId: generatedCvId,
@@ -191,6 +202,7 @@ class JobMatchController extends Notifier<JobMatchState> {
         idempotencyKey: _idempotencyKey!,
       );
       if (!ref.mounted) return null;
+      ref.invalidate(jobMatchEntitlementProvider);
       state = JobMatchState(
         match: match,
         pollPhase:
@@ -230,6 +242,39 @@ class JobMatchController extends Notifier<JobMatchState> {
     }
     if (ref.mounted && generation == _pollGeneration) {
       state = state.copyWith(pollPhase: JobMatchPollPhase.stillProcessing);
+    }
+  }
+
+  /// Reuses the existing match and the initial advice polling flow.
+  Future<void> retryAdvice() async {
+    final match = state.match;
+    if (match == null ||
+        match.aiStatus != AiStatus.failed ||
+        state.retryingAdvice ||
+        state.submitting) {
+      return;
+    }
+    _stopPolling();
+    final generation = _pollGeneration;
+    state = state.copyWith(retryingAdvice: true, clearRetryFailure: true);
+    try {
+      final retried = await _repository.retryAdvice(match.id);
+      if (!ref.mounted || generation != _pollGeneration) return;
+      ref.invalidate(jobMatchEntitlementProvider);
+      state = JobMatchState(
+        match: retried,
+        pollPhase: retried.aiPending
+            ? JobMatchPollPhase.polling
+            : JobMatchPollPhase.idle,
+      );
+      if (retried.aiPending) unawaited(_pollUntilSettled());
+    } catch (error) {
+      if (!ref.mounted || generation != _pollGeneration) return;
+      final failure = JobMatchFailure.from(error, JobMatchOperation.retryAdvice);
+      if (failure.affectsEntitlement) {
+        ref.invalidate(jobMatchEntitlementProvider);
+      }
+      state = state.copyWith(retryingAdvice: false, retryFailure: failure);
     }
   }
 

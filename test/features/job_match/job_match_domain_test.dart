@@ -425,5 +425,50 @@ void main() {
       expect(state.selected, {'s1'});
       expect(state.applying, isFalse);
     });
+
+    test('retryAdvice guards against non-failed status or in-flight', () async {
+      api.createResponses.add(matchJson(aiStatus: 'completed'));
+      await controller().submit(generatedCvId: 1, jobDescription: 'jd');
+      await controller().retryAdvice();
+      expect(api.retryCalls, isEmpty);
+    });
+
+    test('retryAdvice failure records retryFailure and resets in-flight',
+        () async {
+      api
+        ..createResponses.add(matchJson(aiStatus: 'failed'))
+        ..retryResponses.add(ApiException.fromStatus(503, message: ''));
+      await controller().submit(generatedCvId: 1, jobDescription: 'jd');
+      await controller().retryAdvice();
+      expect(api.retryCalls, [7]);
+      final state = container.read(jobMatchControllerProvider);
+      expect(state.retryingAdvice, isFalse);
+      expect(state.retryFailure?.kind, JobMatchFailureKind.unavailable);
+    });
+
+    test('retryAdvice success sets match and initiates polling', () async {
+      final customContainer = ProviderContainer(overrides: [
+        cvApiServiceProvider.overrideWithValue(api),
+        authApiServiceProvider.overrideWithValue(FakeAuth(subscription())),
+        jobMatchPollScheduleProvider
+            .overrideWithValue(const [Duration(minutes: 1)]),
+      ]);
+      addTearDown(customContainer.dispose);
+      customContainer.listen(jobMatchControllerProvider, (_, __) {});
+      final customController =
+          customContainer.read(jobMatchControllerProvider.notifier);
+
+      api
+        ..createResponses.add(matchJson(aiStatus: 'failed'))
+        ..retryResponses.add(matchJson(aiStatus: 'processing'));
+      await customController.submit(generatedCvId: 1, jobDescription: 'jd');
+      await customController.retryAdvice();
+      expect(api.retryCalls, [7]);
+      final state = customContainer.read(jobMatchControllerProvider);
+      expect(state.retryingAdvice, isFalse);
+      expect(state.retryFailure, isNull);
+      expect(state.match?.aiStatus, 'processing');
+      expect(state.pollPhase, JobMatchPollPhase.polling);
+    });
   });
 }

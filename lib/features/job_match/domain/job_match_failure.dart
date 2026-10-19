@@ -2,7 +2,7 @@ import 'package:sirati/core/network/api_exception.dart';
 
 /// Which Job Match request failed; the same status means different things
 /// for create and apply (e.g. 409).
-enum JobMatchOperation { create, refresh, apply }
+enum JobMatchOperation { create, refresh, retryAdvice, apply }
 
 enum JobMatchFailureKind {
   /// 402 — not subscribed.

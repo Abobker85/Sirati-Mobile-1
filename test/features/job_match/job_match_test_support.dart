@@ -117,6 +117,19 @@ class FakeJobMatchApi extends CvApiService {
   final fetchResponses = <Object>[];
   Future<Map<String, dynamic>> Function(int)? fetchOverride;
 
+  final retryCalls = <int>[];
+  final retryResponses = <Object>[];
+  Future<Map<String, dynamic>> Function(int)? retryOverride;
+
+  @override
+  Future<Map<String, dynamic>> retryJobMatchAdvice(int id) async {
+    retryCalls.add(id);
+    if (retryOverride != null) return retryOverride!(id);
+    final next = _next(retryResponses, 'retry');
+    if (next is Map<String, dynamic>) return next;
+    throw next;
+  }
+
   final applyCalls = <List<String>>[];
   final applyResponses = <Object>[];
   Future<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>
