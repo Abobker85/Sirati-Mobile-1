@@ -31,6 +31,7 @@ import 'package:sirati/shared/services/local_session_cleanup.dart';
 /// Composition root: maps route names onto feature screens.
 void registerSiratiRouteWidgets() {
   AppRouter.registerWidgets(_widgetFor);
+  GeneratedCvHubLinks.atsCheck = (_) => const CvAnalysisScreen();
 }
 
 Widget _widgetFor(ParsedRoute parsed) {

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/routing/entitlement_store.dart';
 import 'package:sirati/features/app/sirati_route_table.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_loader_screen.dart';
+import 'package:sirati/features/dashboard/application/premium_gate_controller.dart';
+import 'package:sirati/features/dashboard/data/subscription_plans_repository.dart';
+import 'package:sirati/features/dashboard/domain/subscription_offer.dart';
 import 'package:sirati/features/dashboard/presentation/not_found_screen.dart';
 import 'package:sirati/features/dashboard/presentation/premium_gate_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/routing/app_router.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
@@ -93,18 +98,25 @@ void main() {
         (tester) async {
       EntitlementStore.hasPremium = false;
       await tester.pumpWidget(
-        MaterialApp(
-          locale: const Locale('en', 'US'),
-          supportedLocales: const [Locale('en', 'US'), Locale('ar', 'SA')],
-          theme: AppTheme.light,
-          onGenerateRoute: AppRouter.onGenerateRoute,
-          home: Builder(
-            builder: (context) {
-              return TextButton(
-                onPressed: () => Navigator.of(context).pushNamed('/premium'),
-                child: const Text('go'),
-              );
-            },
+        ProviderScope(
+          overrides: [
+            subscriptionPlansRepositoryProvider
+                .overrideWithValue(_NoPlansRepository()),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            theme: AppTheme.light,
+            onGenerateRoute: AppRouter.onGenerateRoute,
+            home: Builder(
+              builder: (context) {
+                return TextButton(
+                  onPressed: () => Navigator.of(context).pushNamed('/premium'),
+                  child: const Text('go'),
+                );
+              },
+            ),
           ),
         ),
       );
@@ -113,7 +125,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(PremiumGateScreen), findsOneWidget);
-      expect(find.text('Premium required'), findsOneWidget);
+      final l = AppLocalizations.of(
+        tester.element(find.byType(PremiumGateScreen)),
+      );
+      expect(find.text(l.premiumGateAppBar), findsOneWidget);
     });
 
     testWidgets('analysis deep link routes to CvAnalysisLoaderScreen with id',
@@ -134,4 +149,10 @@ void main() {
       expect((built as CvAnalysisLoaderScreen).analysisId, 42);
     });
   });
+}
+
+class _NoPlansRepository extends SubscriptionPlansRepository {
+  @override
+  Future<SubscriptionOffer> load() async =>
+      const SubscriptionOffer(plans: []);
 }

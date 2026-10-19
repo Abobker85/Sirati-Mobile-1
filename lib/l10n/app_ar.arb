@@ -444,5 +444,124 @@
   "jobMatchRetrySuggestions": "إعادة محاولة الاقتراحات",
   "jobMatchLoading": "جارٍ التحميل...",
   "jm4ConfirmFact": "أؤكد أن هذه المعلومة صحيحة عني",
-  "jm4HonestyHint": "أكد فقط المعلومات التي يمكنك إثبات صحتها بصدق. سيُضاف هذا النص إلى سيرتك الذاتية."
+  "jm4HonestyHint": "أكد فقط المعلومات التي يمكنك إثبات صحتها بصدق. سيُضاف هذا النص إلى سيرتك الذاتية.",
+  "premiumGateAppBar": "سيرتي المميز",
+  "premiumGateHeroTitle": "افتح كامل إمكانات مسارك المهني",
+  "premiumGateHeroBody": "أدوات ذكاء اصطناعي مصممة لأنظمة تتبع المتقدمين (ATS) التي تستخدمها جهات التوظيف.",
+  "premiumGateBenefitsTitle": "مزايا اشتراكك",
+  "premiumGateBenefitPdf": "تحميل PDF بدون علامة مائية",
+  "premiumGateBenefitPdfBody": "مستندات احترافية جاهزة للإرسال إلى جهات التوظيف.",
+  "premiumGateBenefitAi": "تحسين الكتابة بالذكاء الاصطناعي",
+  "premiumGateBenefitAiBody": "حسّن صياغة نبذتك وإنجازاتك المهنية.",
+  "premiumGateBenefitAts": "توصيات ATS كاملة",
+  "premiumGateBenefitAtsBody": "اطّلع على جميع توصيات التحليل، وليس التوصية الأولى فقط.",
+  "premiumGateBenefitJobMatch": "مطابقة الوظائف",
+  "premiumGateBenefitJobMatchBody": "قارن سيرتك بأي إعلان وظيفي واحفظ التعديلات المخصصة في نسخة جديدة.",
+  "premiumGateBenefitLimits": "بلا حدود يومية للسير والتحليلات",
+  "premiumGateBenefitLimitsBody": "أنشئ وحلّل ما تحتاجه من السير الذاتية.",
+  "premiumGatePlansTitle": "اختر خطتك",
+  "premiumGatePrice": "{price} {currency}",
+  "@premiumGatePrice": {
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "99"
+      },
+      "currency": {
+        "type": "String",
+        "example": "SAR"
+      }
+    }
+  },
+  "premiumGateCurrencySar": "ر.س",
+  "premiumGatePeriodYear": "سنوياً",
+  "premiumGatePeriod": "{months, plural, =1{شهرياً} =2{كل شهرين} few{كل {months} أشهر} other{كل {months} شهراً}}",
+  "@premiumGatePeriod": {
+    "placeholders": {
+      "months": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "premiumGatePerMonth": "حوالي {price} {currency} شهرياً",
+  "@premiumGatePerMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "16.50"
+      },
+      "currency": {
+        "type": "String",
+        "example": "SAR"
+      }
+    }
+  },
+  "premiumGateTrial": "{days, plural, =1{تشمل تجربة مجانية ليوم واحد} =2{تشمل تجربة مجانية ليومين} few{تشمل تجربة مجانية لمدة {days} أيام} other{تشمل تجربة مجانية لمدة {days} يوماً}}",
+  "@premiumGateTrial": {
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "premiumGatePriceNote": "الأسعار وفترات التجربة مقدمة من سيرتي.",
+  "premiumGatePlansFailed": "تعذر تحميل الخطط.",
+  "premiumGateNoPlans": "لا توجد خطط متاحة حالياً.",
+  "premiumGateRetry": "إعادة المحاولة",
+  "premiumGateSubscribe": "اشترك الآن",
+  "premiumGatePurchaseUnavailable": "الاشتراك من داخل التطبيق غير متاح في هذا الإصدار بعد. إذا اشتركت مسبقاً، استخدم التحديث أدناه.",
+  "premiumGateRefresh": "لدي اشتراك بالفعل: تحديث",
+  "premiumGateRefreshing": "جارٍ التحقق من اشتراكك...",
+  "premiumGateNotFound": "لم نجد اشتراكاً فعالاً مرتبطاً بحسابك بعد.",
+  "premiumGateRefreshFailed": "تعذر التحقق من اشتراكك. حاول مجدداً.",
+  "premiumGateActiveTitle": "اشتراكك المميز فعال",
+  "premiumGateActiveBody": "اشتراكك مرتبط بهذا الحساب.",
+  "premiumGateContinue": "متابعة",
+  "premiumGateNotNow": "ليس الآن",
+  "premiumGatePrivacy": "سياسة الخصوصية",
+  "premiumGateJobMatchSeePlans": "عرض خطط الاشتراك المميز",
+  "premiumGateJobMatchBenefitScore": "درجة تطابق سيرتك مع الإعلان الوظيفي",
+  "premiumGateJobMatchBenefitKeywords": "الكلمات المفتاحية المطابقة والناقصة",
+  "premiumGateJobMatchBenefitEdits": "تعديلات مخصصة تُحفظ في نسخة جديدة",
+  "jobMatchFailedTitle": "الاقتراحات غير متاحة حالياً",
+  "jobMatchFailedManualHint": "يمكنك إضافة الكلمات المفتاحية الناقصة بنفسك في محرر السيرة.",
+  "cvHubTitle": "سيرتك الذاتية جاهزة",
+  "cvHubReady": "جاهزة للتقديم: منظمة لأنظمة تتبع المتقدمين.",
+  "cvHubAtsLabel": "التوافق مع أنظمة ATS",
+  "cvHubAtsScore": "{score}%",
+  "@cvHubAtsScore": {
+    "placeholders": {
+      "score": {
+        "type": "int",
+        "example": "88"
+      }
+    }
+  },
+  "cvHubGrade": "التقدير {grade}",
+  "@cvHubGrade": {
+    "placeholders": {
+      "grade": {
+        "type": "String",
+        "example": "B"
+      }
+    }
+  },
+  "cvHubPreview": "معاينة",
+  "cvHubShowFull": "عرض السيرة كاملة",
+  "cvHubShowLess": "عرض أقل",
+  "cvHubDownload": "تحميل السيرة الذاتية (PDF)",
+  "cvHubPreparing": "جارٍ التجهيز...",
+  "cvHubShare": "مشاركة",
+  "cvHubNextSteps": "الخطوات التالية",
+  "cvHubCheckAts": "فحص التوافق بالتفصيل (ATS)",
+  "cvHubCheckAtsBody": "تعرّف على الكلمات المفتاحية والمعايير التي تبحث عنها أنظمة الفرز.",
+  "cvHubMatchJob": "مطابقة مع وظيفة",
+  "cvHubMatchJobBody": "قارن هذه السيرة بإعلان وظيفي واحصل على تعديلات مخصصة.",
+  "cvHubEdit": "تعديل سيرتك الذاتية",
+  "cvHubEditBody": "حدّث خبراتك أو مهاراتك أو نبذتك في أي وقت.",
+  "cvHubEmpty": "لا يوجد محتوى للسيرة حالياً.",
+  "cvHubAppBar": "سيرتك الذاتية",
+  "cvHubRecommended": "موصى به"
 }

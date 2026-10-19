@@ -437,5 +437,124 @@
   "jobMatchRetrySuggestions": "Retry suggestions",
   "jobMatchLoading": "Loading...",
   "jm4ConfirmFact": "I confirm this is true for me",
-  "jm4HonestyHint": "Only confirm facts you can honestly support. This text will be added to your CV."
+  "jm4HonestyHint": "Only confirm facts you can honestly support. This text will be added to your CV.",
+  "premiumGateAppBar": "Sirati Premium",
+  "premiumGateHeroTitle": "Unlock your full career toolkit",
+  "premiumGateHeroBody": "AI tools built for the applicant tracking systems (ATS) employers use to screen CVs.",
+  "premiumGateBenefitsTitle": "What you get",
+  "premiumGateBenefitPdf": "Watermark-free PDF downloads",
+  "premiumGateBenefitPdfBody": "Clean documents, ready to send to employers.",
+  "premiumGateBenefitAi": "AI writing enhancement",
+  "premiumGateBenefitAiBody": "Rewrite and polish your summary and achievements.",
+  "premiumGateBenefitAts": "Full ATS recommendations",
+  "premiumGateBenefitAtsBody": "Every recommendation from your analysis, not just the first.",
+  "premiumGateBenefitJobMatch": "Job Match",
+  "premiumGateBenefitJobMatchBody": "Compare your CV with any job ad and apply tailored edits to a new copy.",
+  "premiumGateBenefitLimits": "No daily CV or analysis limits",
+  "premiumGateBenefitLimitsBody": "Create and analyze as many CVs as you need.",
+  "premiumGatePlansTitle": "Choose a plan",
+  "premiumGatePrice": "{price} {currency}",
+  "@premiumGatePrice": {
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "99"
+      },
+      "currency": {
+        "type": "String",
+        "example": "SAR"
+      }
+    }
+  },
+  "premiumGateCurrencySar": "SAR",
+  "premiumGatePeriodYear": "per year",
+  "premiumGatePeriod": "{months, plural, =1{per month} other{every {months} months}}",
+  "@premiumGatePeriod": {
+    "placeholders": {
+      "months": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "premiumGatePerMonth": "About {price} {currency} a month",
+  "@premiumGatePerMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "16.50"
+      },
+      "currency": {
+        "type": "String",
+        "example": "SAR"
+      }
+    }
+  },
+  "premiumGateTrial": "{days, plural, =1{Includes a 1-day free trial} other{Includes a {days}-day free trial}}",
+  "@premiumGateTrial": {
+    "placeholders": {
+      "days": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "premiumGatePriceNote": "Prices and trial periods are provided by Sirati.",
+  "premiumGatePlansFailed": "Couldn't load the plans.",
+  "premiumGateNoPlans": "No plans are available right now.",
+  "premiumGateRetry": "Try again",
+  "premiumGateSubscribe": "Subscribe",
+  "premiumGatePurchaseUnavailable": "Subscribing from the app isn't available in this version yet. If you've already subscribed, use refresh below.",
+  "premiumGateRefresh": "I already subscribed: refresh",
+  "premiumGateRefreshing": "Checking your subscription...",
+  "premiumGateNotFound": "We couldn't find an active subscription on your account yet.",
+  "premiumGateRefreshFailed": "Couldn't check your subscription. Try again.",
+  "premiumGateActiveTitle": "Your Premium subscription is active",
+  "premiumGateActiveBody": "Your subscription is linked to this account.",
+  "premiumGateContinue": "Continue",
+  "premiumGateNotNow": "Not now",
+  "premiumGatePrivacy": "Privacy policy",
+  "premiumGateJobMatchSeePlans": "See Premium plans",
+  "premiumGateJobMatchBenefitScore": "A match score against the job ad",
+  "premiumGateJobMatchBenefitKeywords": "Matched and missing keywords",
+  "premiumGateJobMatchBenefitEdits": "Tailored edits saved to a new copy",
+  "jobMatchFailedTitle": "Suggestions aren't available right now",
+  "jobMatchFailedManualHint": "You can still add the missing keywords yourself in the CV editor.",
+  "cvHubTitle": "Your CV is ready",
+  "cvHubReady": "Ready to apply: structured for applicant tracking systems.",
+  "cvHubAtsLabel": "ATS compatibility",
+  "cvHubAtsScore": "{score}%",
+  "@cvHubAtsScore": {
+    "placeholders": {
+      "score": {
+        "type": "int",
+        "example": "88"
+      }
+    }
+  },
+  "cvHubGrade": "Grade {grade}",
+  "@cvHubGrade": {
+    "placeholders": {
+      "grade": {
+        "type": "String",
+        "example": "B"
+      }
+    }
+  },
+  "cvHubPreview": "Preview",
+  "cvHubShowFull": "Show full CV",
+  "cvHubShowLess": "Show less",
+  "cvHubDownload": "Download PDF",
+  "cvHubPreparing": "Preparing...",
+  "cvHubShare": "Share",
+  "cvHubNextSteps": "Next steps",
+  "cvHubCheckAts": "Check ATS in detail",
+  "cvHubCheckAtsBody": "See which keywords and criteria screening systems look for.",
+  "cvHubMatchJob": "Match to a job",
+  "cvHubMatchJobBody": "Compare this CV with a job ad and get tailored edits.",
+  "cvHubEdit": "Edit your CV",
+  "cvHubEditBody": "Update your experience, skills or summary any time.",
+  "cvHubEmpty": "No CV content is available yet.",
+  "cvHubAppBar": "Your CV",
+  "cvHubRecommended": "Recommended"
 }
