@@ -262,6 +262,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
                 key: GeneratedCvScreen.shareKey,
                 style: OutlinedButton.styleFrom(
                   disabledForegroundColor: c.textSecondary,
+                  side: BorderSide(color: c.textSecondary),
                 ),
                 onPressed: _blocks.isEmpty ? null : _share,
                 icon: const Icon(Icons.share_outlined, size: 20),
@@ -281,8 +282,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
                 title: l.cvHubCheckAts,
                 body: l.cvHubCheckAtsBody,
                 tag: l.cvHubRecommended,
-                onTap: () => Navigator.of(context)
-                    .push(MaterialPageRoute<void>(builder: atsCheck)),
+                onTap: () => unawaited(atsCheck(context, _cv)),
               ),
               const SizedBox(height: AppSpacing.sm),
             ],
@@ -291,7 +291,10 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
               icon: Icons.work_outline_rounded,
               title: l.cvHubMatchJob,
               body: l.cvHubMatchJobBody,
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.jobMatch),
+              onTap: () => Navigator.of(context).pushNamed(
+                AppRoutes.jobMatch,
+                arguments: _cv.id,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             _NextStepCard(
@@ -348,7 +351,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
               ),
             ),
           ],
-          Divider(height: AppSpacing.xl, color: c.border),
+          Divider(height: AppSpacing.xl, color: c.textSecondary),
           if (_blocks.isEmpty)
             Text(
               l.cvHubEmpty,
@@ -369,7 +372,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
       decoration: BoxDecoration(
         color: c.surface,
         borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.border),
+        border: Border.all(color: c.textSecondary),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -410,7 +413,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
 /// so this feature does not import them.
 abstract final class GeneratedCvHubLinks {
   /// Opens a new detailed ATS check. The step is hidden while unset.
-  static WidgetBuilder? atsCheck;
+  static Future<void> Function(BuildContext, GeneratedCv)? atsCheck;
 }
 
 /// Shows the document clipped to [collapsedHeight] until expanded. The
@@ -501,13 +504,16 @@ class _AtsScoreCard extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
     final value = score.clamp(0, 100);
+    final ringSize = 64.0 *
+        (MediaQuery.textScalerOf(context).scale(16) / 16)
+            .clamp(1.0, double.infinity);
     final hasGrade = grade.trim().isNotEmpty && grade.trim() != '-';
     return DecoratedBox(
       key: GeneratedCvScreen.atsScoreKey,
       decoration: BoxDecoration(
         color: c.surface,
         borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.border),
+        border: Border.all(color: c.textSecondary),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -517,7 +523,8 @@ class _AtsScoreCard extends StatelessWidget {
               label: '${l.cvHubAtsLabel} ${l.cvHubAtsScore(value)}',
               excludeSemantics: true,
               child: SizedBox.square(
-                dimension: 64,
+                key: const ValueKey('cv-hub-score-ring'),
+                dimension: ringSize,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -525,20 +532,17 @@ class _AtsScoreCard extends StatelessWidget {
                       value: value / 100,
                       strokeWidth: 6,
                       color: c.primaryInk,
-                      backgroundColor: c.surfaceHigh,
+                      backgroundColor: c.surface,
                     ),
                     Center(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.xs),
-                          child: Text(
-                            l.cvHubAtsScore(value),
-                            textDirection: TextDirection.ltr,
-                            style: AppTypography.of(
-                              context,
-                              AppTypography.titleMd,
-                            ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.xs),
+                        child: Text(
+                          l.cvHubAtsScore(value),
+                          textDirection: TextDirection.ltr,
+                          style: AppTypography.of(
+                            context,
+                            AppTypography.titleMd,
                           ),
                         ),
                       ),
@@ -602,7 +606,7 @@ class _NextStepCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: c.surface,
           borderRadius: AppRadius.lgAll,
-          border: Border.all(color: c.border),
+          border: Border.all(color: c.textSecondary),
         ),
         child: Material(
           type: MaterialType.transparency,

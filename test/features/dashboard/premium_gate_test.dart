@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -16,7 +17,6 @@ import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
-import '../../support/contrast_probe.dart';
 import '../../support/non_text_contrast.dart';
 
 Map<String, dynamic> planJson(
@@ -92,11 +92,13 @@ class _FakeAuth extends AuthApiService {
 
   Map<String, dynamic>? subscription;
   Object? error;
+  Future<AuthUser?>? pending;
   int calls = 0;
 
   @override
   Future<AuthUser?> me() async {
     calls++;
+    if (pending != null) return pending!;
     if (error != null) throw error!;
     return AuthUser(
       id: 1,
@@ -130,10 +132,7 @@ Future<void> _pump(
   bool keepView = false,
 }) async {
   if (!keepView) {
-    // Tall enough that the lazy ListView builds every section.
-    tester.view.physicalSize = const Size(1080, 5000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+    usePhoneViewAtTextScale(tester);
   }
   final arabic = language == 'ar';
   await tester.pumpWidget(ProviderScope(
@@ -144,6 +143,7 @@ Future<void> _pump(
       authApiServiceProvider.overrideWithValue(auth ?? _FakeAuth()),
     ],
     child: MaterialApp(
+      builder: (_, child) => RepaintBoundary(key: phonePaintKey, child: child!),
       theme: theme ?? AppTheme.lightFor(arabic: arabic),
       locale: Locale(language),
       supportedLocales: AppLocalizations.supportedLocales,
@@ -176,25 +176,18 @@ AppLocalizations _l(WidgetTester tester) =>
     AppLocalizations.of(tester.element(find.byType(PremiumGateScreen)));
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
-  await tester.ensureVisible(finder);
+  await revealPhoneWidget(tester, finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }
 
-bool _isSelected(WidgetTester tester, String key) => find
-    .descendant(
-      of: find.byKey(PremiumGateScreen.planKey(key)),
-      matching: find.byIcon(Icons.radio_button_checked_rounded),
-    )
-    .evaluate()
-    .isNotEmpty;
-
 void main() {
   test('Screen catalogues preserve translations and the same message keys', () {
     final catalogues = [
       for (final language in ['ar', 'en'])
-        (jsonDecode(File('lib/l10n/app_$language.arb').readAsStringSync()) as Map)
+        (jsonDecode(File('lib/l10n/app_$language.arb').readAsStringSync())
+                as Map)
             .entries
             .where((entry) => ['premiumGate', 'cvHub', 'jobMatchFailed']
                 .any((prefix) => (entry.key as String).startsWith(prefix))),
@@ -259,7 +252,8 @@ void main() {
         const {'is_subscribed': false},
         const {'is_subscribed': true},
       ]) {
-        final explicit = access is Map && identical(access['is_subscribed'], true);
+        final explicit =
+            access is Map && identical(access['is_subscribed'], true);
         expect(
           SubscriptionOffer.fromJson(offerJson(access: access)).subscribed,
           explicit,
@@ -299,8 +293,7 @@ void main() {
     test('default plan is the flagged one, else the first', () {
       for (var flagged = -1; flagged < 3; flagged++) {
         final offer = SubscriptionOffer.fromJson(offerJson(plans: [
-          for (var i = 0; i < 3; i++)
-            planJson('p$i', isDefault: i == flagged),
+          for (var i = 0; i < 3; i++) planJson('p$i', isDefault: i == flagged),
         ]));
         expect(offer.defaultPlan!.key, flagged < 0 ? 'p0' : 'p$flagged');
       }
@@ -336,124 +329,133 @@ void main() {
             : AppTheme.lightFor(arabic: arabic);
         final label = '$language/${dark ? 'dark' : 'light'}';
 
-        testWidgets('$label: benefits first, server plans, default selected',
+        testWidgets(
+            '$label: informational plans and honest actions on a 2x phone',
             (tester) async {
-          tester.view.physicalSize = const Size(1080, 5000);
-          tester.view.devicePixelRatio = 1;
-          addTearDown(tester.view.reset);
-          await _pump(
-            tester,
-            plans: _FakePlans([offerJson()]),
-            language: language,
-            theme: theme,
-          );
+          final auth = _FakeAuth();
+          await _pump(tester,
+              plans: _FakePlans([offerJson()]),
+              auth: auth,
+              language: language,
+              theme: theme);
           final l = _l(tester);
           expect(
-            Directionality.of(tester.element(find.text(l.premiumGateHeroTitle))),
-            arabic ? TextDirection.rtl : TextDirection.ltr,
-          );
-          final benefits = tester.getTopLeft(
-            find.text(l.premiumGateBenefitsTitle),
-          );
-          final plansTitle = tester.getTopLeft(
-            find.text(l.premiumGatePlansTitle),
-          );
-          expect(benefits.dy, lessThan(plansTitle.dy));
+              Directionality.of(tester.element(find.byType(PremiumGateScreen))),
+              arabic ? TextDirection.rtl : TextDirection.ltr);
+          await inspectPhoneScreen(tester, label);
           for (final key in ['monthly', 'semiannual', 'annual']) {
-            expect(find.byKey(PremiumGateScreen.planKey(key)), findsOneWidget);
+            final plan = find.byKey(PremiumGateScreen.planKey(key));
+            await revealPhoneWidget(tester, plan);
+            expect(find.descendant(of: plan, matching: find.byType(InkWell)),
+                findsNothing,
+                reason: 'Plans are information, not purchase choices');
+            expect(find.descendant(of: plan, matching: find.byType(Checkbox)),
+                findsNothing);
             expect(
-              find.text(arabic ? 'خطة $key' : 'Plan $key'),
-              findsOneWidget,
-            );
+                find.byIcon(Icons.radio_button_checked_rounded), findsNothing);
+            await tester.tap(plan);
+            await tester.pump();
           }
-          expect(find.text(arabic ? 'الأكثر شيوعاً' : 'Most popular'),
-              findsOneWidget);
-          expect(find.text(l.premiumGateTrial(3)), findsOneWidget);
-          expect(_isSelected(tester, 'semiannual'), isTrue);
-          expectAllTextAa('premium $label');
-          expectAllIconsNonTextAa('premium $label');
-
-          await _tap(tester, find.byKey(PremiumGateScreen.planKey('annual')));
-          expect(_isSelected(tester, 'annual'), isTrue);
-          expect(_isSelected(tester, 'semiannual'), isFalse);
-          expectAllIconsNonTextAa('premium $label annual');
+          expect(auth.calls, 0);
+          await revealPhoneWidget(
+              tester, find.textContaining(l.premiumGateAvailabilityNote));
+          expect(find.textContaining(l.premiumGatePriceNote), findsOneWidget);
+          await revealPhoneWidget(
+              tester, find.byKey(PremiumGateScreen.refreshKey));
+          expect(
+              tester
+                  .widget<ElevatedButton>(
+                      find.byKey(PremiumGateScreen.refreshKey))
+                  .enabled,
+              isTrue);
+          // Every action belongs to the supported refresh/navigation set.
+          // No catalog wording is used as a heuristic to infer a purchase.
+          final allowed = {
+            l.premiumGateRefresh,
+            l.premiumGateRefreshing,
+            l.premiumGateRetry,
+            l.premiumGateNotNow,
+            l.premiumGatePrivacy,
+            l.premiumGateContinue
+          };
+          for (final button in find
+              .byWidgetPredicate((widget) => widget is ButtonStyleButton)
+              .evaluate()) {
+            for (final text in find
+                .descendant(
+                    of: find.byWidget(button.widget),
+                    matching: find.byType(Text))
+                .evaluate()) {
+              expect(allowed, contains((text.widget as Text).data));
+            }
+          }
+          await _tap(tester, find.byKey(PremiumGateScreen.refreshKey));
+          expect(auth.calls, 1);
+          await revealPhoneWidget(tester, find.text(l.premiumGateNotFound));
+          expect(find.byKey(PremiumGateScreen.continueKey), findsNothing);
+          await inspectPhoneScreen(tester, '$label refreshed');
         });
 
-        for (final (state, setUp) in <(String, Future<void> Function(WidgetTester))>[
-          ('loaded', (tester) async {}),
-          (
-            'subscribe notice',
-            (tester) => _tap(tester, find.byKey(PremiumGateScreen.subscribeKey)),
-          ),
-          (
-            'refresh not found',
-            (tester) => _tap(tester, find.byKey(PremiumGateScreen.refreshKey)),
-          ),
-        ]) {
-          testWidgets('$label: $state fits at 2.0 text scale', (tester) async {
-            usePhoneViewAtTextScale(tester);
-            await _pump(
-              tester,
+        testWidgets(
+            '$label: pending refresh remains legible and cannot be submitted twice',
+            (tester) async {
+          final completer = Completer<AuthUser?>();
+          final auth = _FakeAuth()..pending = completer.future;
+          await _pump(tester,
               plans: _FakePlans([offerJson()]),
-              auth: _FakeAuth(const {'is_subscribed': false}),
+              auth: auth,
+              language: language,
+              theme: theme);
+          await revealPhoneWidget(
+              tester, find.byKey(PremiumGateScreen.refreshKey));
+          await tester.tap(find.byKey(PremiumGateScreen.refreshKey));
+          await tester.pump();
+          expect(
+              tester
+                  .widget<ElevatedButton>(
+                      find.byKey(PremiumGateScreen.refreshKey))
+                  .enabled,
+              isFalse);
+          await tester.tap(find.byKey(PremiumGateScreen.refreshKey));
+          await tester.pump();
+          expect(auth.calls, 1);
+          await inspectPhoneScreen(tester, '$label checking access');
+          completer.complete(const AuthUser(
+              id: 1,
+              name: 'Sara',
+              email: 'sara@example.test',
+              subscription: {'is_subscribed': true}));
+          await tester.pumpAndSettle();
+          await revealPhoneWidget(
+              tester, find.byKey(PremiumGateScreen.continueKey));
+          expect(auth.calls, 1);
+        });
+
+        testWidgets('$label: retry and active actions are reachable at 2x',
+            (tester) async {
+          final plans = _FakePlans([Exception('offline'), offerJson()]);
+          final auth = _FakeAuth(const {'is_subscribed': true});
+          await _pump(tester,
+              plans: plans,
+              auth: auth,
               language: language,
               theme: theme,
-              keepView: true,
-            );
-            await setUp(tester);
-            expect(tester.takeException(), isNull);
-            expectAllTextAa('premium $label $state 2x');
-            expectAllIconsNonTextAa('premium $label $state 2x');
-          });
-        }
-
-        testWidgets('$label: load failure and active states fit at 2.0',
-            (tester) async {
-          usePhoneViewAtTextScale(tester);
-          await _pump(
-            tester,
-            plans: _FakePlans([Exception('offline')]),
-            language: language,
-            theme: theme,
-            keepView: true,
-          );
-          expect(find.byKey(PremiumGateScreen.retryKey), findsOneWidget);
-          expect(tester.takeException(), isNull);
-          expectAllTextAa('premium $label failed 2x');
-          expectAllIconsNonTextAa('premium $label failed 2x');
-
-          await _pump(
-            tester,
-            plans: _FakePlans([
-              offerJson(access: const {'is_subscribed': true}),
-            ]),
-            language: language,
-            theme: theme,
-            keepView: true,
-          );
-          expect(find.byKey(PremiumGateScreen.continueKey), findsOneWidget);
-          expect(tester.takeException(), isNull);
-          expectAllTextAa('premium $label active 2x');
-          expectAllIconsNonTextAa('premium $label active 2x');
+              pushed: true);
+          await _tap(tester, find.byKey(PremiumGateScreen.retryKey));
+          expect(plans.loads, 2);
+          await _tap(tester, find.byKey(PremiumGateScreen.refreshKey));
+          expect(auth.calls, 1);
+          await inspectPhoneScreen(tester, '$label active');
+          await _tap(tester, find.byKey(PremiumGateScreen.continueKey));
+          expect(find.byType(PremiumGateScreen), findsNothing);
         });
       }
     }
 
-    testWidgets('Subscribe explains and never calls the server',
+    testWidgets('each refresh re-reads entitlement, including revocation',
         (tester) async {
-      final auth = _FakeAuth(const {'is_subscribed': false});
-      final plans = _FakePlans([offerJson()]);
-      await _pump(tester, plans: plans, auth: auth);
-      await _tap(tester, find.byKey(PremiumGateScreen.subscribeKey));
-      final l = _l(tester);
-      expect(find.text(l.premiumGatePurchaseUnavailable), findsOneWidget);
-      expect(auth.calls, 0);
-      expect(plans.loads, 1);
-      expect(find.byKey(PremiumGateScreen.continueKey), findsNothing);
-    });
-
-    testWidgets('refresh grants access only on an explicit server yes',
-        (tester) async {
+      final auth = _FakeAuth();
+      await _pump(tester, plans: _FakePlans([offerJson()]), auth: auth);
       for (final (subscription, active) in <(Map<String, dynamic>?, bool)>[
         (null, false),
         (const {}, false),
@@ -461,86 +463,54 @@ void main() {
         (const {'is_subscribed': 1}, false),
         (const {'is_subscribed': false, 'can_job_match': true}, false),
         (const {'is_subscribed': true}, true),
+        (const {'is_subscribed': false}, false),
       ]) {
-        final auth = _FakeAuth(subscription);
-        await _pump(tester, plans: _FakePlans([offerJson()]), auth: auth);
+        final calls = auth.calls;
+        auth.subscription = subscription;
         await _tap(tester, find.byKey(PremiumGateScreen.refreshKey));
-        final l = _l(tester);
-        expect(auth.calls, 1, reason: '$subscription');
-        expect(
-          find.byKey(PremiumGateScreen.continueKey),
-          active ? findsOneWidget : findsNothing,
-          reason: '$subscription',
-        );
-        expect(
-          find.text(l.premiumGateNotFound),
-          active ? findsNothing : findsOneWidget,
-          reason: '$subscription',
-        );
-        expect(
-          find.byKey(PremiumGateScreen.subscribeKey),
-          active ? findsNothing : findsOneWidget,
-        );
+        expect(auth.calls, calls + 1);
+        await revealPhoneWidget(
+            tester, find.byKey(PremiumGateScreen.refreshKey));
+        if (active) {
+          await revealPhoneWidget(
+              tester, find.byKey(PremiumGateScreen.continueKey));
+          expect(find.byKey(PremiumGateScreen.continueKey), findsOneWidget);
+        } else {
+          expect(find.byKey(PremiumGateScreen.continueKey), findsNothing);
+          await revealPhoneWidget(
+              tester, find.text(_l(tester).premiumGateNotFound));
+        }
       }
     });
 
-    testWidgets('refresh failure says so and stays locked', (tester) async {
+    testWidgets('refresh failure stays locked and can be retried',
+        (tester) async {
       final auth = _FakeAuth()..error = Exception('offline');
       await _pump(tester, plans: _FakePlans([offerJson()]), auth: auth);
       await _tap(tester, find.byKey(PremiumGateScreen.refreshKey));
-      expect(find.text(_l(tester).premiumGateRefreshFailed), findsOneWidget);
+      await revealPhoneWidget(
+          tester, find.text(_l(tester).premiumGateRefreshFailed));
       expect(find.byKey(PremiumGateScreen.continueKey), findsNothing);
-      expect(
-        tester
-            .widget<OutlinedButton>(find.byKey(PremiumGateScreen.refreshKey))
-            .enabled,
-        isTrue,
-      );
-    });
-
-    testWidgets('plans retry reloads from the server', (tester) async {
-      final plans = _FakePlans([Exception('offline'), offerJson()]);
-      await _pump(tester, plans: plans);
-      expect(find.text(_l(tester).premiumGatePlansFailed), findsOneWidget);
-      await _tap(tester, find.byKey(PremiumGateScreen.retryKey));
-      expect(plans.loads, 2);
-      expect(find.byKey(PremiumGateScreen.planKey('monthly')), findsOneWidget);
-    });
-
-    testWidgets('an empty catalogue says so', (tester) async {
-      await _pump(tester, plans: _FakePlans([offerJson(plans: const [])]));
-      expect(find.text(_l(tester).premiumGateNoPlans), findsOneWidget);
-    });
-
-    testWidgets('Not now and Continue return to the caller', (tester) async {
-      await _pump(
-        tester,
-        plans: _FakePlans([offerJson()]),
-        auth: _FakeAuth(const {'is_subscribed': true}),
-        pushed: true,
-      );
-      await _tap(tester, find.byKey(PremiumGateScreen.notNowKey));
-      expect(find.byType(PremiumGateScreen), findsNothing);
-      expect(find.text('open'), findsOneWidget);
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
+      auth.error = null;
+      auth.subscription = const {'is_subscribed': true};
       await _tap(tester, find.byKey(PremiumGateScreen.refreshKey));
-      await _tap(tester, find.byKey(PremiumGateScreen.continueKey));
-      expect(find.byType(PremiumGateScreen), findsNothing);
+      expect(auth.calls, 2);
+      await revealPhoneWidget(
+          tester, find.byKey(PremiumGateScreen.continueKey));
     });
 
-    testWidgets('Not now from a deep link goes home; privacy opens policy',
+    testWidgets('empty plans, Privacy and Not now remain reachable',
         (tester) async {
       final routes = _Routes();
-      await _pump(tester, plans: _FakePlans([offerJson()]), routes: routes);
+      await _pump(tester,
+          plans: _FakePlans([offerJson(plans: [])]), routes: routes);
+      await revealPhoneWidget(tester, find.text(_l(tester).premiumGateNoPlans));
       await _tap(tester, find.byKey(PremiumGateScreen.privacyKey));
       expect(routes.opened, [AppRoutes.privacy]);
       tester.state<NavigatorState>(find.byType(Navigator)).pop();
       await tester.pumpAndSettle();
       await _tap(tester, find.byKey(PremiumGateScreen.notNowKey));
       expect(routes.opened.last, AppRoutes.home);
-      expect(find.byType(PremiumGateScreen), findsNothing);
     });
   });
 }

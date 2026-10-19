@@ -55,7 +55,7 @@ class JobMatchSection extends StatelessWidget {
         color: c.surface,
         borderRadius: AppRadius.lgAll,
         border: Border.all(
-          color: highlighted ? c.primaryInk : c.border,
+          color: highlighted ? c.primaryInk : c.textSecondary,
           width: highlighted ? 1.5 : 1,
         ),
       ),
@@ -294,7 +294,7 @@ class JobMatchScoreRing extends StatelessWidget {
         child: CustomPaint(
           painter: _RingPainter(
             progress: score.clamp(0, 100) / 100,
-            track: c.border,
+            track: c.surface,
             arc: c.primaryInk,
           ),
           child: Center(

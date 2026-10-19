@@ -32,8 +32,13 @@ void main() {
   setUp(() => AppLocale.languageCode.value = 'en');
 
   group('entitlement gate (server state only, fails closed)', () {
-    final cases = <(String, Map<String, dynamic>?, String Function(AppLocalizations))>[
-      ('free user', subscription(subscribed: false), (l) => l.jobMatchPaywallTitle),
+    final cases =
+        <(String, Map<String, dynamic>?, String Function(AppLocalizations))>[
+      (
+        'free user',
+        subscription(subscribed: false),
+        (l) => l.jobMatchPaywallTitle
+      ),
       (
         'subscribed, quota used up',
         subscription(canJobMatch: false, limit: 3, used: 3),
@@ -313,7 +318,8 @@ void main() {
       expect(target.description, 'Need SQL');
 
       api.cvs = [savedCv(9)];
-      await tapVisible(tester, find.byKey(const ValueKey('fake-generator-done')));
+      await tapVisible(
+          tester, find.byKey(const ValueKey('fake-generator-done')));
       await settle(tester, frames: 20);
 
       expect(api.createCalls.single['cv'], 9);
@@ -336,7 +342,8 @@ void main() {
       await tapVisible(tester, find.byKey(JobMatchScreen.createTailoredKey));
       await settle(tester);
       api.cvs = [savedCv(9, aiStatus: 'processing'), savedCv(3)];
-      await tapVisible(tester, find.byKey(const ValueKey('fake-generator-done')));
+      await tapVisible(
+          tester, find.byKey(const ValueKey('fake-generator-done')));
       await settle(tester, frames: 20);
 
       expect(api.createCalls, isEmpty);
@@ -362,7 +369,8 @@ void main() {
       await enterJob(tester);
       await tapVisible(tester, find.byKey(JobMatchScreen.createTailoredKey));
       await settle(tester);
-      await tapVisible(tester, find.byKey(const ValueKey('fake-generator-done')));
+      await tapVisible(
+          tester, find.byKey(const ValueKey('fake-generator-done')));
       await settle(tester);
       expect(api.createCalls, isEmpty);
       expect(find.text(l10n(tester).jobMatchNoCvTitle), findsOneWidget);
@@ -374,7 +382,8 @@ void main() {
       const ApiException.network('offline'),
       _status(500),
     ]) {
-      testWidgets('a failed replacement leaves the old match resumable '
+      testWidgets(
+          'a failed replacement leaves the old match resumable '
           '(${failure.type})', (tester) async {
         useTallView(tester);
         final api = FakeJobMatchApi()
@@ -409,7 +418,8 @@ void main() {
       });
     }
 
-    testWidgets('returning to a result preserves selection without creating '
+    testWidgets(
+        'returning to a result preserves selection without creating '
         'another match', (tester) async {
       useTallView(tester);
       final api = FakeJobMatchApi()..createResponses.add(matchJson());
@@ -433,7 +443,8 @@ void main() {
     });
 
     for (final fails in [false, true]) {
-      testWidgets('an old refresh ${fails ? 'failure' : 'result'} cannot '
+      testWidgets(
+          'an old refresh ${fails ? 'failure' : 'result'} cannot '
           'replace a newer match', (tester) async {
         useTallView(tester);
         final refresh = Completer<Map<String, dynamic>>();
@@ -603,15 +614,15 @@ void main() {
 
       final l = l10n(tester);
       final retryFinder =
-          find.widgetWithText(TextButton, l.jobMatchRetrySuggestions);
+          find.widgetWithText(ElevatedButton, l.jobMatchRetrySuggestions);
       expect(retryFinder, findsOneWidget);
-      expect(tester.widget<TextButton>(retryFinder).enabled, isTrue);
+      expect(tester.widget<ElevatedButton>(retryFinder).enabled, isTrue);
 
       await tester.tap(retryFinder);
       await tester.pump();
 
       expect(api.retryCalls, [7]);
-      expect(tester.widget<TextButton>(retryFinder).enabled, isFalse);
+      expect(tester.widget<ElevatedButton>(retryFinder).enabled, isFalse);
 
       retryCompleter.complete(matchJson(id: 7, aiStatus: 'completed'));
       await settle(tester);
@@ -643,8 +654,8 @@ void main() {
       expect(find.text(l.jobMatchRetrySuggestions), findsOneWidget);
       expect(
         tester
-            .widget<TextButton>(
-              find.widgetWithText(TextButton, l.jobMatchRetrySuggestions),
+            .widget<ElevatedButton>(
+              find.widgetWithText(ElevatedButton, l.jobMatchRetrySuggestions),
             )
             .enabled,
         isTrue,
@@ -680,7 +691,8 @@ void main() {
     testWidgets('a late apply cannot replace a newer match or its selection',
         (tester) async {
       useTallView(tester);
-      final apply = Completer<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>();
+      final apply = Completer<
+          ({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>();
       final api = FakeJobMatchApi()
         ..createResponses.addAll([
           matchJson(id: 12),
@@ -691,7 +703,8 @@ void main() {
       await enterJob(tester);
       await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
       await settle(tester);
-      await tapVisible(tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s1')));
+      await tapVisible(
+          tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s1')));
       await tapVisible(tester, find.byKey(const ValueKey('jm-apply')));
       await settle(tester);
       expect(api.applyCalls, hasLength(1));
@@ -700,7 +713,8 @@ void main() {
       await enterJob(tester, description: 'Different role requiring SQL');
       await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));
       await settle(tester);
-      await tapVisible(tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s3')));
+      await tapVisible(
+          tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s3')));
 
       apply.complete((
         generatedCv: savedCv(55),
@@ -717,7 +731,17 @@ void main() {
     testWidgets('only explicit fact-free suggestions can be selected',
         (tester) async {
       useTallView(tester);
-      const values = <Object?>[false, true, null, 0, 1, 'false', 'true', {}, []];
+      const values = <Object?>[
+        false,
+        true,
+        null,
+        0,
+        1,
+        'false',
+        'true',
+        {},
+        []
+      ];
       final suggestions = [
         for (var i = 0; i < values.length; i++)
           {...suggestionJson('fact-$i'), 'needs_user_fact': values[i]},
@@ -770,14 +794,21 @@ void main() {
       expect(box(tester, 's2').onChanged, isNull);
       expect(find.text(l.jm4ConfirmFact), findsOneWidget);
       expect(find.text(l.jobMatchSelectToApply), findsOneWidget);
-      expect(tester.widget<ElevatedButton>(find.byKey(const ValueKey('jm-apply'))).onPressed, isNull);
+      expect(
+          tester
+              .widget<ElevatedButton>(find.byKey(const ValueKey('jm-apply')))
+              .onPressed,
+          isNull);
 
-      await tapVisible(tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s2')));
+      await tapVisible(
+          tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s2')));
       expect(box(tester, 's2').value, isFalse);
 
       // Selected in reverse order.
-      await tapVisible(tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s3')));
-      await tapVisible(tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s1')));
+      await tapVisible(
+          tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s3')));
+      await tapVisible(
+          tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s1')));
       expect(find.text(l.jobMatchApplySelected(2)), findsOneWidget);
 
       api.applyResponses.add((
@@ -795,7 +826,8 @@ void main() {
       final api = FakeJobMatchApi();
       await openResult(tester, api);
       final l = l10n(tester);
-      await tapVisible(tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s1')));
+      await tapVisible(
+          tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s1')));
       api.applyResponses.add(_status(409));
       await tapVisible(tester, find.byKey(const ValueKey('jm-apply')));
       await settle(tester);
@@ -815,7 +847,8 @@ void main() {
         (tester) async {
       final api = FakeJobMatchApi();
       await openResult(tester, api);
-      await tapVisible(tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s3')));
+      await tapVisible(
+          tester, find.byKey(JobMatchSuggestionCard.checkboxKey('s3')));
       api.applyResponses.add(_status(422));
       await tapVisible(tester, find.byKey(const ValueKey('jm-apply')));
       await settle(tester);
@@ -873,6 +906,7 @@ void main() {
 
 class _EmptyContent extends MobileContentService {
   @override
-  Future<Map<String, dynamic>> myCvs(bool english, {bool force = false}) async =>
+  Future<Map<String, dynamic>> myCvs(bool english,
+          {bool force = false}) async =>
       {'title': 'My CVs', 'items': <Object>[]};
 }

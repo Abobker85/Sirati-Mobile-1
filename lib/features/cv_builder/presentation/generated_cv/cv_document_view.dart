@@ -36,7 +36,7 @@ class CvDocumentBlocks extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Divider(height: 1, color: c.border),
+                    Divider(height: 1, color: c.textSecondary),
                   ],
                 ),
               ),

@@ -111,9 +111,15 @@
   "summaryWordCountLine": "{words} كلمة ({chars} حرف) • {advice}",
   "@summaryWordCountLine": {
     "placeholders": {
-      "words": {"type": "int"},
-      "chars": {"type": "int"},
-      "advice": {"type": "String"}
+      "words": {
+        "type": "int"
+      },
+      "chars": {
+        "type": "int"
+      },
+      "advice": {
+        "type": "String"
+      }
     }
   },
   "viewProfile": "عرض الملف الشخصي",
@@ -459,7 +465,7 @@
   "premiumGateBenefitJobMatchBody": "قارن سيرتك بأي إعلان وظيفي واحفظ التعديلات المخصصة في نسخة جديدة.",
   "premiumGateBenefitLimits": "بلا حدود يومية للسير والتحليلات",
   "premiumGateBenefitLimitsBody": "أنشئ وحلّل ما تحتاجه من السير الذاتية.",
-  "premiumGatePlansTitle": "اختر خطتك",
+  "premiumGatePlansTitle": "معلومات الخطط",
   "premiumGatePrice": "{price} {currency}",
   "@premiumGatePrice": {
     "placeholders": {
@@ -497,22 +503,11 @@
       }
     }
   },
-  "premiumGateTrial": "{days, plural, =1{تشمل تجربة مجانية ليوم واحد} =2{تشمل تجربة مجانية ليومين} few{تشمل تجربة مجانية لمدة {days} أيام} other{تشمل تجربة مجانية لمدة {days} يوماً}}",
-  "@premiumGateTrial": {
-    "placeholders": {
-      "days": {
-        "type": "int",
-        "example": "3"
-      }
-    }
-  },
-  "premiumGatePriceNote": "الأسعار وفترات التجربة مقدمة من سيرتي.",
+  "premiumGatePriceNote": "الأسعار المعروضة استرشادية. سيعرض المتجر السعر النهائي عند إتاحة الاشتراكات.",
   "premiumGatePlansFailed": "تعذر تحميل الخطط.",
   "premiumGateNoPlans": "لا توجد خطط متاحة حالياً.",
   "premiumGateRetry": "إعادة المحاولة",
-  "premiumGateSubscribe": "اشترك الآن",
-  "premiumGatePurchaseUnavailable": "الاشتراك من داخل التطبيق غير متاح في هذا الإصدار بعد. إذا اشتركت مسبقاً، استخدم التحديث أدناه.",
-  "premiumGateRefresh": "لدي اشتراك بالفعل: تحديث",
+  "premiumGateRefresh": "لدي اشتراك بالفعل: تحديث صلاحية الوصول",
   "premiumGateRefreshing": "جارٍ التحقق من اشتراكك...",
   "premiumGateNotFound": "لم نجد اشتراكاً فعالاً مرتبطاً بحسابك بعد.",
   "premiumGateRefreshFailed": "تعذر التحقق من اشتراكك. حاول مجدداً.",
@@ -556,12 +551,16 @@
   "cvHubShare": "مشاركة",
   "cvHubNextSteps": "الخطوات التالية",
   "cvHubCheckAts": "فحص التوافق بالتفصيل (ATS)",
-  "cvHubCheckAtsBody": "تعرّف على الكلمات المفتاحية والمعايير التي تبحث عنها أنظمة الفرز.",
+  "cvHubCheckAtsBody": "يفتح فحص ATS جديداً؛ لن تُملأ هذه السيرة تلقائياً بعد.",
   "cvHubMatchJob": "مطابقة مع وظيفة",
   "cvHubMatchJobBody": "قارن هذه السيرة بإعلان وظيفي واحصل على تعديلات مخصصة.",
   "cvHubEdit": "تعديل سيرتك الذاتية",
   "cvHubEditBody": "حدّث خبراتك أو مهاراتك أو نبذتك في أي وقت.",
   "cvHubEmpty": "لا يوجد محتوى للسيرة حالياً.",
   "cvHubAppBar": "سيرتك الذاتية",
-  "cvHubRecommended": "موصى به"
+  "cvHubRecommended": "موصى به",
+  "premiumGateAvailabilityNote": "الاشتراكات داخل التطبيق ستتاح قريباً. لا يمكنك شراء اشتراك في هذا الإصدار.",
+  "cvHubAtsNewFormNotice": "سيُفتح نموذج ATS جديد. لن تُملأ سيرتك تلقائياً بعد؛ الصق نصها أو ارفع ملفاً للمتابعة.",
+  "cvHubAtsStay": "البقاء في هذه السيرة",
+  "cvHubAtsOpenNewForm": "فتح نموذج ATS جديد"
 }

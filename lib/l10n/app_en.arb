@@ -104,9 +104,15 @@
   "summaryWordCountLine": "{words} words ({chars} chars) • {advice}",
   "@summaryWordCountLine": {
     "placeholders": {
-      "words": {"type": "int"},
-      "chars": {"type": "int"},
-      "advice": {"type": "String"}
+      "words": {
+        "type": "int"
+      },
+      "chars": {
+        "type": "int"
+      },
+      "advice": {
+        "type": "String"
+      }
     }
   },
   "viewProfile": "View profile",
@@ -452,7 +458,7 @@
   "premiumGateBenefitJobMatchBody": "Compare your CV with any job ad and apply tailored edits to a new copy.",
   "premiumGateBenefitLimits": "No daily CV or analysis limits",
   "premiumGateBenefitLimitsBody": "Create and analyze as many CVs as you need.",
-  "premiumGatePlansTitle": "Choose a plan",
+  "premiumGatePlansTitle": "Plan information",
   "premiumGatePrice": "{price} {currency}",
   "@premiumGatePrice": {
     "placeholders": {
@@ -490,22 +496,11 @@
       }
     }
   },
-  "premiumGateTrial": "{days, plural, =1{Includes a 1-day free trial} other{Includes a {days}-day free trial}}",
-  "@premiumGateTrial": {
-    "placeholders": {
-      "days": {
-        "type": "int",
-        "example": "3"
-      }
-    }
-  },
-  "premiumGatePriceNote": "Prices and trial periods are provided by Sirati.",
+  "premiumGatePriceNote": "Prices shown are indicative. The final price will be shown by the store when subscriptions open.",
   "premiumGatePlansFailed": "Couldn't load the plans.",
   "premiumGateNoPlans": "No plans are available right now.",
   "premiumGateRetry": "Try again",
-  "premiumGateSubscribe": "Subscribe",
-  "premiumGatePurchaseUnavailable": "Subscribing from the app isn't available in this version yet. If you've already subscribed, use refresh below.",
-  "premiumGateRefresh": "I already subscribed: refresh",
+  "premiumGateRefresh": "I already subscribed: refresh access",
   "premiumGateRefreshing": "Checking your subscription...",
   "premiumGateNotFound": "We couldn't find an active subscription on your account yet.",
   "premiumGateRefreshFailed": "Couldn't check your subscription. Try again.",
@@ -549,12 +544,16 @@
   "cvHubShare": "Share",
   "cvHubNextSteps": "Next steps",
   "cvHubCheckAts": "Check ATS in detail",
-  "cvHubCheckAtsBody": "See which keywords and criteria screening systems look for.",
+  "cvHubCheckAtsBody": "Starts a new ATS check; this CV is not prefilled yet.",
   "cvHubMatchJob": "Match to a job",
   "cvHubMatchJobBody": "Compare this CV with a job ad and get tailored edits.",
   "cvHubEdit": "Edit your CV",
   "cvHubEditBody": "Update your experience, skills or summary any time.",
   "cvHubEmpty": "No CV content is available yet.",
   "cvHubAppBar": "Your CV",
-  "cvHubRecommended": "Recommended"
+  "cvHubRecommended": "Recommended",
+  "premiumGateAvailabilityNote": "In-app subscriptions are opening soon. You cannot buy a subscription in this version.",
+  "cvHubAtsNewFormNotice": "This opens a new ATS form. Your CV is not filled in automatically yet; paste its text or upload a file to continue.",
+  "cvHubAtsStay": "Stay on this CV",
+  "cvHubAtsOpenNewForm": "Open new ATS form"
 }

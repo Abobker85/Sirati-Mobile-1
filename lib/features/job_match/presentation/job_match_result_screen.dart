@@ -399,7 +399,7 @@ class _ApplyBar extends ConsumerWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: c.surface,
-        border: Border(top: BorderSide(color: c.border)),
+        border: Border(top: BorderSide(color: c.textSecondary, width: 2)),
       ),
       child: SafeArea(
         top: false,
@@ -465,7 +465,7 @@ class _AdviceFailedCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.surface,
         borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.border),
+        border: Border.all(color: c.textSecondary),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -497,33 +497,37 @@ class _AdviceFailedCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: AppSpacing.xs),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (retrying) ...[
-                  SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(
-                      key: const ValueKey('jm-retry-progress'),
-                      strokeWidth: 2,
-                      color: c.primaryInk,
+            ElevatedButton(
+              key: const ValueKey('jm-retry-advice'),
+              onPressed: retrying ? null : onRetry,
+              style: ElevatedButton.styleFrom(
+                // Change fill and foreground together when entering busy state.
+                animationDuration: Duration.zero,
+                disabledBackgroundColor: c.surface,
+                disabledForegroundColor: c.textSecondary,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (retrying) ...[
+                    SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(
+                        key: const ValueKey('jm-retry-progress'),
+                        strokeWidth: 2,
+                        color: c.primaryInk,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                ],
-                Flexible(
-                  child: TextButton(
-                    onPressed: retrying ? null : onRetry,
-                    style: TextButton.styleFrom(
-                      disabledForegroundColor: c.textSecondary,
-                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                  ],
+                  Flexible(
                     child: Text(
                       l.jobMatchRetrySuggestions,
                       textAlign: TextAlign.center,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.xs),
             JobMatchNotice(

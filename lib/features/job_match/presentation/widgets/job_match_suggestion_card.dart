@@ -53,6 +53,12 @@ class JobMatchSuggestionCard extends StatelessWidget {
               Checkbox(
                 key: checkboxKey(suggestion.key),
                 value: selected || applied,
+                fillColor: WidgetStateProperty.resolveWith((states) =>
+                    states.contains(WidgetState.selected)
+                        ? c.primaryInk
+                        : c.primaryInk.withValues(alpha: 0)),
+                checkColor: c.surface,
+                side: BorderSide(color: c.textSecondary, width: 2),
                 onChanged: canToggle ? (_) => onToggle() : null,
               ),
               Expanded(
@@ -151,11 +157,13 @@ class JobMatchSuggestionCard extends StatelessWidget {
                   controlAffinity: ListTileControlAffinity.leading,
                   activeColor: c.onWarningContainer,
                   checkColor: c.warningLight,
+                  fillColor: WidgetStateProperty.resolveWith((states) =>
+                      states.contains(WidgetState.selected)
+                          ? c.onWarningContainer
+                          : c.onWarningContainer.withValues(alpha: 0)),
                   side: WidgetStateBorderSide.resolveWith(
                     (states) => BorderSide(
-                      color: states.contains(WidgetState.disabled)
-                          ? c.onWarningContainer.withValues(alpha: 0.6)
-                          : c.onWarningContainer,
+                      color: c.onWarningContainer,
                       width: 2,
                     ),
                   ),

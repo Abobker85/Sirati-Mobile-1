@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,8 +44,11 @@ void main() {
             (tester) async {
           usePhoneViewAtTextScale(tester);
           final api = FakeJobMatchApi()
-            ..createResponses.add(matchJson(aiStatus: status))
+            ..createResponses.add(matchJson(
+                aiStatus: status, applied: status == 'completed' ? ['s3'] : []))
             ..retryResponses.add(matchJson(aiStatus: 'processing'));
+          final retry = Completer<Map<String, dynamic>>();
+          if (status == 'failed') api.retryOverride = (_) => retry.future;
           await pumpJobMatch(
             tester,
             api: api,
@@ -61,49 +66,87 @@ void main() {
           final context = tester.element(find.byType(JobMatchResultScreen));
           expect(Directionality.of(context),
               language == 'ar' ? TextDirection.rtl : TextDirection.ltr);
-          expect(find.byType(JobMatchScoreRing), findsOneWidget);
-          expect(find.byKey(const ValueKey('jm-keywords-matched')), findsOneWidget);
-          expect(find.byKey(const ValueKey('jm-keywords-missing')), findsOneWidget);
-          expect(find.text('SQL'), findsWidgets);
+          await inspectPhoneScreen(tester, '$language/$dark/$status');
+          await revealPhoneWidget(tester, find.byType(JobMatchScoreRing));
+          await revealPhoneWidget(
+              tester, find.byKey(const ValueKey('jm-keywords-matched')));
+          await revealPhoneWidget(
+              tester, find.byKey(const ValueKey('jm-keywords-missing')));
           final l = l10n(tester);
 
           switch (status) {
             case 'processing':
+              await revealPhoneWidget(tester,
+                  find.byKey(const ValueKey('jm-suggestions-skeleton')));
               expect(find.byKey(const ValueKey('jm-suggestions-skeleton')),
                   findsOneWidget);
               expect(find.byType(JobMatchSuggestionCard), findsNothing);
-              expect(tester.widget<ElevatedButton>(
-                  find.byKey(const ValueKey('jm-apply'))).enabled, isFalse);
+              expect(
+                  tester
+                      .widget<ElevatedButton>(
+                          find.byKey(const ValueKey('jm-apply')))
+                      .enabled,
+                  isFalse);
             case 'failed':
-              expect(find.byKey(const ValueKey('jm-advice-failed')), findsOneWidget);
+              await revealPhoneWidget(
+                  tester, find.byKey(const ValueKey('jm-retry-advice')));
+              final retryButton = find.byKey(const ValueKey('jm-retry-advice'));
+              expect(
+                  tester.widget<ElevatedButton>(retryButton).enabled, isTrue);
+              expect(
+                  tester.getSize(retryButton).width,
+                  tester
+                          .getSize(
+                              find.byKey(const ValueKey('jm-advice-failed')))
+                          .width -
+                      2 * AppSpacing.md);
+              expect(find.byKey(const ValueKey('jm-advice-failed')),
+                  findsOneWidget);
               expect(find.text(l.jobMatchFailedTitle), findsOneWidget);
               expect(find.text(l.jobMatchRetrySuggestions), findsOneWidget);
-              expect(find.byKey(const ValueKey('jm-suggestions-skeleton')), findsNothing);
+              expect(find.byKey(const ValueKey('jm-suggestions-skeleton')),
+                  findsNothing);
             case 'completed':
+              await revealPhoneWidget(tester,
+                  find.byKey(JobMatchSuggestionCard.confirmationKey('s2')));
               expect(find.byType(JobMatchSuggestionCard), findsNWidgets(3));
               expect(find.text(l.jobMatchBefore), findsWidgets);
               expect(find.text(l.jobMatchAfter), findsWidgets);
-              final confirm = find.byKey(JobMatchSuggestionCard.confirmationKey('s2'));
-              final select = find.byKey(JobMatchSuggestionCard.checkboxKey('s2'));
+              final confirm =
+                  find.byKey(JobMatchSuggestionCard.confirmationKey('s2'));
+              final select =
+                  find.byKey(JobMatchSuggestionCard.checkboxKey('s2'));
               expect(tester.widget<Checkbox>(select).onChanged, isNull);
               await tapVisible(tester, confirm);
               await tapVisible(tester, select);
               await settle(tester);
               expect(tester.widget<Checkbox>(select).value, isTrue);
-              expect(tester.widget<ElevatedButton>(
-                  find.byKey(const ValueKey('jm-apply'))).enabled, isTrue);
+              expectPaintedControlsAa('$language/$dark confirmed and selected');
+              await expectRenderedControlsAa(
+                  tester, '$language/$dark confirmed and selected');
+              expect(
+                  tester
+                      .widget<ElevatedButton>(
+                          find.byKey(const ValueKey('jm-apply')))
+                      .enabled,
+                  isTrue);
               // Revoking the fact must also revoke selection and apply.
               await tapVisible(tester, confirm);
               await settle(tester);
               expect(tester.widget<Checkbox>(select).value, isFalse);
-              expect(tester.widget<ElevatedButton>(
-                  find.byKey(const ValueKey('jm-apply'))).enabled, isFalse);
+              expect(
+                  tester
+                      .widget<ElevatedButton>(
+                          find.byKey(const ValueKey('jm-apply')))
+                      .enabled,
+                  isFalse);
           }
 
           expect(tester.takeException(), isNull);
           final label = '$language/$dark/$status at 2x';
           expectAllTextAa(label);
           expectAllIconsNonTextAa(label);
+          expectPaintedControlsAa(label);
           // The score arc is meaningful, the track is decoration.
           final c = context.sirati;
           expect(AppContrast.ratio(c.primaryInk, c.surface),
@@ -114,9 +157,23 @@ void main() {
 
           if (status == 'failed') {
             await tapVisible(tester, find.text(l.jobMatchRetrySuggestions));
+            await tester.pump();
+            final retryButton = find.byKey(const ValueKey('jm-retry-advice'));
+            expect(tester.widget<ElevatedButton>(retryButton).enabled, isFalse);
+            expectAllTextAa('$label retry busy first frame');
+            expectAllIconsNonTextAa('$label retry busy first frame');
+            expectPaintedControlsAa('$label retry busy first frame');
+            await expectRenderedControlsAa(
+                tester, '$label retry busy first frame');
+            await inspectPhoneScreen(tester, '$label retry busy');
+            retry.complete(matchJson(aiStatus: 'processing'));
             await settle(tester);
             expect(api.retryCalls, [7]);
-            expect(find.byKey(const ValueKey('jm-suggestions-skeleton')), findsOneWidget);
+            await revealPhoneWidget(
+                tester, find.byKey(const ValueKey('jm-suggestions-skeleton')));
+            expect(find.byKey(const ValueKey('jm-suggestions-skeleton')),
+                findsOneWidget);
+            await revealPhoneWidget(tester, find.byType(JobMatchScoreRing));
             expect(find.byType(JobMatchScoreRing), findsOneWidget);
           }
           await tester.pumpWidget(const SizedBox());

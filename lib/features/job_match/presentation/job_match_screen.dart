@@ -19,7 +19,9 @@ import 'package:sirati/shared/widgets/app_snack_bar.dart';
 /// Job Match entry: server-gated (paywall / quota / unavailable), then job
 /// details + CV choice → match → [JobMatchResultScreen].
 class JobMatchScreen extends ConsumerStatefulWidget {
-  const JobMatchScreen({super.key});
+  const JobMatchScreen({super.key, this.initialCvId});
+
+  final int? initialCvId;
 
   static const titleFieldKey = ValueKey('jm-title');
   static const descriptionFieldKey = ValueKey('jm-description');
@@ -34,7 +36,7 @@ class JobMatchScreen extends ConsumerStatefulWidget {
 class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
   final _title = TextEditingController();
   final _description = TextEditingController();
-  int? _selectedCvId;
+  late int? _selectedCvId = widget.initialCvId;
   JobMatchInputError? _inputError;
   bool _pickError = false;
   bool _cvPreparing = false;
@@ -309,6 +311,7 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
             ),
           if (_pickError)
             JobMatchNotice(
+              key: const ValueKey('jm-pick-error'),
               tone: JobMatchTone.error,
               message: l.jobMatchPickCvRequired,
             ),
@@ -329,7 +332,9 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
   /// The chosen CV, or the only one when there is a single saved CV.
   int? _effectiveCvId(List<GeneratedCv> list) {
     final chosen = _selectedCvId;
-    if (chosen != null && list.any((cv) => cv.id == chosen)) return chosen;
+    if (chosen != null) {
+      return list.any((cv) => cv.id == chosen) ? chosen : null;
+    }
     return list.length == 1 ? list.single.id : null;
   }
 
@@ -653,7 +658,7 @@ class _CvOption extends StatelessWidget {
             color: c.surface,
             borderRadius: AppRadius.mdAll,
             border: Border.all(
-              color: selected ? c.primaryInk : c.border,
+              color: selected ? c.primaryInk : c.textSecondary,
               width: selected ? 2 : 1,
             ),
           ),

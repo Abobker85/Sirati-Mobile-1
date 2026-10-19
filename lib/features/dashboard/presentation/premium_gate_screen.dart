@@ -10,13 +10,12 @@ import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Premium gate: benefits, server plans and a server-verified refresh.
 ///
-/// There is no in-app purchase integration yet, so Subscribe explains that
-/// instead of starting a payment. Access is only ever granted by the server
+/// Plans are informational while in-app subscriptions are not available.
+/// Access is only ever granted by the server
 /// (`/auth/me` → `subscription.is_subscribed`).
 class PremiumGateScreen extends ConsumerStatefulWidget {
   const PremiumGateScreen({super.key});
 
-  static const subscribeKey = ValueKey('premium-subscribe');
   static const refreshKey = ValueKey('premium-refresh');
   static const notNowKey = ValueKey('premium-not-now');
   static const privacyKey = ValueKey('premium-privacy');
@@ -29,12 +28,11 @@ class PremiumGateScreen extends ConsumerStatefulWidget {
   ConsumerState<PremiumGateScreen> createState() => _PremiumGateScreenState();
 }
 
-enum _GateNotice { purchaseUnavailable, notFound, refreshFailed }
+enum _GateNotice { notFound, refreshFailed }
 
 class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
-  String? _selectedPlan;
   bool _refreshing = false;
-  bool _activated = false;
+  bool? _activated;
   _GateNotice? _notice;
 
   Future<void> _refresh() async {
@@ -60,9 +58,6 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     });
   }
 
-  void _subscribe() =>
-      setState(() => _notice = _GateNotice.purchaseUnavailable);
-
   void _leave() {
     final navigator = Navigator.of(context);
     if (navigator.canPop()) {
@@ -77,7 +72,7 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
     final offer = ref.watch(subscriptionOfferProvider);
-    final active = _activated || (offer.value?.subscribed ?? false);
+    final active = _activated ?? (offer.value?.subscribed ?? false);
 
     return Scaffold(
       backgroundColor: c.background,
@@ -99,6 +94,12 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
               const SizedBox(height: AppSpacing.lg),
             ],
             const _Benefits(),
+            const SizedBox(height: AppSpacing.md),
+            _Notice(
+              tone: _Tone.info,
+              message:
+                  '${l.premiumGateAvailabilityNote}\n${l.premiumGatePriceNote}',
+            ),
             if (!active) ...[
               const SizedBox(height: AppSpacing.lg),
               _plans(context, offer),
@@ -107,44 +108,40 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
                 _noticeFor(context, _notice!),
               ],
               const SizedBox(height: AppSpacing.lg),
-              ElevatedButton(
-                key: PremiumGateScreen.subscribeKey,
-                onPressed: _subscribe,
-                child: Text(l.premiumGateSubscribe),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              OutlinedButton(
-                key: PremiumGateScreen.refreshKey,
-                style: OutlinedButton.styleFrom(
-                  disabledForegroundColor: c.textSecondary,
-                ),
-                onPressed: _refreshing ? null : _refresh,
-                child: _refreshing
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: c.primaryInk,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Flexible(child: Text(l.premiumGateRefreshing)),
-                        ],
-                      )
-                    : Text(l.premiumGateRefresh, textAlign: TextAlign.center),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Center(
-                child: TextButton(
-                  key: PremiumGateScreen.notNowKey,
-                  onPressed: _leave,
-                  child: Text(l.premiumGateNotNow),
-                ),
-              ),
             ],
+            ElevatedButton(
+              key: PremiumGateScreen.refreshKey,
+              style: ElevatedButton.styleFrom(
+                animationDuration: Duration.zero,
+                disabledBackgroundColor: c.surface,
+                disabledForegroundColor: c.textSecondary,
+              ),
+              onPressed: _refreshing ? null : _refresh,
+              child: _refreshing
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: c.primaryInk,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Flexible(child: Text(l.premiumGateRefreshing)),
+                      ],
+                    )
+                  : Text(l.premiumGateRefresh, textAlign: TextAlign.center),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Center(
+              child: TextButton(
+                key: PremiumGateScreen.notNowKey,
+                onPressed: _leave,
+                child: Text(l.premiumGateNotNow),
+              ),
+            ),
             const SizedBox(height: AppSpacing.md),
             _Footer(
               onPrivacy: () =>
@@ -208,9 +205,6 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       );
     }
 
-    final selected = data.plans.any((p) => p.key == _selectedPlan)
-        ? _selectedPlan
-        : data.defaultPlan?.key;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -221,30 +215,9 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
             key: PremiumGateScreen.planKey(plan.key),
             plan: plan,
             english: english,
-            selected: plan.key == selected,
-            onTap: () => setState(() => _selectedPlan = plan.key),
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
-        if (data.trialDays > 0) ...[
-          Text(
-            l.premiumGateTrial(data.trialDays),
-            style: AppTypography.of(
-              context,
-              AppTypography.labelLg,
-              color: c.primaryInk,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xxs),
-        ],
-        Text(
-          l.premiumGatePriceNote,
-          style: AppTypography.of(
-            context,
-            AppTypography.bodySm,
-            color: c.textSecondary,
-          ),
-        ),
       ],
     );
   }
@@ -254,10 +227,6 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     return KeyedSubtree(
       key: PremiumGateScreen.noticeKey,
       child: switch (notice) {
-        _GateNotice.purchaseUnavailable => _Notice(
-            tone: _Tone.info,
-            message: l.premiumGatePurchaseUnavailable,
-          ),
         _GateNotice.notFound => _Notice(
             tone: _Tone.warning,
             message: l.premiumGateNotFound,
@@ -416,7 +385,8 @@ class _BenefitRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: AppTypography.of(context, AppTypography.titleSm)),
+              Text(title,
+                  style: AppTypography.of(context, AppTypography.titleSm)),
               const SizedBox(height: AppSpacing.xxs),
               Text(
                 body,
@@ -435,18 +405,10 @@ class _BenefitRow extends StatelessWidget {
 }
 
 class _PlanCard extends StatelessWidget {
-  const _PlanCard({
-    super.key,
-    required this.plan,
-    required this.english,
-    required this.selected,
-    required this.onTap,
-  });
+  const _PlanCard({super.key, required this.plan, required this.english});
 
   final SubscriptionPlan plan;
   final bool english;
-  final bool selected;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -457,88 +419,34 @@ class _PlanCard extends StatelessWidget {
     final period = plan.periodMonths == 12
         ? l.premiumGatePeriodYear
         : l.premiumGatePeriod(plan.periodMonths);
-    final perMonth = plan.pricePerMonth;
-
-    return Semantics(
-      selected: selected,
-      inMutuallyExclusiveGroup: true,
-      button: true,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: AppRadius.lgAll,
-          border: Border.all(
-            color: selected ? c.primaryInk : c.borderStrong,
-            width: selected ? 2 : 1,
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xxs,
+            children: [
+              Text(plan.name(english: english),
+                  style: AppTypography.of(context, AppTypography.titleMd)),
+              if (badge != null) _Badge(badge),
+            ],
           ),
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: AppRadius.lgAll,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    selected
-                        ? Icons.radio_button_checked_rounded
-                        : Icons.radio_button_unchecked_rounded,
-                    color: selected ? c.primaryInk : c.textSecondary,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: AppSpacing.xs,
-                          runSpacing: AppSpacing.xxs,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              plan.name(english: english),
-                              style: AppTypography.of(
-                                context,
-                                AppTypography.titleMd,
-                              ),
-                            ),
-                            if (badge != null) _Badge(badge),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          '${l.premiumGatePrice(formatPlanPrice(plan.price), currency)} · $period',
-                          style: AppTypography.of(
-                            context,
-                            AppTypography.titleSm,
-                            color: c.textPrimary,
-                          ),
-                        ),
-                        if (perMonth != null && plan.periodMonths > 1) ...[
-                          const SizedBox(height: AppSpacing.xxs),
-                          Text(
-                            l.premiumGatePerMonth(
-                              formatPlanPrice(perMonth),
-                              currency,
-                            ),
-                            style: AppTypography.of(
-                              context,
-                              AppTypography.bodySm,
-                              color: c.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            '${l.premiumGatePrice(formatPlanPrice(plan.price), currency)} · $period',
+            style: AppTypography.of(context, AppTypography.titleSm),
+          ),
+          if (plan.pricePerMonth != null && plan.periodMonths > 1) ...[
+            const SizedBox(height: AppSpacing.xxs),
+            Text(
+              l.premiumGatePerMonth(
+                  formatPlanPrice(plan.pricePerMonth!), currency),
+              style: AppTypography.of(context, AppTypography.bodySm,
+                  color: c.textSecondary),
             ),
-          ),
-        ),
+          ],
+        ],
       ),
     );
   }
@@ -621,8 +529,12 @@ class _ActiveCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            ElevatedButton(
+            OutlinedButton(
               key: PremiumGateScreen.continueKey,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: c.onSuccessContainer,
+                side: BorderSide(color: c.onSuccessContainer),
+              ),
               onPressed: onContinue,
               child: Text(l.premiumGateContinue),
             ),
@@ -669,7 +581,7 @@ class _Card extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.surface,
         borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.border),
+        border: Border.all(color: c.textSecondary),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
