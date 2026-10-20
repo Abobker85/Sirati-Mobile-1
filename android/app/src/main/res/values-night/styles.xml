@@ -2,7 +2,10 @@
 <resources>
     <!-- Night launch stays on the dark surface until Flutter paints. -->
     <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <item name="android:windowBackground">@drawable/launch_background</item>
+        <!-- A colour, not the day launch drawable. The unqualified
+             launch_background is inflated with the light splash colour, so
+             the first frame flashed cream in night mode. -->
+        <item name="android:windowBackground">@color/splash_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>

@@ -20,6 +20,12 @@ import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
+/// Branding collapses below this viewport height so the form can move up.
+const _loginCompactHeaderExtent = 520.0;
+
+const _loginMarkSize = 56.0;
+const _loginCompactMarkSize = 40.0;
+
 class LoginScreen extends ConsumerStatefulWidget {
   /// When true, shows a one-shot "session expired" snackbar after first frame.
   final bool sessionExpiredNotice;
@@ -149,9 +155,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: context.sirati.background,
       body: AuthFormConstraint(
-        child: SafeArea(
-          child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Height the body can actually use, including a keyboard that
+            // shrinks the scaffold. Full-screen size stays tall while typing.
+            final compact = constraints.maxHeight < _loginCompactHeaderExtent;
+            final sectionGap = compact ? AppSpacing.sm : AppSpacing.xl;
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  compact ? AppSpacing.xs : AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -172,15 +189,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const LanguageToggle(),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.xl),
-                    const Center(child: SiratiMark(size: 56)),
-                    const SizedBox(height: AppSpacing.xl),
+                    SizedBox(height: sectionGap),
+                    Center(
+                      child: SiratiMark(
+                        size: compact ? _loginCompactMarkSize : _loginMarkSize,
+                      ),
+                    ),
+                    SizedBox(height: sectionGap),
                     Text(
                       english ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
                       textAlign: TextAlign.center,
                       style: AppTypography.of(
                         context,
-                        AppTypography.headlineMd,
+                        compact
+                            ? AppTypography.titleLg
+                            : AppTypography.headlineMd,
                         color: context.sirati.primaryInk,
                       ),
                     ),
@@ -194,7 +217,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: context.sirati.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xl),
+                    SizedBox(height: sectionGap),
                     AutofillGroup(
                   child: Form(
                     key: _formKey,
@@ -374,6 +397,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
               ),
+            );
+          },
         ),
       ),
     );

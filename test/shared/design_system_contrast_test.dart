@@ -913,8 +913,14 @@ void main() {
                   DefaultTextStyle.of(element).style.merge(text.style);
               expect(style.fontWeight,
                   isIn([FontWeight.w400, FontWeight.w600, FontWeight.w700]));
-              expect(style.fontSize,
-                  isIn(AppTypography.all.map((token) => token.size)));
+              final avatar =
+                  element.findAncestorWidgetOfExactType<ProfileAvatar>();
+              if (avatar != null) {
+                expect(style.fontSize, avatar.size * 0.35);
+              } else {
+                expect(style.fontSize,
+                    isIn(AppTypography.all.map((token) => token.size)));
+              }
               expect(
                 style.height,
                 isIn(AppTypography.all.expand(

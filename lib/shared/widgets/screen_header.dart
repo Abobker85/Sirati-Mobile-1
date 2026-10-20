@@ -261,11 +261,17 @@ class ProfileAvatar extends StatelessWidget {
           padding: EdgeInsets.all(size * 0.12),
           child: Text(
             label ?? 'S',
+            maxLines: 1,
+            softWrap: false,
+            // Initials share the fixed avatar face; keep scaling within it.
+            textScaler: MediaQuery.textScalerOf(context).clamp(
+              maxScaleFactor: 1.3,
+            ),
             style: AppTypography.of(
               context,
               AppTypography.titleMd,
               color: context.sirati.onBrandSurface,
-            ),
+            ).copyWith(fontSize: size * 0.35),
           ),
         ),
       );

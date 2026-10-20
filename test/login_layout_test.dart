@@ -70,6 +70,12 @@ void main() {
     for (final dark in [false, true]) {
       phoneLoginTest(arabic: arabic, dark: dark);
     }
+    for (final size in const [Size(390, 844), Size(390, 480)]) {
+      shortLoginTest(arabic: arabic, size: size, keyboard: false);
+      if (size.height < 520) {
+        shortLoginTest(arabic: arabic, size: size, keyboard: true);
+      }
+    }
   }
 }
 
@@ -128,4 +134,85 @@ void phoneLoginTest({required bool arabic, required bool dark}) {
     expect(find.byType(SubmitButton).hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+}
+
+void shortLoginTest({
+  required bool arabic,
+  required Size size,
+  required bool keyboard,
+}) {
+  final language = arabic ? 'ar' : 'en';
+  final signIn = arabic ? 'تسجيل الدخول' : 'Sign in';
+  final banner = arabic
+      ? 'يرجى تصحيح الحقول المحددة للمتابعة.'
+      : 'Please fix the highlighted fields to continue.';
+  testWidgets(
+    'login header at ${size.width.toInt()}x${size.height.toInt()} '
+    'keyboard=$keyboard ($language)',
+    (tester) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.lightFor(arabic: arabic),
+          locale: Locale(language),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: const LoginScreen(),
+        ),
+      ));
+      await tester.pump();
+
+      final scroll = find.byType(SingleChildScrollView);
+      expect(scroll, findsOneWidget);
+      expect(
+        find.descendant(of: scroll, matching: find.byType(SiratiMark)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: scroll, matching: find.text(signIn)),
+        findsOneWidget,
+      );
+
+      final mark = tester.widget<SiratiMark>(find.byType(SiratiMark));
+      if (size.height < 520) {
+        expect(mark.size, lessThan(56));
+        expect(mark.size, greaterThanOrEqualTo(32));
+      } else {
+        expect(mark.size, 56);
+      }
+
+      if (keyboard) {
+        tester.view.viewInsets = const FakeViewPadding(bottom: 320);
+        addTearDown(tester.view.resetViewInsets);
+        await tester.pump();
+        expect(
+          tester.widget<SiratiMark>(find.byType(SiratiMark)).size,
+          lessThan(56),
+        );
+        final position = tester
+            .state<ScrollableState>(
+              find
+                  .descendant(of: scroll, matching: find.byType(Scrollable))
+                  .first,
+            )
+            .position;
+        expect(position.maxScrollExtent, greaterThan(0));
+        expect(find.byType(SubmitButton).hitTestable(), findsNothing);
+        await tester.ensureVisible(find.byType(SubmitButton));
+        await tester.pump();
+      }
+
+      await tester.ensureVisible(find.byType(SubmitButton));
+      await tester.pump();
+      expect(find.byType(SubmitButton).hitTestable(), findsOneWidget);
+      await tester.tap(find.byType(SubmitButton));
+      await tester.pump();
+      expect(find.text(banner), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

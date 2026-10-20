@@ -72,12 +72,14 @@ class AiFieldLoadingOverlay extends StatelessWidget {
             child: IgnorePointer(child: RepaintBoundary(child: child)),
           ),
           Positioned.fill(child: ColoredBox(color: context.sirati.surface)),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppFormStyles.radius),
-            child: _AiCoPilotVeil(
-              messages: messages,
-              statusStream: statusStream,
-              messageInterval: messageInterval,
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppFormStyles.radius),
+              child: _AiCoPilotVeil(
+                messages: messages,
+                statusStream: statusStream,
+                messageInterval: messageInterval,
+              ),
             ),
           ),
         ],
