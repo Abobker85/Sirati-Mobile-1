@@ -436,6 +436,7 @@
   },
   "jobMatchRetrySuggestions": "Retry suggestions",
   "jobMatchLoading": "Loading...",
+  "sharedLoading": "Loading...",
   "jm4ConfirmFact": "I confirm this is true for me",
   "jm4HonestyHint": "Only confirm facts you can honestly support. This text will be added to your CV."
 }

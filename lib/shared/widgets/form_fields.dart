@@ -40,14 +40,32 @@ class AppFormStyles {
       errorBorder: o(c.error, 1.4),
       focusedErrorBorder: o(c.error, 1.8),
       disabledBorder: o(c.outline, 1),
-      labelStyle: AppTypography.bodyMd.resolve(
-        arabic: arabic,
-        color: c.textSecondary,
-      ),
-      floatingLabelStyle: AppTypography.bodySm.resolve(
-        arabic: arabic,
-        color: c.primaryInk,
-      ),
+      labelStyle: WidgetStateTextStyle.resolveWith((states) {
+        final base = AppTypography.bodyMd.resolve(arabic: arabic);
+        if (states.contains(WidgetState.error)) {
+          return base.copyWith(color: c.error);
+        }
+        if (states.contains(WidgetState.focused)) {
+          return base.copyWith(color: c.primaryInk);
+        }
+        if (states.contains(WidgetState.disabled)) {
+          return base.copyWith(color: c.textHint);
+        }
+        return base.copyWith(color: c.textSecondary);
+      }),
+      floatingLabelStyle: WidgetStateTextStyle.resolveWith((states) {
+        final base = AppTypography.bodySm.resolve(arabic: arabic);
+        if (states.contains(WidgetState.error)) {
+          return base.copyWith(color: c.error);
+        }
+        if (states.contains(WidgetState.focused)) {
+          return base.copyWith(color: c.primaryInk);
+        }
+        if (states.contains(WidgetState.disabled)) {
+          return base.copyWith(color: c.textHint);
+        }
+        return base.copyWith(color: c.textSecondary);
+      }),
       hintStyle: AppTypography.bodyMd.resolve(
         arabic: arabic,
         color: c.textHint,
@@ -69,7 +87,7 @@ class AppFormStyles {
   }) {
     return InputDecoration(
       hintText: hintText,
-      labelText: labelText,
+      label: _tokenLabel(labelText),
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
       isDense: dense,
@@ -581,65 +599,71 @@ class _AppTextFormFieldState extends FormFieldState<String> {
       borderSide: BorderSide(color: c.success, width: 1.4),
     );
 
-    return Semantics(
-      liveRegion: showError,
-      child: TextField(
-        controller: _effectiveController,
-        focusNode: _focusNode,
-        enabled: enabled,
-        readOnly: readOnly,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        textInputAction: textInputAction,
-        textCapitalization: textCapitalization,
-        inputFormatters: inputFormatters,
-        autofillHints: widget.autofillHints,
-        maxLines: obscureText ? 1 : maxLines,
-        minLines: minLines,
-        maxLength: maxLength,
-        textAlign: textAlign,
-        textDirection: textDirection ??
-            BidiTextUtils.detectBaseDirection(
-              _effectiveController.text,
-              fallback: Directionality.of(context),
-            ),
-        style: AppTypography.of(context, AppTypography.bodyLg),
-        cursorColor: c.primaryInk,
-        onChanged: (value) {
-          didChange(value);
-          onChanged?.call(value);
-        },
-        onSubmitted: onFieldSubmitted,
-        decoration: InputDecoration(
-          hintText: hintText,
-          label: labelText == null
-              ? null
-              : Text(
-                  labelText,
-                  style: AppTypography.of(context, AppTypography.bodyMd),
-                ),
-          prefixIcon: prefixIcon,
-          suffixIcon: resolvedSuffix,
-          filled: filled,
-          fillColor: fill,
-          enabledBorder: showSuccess ? successBorder : null,
-          focusedBorder: showSuccess ? successBorder : null,
-          contentPadding: contentPadding ??
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          // Native errors are associated with the editable semantics node and
-          // announced by InputDecorator's live region, including on submit.
-          errorText: showError ? errorText : null,
-          errorMaxLines: 100,
-          helperText: showSuccess ? widget.successMessage : null,
-          helperMaxLines: 100,
-          helperStyle: AppTypography.of(
-            context,
-            AppTypography.bodySm,
-            color: c.onSuccessContainer,
+    return TextField(
+      controller: _effectiveController,
+      focusNode: _focusNode,
+      enabled: enabled,
+      readOnly: readOnly,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
+      autofillHints: widget.autofillHints,
+      maxLines: obscureText ? 1 : maxLines,
+      minLines: minLines,
+      maxLength: maxLength,
+      textAlign: textAlign,
+      textDirection: textDirection ??
+          BidiTextUtils.detectBaseDirection(
+            _effectiveController.text,
+            fallback: Directionality.of(context),
           ),
-          counterText: '',
+      style: AppTypography.of(context, AppTypography.bodyLg),
+      cursorColor: c.primaryInk,
+      onChanged: (value) {
+        didChange(value);
+        onChanged?.call(value);
+      },
+      onSubmitted: onFieldSubmitted,
+      decoration: InputDecoration(
+        hintText: hintText,
+        label: _tokenLabel(labelText),
+        prefixIcon: prefixIcon,
+        suffixIcon: resolvedSuffix,
+        filled: filled,
+        fillColor: fill,
+        enabledBorder: showSuccess ? successBorder : null,
+        focusedBorder: showSuccess ? successBorder : null,
+        contentPadding: contentPadding ??
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        // Native errors are associated with the editable semantics node and
+        // announced by InputDecorator's live region, including on submit.
+        errorText: showError ? errorText : null,
+        errorMaxLines: 100,
+        helperText: showSuccess ? widget.successMessage : null,
+        helperMaxLines: 100,
+        helperStyle: AppTypography.of(
+          context,
+          AppTypography.bodySm,
+          color: c.onSuccessContainer,
         ),
+        counterText: '',
       ),
     );
   }
+}
+
+/// Label widget that inherits the decoration's resolved (floating/focused) style but replaces Flutter's
+/// hard-coded `height: 1` with the typography token's line height.
+Widget? _tokenLabel(String? text) {
+  if (text == null) return null;
+  return Builder(
+    builder: (context) => Text(
+      text,
+      style: DefaultTextStyle.of(context).style.copyWith(
+            height: AppTypography.of(context, AppTypography.bodyMd).height,
+          ),
+    ),
+  );
 }

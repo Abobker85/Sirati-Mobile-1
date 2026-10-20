@@ -71,5 +71,133 @@ void main() {
       expect(paintedBackgroundsOf(tester.element(find.text('Outside'))),
           [theme.scaffoldBackgroundColor]);
     });
+
+    testWidgets('contrast probe resolves direct Material fill (${theme.brightness})',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: Material(
+            color: colors.primaryLight,
+            child: Text('On Material', style: TextStyle(color: colors.primaryInk)),
+          ),
+        ),
+      ));
+      expect(
+        paintedBackgroundsOf(tester.element(find.text('On Material'))),
+        [colors.primaryLight],
+      );
+    });
+
+    testWidgets(
+        'adversarial negative control: probe fails on faded ancestor (${theme.brightness})',
+        (tester) async {
+      // 1. Icon under Opacity ancestor
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: ColoredBox(
+            color: colors.surface,
+            child: Opacity(
+              opacity: 0.1,
+              child: Icon(Icons.check, color: colors.textPrimary),
+            ),
+          ),
+        ),
+      ));
+      expect(
+        () => expectAllIconsAa('faded Opacity icon'),
+        throwsA(isA<TestFailure>()),
+      );
+
+      // 2. Icon under FadeTransition ancestor
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: ColoredBox(
+            color: colors.surface,
+            child: FadeTransition(
+              opacity: const AlwaysStoppedAnimation(0.08),
+              child: Icon(Icons.star, color: colors.primaryInk),
+            ),
+          ),
+        ),
+      ));
+      expect(
+        () => expectAllIconsAa('faded FadeTransition icon'),
+        throwsA(isA<TestFailure>()),
+      );
+
+      // 3. Progress indicator under AnimatedOpacity ancestor
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: ColoredBox(
+            color: colors.surface,
+            child: AnimatedOpacity(
+              opacity: 0.1,
+              duration: Duration.zero,
+              child: CircularProgressIndicator(color: colors.primaryInk),
+            ),
+          ),
+        ),
+      ));
+      expect(
+        () => expectAllProgressIndicatorsAa('faded AnimatedOpacity spinner'),
+        throwsA(isA<TestFailure>()),
+      );
+    });
+
+    testWidgets(
+        'adversarial negative control: probe fails on wrong fill (${theme.brightness})',
+        (tester) async {
+      // 1. Text with wrong/low-contrast fill
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: ColoredBox(
+            color: colors.surfaceHigh,
+            child: Text(
+              'Low contrast text',
+              style: TextStyle(color: colors.surfaceLow),
+            ),
+          ),
+        ),
+      ));
+      expect(
+        () => expectAllTextAa('wrong fill text'),
+        throwsA(isA<TestFailure>()),
+      );
+
+      // 2. Icon with wrong/low-contrast fill
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: ColoredBox(
+            color: colors.surface,
+            child: Icon(Icons.warning, color: colors.surfaceLow),
+          ),
+        ),
+      ));
+      expect(
+        () => expectAllIconsAa('wrong fill icon'),
+        throwsA(isA<TestFailure>()),
+      );
+
+      // 3. Progress indicator with wrong/low-contrast fill
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: ColoredBox(
+            color: colors.surface,
+            child: CircularProgressIndicator(color: colors.surfaceLow),
+          ),
+        ),
+      ));
+      expect(
+        () => expectAllProgressIndicatorsAa('wrong fill progress'),
+        throwsA(isA<TestFailure>()),
+      );
+    });
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -65,6 +66,11 @@ class AppButton extends StatelessWidget {
     final c = context.sirati;
     final enabled = onPressed != null && !isLoading;
     final style = AppTypography.of(context, AppTypography.labelLg);
+    final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    final loadingStatus = l10n?.sharedLoading ??
+        (Directionality.of(context) == TextDirection.rtl
+            ? 'جارٍ التحميل...'
+            : 'Loading...');
 
     final child = Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -76,6 +82,7 @@ class AppButton extends StatelessWidget {
             height: 18,
             child: CircularProgressIndicator(
               strokeWidth: 2.2,
+              semanticsLabel: loadingStatus,
               color: variant == AppButtonVariant.primary
                   ? c.onPrimary
                   : variant == AppButtonVariant.destructive
@@ -152,10 +159,7 @@ class AppButton extends StatelessWidget {
         );
     }
 
-    return Semantics(
-      liveRegion: isLoading,
-      child: PressScale(enabled: enabled, child: button),
-    );
+    return PressScale(enabled: enabled, child: button);
   }
 
   Color _foreground(SiratiColors c) {

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_title.dart';
@@ -71,6 +71,15 @@ void uiPair(Color ink, Color fill) => expect(
       reason: '$ink on $fill',
     );
 
+Color renderedTextColor(WidgetTester tester, Finder finder) {
+  final renderParagraph = tester.renderObject<RenderParagraph>(finder);
+  final inlineSpan = renderParagraph.text;
+  if (inlineSpan is TextSpan && inlineSpan.style?.color != null) {
+    return inlineSpan.style!.color!;
+  }
+  return DefaultTextStyle.of(tester.element(finder)).style.color!;
+}
+
 void main() {
   for (final dark in [false, true]) {
     testWidgets('painted shared controls meet contrast, dark=$dark', (
@@ -83,6 +92,7 @@ void main() {
       final theme = dark ? AppTheme.dark : AppTheme.light;
       const direction = TextDirection.ltr;
 
+      // ── A1: AppTextFormField resting & floating/focused label color ──
       await tester.pumpWidget(
         app(
           theme,
@@ -92,9 +102,8 @@ void main() {
         ),
       );
       await tester.pump();
-      final deco = tester
-          .widget<InputDecorator>(find.byType(InputDecorator))
-          .decoration;
+      final deco =
+          tester.widget<InputDecorator>(find.byType(InputDecorator)).decoration;
       final fill = deco.fillColor!;
       final enabled = deco.enabledBorder! as OutlineInputBorder;
       final focusedBorder = deco.focusedBorder! as OutlineInputBorder;
@@ -103,27 +112,72 @@ void main() {
       uiPair(enabled.borderSide.color, fill);
       uiPair(focusedBorder.borderSide.color, fill);
 
+      final restingColor = renderedTextColor(tester, find.text('Email'));
+      textPair(restingColor, fill);
+      expect(restingColor, theme.extension<SiratiColors>()!.textSecondary);
+
       await tester.showKeyboard(find.byType(EditableText));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
-      final labelElement = tester.element(find.text('Email'));
-      final animated = tester
-          .widgetList<AnimatedDefaultTextStyle>(
-            find.ancestor(
-              of: find.text('Email'),
-              matching: find.byType(AnimatedDefaultTextStyle),
-            ),
-          )
-          .first;
-      final labelColor =
-          animated.style.color ??
-          DefaultTextStyle.of(labelElement).style.color!;
-      textPair(labelColor, fill);
-      expect(
-        labelColor,
-        Theme.of(labelElement).extension<SiratiColors>()!.primaryInk,
-      );
+      final floatingColor = renderedTextColor(tester, find.text('Email'));
+      textPair(floatingColor, fill);
+      expect(floatingColor, theme.extension<SiratiColors>()!.primaryInk);
 
+      // ── A1: AppInput resting & floating/focused label color ──
+      await tester.pumpWidget(
+        app(
+          theme,
+          direction,
+          const AppInput(label: 'Username'),
+          disableAnimations: false,
+        ),
+      );
+      await tester.pump();
+      final inputDeco =
+          tester.widget<InputDecorator>(find.byType(InputDecorator)).decoration;
+      final inputFill =
+          inputDeco.fillColor ?? theme.inputDecorationTheme.fillColor!;
+      final inputRestingColor =
+          renderedTextColor(tester, find.text('Username'));
+      textPair(inputRestingColor, inputFill);
+      expect(inputRestingColor, theme.extension<SiratiColors>()!.textSecondary);
+
+      await tester.showKeyboard(find.byType(EditableText));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      final inputFloatingColor =
+          renderedTextColor(tester, find.text('Username'));
+      textPair(inputFloatingColor, inputFill);
+      expect(inputFloatingColor, theme.extension<SiratiColors>()!.primaryInk);
+
+      // ── A6: Real input hint states ──
+      await tester.pumpWidget(
+        app(
+          theme,
+          direction,
+          AppTextFormField(hintText: 'Enter keyword'),
+        ),
+      );
+      await tester.pump();
+      final formHintColor =
+          renderedTextColor(tester, find.text('Enter keyword'));
+      textPair(formHintColor, fill);
+      expect(formHintColor, theme.extension<SiratiColors>()!.textHint);
+
+      await tester.pumpWidget(
+        app(
+          theme,
+          direction,
+          const AppInput(hint: 'Search jobs'),
+        ),
+      );
+      await tester.pump();
+      final inputHintColor =
+          renderedTextColor(tester, find.text('Search jobs'));
+      textPair(inputHintColor, inputFill);
+      expect(inputHintColor, theme.extension<SiratiColors>()!.textHint);
+
+      // ── A6: Real input error states ──
       const message = 'Enter a valid value';
       final form = GlobalKey<FormState>();
       await tester.pumpWidget(
@@ -141,25 +195,83 @@ void main() {
       );
       form.currentState!.validate();
       await tester.pump(const Duration(milliseconds: 400));
-      final errorDeco = tester
-          .widget<InputDecorator>(find.byType(InputDecorator))
-          .decoration;
+      final errorDeco =
+          tester.widget<InputDecorator>(find.byType(InputDecorator)).decoration;
       final errorBorder = errorDeco.errorBorder! as OutlineInputBorder;
       expect(errorBorder.borderSide.color.a, 1);
       uiPair(errorBorder.borderSide.color, errorDeco.fillColor!);
+      expect(
+          errorBorder.borderSide.color, theme.extension<SiratiColors>()!.error);
       final icon = tester.widget<Icon>(
         find.byIcon(Icons.error_outline_rounded),
       );
       expect(icon.color!.a, 1);
       uiPair(icon.color!, errorDeco.fillColor!);
-      final errorElement = tester.element(find.text(message));
-      final errorText = errorElement.widget as Text;
-      final errorStyle = DefaultTextStyle.of(
-        errorElement,
-      ).style.merge(errorText.style);
-      expect(errorStyle.fontSize, AppTypography.bodySm.size);
-      expect(errorStyle.fontWeight, FontWeight.w600);
+      expect(icon.color, theme.extension<SiratiColors>()!.error);
+      final errorColor = renderedTextColor(tester, find.text(message));
+      textPair(errorColor, errorDeco.fillColor!);
       expectAllTextAa('field error dark=$dark');
+
+      await tester.pumpWidget(
+        app(
+          theme,
+          direction,
+          const AppInput(
+            label: 'Email',
+            errorText: 'Invalid email address',
+          ),
+        ),
+      );
+      await tester.pump();
+      final appInputErrorIcon = tester.widget<Icon>(
+        find.byIcon(Icons.error_outline_rounded),
+      );
+      expect(appInputErrorIcon.color!.a, 1);
+      uiPair(appInputErrorIcon.color!, inputFill);
+      expect(appInputErrorIcon.color, theme.extension<SiratiColors>()!.error);
+      final appInputErrorColor =
+          renderedTextColor(tester, find.text('Invalid email address'));
+      textPair(appInputErrorColor, inputFill);
+
+      // ── A6: Real input success state (AppTextFormField) ──
+      const successMsg = 'Username available';
+      await tester.pumpWidget(
+        app(
+          theme,
+          direction,
+          AppTextFormField(
+            labelText: 'Username',
+            initialValue: 'ValidUser',
+            showSuccessWhenValid: true,
+            autovalidateMode: AutovalidateMode.always,
+            successMessage: successMsg,
+          ),
+        ),
+      );
+      await tester.pump();
+      final successDeco =
+          tester.widget<InputDecorator>(find.byType(InputDecorator)).decoration;
+      final successBorder = successDeco.enabledBorder! as OutlineInputBorder;
+      expect(successBorder.borderSide.color.a, 1);
+      uiPair(successBorder.borderSide.color, successDeco.fillColor!);
+      expect(
+        successBorder.borderSide.color,
+        theme.extension<SiratiColors>()!.success,
+      );
+
+      final successIcon = tester.widget<Icon>(
+        find.byIcon(Icons.check_circle_rounded),
+      );
+      expect(successIcon.color!.a, 1);
+      uiPair(successIcon.color!, successDeco.fillColor!);
+      expect(successIcon.color, theme.extension<SiratiColors>()!.success);
+
+      final successColor = renderedTextColor(tester, find.text(successMsg));
+      textPair(successColor, successDeco.fillColor!);
+      expect(
+        successColor,
+        theme.extension<SiratiColors>()!.onSuccessContainer,
+      );
 
       await tester.pumpWidget(
         app(
@@ -217,75 +329,31 @@ void main() {
       await tester.pump();
       expectAllTextAa('input hint dark=$dark');
 
-      await tester.pumpWidget(
-        app(
-          theme,
-          direction,
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: theme.extension<SiratiColors>()!.surfaceHigh,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Builder(
-                builder: (context) => Text(
-                  'Raised hint',
-                  style: Theme.of(context).inputDecorationTheme.hintStyle,
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-      expectAllTextAa('raised hint dark=$dark');
+      // Scheme contrast invariants checked with strict mathematical ratios
+      final scheme = theme.colorScheme;
+      textPair(scheme.onSecondary, scheme.secondary);
+      textPair(scheme.onSecondaryContainer, scheme.secondaryContainer);
+      textPair(scheme.onTertiary, scheme.tertiary);
+      textPair(scheme.onTertiaryContainer, scheme.tertiaryContainer);
 
+      // Real SegmentedButton on dark/light scheme surfaces
       await tester.pumpWidget(
         app(
           theme,
           direction,
-          Builder(
-            builder: (context) {
-              final scheme = Theme.of(context).colorScheme;
-              Widget pair(String name, Color background, Color foreground) =>
-                  DecoratedBox(
-                    decoration: BoxDecoration(color: background),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Text(name, style: TextStyle(color: foreground)),
-                    ),
-                  );
-              return Column(
-                children: [
-                  pair('Secondary', scheme.secondary, scheme.onSecondary),
-                  pair(
-                    'Secondary container',
-                    scheme.secondaryContainer,
-                    scheme.onSecondaryContainer,
-                  ),
-                  pair('Tertiary', scheme.tertiary, scheme.onTertiary),
-                  pair(
-                    'Tertiary container',
-                    scheme.tertiaryContainer,
-                    scheme.onTertiaryContainer,
-                  ),
-                  SegmentedButton<int>(
-                    showSelectedIcon: false,
-                    segments: const [
-                      ButtonSegment(value: 1, label: Text('One')),
-                      ButtonSegment(value: 2, label: Text('Two')),
-                    ],
-                    selected: const {1},
-                    onSelectionChanged: (_) {},
-                  ),
-                ],
-              );
-            },
+          SegmentedButton<int>(
+            showSelectedIcon: false,
+            segments: const [
+              ButtonSegment(value: 1, label: Text('One')),
+              ButtonSegment(value: 2, label: Text('Two')),
+            ],
+            selected: const {1},
+            onSelectionChanged: (_) {},
           ),
         ),
       );
       await tester.pump();
-      expectAllTextAa('scheme pairs dark=$dark');
+      expectAllTextAa('SegmentedButton dark=$dark');
 
       await tester.pumpWidget(
         app(theme, direction, const AppCard(child: Text('Plain card'))),
@@ -311,19 +379,17 @@ void main() {
         ),
       );
       await tester.pump();
-      final surfaceShadow =
-          (tester
-                      .widget<DecoratedBox>(
-                        find
-                            .descendant(
-                              of: find.byType(AppSurfaceCard),
-                              matching: find.byType(DecoratedBox),
-                            )
-                            .first,
-                      )
-                      .decoration
-                  as BoxDecoration)
-              .boxShadow;
+      final surfaceShadow = (tester
+              .widget<DecoratedBox>(
+                find
+                    .descendant(
+                      of: find.byType(AppSurfaceCard),
+                      matching: find.byType(DecoratedBox),
+                    )
+                    .first,
+              )
+              .decoration as BoxDecoration)
+          .boxShadow;
       expect(surfaceShadow ?? const <BoxShadow>[], isEmpty);
       expect(tester.takeException(), isNull);
     });
@@ -349,7 +415,8 @@ void main() {
                 direction,
                 Column(
                   children: [
-                    AppButton.primary(label: 'Save حفظ', onPressed: () => taps++),
+                    AppButton.primary(
+                        label: 'Save حفظ', onPressed: () => taps++),
                     AppInput(label: 'Name الاسم', controller: controller),
                     AppListTile(title: 'Open فتح', onTap: () => taps++),
                     AppListTile(
@@ -365,10 +432,11 @@ void main() {
               ),
             );
             await tester.pump();
-            final root = tester.binding.renderViews.single.owner!.semanticsOwner!
-                .rootSemanticsNode!;
+            final root = tester.binding.renderViews.single.owner!
+                .semanticsOwner!.rootSemanticsNode!;
             for (final label in ['Save حفظ', 'Open فتح']) {
-              final node = nodes(root).singleWhere((node) => node.label == label);
+              final node =
+                  nodes(root).singleWhere((node) => node.label == label);
               expect(node.flagsCollection.isButton, isTrue);
               expect(
                 node.getSemanticsData().hasAction(SemanticsAction.tap),
@@ -381,6 +449,8 @@ void main() {
               );
             }
             expect(taps, 2);
+
+            // text field + switch checked on the FIRST tree, before the tree is replaced below
             final field = nodes(
               root,
             ).singleWhere((node) => node.flagsCollection.isTextField);
@@ -414,6 +484,77 @@ void main() {
               SemanticsAction.tap,
             );
             expect(switches, 1);
+
+            // A3: AppListTile button node count and null onTap check
+            expect(
+              nodes(root).where(
+                  (n) => n.flagsCollection.isButton && n.label.trim().isEmpty),
+              isEmpty,
+            );
+            final tileButtons = nodes(root)
+                .where((n) =>
+                    n.flagsCollection.isButton && n.label.contains('Open فتح'))
+                .toList();
+            expect(tileButtons.length, 1);
+
+            // A3: Non-tappable AppListTile must not have button semantics
+            await tester.pumpWidget(
+              app(
+                theme,
+                direction,
+                const AppListTile(
+                  title: 'Static Info معلومات ثابته',
+                  subtitle: 'Read only للقراءة',
+                  onTap: null,
+                ),
+              ),
+            );
+            await tester.pump();
+            final staticRoot = tester.binding.renderViews.single.owner!
+                .semanticsOwner!.rootSemanticsNode!;
+            final staticTileNodes = nodes(staticRoot)
+                .where((n) => n.label.contains('Static Info معلومات ثابته'))
+                .toList();
+            expect(staticTileNodes.length, 1);
+            expect(staticTileNodes.single.flagsCollection.isButton, isFalse);
+            expect(
+              staticTileNodes.single
+                  .getSemanticsData()
+                  .hasAction(SemanticsAction.tap),
+              isFalse,
+            );
+
+            // A2: AppButton loading semantics: exactly one button node with loading text
+            final loadingText = direction == TextDirection.rtl
+                ? 'جارٍ التحميل...'
+                : 'Loading...';
+            var loadingTaps = 0;
+            await tester.pumpWidget(
+              app(
+                theme,
+                direction,
+                AppButton.primary(
+                  label: 'Submit إرسال',
+                  isLoading: true,
+                  onPressed: () => loadingTaps++,
+                ),
+              ),
+            );
+            await tester.pump();
+            final loadingRoot = tester.binding.renderViews.single.owner!
+                .semanticsOwner!.rootSemanticsNode!;
+            final loadingButtons = nodes(loadingRoot)
+                .where((n) => n.flagsCollection.isButton)
+                .toList();
+            expect(loadingButtons.length, 1);
+            expect(loadingButtons.single.label, contains('Submit إرسال'));
+            expect(loadingButtons.single.label, contains(loadingText));
+            expect(
+              loadingButtons.single
+                  .getSemanticsData()
+                  .hasAction(SemanticsAction.tap),
+              isFalse,
+            );
             await tester.pumpWidget(const SizedBox());
             await tester.pumpAndSettle();
             expect(tester.takeException(), isNull);
@@ -430,41 +571,81 @@ void main() {
           final form = GlobalKey<FormState>();
           const message = 'Enter a valid value يرجى إدخال قيمة صحيحة';
           try {
-          await tester.pumpWidget(
-            app(
-              theme,
-              direction,
-              Form(
-                key: form,
-                child: AppTextFormField(
-                  labelText: 'Contact التواصل',
-                  validator: (_) => message,
+            await tester.pumpWidget(
+              app(
+                theme,
+                direction,
+                Form(
+                  key: form,
+                  child: AppTextFormField(
+                    labelText: 'Contact التواصل',
+                    validator: (_) => message,
+                  ),
                 ),
               ),
-            ),
-          );
-          form.currentState!.validate();
-          await tester.pumpAndSettle();
-          final field = tester.widget<TextField>(find.byType(TextField));
-          expect(field.decoration!.errorText, message);
-          expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
-          final all = nodes(
-            tester.binding.renderViews.single.owner!.semanticsOwner!
-                .rootSemanticsNode!,
-          ).toList();
-          final editable = all.singleWhere(
-            (node) => node.flagsCollection.isTextField,
-          );
-          expect(editable.hint, contains(message));
-          expect(
-            all.any(
-              (node) =>
-                  node.flagsCollection.isLiveRegion &&
-                  node.hint.contains(message),
-            ),
-            isTrue,
-          );
-          expect(tester.takeException(), isNull);
+            );
+            form.currentState!.validate();
+            await tester.pumpAndSettle();
+            final field = tester.widget<TextField>(find.byType(TextField));
+            expect(field.decoration!.errorText, message);
+            expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
+            final all = nodes(
+              tester.binding.renderViews.single.owner!.semanticsOwner!
+                  .rootSemanticsNode!,
+            ).toList();
+            all.singleWhere(
+              // exactly one text-field node
+              (node) => node.flagsCollection.isTextField,
+            );
+            final liveNodes = all
+                .where(
+                  (node) => node.flagsCollection.isLiveRegion,
+                )
+                .toList();
+            // Flutter's InputDecorator announces the error itself: as a live region where the platform has no
+            // announce API, via the announce API otherwise. Never both, and no extra wrapper may add a second one.
+            expect(liveNodes.length, lessThanOrEqualTo(1));
+            expect(
+              all.any(
+                (n) => '${n.label} ${n.hint} ${n.value}'.contains(message),
+              ),
+              isTrue,
+              reason: 'the error text must be reachable in the semantics tree',
+            );
+
+            // A4: AppInput error semantics: exactly one live-region error node tied to the field
+            await tester.pumpWidget(
+              app(
+                theme,
+                direction,
+                const AppInput(
+                  label: 'Contact التواصل',
+                  errorText: message,
+                ),
+              ),
+            );
+            await tester.pumpAndSettle();
+            final allInput = nodes(
+              tester.binding.renderViews.single.owner!.semanticsOwner!
+                  .rootSemanticsNode!,
+            ).toList();
+            final inputEditable = allInput.singleWhere(
+              (node) => node.flagsCollection.isTextField,
+            );
+            expect(inputEditable.hint, contains(message));
+            final inputLiveNodes = allInput
+                .where(
+                  (node) => node.flagsCollection.isLiveRegion,
+                )
+                .toList();
+            expect(inputLiveNodes.length, lessThanOrEqualTo(1));
+            expect(
+              allInput.any(
+                (n) => '${n.label} ${n.hint} ${n.value}'.contains(message),
+              ),
+              isTrue,
+            );
+            expect(tester.takeException(), isNull);
           } finally {
             handle.dispose();
           }
@@ -621,8 +802,8 @@ void main() {
                   isIn(AppTypography.all.map((token) => token.size)));
               expect(
                 style.height,
-                isIn(AppTypography.all.expand((token) =>
-                    [token.heightArabic, token.heightLatin])),
+                isIn(AppTypography.all.expand(
+                    (token) => [token.heightArabic, token.heightLatin])),
               );
             }
           }

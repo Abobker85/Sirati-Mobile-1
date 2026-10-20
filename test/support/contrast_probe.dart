@@ -22,6 +22,27 @@ List<Color> paintedBackgroundsOf(Element element) {
       candidates = [widget.color];
     } else if (widget is PhysicalShape) {
       candidates = [widget.color];
+    } else if (widget is Material && widget.type != MaterialType.transparency) {
+      if (widget.color != null) {
+        candidates = [widget.color!];
+      }
+    } else if (widget is ButtonStyleButton) {
+      final theme = Theme.of(ancestor);
+      final themed = switch (widget) {
+        ElevatedButton() => theme.elevatedButtonTheme.style,
+        FilledButton() => theme.filledButtonTheme.style,
+        OutlinedButton() => theme.outlinedButtonTheme.style,
+        TextButton() => theme.textButtonTheme.style,
+        _ => null,
+      };
+      final states = widget.enabled
+          ? const <WidgetState>{}
+          : const <WidgetState>{WidgetState.disabled};
+      final bg = widget.style?.backgroundColor?.resolve(states) ??
+          themed?.backgroundColor?.resolve(states);
+      if (bg != null) {
+        candidates = [bg];
+      }
     } else if (widget is InputDecorator) {
       // Helper/error copy sits outside the input's painted fill.
       final container = InputDecorator.containerOf(element);
@@ -54,6 +75,24 @@ List<Color> paintedBackgroundsOf(Element element) {
   return layers;
 }
 
+/// Accumulates painted opacity from ancestor [Opacity], [AnimatedOpacity],
+/// and [FadeTransition] widgets.
+double effectiveAncestorOpacityOf(Element element) {
+  var opacity = 1.0;
+  element.visitAncestorElements((ancestor) {
+    final widget = ancestor.widget;
+    if (widget is Opacity) {
+      opacity *= widget.opacity;
+    } else if (widget is AnimatedOpacity) {
+      opacity *= widget.opacity;
+    } else if (widget is FadeTransition) {
+      opacity *= widget.opacity.value;
+    }
+    return true;
+  });
+  return opacity;
+}
+
 /// Asserts every [Text] currently on screen meets WCAG AA (4.5:1) against
 /// what it is actually painted on.
 void expectAllTextAa(String label) {
@@ -78,7 +117,11 @@ void expectAllIconsAa(String label) {
     final icon = element.widget as Icon;
     final theme = IconTheme.of(element);
     final ink = icon.color ?? theme.color!;
-    final color = ink.withValues(alpha: ink.a * (theme.opacity ?? 1));
+    final totalOpacity =
+        (theme.opacity ?? 1.0) * effectiveAncestorOpacityOf(element);
+    final color = ink.withValues(
+      alpha: (ink.a * totalOpacity).clamp(0.0, 1.0),
+    );
     for (final background in paintedBackgroundsOf(element)) {
       expect(
         AppContrast.ratio(Color.alphaBlend(color, background), background),
@@ -94,10 +137,14 @@ void expectAllProgressIndicatorsAa(String label) {
       widget is CircularProgressIndicator ||
       widget is LinearProgressIndicator).evaluate()) {
     final indicator = element.widget as ProgressIndicator;
-    final ink = indicator.valueColor?.value ??
+    final rawInk = indicator.valueColor?.value ??
         indicator.color ??
         ProgressIndicatorTheme.of(element).color ??
         Theme.of(element).colorScheme.primary;
+    final totalOpacity = effectiveAncestorOpacityOf(element);
+    final ink = rawInk.withValues(
+      alpha: (rawInk.a * totalOpacity).clamp(0.0, 1.0),
+    );
     final backgrounds = indicator.backgroundColor == null
         ? paintedBackgroundsOf(element)
         : [indicator.backgroundColor!];

@@ -110,16 +110,18 @@ class AppListTile extends StatelessWidget {
       return MergeSemantics(child: content);
     }
 
-    // Single semantic node for TalkBack; decorative chrome excluded above.
-    return Semantics(
-      button: true,
-      child: PressScale(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
-            child: content,
+    return PressScale(
+      child: Material(
+        type: MaterialType.transparency,
+        // One merged node: the button role + the InkWell tap action + the title/subtitle label.
+        child: MergeSemantics(
+          child: Semantics(
+            button: true,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(16),
+              child: content,
+            ),
           ),
         ),
       ),
