@@ -303,7 +303,7 @@ class AppTheme {
         color: c.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.lgAll,
+          borderRadius: AppRadius.xlAll,
           side: BorderSide.none,
         ),
         margin: EdgeInsets.zero,
@@ -416,14 +416,14 @@ class AppCard extends StatelessWidget {
     final c = context.sirati;
     return Material(
       color: color ?? c.surface,
-      borderRadius: AppRadius.lgAll,
+      borderRadius: AppRadius.xlAll,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.lgAll,
+        borderRadius: AppRadius.xlAll,
         child: Container(
           padding: padding ?? const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            borderRadius: AppRadius.lgAll,
+            borderRadius: AppRadius.xlAll,
             border: Border.all(color: c.border),
             boxShadow: AppShadows.of(c, elevation: AppElevation.card),
           ),

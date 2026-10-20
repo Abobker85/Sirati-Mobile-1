@@ -629,7 +629,21 @@ class _AppTextFormFieldState extends FormFieldState<String> {
       decoration: InputDecoration(
         hintText: hintText,
         label: _tokenLabel(labelText),
-        prefixIcon: prefixIcon,
+        prefixIcon: prefixIcon == null
+            ? null
+            : IconTheme(
+                data: IconThemeData(
+                  color: showError
+                      ? c.error
+                      : showSuccess
+                          ? c.success
+                          : _hasFocus
+                              ? c.primaryInk
+                              : c.textSecondary,
+                  size: 20,
+                ),
+                child: prefixIcon,
+              ),
         suffixIcon: resolvedSuffix,
         filled: filled,
         fillColor: fill,

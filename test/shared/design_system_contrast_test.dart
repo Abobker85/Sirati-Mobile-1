@@ -298,6 +298,121 @@ void main() {
       await tester.pump();
       expectAllTextAa('secondary button dark=$dark');
 
+      // ── B1: AppButton enabled / loading / disabled painted-colour tests ──
+      final siratiColors = theme.extension<SiratiColors>()!;
+      for (final variant in [
+        AppButtonVariant.primary,
+        AppButtonVariant.destructive,
+      ]) {
+        final isPrimary = variant == AppButtonVariant.primary;
+        final enabledBg = isPrimary ? siratiColors.primary : siratiColors.error;
+        final enabledFg =
+            isPrimary ? siratiColors.onPrimary : siratiColors.onError;
+        const testLabel = 'Action إجراء';
+
+        // 1. Enabled: enabled fill + enabled text
+        await tester.pumpWidget(
+          app(
+            theme,
+            direction,
+            AppButton(
+              label: testLabel,
+              variant: variant,
+              icon: Icons.check,
+              onPressed: () {},
+            ),
+          ),
+        );
+        await tester.pump();
+        final enabledBtn =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final enabledResolvedBg = enabledBtn.style!.backgroundColor!
+            .resolve(const <WidgetState>{})!;
+        expect(enabledResolvedBg, enabledBg);
+        final enabledText = tester.element(find.text(testLabel));
+        expect(paintedBackgroundsOf(enabledText), contains(enabledBg));
+        final enabledTextColor =
+            renderedTextColor(tester, find.text(testLabel));
+        expect(enabledTextColor, enabledFg);
+        expect(AppContrast.ratio(enabledTextColor, enabledBg),
+            greaterThanOrEqualTo(4.5));
+        expectAllTextAa('AppButton $variant enabled dark=$dark');
+        expectAllIconsAa('AppButton $variant enabled icon dark=$dark');
+
+        // 2. Loading: keeps enabled fill with a spinner
+        await tester.pumpWidget(
+          app(
+            theme,
+            direction,
+            AppButton(
+              label: testLabel,
+              variant: variant,
+              isLoading: true,
+              onPressed: () {},
+            ),
+          ),
+        );
+        await tester.pump();
+        final loadingBtn =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final loadingResolvedBg = loadingBtn.style!.backgroundColor!
+            .resolve(const <WidgetState>{WidgetState.disabled})!;
+        expect(loadingResolvedBg, enabledBg,
+            reason: 'loading must keep the enabled fill');
+        final loadingText = tester.element(find.text(testLabel));
+        expect(paintedBackgroundsOf(loadingText), contains(enabledBg));
+        final loadingTextColor =
+            renderedTextColor(tester, find.text(testLabel));
+        expect(loadingTextColor, enabledFg);
+        expect(AppContrast.ratio(loadingTextColor, enabledBg),
+            greaterThanOrEqualTo(4.5));
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expectAllTextAa('AppButton $variant loading dark=$dark');
+        expectAllProgressIndicatorsAa(
+            'AppButton $variant loading indicator dark=$dark');
+
+        // 3. Disabled: neutral surfaceHigh-level fill with textSecondary-level text (text >= 4.5:1 on its own fill)
+        await tester.pumpWidget(
+          app(
+            theme,
+            direction,
+            AppButton(
+              label: testLabel,
+              variant: variant,
+              icon: Icons.check,
+              onPressed: null,
+            ),
+          ),
+        );
+        await tester.pump();
+        final disabledBtn =
+            tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        final disabledResolvedBg = disabledBtn.style!.backgroundColor!
+            .resolve(const <WidgetState>{WidgetState.disabled})!;
+        expect(disabledResolvedBg, siratiColors.surfaceHigh,
+            reason: 'disabled must use neutral surfaceHigh fill');
+        expect(disabledResolvedBg, isNot(equals(enabledBg)),
+            reason: 'disabled fill must look different from enabled');
+        final disabledText = tester.element(find.text(testLabel));
+        expect(paintedBackgroundsOf(disabledText),
+            contains(siratiColors.surfaceHigh));
+        final disabledTextColor =
+            renderedTextColor(tester, find.text(testLabel));
+        expect(disabledTextColor, siratiColors.textSecondary,
+            reason: 'disabled text must use textSecondary');
+        expect(disabledTextColor, isNot(equals(enabledFg)),
+            reason: 'disabled text must look different from enabled');
+        expect(
+          AppContrast.ratio(disabledTextColor, disabledResolvedBg),
+          greaterThanOrEqualTo(4.5),
+          reason: 'disabled text must be >= 4.5:1 on its own fill',
+        );
+        final disabledIcon = tester.widget<Icon>(find.byIcon(Icons.check));
+        expect(disabledIcon.color, siratiColors.textSecondary);
+        expectAllTextAa('AppButton $variant disabled dark=$dark');
+        expectAllIconsAa('AppButton $variant disabled icon dark=$dark');
+      }
+
       await tester.pumpWidget(
         app(
           theme,

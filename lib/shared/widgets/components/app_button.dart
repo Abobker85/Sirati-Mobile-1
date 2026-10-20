@@ -72,6 +72,9 @@ class AppButton extends StatelessWidget {
             ? 'جارٍ التحميل...'
             : 'Loading...');
 
+    final foreground =
+        !enabled && !isLoading ? c.textSecondary : _foreground(c);
+
     final child = Row(
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
@@ -91,13 +94,13 @@ class AppButton extends StatelessWidget {
             ),
           )
         else if (icon != null)
-          Icon(icon, size: 18),
+          Icon(icon, size: 18, color: foreground),
         if (isLoading || icon != null) const SizedBox(width: AppSpacing.xs),
         Flexible(
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: style.copyWith(color: _foreground(c)),
+            style: style.copyWith(color: foreground),
           ),
         ),
       ],
@@ -116,9 +119,10 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             minimumSize: minSize,
             backgroundColor: c.primary,
-            disabledBackgroundColor: c.primary,
-            disabledForegroundColor: c.onPrimary,
+            disabledBackgroundColor: isLoading ? c.primary : c.surfaceHigh,
+            disabledForegroundColor: isLoading ? c.onPrimary : c.textSecondary,
             foregroundColor: c.onPrimary,
+            elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
           ),
           child: child,
@@ -129,7 +133,11 @@ class AppButton extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             minimumSize: minSize,
             foregroundColor: c.primaryInk,
-            side: BorderSide(color: c.primaryInk, width: 1.5),
+            disabledForegroundColor: c.textSecondary,
+            side: BorderSide(
+              color: !enabled && !isLoading ? c.outline : c.primaryInk,
+              width: 1.5,
+            ),
             shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
           ),
           child: child,
@@ -140,6 +148,7 @@ class AppButton extends StatelessWidget {
           style: TextButton.styleFrom(
             minimumSize: minSize,
             foregroundColor: c.primaryInk,
+            disabledForegroundColor: c.textSecondary,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
           ),
           child: child,
@@ -150,9 +159,10 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             minimumSize: minSize,
             backgroundColor: c.error,
-            disabledBackgroundColor: c.error,
-            disabledForegroundColor: c.onError,
+            disabledBackgroundColor: isLoading ? c.error : c.surfaceHigh,
+            disabledForegroundColor: isLoading ? c.onError : c.textSecondary,
             foregroundColor: c.onError,
+            elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
           ),
           child: child,

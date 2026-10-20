@@ -22,10 +22,10 @@ class AppSurfaceCard extends StatelessWidget {
     final c = context.sirati;
     final body = Material(
       color: c.surface,
-      borderRadius: AppRadius.lgAll,
+      borderRadius: AppRadius.xlAll,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.lgAll,
+        borderRadius: AppRadius.xlAll,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
           child: Padding(
@@ -41,7 +41,7 @@ class AppSurfaceCard extends StatelessWidget {
       label: semanticLabel,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: AppRadius.lgAll,
+          borderRadius: AppRadius.xlAll,
           border: Border.all(color: c.outline),
           boxShadow: AppShadows.of(c, elevation: AppElevation.card),
         ),

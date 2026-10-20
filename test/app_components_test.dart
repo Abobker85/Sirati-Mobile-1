@@ -129,4 +129,118 @@ void main() {
     expect(find.byType(AppCrashView), findsOneWidget);
     expect(find.textContaining('Exception'), findsNothing);
   });
+
+  testWidgets(
+      'AppButton primary/destructive disabled state looks different from enabled and loading',
+      (tester) async {
+    for (final dir in [TextDirection.ltr, TextDirection.rtl]) {
+      for (final arabic in [false, true]) {
+        for (final isDark in [false, true]) {
+          final theme = isDark
+              ? AppTheme.darkFor(arabic: arabic)
+              : AppTheme.lightFor(arabic: arabic);
+          final c = theme.extension<SiratiColors>()!;
+
+          for (final variant in [
+            AppButtonVariant.primary,
+            AppButtonVariant.destructive,
+          ]) {
+            final isPrimary = variant == AppButtonVariant.primary;
+            final enabledFill = isPrimary ? c.primary : c.error;
+            final enabledFg = isPrimary ? c.onPrimary : c.onError;
+            const label = 'Proceed متابعة';
+
+            // Enabled
+            await tester.pumpWidget(
+              MaterialApp(
+                home: Theme(
+                  data: theme,
+                  child: Scaffold(
+                    body: Directionality(
+                      textDirection: dir,
+                      child: AppButton(
+                        label: label,
+                        variant: variant,
+                        onPressed: () {},
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            await tester.pump();
+            final enabledBtn =
+                tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+            expect(
+              enabledBtn.style!.backgroundColor!.resolve(const <WidgetState>{}),
+              enabledFill,
+            );
+
+            // Loading keeps enabled fill
+            await tester.pumpWidget(
+              MaterialApp(
+                home: Theme(
+                  data: theme,
+                  child: Scaffold(
+                    body: Directionality(
+                      textDirection: dir,
+                      child: AppButton(
+                        label: label,
+                        variant: variant,
+                        isLoading: true,
+                        onPressed: () {},
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            await tester.pump();
+            final loadingBtn =
+                tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+            expect(
+              loadingBtn.style!.backgroundColor!
+                  .resolve(const <WidgetState>{WidgetState.disabled}),
+              enabledFill,
+            );
+            expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+            // Disabled has neutral surfaceHigh fill and textSecondary text
+            await tester.pumpWidget(
+              MaterialApp(
+                home: Theme(
+                  data: theme,
+                  child: Scaffold(
+                    body: Directionality(
+                      textDirection: dir,
+                      child: AppButton(
+                        label: label,
+                        variant: variant,
+                        onPressed: null,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            await tester.pump();
+            final disabledBtn =
+                tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+            final disabledFill = disabledBtn.style!.backgroundColor!
+                .resolve(const <WidgetState>{WidgetState.disabled})!;
+            expect(disabledFill, c.surfaceHigh);
+            expect(disabledFill, isNot(equals(enabledFill)));
+
+            final textWidget = tester.widget<Text>(find.text(label));
+            final textColor = textWidget.style!.color!;
+            expect(textColor, c.textSecondary);
+            expect(textColor, isNot(equals(enabledFg)));
+
+            final ratio = AppContrast.ratio(textColor, disabledFill);
+            expect(ratio, greaterThanOrEqualTo(4.5));
+          }
+        }
+      }
+    }
+  });
 }
