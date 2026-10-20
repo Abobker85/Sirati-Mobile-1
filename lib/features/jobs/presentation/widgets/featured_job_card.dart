@@ -148,7 +148,7 @@ class FeaturedJobCard extends StatelessWidget {
                                 softWrap: true,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                   color: _whiteCardInk,
                                 ),
                               ),
@@ -164,7 +164,7 @@ class FeaturedJobCard extends StatelessWidget {
                   primaryStyle: TextStyle(
                     fontSize: 17,
                     height: 1.35,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: context.sirati.onBrandSurface,
                   ),
                   secondaryStyle: TextStyle(
