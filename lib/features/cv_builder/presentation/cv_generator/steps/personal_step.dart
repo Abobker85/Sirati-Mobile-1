@@ -186,7 +186,7 @@ class _JobDescriptionField extends StatelessWidget {
             onFieldSubmitted: (_) => onDone(),
             enabled: !isEnhancing,
             hintText: english
-                ? 'Paste the job description or let Sirati complete it from the role...'
+                ? 'Paste the job description or let Siratie complete it from the role...'
                 : 'الصق الوصف الوظيفي أو دع سيرتي يكمله من المسمى...',
             prefixIcon: const Icon(Icons.assignment_outlined),
           ),

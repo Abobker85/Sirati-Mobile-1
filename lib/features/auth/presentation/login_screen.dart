@@ -212,7 +212,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             SizedBox(height: sectionGap),
                             Text(
                               english
-                                  ? 'Welcome to Sirati'
+                                  ? 'Welcome to Siratie'
                                   : 'مرحباً بك في سيرتي',
                               textAlign: TextAlign.center,
                               style: AppTypography.of(

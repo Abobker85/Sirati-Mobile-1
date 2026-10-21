@@ -45,7 +45,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           icon: Icons.description_outlined,
           accent: context.sirati.primaryInk,
           accentSoft: context.sirati.primaryLight,
-          title: en ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
+          title: en ? 'Welcome to Siratie' : 'مرحباً بك في سيرتي',
           body: en
               ? 'Analyze your CV for ATS score, or build a professional resume with AI — in Arabic or English.'
               : 'حلل سيرتك الذاتية واحصل على درجة ATS، أو أنشئ سيرة ذاتية احترافية بالذكاء الاصطناعي — بالعربية أو الإنجليزية.',

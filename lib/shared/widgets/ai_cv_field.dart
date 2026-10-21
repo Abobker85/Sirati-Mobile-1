@@ -241,7 +241,7 @@ class _EnhancementResultCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  english ? 'What Sirati improved' : 'ما الذي حسّنته سيرتي',
+                  english ? 'What Siratie improved' : 'ما الذي حسّنته سيرتي',
                   style: AppTypography.of(context, AppTypography.titleSm),
                 ),
               ),

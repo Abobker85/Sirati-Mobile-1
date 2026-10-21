@@ -28,7 +28,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _Section(
             title: english ? 'What We Collect' : 'ما البيانات التي نجمعها؟',
             body: english
-                ? 'We collect account details (name, email, optional phone and location), the CV content you enter or upload, analysis results, subscription entitlement metadata, and a device push-notification token (FCM) so Sirati can analyze, improve, save, and notify you about your CVs.'
+                ? 'We collect account details (name, email, optional phone and location), the CV content you enter or upload, analysis results, subscription entitlement metadata, and a device push-notification token (FCM) so Siratie can analyze, improve, save, and notify you about your CVs.'
                 : 'نجمع بيانات الحساب (الاسم، البريد، والجوال والموقع اختياريًا)، ومحتوى السيرة الذي تدخله أو ترفعه، ونتائج التحليل، وبيانات صلاحية الاشتراك، ورمز إشعارات الجهاز (FCM) لنتمكن من تحليل سيرتك وتحسينها وحفظها وإرسال الإشعارات.',
           ),
           _Section(
