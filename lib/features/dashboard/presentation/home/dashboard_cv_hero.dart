@@ -46,9 +46,13 @@ class DashboardCvHero extends ConsumerWidget {
     final rows = ref.watch(myCvsProvider(english)).value?.items;
     final savedRow = rows?.where((item) => item.id == cv?.id).firstOrNull;
     final updatedAt = savedRow?.updatedAt;
-    final updatedLabel = updatedAt == null
+    // The backend label is already a full phrase ("Last updated: ..."); only
+    // a date formatted here needs the "Updated {time}" wrapper.
+    final updatedText = updatedAt == null
         ? savedRow?.updatedLabel ?? ''
-        : '${MaterialLocalizations.of(context).formatCompactDate(updatedAt.toLocal())} ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(updatedAt.toLocal()))}';
+        : l.homeHeroUpdatedAt(
+            '${MaterialLocalizations.of(context).formatCompactDate(updatedAt.toLocal())} ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(updatedAt.toLocal()))}',
+          );
     final band = cv == null ? null : ScoreBand.of(cv.scoreTotal);
     final bandLabel = switch (band) {
       ScoreBand.excellent => l.homeHeroBandExcellent,
@@ -134,10 +138,10 @@ class DashboardCvHero extends ConsumerWidget {
                 fontSize: 20,
               ),
             ),
-            if (updatedLabel.isNotEmpty) ...[
+            if (updatedText.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
-                l.homeHeroUpdatedAt(updatedLabel),
+                updatedText,
                 style: TextStyle(color: c.textSecondary),
               ),
             ],
