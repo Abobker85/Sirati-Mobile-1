@@ -7,11 +7,13 @@ workflows:
     environment:
       flutter: stable
       vars:
-        SIRATI_API_BASE_URL: "https://sirati-main-shokc5.laravel.cloud/api"
+        SIRATI_API_BASE_URL: "https://siratie.com/api"
 
     scripts:
       - name: Get Flutter packages
-        script: flutter pub get
+        script: |
+          flutter pub get
+          flutter gen-l10n
 
       - name: Analyze
         script: flutter analyze
@@ -40,11 +42,13 @@ workflows:
       flutter: stable
       xcode: latest
       vars:
-        SIRATI_API_BASE_URL: "https://sirati-main-shokc5.laravel.cloud/api"
+        SIRATI_API_BASE_URL: "https://siratie.com/api"
 
     scripts:
       - name: Get Flutter packages
-        script: flutter pub get
+        script: |
+          flutter pub get
+          flutter gen-l10n
 
       - name: Analyze
         script: flutter analyze
@@ -77,10 +81,12 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.sirati.sirati
       vars:
-        SIRATI_API_BASE_URL: "https://sirati-main-shokc5.laravel.cloud/api"
+        SIRATI_API_BASE_URL: "https://siratie.com/api"
     scripts:
       - name: Get Flutter packages
-        script: flutter pub get
+        script: |
+          flutter pub get
+          flutter gen-l10n
       - name: Install CocoaPods
         script: |
           cd ios
