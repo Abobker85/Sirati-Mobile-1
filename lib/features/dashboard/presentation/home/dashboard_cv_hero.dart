@@ -160,7 +160,7 @@ class DashboardCvHero extends ConsumerWidget {
                         CircularProgressIndicator(
                           value: cv.scoreTotal.clamp(0, 100) / 100,
                           color: c.primaryInk,
-                          backgroundColor: c.surface,
+                          backgroundColor: c.border,
                           strokeWidth: 7,
                         ),
                         Center(

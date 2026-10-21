@@ -628,6 +628,9 @@ class _AppTextFormFieldState extends FormFieldState<String> {
       onSubmitted: onFieldSubmitted,
       decoration: InputDecoration(
         hintText: hintText,
+        // An explicit text direction (phone, email) also governs the hint, so
+        // "+966 5X XXX XXXX" is not bidi-reordered inside an Arabic UI.
+        hintTextDirection: textDirection,
         label: _tokenLabel(labelText),
         prefixIcon: prefixIcon == null
             ? null
