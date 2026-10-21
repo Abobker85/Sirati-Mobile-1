@@ -280,7 +280,7 @@ class _ComingSoonHero extends StatelessWidget {
               label: Text(
                 notified
                     ? (english ? 'Interest Registered' : 'تم تسجيل اهتمامك')
-                    : AppLocalizations.of(context).wp2bRegisterInterest,
+                    : AppLocalizations.of(context).registerInterest,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),

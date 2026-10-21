@@ -384,8 +384,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
                       tooltip: _obscurePassword
-                          ? AppLocalizations.of(context).wp2bShowPassword
-                          : AppLocalizations.of(context).wp2bHidePassword,
+                          ? AppLocalizations.of(context).showPassword
+                          : AppLocalizations.of(context).hidePassword,
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_outlined

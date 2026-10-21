@@ -6,9 +6,6 @@ import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
-// Match and Apply pills stay white in both themes and need the light ink pair.
-final Color _whiteCardInk = SiratiColors.light.primaryInk;
-
 class FeaturedJobCard extends StatelessWidget {
   final JobNews item;
   final bool english;
@@ -139,7 +136,7 @@ class FeaturedJobCard extends StatelessWidget {
                             Icon(
                               Icons.stars_rounded,
                               size: 14,
-                              color: _whiteCardInk,
+                              color: context.sirati.onWhitePill,
                             ),
                             const SizedBox(width: 4),
                             Flexible(
@@ -149,7 +146,7 @@ class FeaturedJobCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: _whiteCardInk,
+                                  color: context.sirati.onWhitePill,
                                 ),
                               ),
                             ),
@@ -247,7 +244,7 @@ class FeaturedJobCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: _whiteCardInk,
+                          color: context.sirati.onWhitePill,
                         ),
                       ),
                     ),

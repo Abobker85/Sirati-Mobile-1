@@ -438,14 +438,14 @@
   "jobMatchLoading": "Loading...",
   "jm4ConfirmFact": "I confirm this is true for me",
   "jm4HonestyHint": "Only confirm facts you can honestly support. This text will be added to your CV.",
-  "wp2bRegisterInterest": "Register interest",
-  "wp2bNoMatchingJobs": "No matching jobs",
-  "wp2bClearFilters": "Clear filters",
-  "wp2bScoreLabel": "ATS compatibility score",
-  "wp2bScoreValue": "{score} out of 100",
-  "wp2bShowPassword": "Show password",
-  "wp2bHidePassword": "Hide password",
-  "@wp2bScoreValue": {
+  "registerInterest": "Register interest",
+  "noMatchingJobs": "No matching jobs",
+  "clearFilters": "Clear filters",
+  "compatibilityScoreLabel": "ATS compatibility score",
+  "compatibilityScoreValue": "{score} out of 100",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "@compatibilityScoreValue": {
     "placeholders": {
       "score": {
         "type": "int"

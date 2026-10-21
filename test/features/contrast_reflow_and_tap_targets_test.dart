@@ -37,7 +37,8 @@ Map<String, dynamic> _jobJson(String content, {int? score = 92}) => {
   'location': content,
   'source_badge': content,
   'is_verified': true,
-  'is_tamheer': true,
+  // `isTamheer` reads employment_type / source_type, not a boolean flag.
+  'employment_type': 'tamheer',
   'match_score': score,
   'match_reasons': [content],
   'skills_required': [content, 'TypeScript', 'إدارة المشاريع'],
@@ -256,8 +257,8 @@ void main() {
           ));
           await tester.pumpAndSettle();
           final l10n = await AppLocalizations.delegate.load(Locale(lang));
-          final clear = find.widgetWithText(TextButton, l10n.wp2bClearFilters);
-          expect(find.text(l10n.wp2bNoMatchingJobs), filters.isActive ? findsOneWidget : findsNothing);
+          final clear = find.widgetWithText(TextButton, l10n.clearFilters);
+          expect(find.text(l10n.noMatchingJobs), filters.isActive ? findsOneWidget : findsNothing);
           if (filters.isActive) {
             // A pending debounce must not reapply a search after clearing.
             await tester.enterText(find.byType(TextField), 'pending search');
@@ -314,7 +315,7 @@ void main() {
         ], child: _app(const EducationScreen(), lang: lang, dark: dark)));
         await tester.pumpAndSettle();
         final l10n = await AppLocalizations.delegate.load(Locale(lang));
-        final action = find.widgetWithText(ElevatedButton, l10n.wp2bRegisterInterest);
+        final action = find.widgetWithText(ElevatedButton, l10n.registerInterest);
         await tester.ensureVisible(action);
         _target(tester, action);
         expect(tester.takeException(), isNull);
@@ -334,48 +335,60 @@ void main() {
 
       testWidgets('CV action ink and focus paint above the card: $variant', (tester) async {
         final semantics = tester.ensureSemantics();
-        addTearDown(semantics.dispose);
-        final key = GlobalKey();
-        var downloads = 0;
-        await tester.pumpWidget(_app(RepaintBoundary(key: key, child: CvDocumentCard(
-          item: const CvListItem(id: 10, title: 'Engineer', badge: '', isDraft: false,
-            canDownload: true, pdfUrl: '', templatePdfUrl: '', updatedAt: null, updatedLabel: ''),
-          onEdit: () {}, onDelete: () {}, onDownload: () => downloads++,
-        )), lang: lang, dark: dark, scale: 1));
-        await tester.pumpAndSettle();
-        final action = find.bySemanticsLabel(lang == 'en' ? 'Download' : 'تنزيل').first;
-        _target(tester, action);
-        _target(tester, find.bySemanticsLabel(lang == 'en' ? 'Delete' : 'حذف').first);
-        final before = await _pixels(tester, key);
-        final oldStrategy = FocusManager.instance.highlightStrategy;
-        addTearDown(() => FocusManager.instance.highlightStrategy = oldStrategy);
-        FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
-        Focus.of(tester.element(find.byIcon(Icons.download_rounded))).requestFocus();
-        await tester.pumpAndSettle();
-        final focused = await _pixels(tester, key);
-        expect(focused, isNot(equals(before)), reason: 'focus must visibly paint over the opaque card');
-        FocusManager.instance.primaryFocus?.unfocus();
-        await tester.pumpAndSettle();
-        final gesture = await tester.startGesture(tester.getCenter(action));
-        await tester.pump(const Duration(milliseconds: 100));
-        final pressed = await _pixels(tester, key);
-        expect(pressed, isNot(equals(before)), reason: 'tap ink must be visible');
-        await gesture.up();
-        await tester.pumpAndSettle();
-        expect(downloads, 1);
+        try {
+          final key = GlobalKey();
+          var downloads = 0;
+          await tester.pumpWidget(_app(RepaintBoundary(key: key, child: CvDocumentCard(
+            item: const CvListItem(id: 10, title: 'Engineer', badge: '', isDraft: false,
+              canDownload: true, pdfUrl: '', templatePdfUrl: '', updatedAt: null, updatedLabel: ''),
+            onEdit: () {}, onDelete: () {}, onDownload: () => downloads++,
+          )), lang: lang, dark: dark, scale: 1));
+          await tester.pumpAndSettle();
+          final action = find.bySemanticsLabel(lang == 'en' ? 'Download' : 'تنزيل').first;
+          _target(tester, action);
+          _target(tester, find.bySemanticsLabel(lang == 'en' ? 'Delete' : 'حذف').first);
+          final before = await _pixels(tester, key);
+          final oldStrategy = FocusManager.instance.highlightStrategy;
+          addTearDown(() => FocusManager.instance.highlightStrategy = oldStrategy);
+          FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
+          Focus.of(tester.element(find.byIcon(Icons.download_rounded))).requestFocus();
+          await tester.pumpAndSettle();
+          final focused = await _pixels(tester, key);
+          expect(focused, isNot(equals(before)), reason: 'focus must visibly paint over the opaque card');
+          FocusManager.instance.primaryFocus?.unfocus();
+          await tester.pumpAndSettle();
+          final gesture = await tester.startGesture(tester.getCenter(action));
+          // Tap down is deferred by kPressTimeout (100ms). That timer starts the
+          // highlight while the scheduler is idle, so the same frame's first
+          // tick is elapsed 0 and the circle is fully transparent. The next
+          // elapsed pump is the first frame toImage can see. Stay under the
+          // 500ms tooltip long-press, which cancels the pressed highlight.
+          await tester.pump(const Duration(milliseconds: 100));
+          await tester.pump(const Duration(milliseconds: 50));
+          final pressed = await _pixels(tester, key);
+          expect(pressed, isNot(equals(before)), reason: 'tap ink must be visible');
+          await gesture.up();
+          await tester.pumpAndSettle();
+          expect(downloads, 1);
+        } finally {
+          semantics.dispose();
+        }
       });
 
       testWidgets('score semantics announce one localized value: $variant', (tester) async {
         final semantics = tester.ensureSemantics();
-        addTearDown(semantics.dispose);
-        final l10n = await AppLocalizations.delegate.load(Locale(lang));
-        for (final score in [0, 37, 100]) {
-          await tester.pumpWidget(_app(Builder(builder: (context) => AnimatedScoreRing(
-            score: score, scoreColor: context.sirati.primaryInk)), lang: lang, dark: dark));
-          await tester.pumpAndSettle();
-          final ring = find.bySemanticsLabel(l10n.wp2bScoreLabel);
-          expect(ring, findsOneWidget);
-          expect(tester.getSemantics(ring).getSemanticsData().value, l10n.wp2bScoreValue(score));
+        try {
+          final l10n = await AppLocalizations.delegate.load(Locale(lang));
+          for (final score in [0, 37, 100]) {
+            await tester.pumpWidget(_app(Builder(builder: (context) => AnimatedScoreRing(
+              score: score, scoreColor: context.sirati.primaryInk)), lang: lang, dark: dark));
+            await tester.pumpAndSettle();
+            final ring = find.bySemanticsLabel(l10n.compatibilityScoreLabel);
+            expect(ring, findsOneWidget);
+            expect(tester.getSemantics(ring).getSemanticsData().value, l10n.compatibilityScoreValue(score));
+          }
+        } finally {
+          semantics.dispose();
         }
       });
     }
@@ -383,9 +396,16 @@ void main() {
 
   testWidgets('onboarding dots render 48dp semantic targets', (tester) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    await tester.pumpWidget(_app(OnboardingScreen(onFinished: () {}), lang: 'en', dark: false, scale: 1));
-    await tester.pumpAndSettle();
-    _target(tester, find.bySemanticsLabel('Page 1 of 3'));
+    try {
+      await tester.pumpWidget(_app(OnboardingScreen(onFinished: () {}), lang: 'en', dark: false, scale: 1));
+      await tester.pumpAndSettle();
+      final dots = find.bySemanticsLabel(RegExp(r'^Page \d+ of \d+$'));
+      expect(dots, findsNWidgets(3));
+      for (final element in dots.evaluate()) {
+        _target(tester, find.byElementPredicate((candidate) => candidate == element));
+      }
+    } finally {
+      semantics.dispose();
+    }
   });
 }

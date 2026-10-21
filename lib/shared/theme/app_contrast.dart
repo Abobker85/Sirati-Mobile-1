@@ -151,6 +151,12 @@ class AppContrast {
         minRatio: 4.5,
       ),
       ContrastPair(
+        name: 'onWhitePill / onBrandSurface (white pill fill)',
+        foreground: c.onWhitePill,
+        background: c.onBrandSurface,
+        minRatio: 4.5,
+      ),
+      ContrastPair(
         name: 'onBrandSurface / brandSurface',
         foreground: c.onBrandSurface,
         background: c.brandSurface,

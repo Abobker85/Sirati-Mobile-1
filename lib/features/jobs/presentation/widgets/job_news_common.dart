@@ -53,7 +53,7 @@ class EmptyJobNews extends StatelessWidget {
         children: [
           Text(
             onClearFilters != null
-                ? AppLocalizations.of(context).wp2bNoMatchingJobs
+                ? AppLocalizations.of(context).noMatchingJobs
                 : english
                     ? 'No job news is published yet.'
                     : 'لا توجد أخبار وظائف منشورة حالياً.',
@@ -69,7 +69,7 @@ class EmptyJobNews extends StatelessWidget {
                 minimumSize: const Size(48, 48),
                 foregroundColor: context.sirati.primaryInk,
               ),
-              child: Text(AppLocalizations.of(context).wp2bClearFilters),
+              child: Text(AppLocalizations.of(context).clearFilters),
             ),
           ],
         ],

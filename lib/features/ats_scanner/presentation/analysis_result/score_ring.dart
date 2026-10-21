@@ -19,8 +19,8 @@ class AnimatedScoreRing extends StatelessWidget {
     final target = score.clamp(0, 100) / 100.0;
     final reduce = MotionSettings.reduce(context);
     final l10n = AppLocalizations.of(context);
-    final label = l10n.wp2bScoreLabel;
-    final valueText = l10n.wp2bScoreValue(score);
+    final label = l10n.compatibilityScoreLabel;
+    final valueText = l10n.compatibilityScoreValue(score);
 
     // RepaintBoundary keeps the per-frame ring animation from repainting the
     // rest of the score card.

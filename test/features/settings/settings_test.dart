@@ -208,32 +208,42 @@ void main() {
 
     for (final language in ['en', 'ar']) {
       for (final dark in [false, true]) {
-        testWidgets('notification label announces once and toggles by semantics ($language, dark=$dark)', (tester) async {
+        testWidgets(
+            'notification label announces once and toggles by semantics ($language, dark=$dark)',
+            (tester) async {
           AppLocale.languageCode.value = language;
           final semantics = tester.ensureSemantics();
-          addTearDown(semantics.dispose);
-          await tester.pumpWidget(app(_FakeAuth(), language: language,
-              theme: dark ? AppTheme.darkFor(arabic: language == 'ar')
-                  : AppTheme.lightFor(arabic: language == 'ar')));
-          await tester.pumpAndSettle();
-          final l10n = await AppLocalizations.delegate.load(Locale(language));
-          await tester.scrollUntilVisible(find.byType(SwitchListTile), 200);
-          final control = find.bySemanticsLabel(l10n.pushNotifications);
-          expect(control, findsOneWidget);
-          final node = tester.getSemantics(control);
-          final data = node.getSemanticsData();
-          expect(data.label, l10n.pushNotifications);
-          expect(data.hasAction(ui.SemanticsAction.tap), isTrue);
-          expect(data.flagsCollection.isToggled, ui.Tristate.isTrue);
-          final size = tester.getSize(find.byType(SwitchListTile));
-          expect(size.width, greaterThanOrEqualTo(48));
-          expect(size.height, greaterThanOrEqualTo(48));
-          node.owner!.performAction(node.id, ui.SemanticsAction.tap);
-          await tester.pumpAndSettle();
-          expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isFalse);
-          final off = tester.getSemantics(control).getSemanticsData();
-          expect(off.label, l10n.pushNotifications);
-          expect(off.flagsCollection.isToggled, ui.Tristate.isFalse);
+          try {
+            await tester.pumpWidget(app(_FakeAuth(),
+                language: language,
+                theme: dark
+                    ? AppTheme.darkFor(arabic: language == 'ar')
+                    : AppTheme.lightFor(arabic: language == 'ar')));
+            await tester.pumpAndSettle();
+            final l10n = await AppLocalizations.delegate.load(Locale(language));
+            await tester.scrollUntilVisible(find.byType(SwitchListTile), 200);
+            final control = find.bySemanticsLabel(l10n.pushNotifications);
+            expect(control, findsOneWidget);
+            final node = tester.getSemantics(control);
+            final data = node.getSemanticsData();
+            expect(data.label, l10n.pushNotifications);
+            expect(data.hasAction(ui.SemanticsAction.tap), isTrue);
+            expect(data.flagsCollection.isToggled, ui.Tristate.isTrue);
+            final size = tester.getSize(find.byType(SwitchListTile));
+            expect(size.width, greaterThanOrEqualTo(48));
+            expect(size.height, greaterThanOrEqualTo(48));
+            node.owner!.performAction(node.id, ui.SemanticsAction.tap);
+            await tester.pumpAndSettle();
+            expect(
+                tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+                isFalse);
+            final off = tester.getSemantics(control).getSemanticsData();
+            expect(off.label, l10n.pushNotifications);
+            expect(off.flagsCollection.isToggled, ui.Tristate.isFalse);
+            expect(control, findsOneWidget);
+          } finally {
+            semantics.dispose();
+          }
         });
       }
     }
