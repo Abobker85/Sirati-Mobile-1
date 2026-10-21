@@ -99,6 +99,25 @@ class GeneratedCv {
           : null,
     );
   }
+
+  /// Full resume text for scanning and rewriting. The stored markdown omits the
+  /// header (name, target role, contact details) that the exported CV carries,
+  /// so a scan of the bare markdown cannot see the candidate's name or contact
+  /// info. Blank markdown stays blank so callers keep their fetch fallback.
+  String get resumeText {
+    if (generatedMarkdown.trim().isEmpty) return '';
+    final contact = [email, phone, linkedin, location]
+        .whereType<String>()
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .join(' | ');
+    final header = [
+      if (fullName.trim().isNotEmpty) '# ${fullName.trim()}',
+      if (targetJobTitle.trim().isNotEmpty) targetJobTitle.trim(),
+      if (contact.isNotEmpty) contact,
+    ].join('\n');
+    return header.isEmpty ? generatedMarkdown : '$header\n\n$generatedMarkdown';
+  }
 }
 
 List<Map<String, dynamic>> _asList(dynamic value) {

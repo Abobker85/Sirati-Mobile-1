@@ -317,7 +317,10 @@ void main() {
         final screen =
             tester.widget<CvAnalysisScreen>(find.byType(CvAnalysisScreen));
         expect(screen.initialCvId, id);
-        expect(screen.initialMarkdown, entry.value);
+        // The scan text is the CV's header (name, role, contact) plus its markdown.
+        expect(screen.initialMarkdown, endsWith(entry.value));
+        expect(screen.initialMarkdown, startsWith('# سارة أحمد Sara Ahmed'));
+        expect(screen.initialMarkdown, contains('sara@example.test'));
         // The scanner opens with the CV's own job title and job description.
         expect(
             screen.initialJobTitle, 'مهندسة نظم Distributed Systems Engineer');
@@ -332,7 +335,7 @@ void main() {
                 .settings
                 .arguments as CvHubAtsCheckArguments;
         expect(args.cvId, id);
-        expect(args.markdown, entry.value);
+        expect(args.markdown, screen.initialMarkdown);
         expect(
             tester
                 .widget<DropdownButtonFormField<int>>(

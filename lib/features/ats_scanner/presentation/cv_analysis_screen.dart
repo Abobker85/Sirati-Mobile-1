@@ -112,7 +112,7 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
     final id = _selectedCvId;
     return id == null
         ? ''
-        : ref.read(analysisSavedCvProvider(id)).value?.generatedMarkdown ?? '';
+        : ref.read(analysisSavedCvProvider(id)).value?.resumeText ?? '';
   }
 
   AnalysisDraft get _draft => AnalysisDraft(

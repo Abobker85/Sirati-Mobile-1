@@ -50,11 +50,11 @@ Future<void> openCvHubAtsCheck(BuildContext context, GeneratedCv cv) async {
     settings: RouteSettings(
         arguments: CvHubAtsCheckArguments(
       cvId: cv.id,
-      markdown: cv.generatedMarkdown,
+      markdown: cv.resumeText,
     )),
     builder: (_) => CvAnalysisScreen(
       initialCvId: cv.id,
-      initialMarkdown: cv.generatedMarkdown,
+      initialMarkdown: cv.resumeText,
       initialJobTitle: cv.targetJobTitle,
       initialJobDescription: cv.jobDescriptionInput,
     ),

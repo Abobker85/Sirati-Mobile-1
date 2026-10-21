@@ -33,37 +33,38 @@ GeneratedCv cv(
   int id = 71,
   String status = 'completed',
   String text = 'خبرة Data analysis\nSQL أدوات البيانات',
-}) => GeneratedCv.fromJson({
-  'id': id,
-  'target_job_title': 'محلل بيانات Data Analyst',
-  'generated_markdown': text,
-  'score_total': score,
-  'ai_status': status,
-  'created_at': '2026-10-17T12:00:00Z',
-});
+}) =>
+    GeneratedCv.fromJson({
+      'id': id,
+      'target_job_title': 'محلل بيانات Data Analyst',
+      'generated_markdown': text,
+      'score_total': score,
+      'ai_status': status,
+      'created_at': '2026-10-17T12:00:00Z',
+    });
 CvAnalysis analysis(int score) => CvAnalysis.fromJson({
-  'id': 92,
-  'target_job_title': 'محلل بيانات Data Analyst',
-  'score_total': score,
-  'grade': 'B',
-  'job_match': score,
-  'ai_status': 'completed',
-  'strengths': ['ملخص واضح Clear summary'],
-  'quick_wins': ['أضف نتائج قابلة للقياس'],
-  'weaknesses': [
-    {'priority': 'low', 'issue': 'تفاصيل إضافية', 'fix': 'راجع التفاصيل'},
-    {
-      'priority': 'high',
-      'issue': 'النتائج المهنية',
-      'fix': 'اذكر نتائجك الحقيقية',
-    },
-  ],
-  'keywords_found': ['تحليل البيانات Data analysis'],
-  'keywords_missing': ['إدارة المشاريع Project management'],
-  'criteria': [
-    {'label': 'المهارات المهنية Skills', 'score': 7, 'max': 10},
-  ],
-});
+      'id': 92,
+      'target_job_title': 'محلل بيانات Data Analyst',
+      'score_total': score,
+      'grade': 'B',
+      'job_match': score,
+      'ai_status': 'completed',
+      'strengths': ['ملخص واضح Clear summary'],
+      'quick_wins': ['أضف نتائج قابلة للقياس'],
+      'weaknesses': [
+        {'priority': 'low', 'issue': 'تفاصيل إضافية', 'fix': 'راجع التفاصيل'},
+        {
+          'priority': 'high',
+          'issue': 'النتائج المهنية',
+          'fix': 'اذكر نتائجك الحقيقية',
+        },
+      ],
+      'keywords_found': ['تحليل البيانات Data analysis'],
+      'keywords_missing': ['إدارة المشاريع Project management'],
+      'criteria': [
+        {'label': 'المهارات المهنية Skills', 'score': 7, 'max': 10},
+      ],
+    });
 
 class Content extends MobileContentService {
   Content({this.latest, this.rows});
@@ -73,46 +74,47 @@ class Content extends MobileContentService {
   Future<Map<String, dynamic>> dashboard(
     bool english, {
     bool force = false,
-  }) async => {
-    'profile': {'name': 'سارة Sara'},
-    'stats': {'generated_cvs': 17, 'analyses': 23},
-    'primary_action': {
-      'title': 'Build your professional CV ابنِ سيرتك',
-      'subtitle': 'Server action description وصف الإجراء',
-      'button_label': 'Create now ابدأ الآن',
-    },
-    'latest_news': {
-      'title': 'Career workshop ورشة مهنية',
-      'subtitle': 'Registration opens tomorrow يبدأ التسجيل غداً',
-    },
-  };
+  }) async =>
+      {
+        'profile': {'name': 'سارة Sara'},
+        'stats': {'generated_cvs': 17, 'analyses': 23},
+        'primary_action': {
+          'title': 'Build your professional CV ابنِ سيرتك',
+          'subtitle': 'Server action description وصف الإجراء',
+          'button_label': 'Create now ابدأ الآن',
+        },
+        'latest_news': {
+          'title': 'Career workshop ورشة مهنية',
+          'subtitle': 'Registration opens tomorrow يبدأ التسجيل غداً',
+        },
+      };
   @override
   Future<Map<String, dynamic>> myCvs(
     bool english, {
     bool force = false,
-  }) async => {
-    'items':
-        rows ??
-        [
-          if (latest != null) ...[
-            {
-              'id': 13,
-              'title': 'Older Research Engineer مهندس أبحاث',
-              'updated_at': '2026-08-01T09:00:00Z',
-            },
-            {
-              'id': latest!.id,
-              'title': latest!.targetJobTitle,
-              'updated_at': '2026-10-19T12:00:00Z',
-            },
-            {
-              'id': 29,
-              'title': 'Previous Product Designer مصمم منتجات',
-              'updated_at': '2026-09-03T09:00:00Z',
-            },
-          ],
-        ],
-  };
+  }) async =>
+      {
+        'items': rows ??
+            [
+              if (latest != null) ...[
+                {
+                  'id': 13,
+                  'title': 'Older Research Engineer مهندس أبحاث',
+                  'updated_at': '2026-08-01T09:00:00Z',
+                },
+                {
+                  'id': latest!.id,
+                  'title': latest!.targetJobTitle,
+                  'updated_at': '2026-10-19T12:00:00Z',
+                },
+                {
+                  'id': 29,
+                  'title': 'Previous Product Designer مصمم منتجات',
+                  'updated_at': '2026-09-03T09:00:00Z',
+                },
+              ],
+            ],
+      };
 }
 
 class Api extends CvApiService {
@@ -130,6 +132,7 @@ class Api extends CvApiService {
         ? latest!
         : cv(72, id: id, text: 'CV $id SQL خبرة مهنية');
   }
+
   @override
   Future<CvAnalysis> submitAnalysis({
     required String targetJobTitle,
@@ -358,14 +361,13 @@ void main() {
     final submit = find.widgetWithText(ElevatedButton, 'تحليل السيرة الذاتية');
     await tester.ensureVisible(submit);
     await tester.tap(submit);
-    for (
-      var i = 0;
-      i < 30 && find.byType(AnalysisResultScreen).evaluate().isEmpty;
-      i++
-    ) {
+    for (var i = 0;
+        i < 30 && find.byType(AnalysisResultScreen).evaluate().isEmpty;
+        i++) {
       await tester.pump(const Duration(milliseconds: 300));
     }
-    expect(api.submittedText, 'CV 71 SQL خبرة مهنية');
+    expect(api.submittedText,
+        cv(72, id: 71, text: 'CV 71 SQL خبرة مهنية').resumeText);
     expect(api.submittedJd, 'متطلبات SQL إدارة البيانات');
     expect(api.submittedFile, isNull);
     expect(find.byType(AnalysisResultScreen), findsOneWidget);
@@ -374,7 +376,8 @@ void main() {
   const markdowns = {
     'Arabic': '# الخبرات\n\n- تطوير الأنظمة وتحليل البيانات\n- إدارة المشاريع',
     'Latin': '# Experience\n\n- Platform engineering\n- SQL and C++\n',
-    'mixed multiline': '  ## الخبرات Experience\n\n**مهندسة Systems**\n- C++ / SQL\n\n',
+    'mixed multiline':
+        '  ## الخبرات Experience\n\n**مهندسة Systems**\n- C++ / SQL\n\n',
   };
   const savedRows = AsyncData([
     SavedAnalysisCv(id: 83, title: 'Another CV'),
@@ -391,11 +394,18 @@ void main() {
             initialMarkdown: entry.value,
             savedCvs: savedRows,
           ),
-          arabic: true, dark: true, scale: 1, api: api,
+          arabic: true,
+          dark: true,
+          scale: 1,
+          api: api,
         ));
         await tester.pumpAndSettle();
-        expect(tester.widget<DropdownButtonFormField<int>>(
-            find.byType(DropdownButtonFormField<int>)).initialValue, 71);
+        expect(
+            tester
+                .widget<DropdownButtonFormField<int>>(
+                    find.byType(DropdownButtonFormField<int>))
+                .initialValue,
+            71);
         expect(api.savedCvFetches, 0);
         await submitSavedAnalysis(tester);
         expect(api.submittedText, entry.value);
@@ -407,20 +417,31 @@ void main() {
     );
 
     for (final seed in [null, '', ' \t\n ']) {
-      final label = seed == null ? 'only initialCvId' :
-          seed.isEmpty ? 'empty hub markdown' : 'blank hub markdown';
+      final label = seed == null
+          ? 'only initialCvId'
+          : seed.isEmpty
+              ? 'empty hub markdown'
+              : 'blank hub markdown';
       testWidgets('$label falls back to the fetched saved CV (${entry.key})',
           (tester) async {
         final api = Api(latest: cv(72, text: entry.value));
         await tester.pumpWidget(app(
-          CvAnalysisScreen(initialCvId: 71, initialMarkdown: seed, savedCvs: savedRows),
-          arabic: false, dark: false, scale: 1, api: api,
+          CvAnalysisScreen(
+              initialCvId: 71, initialMarkdown: seed, savedCvs: savedRows),
+          arabic: false,
+          dark: false,
+          scale: 1,
+          api: api,
         ));
         await tester.pumpAndSettle();
-        expect(tester.widget<DropdownButtonFormField<int>>(
-            find.byType(DropdownButtonFormField<int>)).initialValue, 71);
+        expect(
+            tester
+                .widget<DropdownButtonFormField<int>>(
+                    find.byType(DropdownButtonFormField<int>))
+                .initialValue,
+            71);
         await submitSavedAnalysis(tester);
-        expect(api.submittedText, entry.value);
+        expect(api.submittedText, api.latest!.resumeText);
         expect(api.submittedFile, isNull);
         expect(api.savedCvFetches, greaterThanOrEqualTo(1));
         expect(api.fetchedCvIds, everyElement(71));
@@ -429,12 +450,17 @@ void main() {
       });
     }
 
-    testWidgets('changing the selected CV stops using hub markdown (${entry.key})',
+    testWidgets(
+        'changing the selected CV stops using hub markdown (${entry.key})',
         (tester) async {
       final api = Api();
       await tester.pumpWidget(app(
-        CvAnalysisScreen(initialCvId: 71, initialMarkdown: entry.value, savedCvs: savedRows),
-        arabic: false, dark: false, scale: 1, api: api,
+        CvAnalysisScreen(
+            initialCvId: 71, initialMarkdown: entry.value, savedCvs: savedRows),
+        arabic: false,
+        dark: false,
+        scale: 1,
+        api: api,
       ));
       await tester.pumpAndSettle();
       expect(api.savedCvFetches, 0);
@@ -444,33 +470,49 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Another CV').last);
       await tester.pumpAndSettle();
-      expect(tester.widget<DropdownButtonFormField<int>>(dropdown).initialValue, 83);
+      expect(tester.widget<DropdownButtonFormField<int>>(dropdown).initialValue,
+          83);
       await submitSavedAnalysis(tester);
-      expect(api.submittedText, 'CV 83 SQL خبرة مهنية');
+      expect(api.submittedText,
+          cv(72, id: 83, text: 'CV 83 SQL خبرة مهنية').resumeText);
       expect(api.fetchedCvIds, isNotEmpty);
       expect(api.fetchedCvIds, everyElement(83));
       expect(find.byType(AnalysisResultScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('carried markdown cannot bypass a missing saved CV (${entry.key})',
+    testWidgets(
+        'carried markdown cannot bypass a missing saved CV (${entry.key})',
         (tester) async {
       final api = Api();
       await tester.pumpWidget(app(
-        CvAnalysisScreen(initialCvId: 999, initialMarkdown: entry.value, savedCvs: savedRows),
-        arabic: false, dark: false, scale: 1, api: api,
+        CvAnalysisScreen(
+            initialCvId: 999,
+            initialMarkdown: entry.value,
+            savedCvs: savedRows),
+        arabic: false,
+        dark: false,
+        scale: 1,
+        api: api,
       ));
       await tester.pumpAndSettle();
-      expect(tester.widget<DropdownButtonFormField<int>>(
-          find.byType(DropdownButtonFormField<int>)).initialValue, isNull);
-      await tester.ensureVisible(find.byKey(const ValueKey('ats-input-job-title')));
-      await tester.enterText(find.byKey(const ValueKey('ats-input-job-title')), 'Engineer');
+      expect(
+          tester
+              .widget<DropdownButtonFormField<int>>(
+                  find.byType(DropdownButtonFormField<int>))
+              .initialValue,
+          isNull);
+      await tester
+          .ensureVisible(find.byKey(const ValueKey('ats-input-job-title')));
+      await tester.enterText(
+          find.byKey(const ValueKey('ats-input-job-title')), 'Engineer');
       await tester.tap(find.byKey(const ValueKey('ats-input-docked-analyze')));
       await tester.pumpAndSettle();
       expect(api.submittedText, isNull);
       expect(api.savedCvFetches, 0);
       expect(find.byType(AnalysisResultScreen), findsNothing);
-      final l = AppLocalizations.of(tester.element(find.byType(CvAnalysisScreen)));
+      final l =
+          AppLocalizations.of(tester.element(find.byType(CvAnalysisScreen)));
       expect(find.text(l.atsInputSelectSourceRequired), findsOneWidget);
     });
   }
@@ -485,7 +527,9 @@ Future<void> submitSavedAnalysis(WidgetTester tester) async {
   await tester.ensureVisible(description);
   await tester.enterText(description, 'SQL وتطوير الأنظمة');
   await tester.tap(find.byKey(const ValueKey('ats-input-docked-analyze')));
-  for (var i = 0; i < 30 && find.byType(AnalysisResultScreen).evaluate().isEmpty; i++) {
+  for (var i = 0;
+      i < 30 && find.byType(AnalysisResultScreen).evaluate().isEmpty;
+      i++) {
     await tester.pump(const Duration(milliseconds: 300));
   }
 }
@@ -587,16 +631,15 @@ void expectRenderedControls(WidgetTester tester, String label) {
       background: widget.color,
     );
   }
-  for (final element
-      in find
-          .byWidgetPredicate(
-            (w) =>
-                w is ButtonStyleButton ||
-                w is DashboardToolCard ||
-                w is ListTile && w.onTap != null ||
-                w is Tab,
-          )
-          .evaluate()) {
+  for (final element in find
+      .byWidgetPredicate(
+        (w) =>
+            w is ButtonStyleButton ||
+            w is DashboardToolCard ||
+            w is ListTile && w.onTap != null ||
+            w is Tab,
+      )
+      .evaluate()) {
     final box = element.findRenderObject();
     if (box is! RenderBox || !box.hasSize) continue;
     expect(
@@ -749,14 +792,12 @@ void additionalTests() {
           await tester.tap(
             find.byKey(const ValueKey('ats-input-docked-analyze')),
           );
-          for (
-            var i = 0;
-            i < 30 && find.byType(AnalysisResultScreen).evaluate().isEmpty;
-            i++
-          ) {
+          for (var i = 0;
+              i < 30 && find.byType(AnalysisResultScreen).evaluate().isEmpty;
+              i++) {
             await tester.pump(const Duration(milliseconds: 300));
           }
-          expect(api.submittedText, latest.generatedMarkdown);
+          expect(api.submittedText, latest.resumeText);
           expect(api.submittedJd, 'SQL إدارة البيانات');
           expect(api.submittedFile, isNull);
           expect(find.byType(AnalysisResultScreen), findsOneWidget);
@@ -858,9 +899,8 @@ void additionalTests() {
               .where((t) => t.onTap != null)
               .toList();
           expect(tiles.length, 3);
-          final subtitles = tiles
-              .map((t) => (t.subtitle! as Text).data!)
-              .toList();
+          final subtitles =
+              tiles.map((t) => (t.subtitle! as Text).data!).toList();
           final l = AppLocalizations.of(
             tester.element(find.byType(DashboardHomeTab)),
           );
