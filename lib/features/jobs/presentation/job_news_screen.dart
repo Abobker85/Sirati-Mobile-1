@@ -64,6 +64,12 @@ class _JobNewsScreenState extends ConsumerState<JobNewsScreen> {
     });
   }
 
+  void _clearFilters() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    ref.read(jobNewsFiltersProvider.notifier).clear();
+  }
+
   void _openJob(JobNews item) {
     unawaited(Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => JobNewsDetailScreen(item: item)),
@@ -116,6 +122,7 @@ class _JobNewsScreenState extends ConsumerState<JobNewsScreen> {
                 isReloading: feed.isLoading,
                 searchController: _searchController,
                 onSearchChanged: _onSearchChanged,
+                onClearFilters: _clearFilters,
                 onRefresh: () => refreshJobNews(ref, english: english),
                 onOpenJob: _openJob,
               ),
@@ -136,6 +143,7 @@ class _JobNewsList extends ConsumerWidget {
     required this.isReloading,
     required this.searchController,
     required this.onSearchChanged,
+    required this.onClearFilters,
     required this.onRefresh,
     required this.onOpenJob,
   });
@@ -147,6 +155,7 @@ class _JobNewsList extends ConsumerWidget {
   final bool isReloading;
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClearFilters;
   final Future<void> Function() onRefresh;
   final ValueChanged<JobNews> onOpenJob;
 
@@ -248,7 +257,12 @@ class _JobNewsList extends ConsumerWidget {
                           const SizedBox(height: AppSpacing.lg),
                         ],
                         if (feed.items.isEmpty)
-                          EmptyJobNews(english: english)
+                          EmptyJobNews(
+                            english: english,
+                            onClearFilters: filters.isActive
+                                ? onClearFilters
+                                : null,
+                          )
                         else if (latest.isNotEmpty) ...[
                           Text(
                             english ? 'Latest Postings' : 'آخر الإعلانات',
@@ -291,4 +305,5 @@ class _JobNewsList extends ConsumerWidget {
       ),
     );
   }
+
 }

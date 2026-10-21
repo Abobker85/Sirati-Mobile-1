@@ -4,12 +4,7 @@ import 'package:sirati/features/jobs/presentation/widgets/job_news_format.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_title_display.dart';
 import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/theme/sirati_colors.dart';
 import 'package:sirati/shared/widgets/motion.dart';
-
-/// The featured card is a permanently white surface in both themes, so its ink must be the light brand ink.
-final Color _whiteCardInk = SiratiColors
-    .light.primaryInk; // ignore: hardcoded_color -- white card in both themes
 
 class FeaturedJobCard extends StatelessWidget {
   final JobNews item;
@@ -95,13 +90,16 @@ class FeaturedJobCard extends StatelessWidget {
                               color: context.sirati.onBrandSurface,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              item.sourceBadge ??
-                                  (english ? 'Verified' : 'جهة موثقة'),
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: context.sirati.onBrandSurface,
+                            Flexible(
+                              child: Text(
+                                item.sourceBadge ??
+                                    (english ? 'Verified' : 'جهة موثقة'),
+                                softWrap: true,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.sirati.onBrandSurface,
+                                ),
                               ),
                             ),
                           ],
@@ -138,15 +136,18 @@ class FeaturedJobCard extends StatelessWidget {
                             Icon(
                               Icons.stars_rounded,
                               size: 14,
-                              color: _whiteCardInk,
+                              color: context.sirati.onWhitePill,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              '${item.matchScore}% ${english ? 'Match' : 'تطابق'}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                color: _whiteCardInk,
+                            Flexible(
+                              child: Text(
+                                '${item.matchScore}% ${english ? 'Match' : 'تطابق'}',
+                                softWrap: true,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.sirati.onWhitePill,
+                                ),
                               ),
                             ),
                           ],
@@ -160,7 +161,7 @@ class FeaturedJobCard extends StatelessWidget {
                   primaryStyle: TextStyle(
                     fontSize: 17,
                     height: 1.35,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: context.sirati.onBrandSurface,
                   ),
                   secondaryStyle: TextStyle(
@@ -243,7 +244,7 @@ class FeaturedJobCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: _whiteCardInk,
+                          color: context.sirati.onWhitePill,
                         ),
                       ),
                     ),

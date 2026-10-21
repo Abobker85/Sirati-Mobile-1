@@ -649,5 +649,19 @@
   "premiumGateAvailabilityNote": "الاشتراكات داخل التطبيق ستتاح قريباً. لا يمكنك شراء اشتراك في هذا الإصدار.",
   "cvHubAtsNewFormNotice": "سيُفتح نموذج ATS جديد. لن تُملأ سيرتك تلقائياً بعد؛ الصق نصها أو ارفع ملفاً للمتابعة.",
   "cvHubAtsStay": "البقاء في هذه السيرة",
-  "cvHubAtsOpenNewForm": "فتح نموذج ATS جديد"
+  "cvHubAtsOpenNewForm": "فتح نموذج ATS جديد",
+  "registerInterest": "سجّل اهتمامك",
+  "noMatchingJobs": "لا توجد وظائف مطابقة",
+  "clearFilters": "مسح عوامل التصفية",
+  "compatibilityScoreLabel": "درجة توافق السيرة الذاتية مع نظام تتبع المتقدمين",
+  "compatibilityScoreValue": "{score} من 100",
+  "showPassword": "إظهار كلمة المرور",
+  "hidePassword": "إخفاء كلمة المرور",
+  "@compatibilityScoreValue": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  }
 }

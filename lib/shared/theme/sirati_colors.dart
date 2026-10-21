@@ -48,6 +48,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     required this.brandSurface,
     required this.brandSurfaceDeep,
     required this.onBrandSurface,
+    required this.onWhitePill,
     required this.softShadow,
   });
 
@@ -103,6 +104,9 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   final Color brandSurface;
   final Color brandSurfaceDeep;
   final Color onBrandSurface;
+
+  /// Dark ink for text and icons on white pills in either theme.
+  final Color onWhitePill;
   final List<BoxShadow> softShadow;
 
   /// Semantic aliases (SIRATI-17). Prefer these names in new widgets.
@@ -175,6 +179,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     brandSurface: Color(0xFF006A60),
     brandSurfaceDeep: Color(0xFF004A43),
     onBrandSurface: Color(0xFFFFFFFF),
+    onWhitePill: Color(0xFF006A60),
     softShadow: [
       BoxShadow(
         color: Color(0x0D000000),
@@ -228,6 +233,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     brandSurface: Color(0xFF0F5C54),
     brandSurfaceDeep: Color(0xFF0A3D38),
     onBrandSurface: Color(0xFFFFFFFF),
+    onWhitePill: Color(0xFF006A60),
     softShadow: [
       BoxShadow(
         color: Color(0x14000000),
@@ -281,6 +287,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     Color? brandSurface,
     Color? brandSurfaceDeep,
     Color? onBrandSurface,
+    Color? onWhitePill,
     List<BoxShadow>? softShadow,
   }) {
     return SiratiColors(
@@ -326,6 +333,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       brandSurface: brandSurface ?? this.brandSurface,
       brandSurfaceDeep: brandSurfaceDeep ?? this.brandSurfaceDeep,
       onBrandSurface: onBrandSurface ?? this.onBrandSurface,
+      onWhitePill: onWhitePill ?? this.onWhitePill,
       softShadow: softShadow ?? this.softShadow,
     );
   }
@@ -377,6 +385,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       brandSurface: l(brandSurface, other.brandSurface),
       brandSurfaceDeep: l(brandSurfaceDeep, other.brandSurfaceDeep),
       onBrandSurface: l(onBrandSurface, other.onBrandSurface),
+      onWhitePill: l(onWhitePill, other.onWhitePill),
       softShadow: t < 0.5 ? softShadow : other.softShadow,
     );
   }

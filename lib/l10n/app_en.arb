@@ -642,5 +642,19 @@
   "premiumGateAvailabilityNote": "In-app subscriptions are opening soon. You cannot buy a subscription in this version.",
   "cvHubAtsNewFormNotice": "This opens a new ATS form. Your CV is not filled in automatically yet; paste its text or upload a file to continue.",
   "cvHubAtsStay": "Stay on this CV",
-  "cvHubAtsOpenNewForm": "Open new ATS form"
+  "cvHubAtsOpenNewForm": "Open new ATS form",
+  "registerInterest": "Register interest",
+  "noMatchingJobs": "No matching jobs",
+  "clearFilters": "Clear filters",
+  "compatibilityScoreLabel": "ATS compatibility score",
+  "compatibilityScoreValue": "{score} out of 100",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "@compatibilityScoreValue": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  }
 }

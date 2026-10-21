@@ -37,10 +37,13 @@ class _FakeContent extends MobileContentService {
   Object? markError;
   Future<void>? markGate;
   final marked = <Object>[];
+  int fetches = 0;
 
   @override
-  Future<Map<String, dynamic>> notifications({bool force = false}) async =>
-      {'items': rows};
+  Future<Map<String, dynamic>> notifications({bool force = false}) async {
+    fetches++;
+    return {'items': rows};
+  }
 
   @override
   Future<Map<String, dynamic>> markNotificationRead(int id) async {
@@ -62,6 +65,34 @@ class _FakeContent extends MobileContentService {
 }
 
 void main() {
+  for (final language in ['en', 'ar']) {
+    for (final dark in [false, true]) {
+      testWidgets('empty inbox refresh fetches new notifications ($language, dark=$dark)', (tester) async {
+        AppLocale.languageCode.value = language;
+        SessionCache.instance.clear();
+        final content = _FakeContent([]);
+        await tester.pumpWidget(ProviderScope(overrides: [
+          mobileContentServiceProvider.overrideWithValue(content),
+        ], child: MaterialApp(
+          theme: dark ? AppTheme.darkFor(arabic: language == 'ar')
+              : AppTheme.lightFor(arabic: language == 'ar'),
+          locale: Locale(language),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: const NotificationsScreen(),
+        )));
+        await tester.pumpAndSettle();
+        expect(content.fetches, 1);
+        content.rows = [_row(42)];
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, 400));
+        await tester.pumpAndSettle();
+        expect(content.fetches, 2);
+        expect(find.text('Note 42'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
   group('NotificationItem', () {
     test('only url/screen actions with a target open something', () {
       for (final (type, url, opens) in <(String?, String?, bool)>[
