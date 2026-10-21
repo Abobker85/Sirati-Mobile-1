@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/app/sirati_route_table.dart';
+import 'package:sirati/features/ats_scanner/application/saved_analysis_cvs.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 import 'package:sirati/features/job_match/presentation/job_match_screen.dart';
@@ -63,6 +64,7 @@ Future<void> _pump(
   String status = 'completed',
   _Api? api,
   String? markdown,
+  List<SavedAnalysisCv>? analysisCvs,
 }) async {
   AppLocale.languageCode.value = language;
   registerSiratiRouteWidgets();
@@ -70,6 +72,8 @@ Future<void> _pump(
     key: UniqueKey(),
     overrides: [
       cvApiServiceProvider.overrideWithValue(api ?? _Api()),
+      if (analysisCvs != null)
+        analysisSavedCvsProvider.overrideWith((ref, english) async => analysisCvs),
       authApiServiceProvider.overrideWithValue(FakeAuth(subscription())),
     ],
     child: MaterialApp(
@@ -284,23 +288,47 @@ void main() {
     });
   }
 
-  testWidgets('ATS discloses the empty form and carries the source CV input',
-      (tester) async {
-    usePhoneViewAtTextScale(tester);
-    await _pump(tester);
-    final l =
-        AppLocalizations.of(tester.element(find.byType(GeneratedCvScreen)));
-    await _tap(tester, GeneratedCvScreen.atsStepKey);
-    expect(find.text(l.cvHubAtsNewFormNotice), findsOneWidget);
-    expect(find.byType(CvAnalysisScreen), findsNothing);
-    await tester.tap(find.text(l.cvHubAtsOpenNewForm));
-    await tester.pumpAndSettle();
-    final args = ModalRoute.of(tester.element(find.byType(CvAnalysisScreen)))!
-        .settings
-        .arguments as CvHubAtsCheckArguments;
-    expect(args.cvId, _cv().id);
-    expect(args.markdown, _cv().generatedMarkdown);
-  });
+  const markdowns = {
+    'Arabic': '# الخبرات\n\n- تطوير الأنظمة وتحليل البيانات\n- إدارة المشاريع',
+    'Latin': '# Experience\n\n- Platform engineering\n- SQL and C++\n',
+    'mixed multiline': '  ## الخبرات Experience\n\n**مهندسة Systems**\n- C++ / SQL\n\n',
+  };
+  for (final id in [7, 91, 503]) {
+    for (final entry in markdowns.entries) {
+      testWidgets('ATS opens prefilled with the source CV (id $id, ${entry.key})',
+          (tester) async {
+        usePhoneViewAtTextScale(tester);
+        final api = _Api();
+        await _pump(tester,
+            id: id,
+            api: api,
+            markdown: entry.value,
+            analysisCvs: [
+              SavedAnalysisCv(id: id + 1, title: 'Another CV'),
+              SavedAnalysisCv(id: id, title: 'Selected CV'),
+            ]);
+        await _tap(tester, GeneratedCvScreen.atsStepKey);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(CvAnalysisScreen), findsOneWidget);
+        final screen = tester.widget<CvAnalysisScreen>(
+            find.byType(CvAnalysisScreen));
+        expect(screen.initialCvId, id);
+        expect(screen.initialMarkdown, entry.value);
+        final args = ModalRoute.of(tester.element(find.byType(CvAnalysisScreen)))!
+            .settings.arguments as CvHubAtsCheckArguments;
+        expect(args.cvId, id);
+        expect(args.markdown, entry.value);
+        expect(tester.widget<DropdownButtonFormField<int>>(
+            find.byType(DropdownButtonFormField<int>)).initialValue, id);
+        final savedSource = tester
+            .element(find.byKey(const ValueKey(AnalysisCvSource.saved)))
+            .findAncestorWidgetOfExactType<Semantics>()!;
+        expect(savedSource.properties.selected, isTrue);
+        expect(find.byKey(const ValueKey('ats-input-resume-text')), findsNothing);
+        expect(api.fetches, 0);
+      });
+    }
+  }
 
   for (final language in ['ar', 'en']) {
     for (final dark in [false, true]) {
