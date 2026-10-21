@@ -150,7 +150,7 @@ class AppErrorState extends StatelessWidget {
     return AppEmptyState(
       icon: icon,
       title: title ?? defaultTitle,
-      subtitle: message,
+      subtitle: _clientSubtitleFor(type, english) ?? message,
       actionLabel:
           onRetry == null ? null : (english ? 'Retry' : 'إعادة المحاولة'),
       onAction: onRetry,
@@ -160,6 +160,24 @@ class AppErrorState extends StatelessWidget {
       scrollable: scrollable,
       topInsetFactor: 0.16,
     );
+  }
+
+  /// Connection and timeout failures are raised by the client itself, so their
+  /// raw message is a fixed (Arabic) developer-facing string; show localized
+  /// user copy instead. Server-provided messages for other types pass through.
+  static String? _clientSubtitleFor(ApiErrorType type, bool english) {
+    switch (type) {
+      case ApiErrorType.network:
+        return english
+            ? 'Check your internet connection and try again.'
+            : 'تحقق من اتصالك بالإنترنت ثم حاول مرة أخرى.';
+      case ApiErrorType.timeout:
+        return english
+            ? 'The server took too long to respond. Please try again.'
+            : 'استغرق الخادم وقتاً طويلاً للرد. حاول مرة أخرى.';
+      default:
+        return null;
+    }
   }
 
   static IconData _iconFor(ApiErrorType type) {

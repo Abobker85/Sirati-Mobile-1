@@ -176,7 +176,7 @@ class ApiClient {
       );
     } on http.ClientException {
       throw const ApiException.network(
-          'تعذر الاتصال بالخادم. تأكد من تشغيل Laravel وصحة رابط API.');
+          'تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.');
     } catch (e) {
       if (e is ApiException) rethrow;
       throw const ApiException.network(
