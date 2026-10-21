@@ -60,11 +60,7 @@ class AppColors {
   static const textHint = Color(0xFF54615E);
 
   static const softShadow = [
-    BoxShadow(
-      color: Color(0x0D000000),
-      blurRadius: 12,
-      offset: Offset(0, 4),
-    ),
+    BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 4)),
   ];
 }
 
@@ -96,9 +92,12 @@ class AppSpacing {
 }
 
 /// Elevation steps per surface type (SIRATI-19).
+///
+/// Ordinary cards are flat so [AppCard] and [AppSurfaceCard] share one
+/// shadow. Sheets and dialogs stay raised.
 class AppElevation {
   static const none = 0.0;
-  static const card = 1.0;
+  static const card = 0.0;
   static const raised = 3.0;
   static const sheet = 6.0;
   static const dialog = 12.0;
@@ -188,14 +187,26 @@ class AppTextStyles {
 }
 
 class AppTheme {
-  static final ThemeData _lightArabic =
-      _build(SiratiColors.light, Brightness.light, arabic: true);
-  static final ThemeData _lightLatin =
-      _build(SiratiColors.light, Brightness.light, arabic: false);
-  static final ThemeData _darkArabic =
-      _build(SiratiColors.dark, Brightness.dark, arabic: true);
-  static final ThemeData _darkLatin =
-      _build(SiratiColors.dark, Brightness.dark, arabic: false);
+  static final ThemeData _lightArabic = _build(
+    SiratiColors.light,
+    Brightness.light,
+    arabic: true,
+  );
+  static final ThemeData _lightLatin = _build(
+    SiratiColors.light,
+    Brightness.light,
+    arabic: false,
+  );
+  static final ThemeData _darkArabic = _build(
+    SiratiColors.dark,
+    Brightness.dark,
+    arabic: true,
+  );
+  static final ThemeData _darkLatin = _build(
+    SiratiColors.dark,
+    Brightness.dark,
+    arabic: false,
+  );
 
   static ThemeData get light => _lightArabic;
 
@@ -222,9 +233,13 @@ class AppTheme {
         primary: c.primary,
         onPrimary: c.onPrimary,
         secondary: c.amber,
-        onSecondary: isDark ? c.textPrimary : const Color(0xFF1A1200),
+        onSecondary: const Color(0xFF1A1200),
+        secondaryContainer: c.primaryLight,
+        onSecondaryContainer: c.primaryInk,
         tertiary: c.tertiary,
-        onTertiary: isDark ? c.onPrimary : Colors.white,
+        onTertiary: isDark ? const Color(0xFF21120D) : Colors.white,
+        tertiaryContainer: c.tertiaryLight,
+        onTertiaryContainer: isDark ? c.tertiary : const Color(0xFF9A4528),
         error: c.error,
         onError: c.onError,
         surface: c.surface,
@@ -251,8 +266,9 @@ class AppTheme {
           foregroundColor: c.onPrimary,
           minimumSize: const Size.fromHeight(54),
           elevation: 0,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           textStyle: AppTypography.labelLg.resolve(arabic: arabic),
         ),
       ),
@@ -260,8 +276,9 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: c.primaryInk,
           minimumSize: const Size.fromHeight(54),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           textStyle: AppTypography.labelLg.resolve(arabic: arabic),
         ).copyWith(
           // A disabled button must not keep the active outline.
@@ -281,7 +298,7 @@ class AppTheme {
           textStyle: AppTypography.labelMd.resolve(arabic: arabic),
         ),
       ),
-      inputDecorationTheme: AppFormStyles.inputThemeFor(c),
+      inputDecorationTheme: AppFormStyles.inputThemeFor(c, arabic: arabic),
       cardTheme: CardThemeData(
         color: c.surface,
         elevation: 0,
@@ -301,11 +318,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide.none,
       ),
-      dividerTheme: DividerThemeData(
-        color: c.border,
-        thickness: 1,
-        space: 0,
-      ),
+      dividerTheme: DividerThemeData(color: c.border, thickness: 1, space: 0),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: c.surface,
         selectedItemColor: c.primaryInk,
@@ -354,7 +367,13 @@ class AppTheme {
   /// icon brightness follows theme.
   /// Pre-theme overlay used at process start, before [SiratiApp] mounts.
   static SystemUiOverlayStyle bootstrapSystemUiOverlayStyle() =>
-      systemUiOverlayStyle(SiratiColors.light, Brightness.light);
+      systemUiOverlayStyle(
+        WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+                Brightness.dark
+            ? SiratiColors.dark
+            : SiratiColors.light,
+        WidgetsBinding.instance.platformDispatcher.platformBrightness,
+      );
 
   static SystemUiOverlayStyle systemUiOverlayStyle(
     SiratiColors c,
@@ -406,7 +425,7 @@ class AppCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: AppRadius.xlAll,
             border: Border.all(color: c.border),
-            boxShadow: c.softShadow,
+            boxShadow: AppShadows.of(c, elevation: AppElevation.card),
           ),
           child: child,
         ),
@@ -444,7 +463,7 @@ class SiratiMark extends StatelessWidget {
                   color: Color(0x3312384F),
                   blurRadius: 18,
                   offset: Offset(0, 8),
-                )
+                ),
               ]
             : null,
       ),
@@ -529,15 +548,21 @@ class StatusChip extends StatelessWidget {
   final Color bg;
   final Color fg;
 
-  const StatusChip(
-      {super.key, required this.label, required this.bg, required this.fg});
+  const StatusChip({
+    super.key,
+    required this.label,
+    required this.bg,
+    required this.fg,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Text(
         label,
         style: AppTypography.of(context, AppTypography.labelMd, color: fg),

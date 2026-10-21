@@ -20,6 +20,12 @@ import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
+/// Branding collapses below this viewport height so the form can move up.
+const _loginCompactHeaderExtent = 520.0;
+
+const _loginMarkSize = 56.0;
+const _loginCompactMarkSize = 40.0;
+
 class LoginScreen extends ConsumerStatefulWidget {
   /// When true, shows a one-shot "session expired" snackbar after first frame.
   final bool sessionExpiredNotice;
@@ -146,74 +152,95 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
     final isLoading = ref.watch(loginControllerProvider);
-    final compactHeader = MediaQuery.sizeOf(context).height < 520;
-
     return Scaffold(
       backgroundColor: context.sirati.background,
       body: AuthFormConstraint(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: context.sirati.surface,
-                border: Border(
-                  bottom: BorderSide(
-                      color: context.sirati.border.withValues(alpha: .5)),
-                ),
-              ),
-              padding: EdgeInsetsDirectional.only(
-                top: MediaQuery.of(context).padding.top +
-                    (compactHeader ? 10 : 16),
-                start: 20,
-                end: 12,
-                bottom: compactHeader ? 14 : 24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      if (Navigator.of(context).canPop())
-                        IconButton(
-                          onPressed: () => Navigator.maybePop(context),
-                          tooltip: MaterialLocalizations.of(context)
-                              .backButtonTooltip,
-                          icon: DirectionalIcon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: context.sirati.textPrimary,
-                            size: 18,
-                          ),
-                        ),
-                      const Spacer(),
-                      const LanguageToggle(),
-                    ],
-                  ),
-                  SizedBox(height: compactHeader ? 4 : 8),
-                  SiratiMark(size: compactHeader ? 44 : 56, elevated: true),
-                  SizedBox(height: compactHeader ? 8 : 14),
-                  Text(
-                    english ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: compactHeader ? 20 : 22,
-                        fontWeight: FontWeight.w800,
-                        color: context.sirati.primaryInk),
-                  ),
-                  SizedBox(height: compactHeader ? 4 : 6),
-                  Text(
-                    english ? 'Sign in to continue' : 'سجّل دخولك للمتابعة',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 14, color: context.sirati.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Height the body can actually use, including a keyboard that
+            // shrinks the scaffold. Full-screen size stays tall while typing.
+            final compact = constraints.maxHeight < _loginCompactHeaderExtent;
+            final sectionGap = compact ? AppSpacing.sm : AppSpacing.xl;
+            return SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                child: AutofillGroup(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  compact ? AppSpacing.xs : AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: context.sirati.surface,
+                        border: Border(
+                          bottom: BorderSide(color: context.sirati.outline),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                if (Navigator.of(context).canPop())
+                                  IconButton(
+                                    onPressed: () => Navigator.maybePop(context),
+                                    tooltip: MaterialLocalizations.of(context)
+                                        .backButtonTooltip,
+                                    icon: DirectionalIcon(
+                                      Icons.arrow_back_ios_new_rounded,
+                                      color: context.sirati.textPrimary,
+                                      size: 18,
+                                    ),
+                                  ),
+                                const Spacer(),
+                                const LanguageToggle(),
+                              ],
+                            ),
+                            SizedBox(height: sectionGap),
+                            Center(
+                              child: SiratiMark(
+                                size: compact
+                                    ? _loginCompactMarkSize
+                                    : _loginMarkSize,
+                              ),
+                            ),
+                            SizedBox(height: sectionGap),
+                            Text(
+                              english
+                                  ? 'Welcome to Sirati'
+                                  : 'مرحباً بك في سيرتي',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.of(
+                                context,
+                                compact
+                                    ? AppTypography.titleLg
+                                    : AppTypography.headlineMd,
+                                color: context.sirati.primaryInk,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              english
+                                  ? 'Sign in to continue'
+                                  : 'سجّل دخولك للمتابعة',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.bodyMd,
+                                color: context.sirati.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: sectionGap),
+                    AutofillGroup(
                   child: Form(
                     key: _formKey,
                     autovalidateMode: _submitted
@@ -389,9 +416,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

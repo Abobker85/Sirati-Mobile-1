@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -65,6 +66,14 @@ class AppButton extends StatelessWidget {
     final c = context.sirati;
     final enabled = onPressed != null && !isLoading;
     final style = AppTypography.of(context, AppTypography.labelLg);
+    final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    final loadingStatus = l10n?.sharedLoading ??
+        (Directionality.of(context) == TextDirection.rtl
+            ? 'جارٍ التحميل...'
+            : 'Loading...');
+
+    final foreground =
+        !enabled && !isLoading ? c.textSecondary : _foreground(c);
 
     final child = Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -76,32 +85,31 @@ class AppButton extends StatelessWidget {
             height: 18,
             child: CircularProgressIndicator(
               strokeWidth: 2.2,
+              semanticsLabel: loadingStatus,
               color: variant == AppButtonVariant.primary
                   ? c.onPrimary
                   : variant == AppButtonVariant.destructive
                       ? c.onError
-                      : c.primary,
+                      : c.primaryInk,
             ),
           )
         else if (icon != null)
-          Icon(icon, size: 18),
+          Icon(icon, size: 18, color: foreground),
         if (isLoading || icon != null) const SizedBox(width: AppSpacing.xs),
         Flexible(
           child: Text(
             label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: style.copyWith(
-              color: _foreground(c),
-            ),
+            style: style.copyWith(color: foreground),
           ),
         ),
       ],
     );
 
-    final minSize =
-        Size(expand ? double.infinity : AppTouchTarget.min, AppTouchTarget.min);
+    final minSize = Size(
+      expand ? double.infinity : AppTouchTarget.min,
+      AppTouchTarget.min,
+    );
 
     late final Widget button;
     switch (variant) {
@@ -111,7 +119,10 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             minimumSize: minSize,
             backgroundColor: c.primary,
+            disabledBackgroundColor: isLoading ? c.primary : c.surfaceHigh,
+            disabledForegroundColor: isLoading ? c.onPrimary : c.textSecondary,
             foregroundColor: c.onPrimary,
+            elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
           ),
           child: child,
@@ -121,8 +132,12 @@ class AppButton extends StatelessWidget {
           onPressed: enabled ? onPressed : null,
           style: OutlinedButton.styleFrom(
             minimumSize: minSize,
-            foregroundColor: c.primary,
-            side: BorderSide(color: c.primary, width: 1.5),
+            foregroundColor: c.primaryInk,
+            disabledForegroundColor: c.textSecondary,
+            side: BorderSide(
+              color: !enabled && !isLoading ? c.outline : c.primaryInk,
+              width: 1.5,
+            ),
             shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
           ),
           child: child,
@@ -132,7 +147,8 @@ class AppButton extends StatelessWidget {
           onPressed: enabled ? onPressed : null,
           style: TextButton.styleFrom(
             minimumSize: minSize,
-            foregroundColor: c.primary,
+            foregroundColor: c.primaryInk,
+            disabledForegroundColor: c.textSecondary,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
           ),
           child: child,
@@ -143,23 +159,17 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             minimumSize: minSize,
             backgroundColor: c.error,
+            disabledBackgroundColor: isLoading ? c.error : c.surfaceHigh,
+            disabledForegroundColor: isLoading ? c.onError : c.textSecondary,
             foregroundColor: c.onError,
+            elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
           ),
           child: child,
         );
     }
 
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: isLoading ? '$label, loading' : label,
-      excludeSemantics: true,
-      child: PressScale(
-        enabled: enabled,
-        child: button,
-      ),
-    );
+    return PressScale(enabled: enabled, child: button);
   }
 
   Color _foreground(SiratiColors c) {
@@ -170,7 +180,7 @@ class AppButton extends StatelessWidget {
         return c.onError;
       case AppButtonVariant.secondary:
       case AppButtonVariant.text:
-        return c.primary;
+        return c.primaryInk;
     }
   }
 }

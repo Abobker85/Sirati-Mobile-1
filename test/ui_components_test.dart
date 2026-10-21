@@ -122,26 +122,33 @@ void main() {
 
   testWidgets('AiFieldLoadingOverlay blocks interaction while loading',
       (tester) async {
-    var taps = 0;
-    await tester.pumpWidget(wrap(
-      SizedBox(
-        height: 80,
-        child: AiFieldLoadingOverlay(
-          isLoading: true,
-          semanticsLabel: 'Improving content',
-          statusMessages: const ['Working…'],
-          child: ElevatedButton(
-            onPressed: () => taps++,
-            child: const Text('Edit'),
+    final semantics = tester.ensureSemantics();
+    try {
+      var taps = 0;
+      await tester.pumpWidget(wrap(
+        SizedBox(
+          height: 80,
+          child: AiFieldLoadingOverlay(
+            isLoading: true,
+            semanticsLabel: 'Improving content',
+            statusMessages: const ['Working…'],
+            child: ElevatedButton(
+              onPressed: () => taps++,
+              child: const Text('Edit'),
+            ),
           ),
         ),
-      ),
-    ));
+      ));
 
-    await tester.tap(find.text('Edit'), warnIfMissed: false);
-    expect(taps, 0);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.text('Working…'), findsOneWidget);
+      await tester.tap(find.text('Edit'), warnIfMissed: false);
+      expect(taps, 0);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Working…'), findsOneWidget);
+      expect(find.bySemanticsLabel('Edit'), findsNothing);
+      expect(find.bySemanticsLabel('Improving content'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('MotionTabStack first frame is fully visible', (tester) async {
@@ -244,24 +251,26 @@ void main() {
     expect(find.byType(AnimatedSlide), findsNothing);
   });
 
-  testWidgets('AppTextFormField animates primary focus chrome', (tester) async {
-    await tester.pumpWidget(wrap(
-      AppTextFormField(hintText: 'Email'),
-    ));
-
-    await tester.tap(find.byType(TextField));
-    await tester.pump();
-
-    final animated = tester.widget<AnimatedContainer>(
-      find
-          .descendant(
-            of: find.byType(AppTextFormField),
-            matching: find.byType(AnimatedContainer),
-          )
-          .first,
-    );
-    final decoration = animated.decoration! as BoxDecoration;
-    expect(decoration.border!.top.color, AppColors.primary);
+  testWidgets('AppTextFormField renders visible native focus chrome',
+      (tester) async {
+    for (final theme in [AppTheme.light, AppTheme.dark]) {
+      await tester.pumpWidget(MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: AppTextFormField(hintText: 'Contact'),
+          )));
+      await tester.tap(find.byType(TextField));
+      await tester.pumpAndSettle();
+      final input = tester.widget<InputDecorator>(find.byType(InputDecorator));
+      final colors = theme.extension<SiratiColors>()!;
+      final border = input.decoration.focusedBorder! as OutlineInputBorder;
+      expect(input.isFocused, isTrue);
+      expect(border.borderSide.color, colors.primaryInk);
+      expect(
+          AppContrast.ratio(
+              border.borderSide.color, input.decoration.fillColor!),
+          greaterThanOrEqualTo(3));
+    }
   });
 
   testWidgets(

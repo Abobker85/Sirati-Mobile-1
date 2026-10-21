@@ -51,8 +51,9 @@ class AiProgressHandle {
   // route pops, and these are two short-lived notifiers per generation.
 
   /// Listened to by the overlay body; safe to update before or after mount.
-  final ValueNotifier<AiProgressPhase> _phase =
-      ValueNotifier<AiProgressPhase>(AiProgressPhase.queued);
+  final ValueNotifier<AiProgressPhase> _phase = ValueNotifier<AiProgressPhase>(
+    AiProgressPhase.queued,
+  );
 
   /// Drives the "everything is done" state before the dialog pops.
   final ValueNotifier<bool> _finished = ValueNotifier<bool>(false);
@@ -105,10 +106,8 @@ class AiProgressHandle {
 
 /// Full-screen, dismissible-by-back AI progress overlay.
 ///
-/// Shows a three-step checklist plus a progress bar. The bar is honest about
-/// what it is: it eases toward 92% over the expected duration and only reaches
-/// 100% when the caller reports completion, so it never stalls at a fixed
-/// number and never lies about being finished.
+/// Shows reported server stages and an indeterminate bar until completion.
+/// Elapsed time never completes a checklist item or implies a percentage.
 class AiProgressOverlay {
   AiProgressOverlay._();
 
@@ -129,8 +128,9 @@ class AiProgressOverlay {
         useRootNavigator: true,
         barrierDismissible: false,
         barrierLabel: english ? 'AI progress' : 'تقدم الذكاء الاصطناعي',
-        barrierColor:
-            Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55),
+        barrierColor: Theme.of(
+          context,
+        ).colorScheme.scrim.withValues(alpha: 0.55),
         transitionDuration: reduce ? Duration.zero : MotionDurations.medium,
         pageBuilder: (dialogContext, animation, secondaryAnimation) {
           handle._dialogContext = dialogContext;
@@ -250,22 +250,10 @@ class _AiProgressOverlayBody extends StatefulWidget {
 }
 
 class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
-  /// Fallback step advancement when the server reports nothing useful.
-  static const _stageDelays = [
-    Duration.zero,
-    Duration(seconds: 4),
-    Duration(seconds: 11),
-  ];
   static const _longWaitAfter = Duration(seconds: 30);
-
-  /// How long the bar takes to drift from 0 to [_ceiling]. Longer than a
-  /// typical run on purpose: a bar that hits its ceiling early reads as stuck.
-  static const _drift = Duration(seconds: 40);
-  static const _ceiling = 0.92;
 
   late final List<String> _steps;
 
-  int _timerStep = 0;
   bool _longWait = false;
 
   final List<Timer> _timers = [];
@@ -275,18 +263,12 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
     super.initState();
     _steps = AiProgressOverlay.stageMessages(widget.kind, widget.english);
 
-    for (var i = 1; i < _steps.length && i < _stageDelays.length; i++) {
-      final index = i;
-      _timers.add(Timer(_stageDelays[index], () {
+    _timers.add(
+      Timer(_longWaitAfter, () {
         if (!mounted) return;
-        setState(() => _timerStep = index);
-      }));
-    }
-
-    _timers.add(Timer(_longWaitAfter, () {
-      if (!mounted) return;
-      setState(() => _longWait = true);
-    }));
+        setState(() => _longWait = true);
+      }),
+    );
   }
 
   @override
@@ -305,47 +287,46 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
     final reduce = MotionSettings.reduce(context);
 
     // System back always cancels and dismisses the overlay immediately.
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        widget.onCancel();
-      },
-      child: Material(
-        type: MaterialType.transparency,
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 360),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: ValueListenableBuilder<bool>(
-                    valueListenable: widget.finished,
-                    builder: (context, finished, _) {
-                      return ValueListenableBuilder<AiProgressPhase>(
-                        valueListenable: widget.phase,
-                        builder: (context, phase, __) {
-                          // Real server phase wins; the timer only ever fills
-                          // in while the server has told us nothing newer.
-                          final step = (finished
-                                  ? _steps.length - 1
-                                  : (phase.index > _timerStep
-                                      ? phase.index
-                                      : _timerStep))
-                              .clamp(0, _steps.length - 1);
+    return TickerMode(
+      enabled: !reduce,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          widget.onCancel();
+        },
+        child: Material(
+          type: MaterialType.transparency,
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                    ),
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: widget.finished,
+                      builder: (context, finished, _) {
+                        return ValueListenableBuilder<AiProgressPhase>(
+                          valueListenable: widget.phase,
+                          builder: (context, phase, __) {
+                            final step =
+                                (finished ? _steps.length - 1 : phase.index)
+                                    .clamp(0, _steps.length - 1);
 
-                          return _card(
-                            c: c,
-                            en: en,
-                            reduce: reduce,
-                            step: step,
-                            finished: finished,
-                          );
-                        },
-                      );
-                    },
+                            return _card(
+                              c: c,
+                              en: en,
+                              reduce: reduce,
+                              step: step,
+                              finished: finished,
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -374,7 +355,7 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
         color: c.surface,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: c.border),
-        boxShadow: c.softShadow,
+        boxShadow: AppShadows.of(c, elevation: AppElevation.dialog),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 26, 24, 16),
@@ -401,22 +382,17 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
               child: Text(
                 status,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15.5,
-                  height: 1.4,
-                  fontWeight: FontWeight.w700,
-                  color: c.textPrimary,
-                ),
+                style: AppTypography.of(context, AppTypography.titleMd),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            _ProgressBar(
-              finished: finished,
-              reduce: reduce,
-              step: step,
-              stepCount: _steps.length,
-              drift: _drift,
-              ceiling: _ceiling,
+            // Indeterminate sweep is a repeating ticker. Mute it under reduced
+            // motion; a fixed value would pretend the job has a percentage.
+            LinearProgressIndicator(
+              value: finished ? 1 : null,
+              minHeight: 6,
+              backgroundColor: c.primaryLight,
+              color: c.primaryInk,
             ),
             const SizedBox(height: AppSpacing.md),
             for (var i = 0; i < _steps.length; i++) ...[
@@ -432,18 +408,17 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
             const SizedBox(height: AppSpacing.sm),
             Text(
               en
-                  ? 'You can switch away — generation keeps running'
-                  : 'يمكنك مغادرة التطبيق — التوليد يستمر في الخلفية',
+                  ? 'Processing your request. This can take a little while.'
+                  : 'جارٍ معالجة طلبك. قد يستغرق ذلك بعض الوقت.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                height: 1.35,
-                fontWeight: FontWeight.w500,
-                color: c.textHint,
+              style: AppTypography.of(
+                context,
+                AppTypography.bodySm,
+                color: c.textSecondary,
               ),
             ),
-            SizedBox(
-              height: 48,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
               child: finished
                   ? null
                   : Center(
@@ -451,72 +426,19 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
                         onPressed: widget.onCancel,
                         style: TextButton.styleFrom(
                           foregroundColor: c.textSecondary,
-                          minimumSize: const Size(88, 40),
+                          minimumSize: const Size(88, AppTouchTarget.min),
                         ),
                         child: Text(
                           en ? 'Cancel' : 'إلغاء',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
+                          style: AppTypography.of(
+                            context,
+                            AppTypography.labelLg,
                           ),
                         ),
                       ),
                     ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Progress bar that drifts toward [ceiling] and only completes on demand.
-class _ProgressBar extends StatelessWidget {
-  final bool finished;
-  final bool reduce;
-  final int step;
-  final int stepCount;
-  final Duration drift;
-  final double ceiling;
-
-  const _ProgressBar({
-    required this.finished,
-    required this.reduce,
-    required this.step,
-    required this.stepCount,
-    required this.drift,
-    required this.ceiling,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.sirati;
-
-    // Reduced motion: no long sweep, just a discrete value per step.
-    final target = finished
-        ? 1.0
-        : reduce
-            ? ((step + 1) / stepCount).clamp(0.0, ceiling)
-            : ceiling;
-    final duration = finished
-        ? const Duration(milliseconds: 380)
-        : reduce
-            ? Duration.zero
-            : drift;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: TweenAnimationBuilder<double>(
-        // Retargets smoothly from wherever the value currently sits, so
-        // "finished" pulls the bar to 100% from its real position.
-        tween: Tween<double>(begin: 0, end: target),
-        duration: duration,
-        curve: finished ? Curves.easeOut : Curves.decelerate,
-        builder: (context, value, _) => LinearProgressIndicator(
-          value: value,
-          minHeight: 6,
-          backgroundColor: c.primary.withValues(alpha: 0.14),
-          valueColor: AlwaysStoppedAnimation<Color>(c.primary),
         ),
       ),
     );
@@ -537,52 +459,43 @@ class _StepRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    final reduce = MotionSettings.reduce(context);
     final color = done
         ? c.textSecondary
         : active
             ? c.textPrimary
-            : c.textHint.withValues(alpha: 0.6);
+            : c.textSecondary;
 
-    return AnimatedOpacity(
-      opacity: done || active ? 1 : 0.55,
-      duration: reduce ? Duration.zero : MotionDurations.medium,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: done
-                ? Icon(Icons.check_circle_rounded, size: 18, color: c.primary)
-                : active
-                    ? Padding(
-                        padding: const EdgeInsets.all(2),
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(c.primary),
-                        ),
-                      )
-                    : Icon(
-                        Icons.circle_outlined,
-                        size: 16,
-                        color: c.textHint.withValues(alpha: 0.5),
+    return Row(
+      children: [
+        SizedBox(
+          width: 20,
+          height: 20,
+          child: done
+              ? Icon(Icons.check_circle_rounded, size: 18, color: c.primaryInk)
+              : active
+                  ? Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(c.primaryInk),
                       ),
+                    )
+                  : Icon(Icons.circle_outlined,
+                      size: 16, color: c.textSecondary),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            label,
+            textAlign: TextAlign.start,
+            style: AppTypography.of(
+              context,
+              AppTypography.bodySm,
+              color: color,
+            ).copyWith(fontWeight: active ? FontWeight.w700 : FontWeight.w400),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              label,
-              textAlign: TextAlign.start,
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.35,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                color: color,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

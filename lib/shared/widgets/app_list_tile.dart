@@ -45,14 +45,11 @@ class AppListTile extends StatelessWidget {
             : _LeadingIconBox(
                 icon: leadingIcon!,
                 background: leadingBackground ?? context.sirati.primaryLight,
-                iconColor: leadingIconColor ?? context.sirati.primary,
+                iconColor: leadingIconColor ?? context.sirati.primaryInk,
               ));
 
-    final semanticsLabel = subtitle != null && subtitle!.trim().isNotEmpty
-        ? '$title. $subtitle'
-        : title;
-
     final content = Container(
+      constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
       padding: padding,
       decoration: BoxDecoration(
         color: context.sirati.surface,
@@ -74,9 +71,9 @@ class AppListTile extends StatelessWidget {
                   textAlign: TextAlign.start,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.titleMd(context.sirati).copyWith(
-                    color: titleColor ?? context.sirati.textPrimary,
-                  ),
+                  style: AppTextStyles.titleMd(
+                    context.sirati,
+                  ).copyWith(color: titleColor ?? context.sirati.textPrimary),
                 ),
                 if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
                   const SizedBox(height: 5),
@@ -113,14 +110,13 @@ class AppListTile extends StatelessWidget {
       return MergeSemantics(child: content);
     }
 
-    // Single semantic node for TalkBack; decorative chrome excluded above.
-    return Semantics(
-      button: true,
-      label: semanticsLabel,
-      child: ExcludeSemantics(
-        child: PressScale(
-          child: Material(
-            type: MaterialType.transparency,
+    return PressScale(
+      child: Material(
+        type: MaterialType.transparency,
+        // One merged node: the button role + the InkWell tap action + the title/subtitle label.
+        child: MergeSemantics(
+          child: Semantics(
+            button: true,
             child: InkWell(
               onTap: onTap,
               borderRadius: BorderRadius.circular(16),

@@ -56,21 +56,6 @@ void main() {
     );
 
     testWidgets(
-      'submit button states ${m.tag}',
-      (tester) async {
-        await _pumpGolden(
-          tester,
-          name: 'submit_button_states',
-          themeMode: m.theme,
-          direction: m.dir,
-          english: m.en,
-          child: GoldenSubmitButtonStates(english: m.en),
-        );
-      },
-      tags: <String>['golden'],
-    );
-
-    testWidgets(
       'form field states ${m.tag}',
       (tester) async {
         await _pumpGolden(

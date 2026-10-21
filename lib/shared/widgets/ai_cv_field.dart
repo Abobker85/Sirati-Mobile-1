@@ -67,15 +67,13 @@ class AiCvField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (leadingHint != null) ...[
-          leadingHint!,
-          const SizedBox(height: 10),
-        ],
+        if (leadingHint != null) ...[leadingHint!, const SizedBox(height: 10)],
         AiFieldLoadingOverlay(
           key: Key('ai_overlay_$field'),
           isLoading: isLoading,
-          statusMessages:
-              AiFieldLoadingOverlay.defaultStatusMessages(english: english),
+          statusMessages: AiFieldLoadingOverlay.defaultStatusMessages(
+            english: english,
+          ),
           semanticsLabel:
               english ? 'Enhancing $field' : 'جارٍ تحسين حقل السيرة الذاتية',
           child: child,
@@ -84,11 +82,8 @@ class AiCvField extends StatelessWidget {
         Text(
           displayHelper,
           textAlign: TextAlign.start,
-          style: TextStyle(
-            color: context.sirati.textSecondary,
-            fontSize: 12,
-            height: 1.45,
-          ),
+          style: AppTypography.of(context, AppTypography.bodySm,
+              color: context.sirati.textSecondary),
         ),
         if (minimumCharacters != null) ...[
           const SizedBox(height: 8),
@@ -106,7 +101,7 @@ class AiCvField extends StatelessWidget {
                     value: (count / minimum).clamp(0, 1),
                     color: count >= minimum
                         ? context.sirati.success
-                        : context.sirati.primary,
+                        : context.sirati.primaryInk,
                     backgroundColor: context.sirati.surfaceHigh,
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -116,13 +111,10 @@ class AiCvField extends StatelessWidget {
                         ? '$count / $minimum characters minimum'
                         : '$count / $minimum حرفاً كحد أدنى',
                     key: Key('character_count_$field'),
-                    style: TextStyle(
-                      color: count >= minimum
-                          ? context.sirati.success
-                          : context.sirati.textSecondary,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTypography.of(context, AppTypography.bodySm,
+                        color: count >= minimum
+                            ? context.sirati.success
+                            : context.sirati.textSecondary),
                   ),
                 ],
               );
@@ -147,7 +139,7 @@ class AiCvField extends StatelessWidget {
                   loadingLabel: english ? 'Enhancing...' : 'جارٍ التحسين...',
                   isLoading: isLoading,
                   outlined: true,
-                  height: 44,
+                  height: AppTouchTarget.min,
                   icon: Icons.auto_fix_high_rounded,
                   onPressed: enabled ? onEnhance : null,
                 ),
@@ -169,11 +161,8 @@ class AiCvField extends StatelessWidget {
                           english
                               ? 'Write at least ${minimumCharacters ?? defaultMinimumCharacters} characters for AI to enhance'
                               : 'اكتب ${minimumCharacters ?? defaultMinimumCharacters} حرفاً على الأقل ليحسّنها الذكاء الاصطناعي',
-                          style: TextStyle(
-                            color: context.sirati.textSecondary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: AppTypography.of(context, AppTypography.bodySm,
+                              color: context.sirati.textSecondary),
                         ),
                       ),
                     ],
@@ -218,10 +207,12 @@ class _EnhancementResultCard extends StatelessWidget {
   List<Map<String, String>> _claims() =>
       (result['unverified_claims'] as List? ?? const [])
           .whereType<Map>()
-          .map((claim) => {
-                'text': claim['text']?.toString().trim() ?? '',
-                'kind': claim['kind']?.toString() ?? '',
-              })
+          .map(
+            (claim) => {
+              'text': claim['text']?.toString().trim() ?? '',
+              'kind': claim['kind']?.toString() ?? '',
+            },
+          )
           .where((claim) => claim['text']!.isNotEmpty)
           .toList();
 
@@ -246,32 +237,29 @@ class _EnhancementResultCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome_rounded, size: 18, color: c.primary),
+              Icon(Icons.auto_awesome_rounded, size: 18, color: c.primaryInk),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   english ? 'What Sirati improved' : 'ما الذي حسّنته سيرتي',
-                  style: TextStyle(
-                    color: c.textPrimary,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: AppTypography.of(context, AppTypography.titleSm),
                 ),
               ),
               IconButton(
                 tooltip: english ? 'Dismiss' : 'إخفاء',
                 onPressed: onDismiss,
-                visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.close_rounded, size: 18),
               ),
             ],
           ),
           if (changes.isNotEmpty)
-            ...changes.map((item) => _ResultLine(
-                  icon: Icons.check_rounded,
-                  text: item,
-                  color: c.success,
-                )),
+            ...changes.map(
+              (item) => _ResultLine(
+                icon: Icons.check_rounded,
+                text: item,
+                color: c.success,
+              ),
+            ),
           if (missing.isNotEmpty) ...[
             const SizedBox(height: 10),
             Container(
@@ -289,18 +277,16 @@ class _EnhancementResultCard extends StatelessWidget {
                     english
                         ? 'Complete these facts yourself'
                         : 'أكمل هذه المعلومات بنفسك',
-                    style: TextStyle(
-                      color: c.textPrimary,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTypography.of(context, AppTypography.titleSm),
                   ),
                   const SizedBox(height: 6),
-                  ...missing.map((item) => _ResultLine(
-                        icon: Icons.check_box_outline_blank_rounded,
-                        text: item,
-                        color: c.warning,
-                      )),
+                  ...missing.map(
+                    (item) => _ResultLine(
+                      icon: Icons.check_box_outline_blank_rounded,
+                      text: item,
+                      color: c.onWarningContainer,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -323,34 +309,32 @@ class _EnhancementResultCard extends StatelessWidget {
                     english
                         ? 'Verify these details in the enhanced text'
                         : 'تحقق من هذه التفاصيل في النص المحسّن',
-                    style: TextStyle(
-                      color: c.textPrimary,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTypography.of(context, AppTypography.titleSm),
                   ),
                   const SizedBox(height: 7),
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
                     children: claims
-                        .map((claim) => Chip(
-                              key: Key(
-                                  'unverified_${field}_${claim['kind']}_${claim['text']}'),
-                              avatar: Icon(
-                                claim['kind'] == 'date'
-                                    ? Icons.event_outlined
-                                    : Icons.business_outlined,
-                                size: 16,
-                                color: c.warning,
-                              ),
-                              label: Text(
-                                BidiText.protectLatinTokens(claim['text']!),
-                              ),
-                              visualDensity: VisualDensity.compact,
-                              backgroundColor: c.surfaceLow,
-                              side: BorderSide(color: c.warning),
-                            ))
+                        .map(
+                          (claim) => Chip(
+                            key: Key(
+                              'unverified_${field}_${claim['kind']}_${claim['text']}',
+                            ),
+                            avatar: Icon(
+                              claim['kind'] == 'date'
+                                  ? Icons.event_outlined
+                                  : Icons.business_outlined,
+                              size: 16,
+                              color: c.onWarningContainer,
+                            ),
+                            label: Text(
+                              BidiText.protectLatinTokens(claim['text']!),
+                            ),
+                            backgroundColor: c.surfaceLow,
+                            side: BorderSide(color: c.warning),
+                          ),
+                        )
                         .toList(),
                   ),
                 ],
@@ -363,15 +347,18 @@ class _EnhancementResultCard extends StatelessWidget {
               spacing: 6,
               runSpacing: 6,
               children: keywords
-                  .map((keyword) => Chip(
-                        key: Key('ats_keyword_${field}_$keyword'),
-                        label: Text(BidiText.looksLatin(keyword)
+                  .map(
+                    (keyword) => Chip(
+                      key: Key('ats_keyword_${field}_$keyword'),
+                      label: Text(
+                        BidiText.looksLatin(keyword)
                             ? BidiText.isolateLtr(keyword)
-                            : keyword),
-                        visualDensity: VisualDensity.compact,
-                        backgroundColor: c.primaryLight,
-                        side: BorderSide.none,
-                      ))
+                            : keyword,
+                      ),
+                      backgroundColor: c.primaryLight,
+                      side: BorderSide.none,
+                    ),
+                  )
                   .toList(),
             ),
           ],
@@ -405,11 +392,8 @@ class _ResultLine extends StatelessWidget {
             child: Text(
               BidiText.protectLatinTokens(text),
               textAlign: TextAlign.start,
-              style: TextStyle(
-                color: context.sirati.textSecondary,
-                fontSize: 12,
-                height: 1.4,
-              ),
+              style: AppTypography.of(context, AppTypography.bodySm,
+                  color: context.sirati.textSecondary),
             ),
           ),
         ],

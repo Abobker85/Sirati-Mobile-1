@@ -177,7 +177,7 @@ class ScoreBoosterCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: c.border),
-                boxShadow: c.softShadow,
+                boxShadow: AppShadows.of(c, elevation: AppElevation.card),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -195,27 +195,21 @@ class ScoreBoosterCard extends StatelessWidget {
                         child: Icon(
                           tip?.icon ?? Icons.trending_up_rounded,
                           size: 18,
-                          color: c.primary,
+                          color: c.primaryInk,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           english ? 'Career readiness' : 'جاهزية المسار المهني',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: c.textPrimary,
-                          ),
+                          style:
+                              AppTypography.of(context, AppTypography.titleSm),
                         ),
                       ),
                       Text(
                         '$pct%',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: c.primary,
-                        ),
+                        style: AppTypography.of(context, AppTypography.titleSm,
+                            color: c.primaryInk),
                       ),
                     ],
                   ),
@@ -224,7 +218,7 @@ class ScoreBoosterCard extends StatelessWidget {
                   AnimatedAtsScoreBar(
                     key: ValueKey('booster-$pct'),
                     value: progress,
-                    color: c.primary,
+                    color: c.primaryInk,
                     height: 6,
                     borderRadius: 999,
                     semanticLabel: english
@@ -246,18 +240,18 @@ class ScoreBoosterCard extends StatelessWidget {
                           if (tip.boostPoints > 0) ...[
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: c.amberLight,
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
                                 '+${tip.boostPoints}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  color: c.amber,
-                                ),
+                                style: AppTypography.of(
+                                    context, AppTypography.bodySm,
+                                    color: c.onWarningContainer),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -266,12 +260,9 @@ class ScoreBoosterCard extends StatelessWidget {
                             child: Text(
                               tip.message,
                               textAlign: TextAlign.start,
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                height: 1.4,
-                                fontWeight: FontWeight.w600,
-                                color: c.textSecondary,
-                              ),
+                              style: AppTypography.of(
+                                  context, AppTypography.bodySm,
+                                  color: c.textSecondary),
                             ),
                           ),
                         ],

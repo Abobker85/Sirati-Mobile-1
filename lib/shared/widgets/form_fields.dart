@@ -13,21 +13,18 @@ class AppFormStyles {
 
   /// Inline field error text. `error` on surface/background is a gated AA
   /// pair in both themes (the old static style was light-only).
-  static TextStyle errorTextStyle(SiratiColors c) => TextStyle(
-        fontSize: 12.5,
-        height: 1.35,
-        fontWeight: FontWeight.w600,
-        color: c.error,
-      );
+  static TextStyle errorTextStyle(SiratiColors c, {bool arabic = true}) =>
+      AppTypography.bodySm
+          .resolve(arabic: arabic, color: c.error)
+          .copyWith(fontWeight: FontWeight.w600);
 
-  static TextStyle successTextStyle(SiratiColors c) => TextStyle(
-        fontSize: 12.5,
-        height: 1.35,
-        fontWeight: FontWeight.w600,
-        color: c.onSuccessContainer,
-      );
+  static TextStyle successTextStyle(SiratiColors c) =>
+      AppTypography.bodySm.resolve(arabic: true, color: c.onSuccessContainer);
 
-  static InputDecorationTheme inputThemeFor(SiratiColors c) {
+  static InputDecorationTheme inputThemeFor(
+    SiratiColors c, {
+    bool arabic = true,
+  }) {
     OutlineInputBorder o(Color color, double width) => OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
           borderSide: BorderSide(color: color, width: width),
@@ -37,34 +34,44 @@ class AppFormStyles {
       filled: true,
       fillColor: c.surface,
       hoverColor: c.surfaceLow,
-      border: o(c.border, 1),
-      enabledBorder: o(c.border, 1),
-      focusedBorder: o(c.primary, 1.8),
-      errorBorder: o(c.red.withValues(alpha: .55), 1.4),
-      focusedErrorBorder: o(c.red, 1.8),
-      disabledBorder: o(c.border, 1),
-      labelStyle: TextStyle(
-        color: c.textSecondary,
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
-      floatingLabelStyle: TextStyle(
-        color: c.primary,
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-      ),
-      hintStyle: TextStyle(
+      border: o(c.outline, 1),
+      enabledBorder: o(c.outline, 1),
+      focusedBorder: o(c.primaryInk, 1.8),
+      errorBorder: o(c.error, 1.4),
+      focusedErrorBorder: o(c.error, 1.8),
+      disabledBorder: o(c.outline, 1),
+      labelStyle: WidgetStateTextStyle.resolveWith((states) {
+        final base = AppTypography.bodyMd.resolve(arabic: arabic);
+        if (states.contains(WidgetState.error)) {
+          return base.copyWith(color: c.error);
+        }
+        if (states.contains(WidgetState.focused)) {
+          return base.copyWith(color: c.primaryInk);
+        }
+        if (states.contains(WidgetState.disabled)) {
+          return base.copyWith(color: c.textHint);
+        }
+        return base.copyWith(color: c.textSecondary);
+      }),
+      floatingLabelStyle: WidgetStateTextStyle.resolveWith((states) {
+        final base = AppTypography.bodySm.resolve(arabic: arabic);
+        if (states.contains(WidgetState.error)) {
+          return base.copyWith(color: c.error);
+        }
+        if (states.contains(WidgetState.focused)) {
+          return base.copyWith(color: c.primaryInk);
+        }
+        if (states.contains(WidgetState.disabled)) {
+          return base.copyWith(color: c.textHint);
+        }
+        return base.copyWith(color: c.textSecondary);
+      }),
+      hintStyle: AppTypography.bodyMd.resolve(
+        arabic: arabic,
         color: c.textHint,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
       ),
-      errorStyle: TextStyle(
-        fontSize: 12.5,
-        height: 1.35,
-        fontWeight: FontWeight.w600,
-        color: c.red,
-      ),
-      errorMaxLines: 2,
+      errorStyle: errorTextStyle(c, arabic: arabic),
+      errorMaxLines: 100,
       prefixIconColor: c.textSecondary,
       suffixIconColor: c.textSecondary,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
@@ -80,7 +87,7 @@ class AppFormStyles {
   }) {
     return InputDecoration(
       hintText: hintText,
-      labelText: labelText,
+      label: _tokenLabel(labelText),
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
       isDense: dense,
@@ -99,34 +106,37 @@ class AppFieldError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final row = Padding(
-      padding: const EdgeInsetsDirectional.only(top: 8, start: 2, end: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 18,
-            height: 18,
-            margin: const EdgeInsetsDirectional.only(top: 1),
-            decoration: BoxDecoration(
-              color: context.sirati.redLight,
-              borderRadius: BorderRadius.circular(6),
+    final row = Semantics(
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(top: 8, start: 2, end: 2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 18,
+              height: 18,
+              margin: const EdgeInsetsDirectional.only(top: 1),
+              decoration: BoxDecoration(
+                color: context.sirati.redLight,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 13,
+                color: context.sirati.onErrorContainer,
+              ),
             ),
-            child: Icon(
-              Icons.error_outline_rounded,
-              size: 13,
-              color: context.sirati.red,
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                textAlign: TextAlign.start,
+                style: AppFormStyles.errorTextStyle(context.sirati),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              textAlign: TextAlign.start,
-              style: AppFormStyles.errorTextStyle(context.sirati),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
 
@@ -156,11 +166,7 @@ class AppFormErrorBanner extends StatelessWidget {
   final String message;
   final VoidCallback? onDismiss;
 
-  const AppFormErrorBanner({
-    super.key,
-    required this.message,
-    this.onDismiss,
-  });
+  const AppFormErrorBanner({super.key, required this.message, this.onDismiss});
 
   @override
   Widget build(BuildContext context) {
@@ -178,26 +184,30 @@ class AppFormErrorBanner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.error_outline_rounded,
-                size: 20, color: context.sirati.red),
+            Icon(
+              Icons.error_outline_rounded,
+              size: 20,
+              color: context.sirati.red,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 message,
                 textAlign: TextAlign.start,
                 // Banner sits on errorLight: use the gated container pair.
-                style: AppFormStyles.errorTextStyle(context.sirati).copyWith(
-                  height: 1.4,
-                  color: context.sirati.onErrorContainer,
-                ),
+                style: AppFormStyles.errorTextStyle(
+                  context.sirati,
+                ).copyWith(color: context.sirati.onErrorContainer),
               ),
             ),
             if (onDismiss != null)
               IconButton(
                 onPressed: onDismiss,
-                visualDensity: VisualDensity.compact,
-                icon: Icon(Icons.close_rounded,
-                    size: 18, color: context.sirati.red),
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 18,
+                  color: context.sirati.red,
+                ),
               ),
           ],
         ),
@@ -233,8 +243,10 @@ class AppFormSuccessBanner extends StatelessWidget {
         builder: (context, t, child) => Opacity(
           opacity: MotionSettings.reduce(context) ? 1 : t,
           child: Transform.translate(
-            offset:
-                Offset(0, MotionSettings.reduce(context) ? 0 : (1 - t) * -4),
+            offset: Offset(
+              0,
+              MotionSettings.reduce(context) ? 0 : (1 - t) * -4,
+            ),
             child: child,
           ),
         ),
@@ -246,7 +258,8 @@ class AppFormSuccessBanner extends StatelessWidget {
             color: context.sirati.successLight,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-                color: context.sirati.success.withValues(alpha: .35)),
+              color: context.sirati.success.withValues(alpha: .35),
+            ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,20 +270,21 @@ class AppFormSuccessBanner extends StatelessWidget {
                 child: Text(
                   message,
                   textAlign: TextAlign.start,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    height: 1.45,
-                    color: context.sirati.success,
-                    fontWeight: FontWeight.w700,
+                  style: AppTypography.of(
+                    context,
+                    AppTypography.bodySm,
+                    color: context.sirati.onSuccessContainer,
                   ),
                 ),
               ),
               if (onDismiss != null)
                 IconButton(
                   onPressed: onDismiss,
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(Icons.close_rounded,
-                      size: 18, color: context.sirati.success),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: context.sirati.success,
+                  ),
                 ),
             ],
           ),
@@ -280,7 +294,7 @@ class AppFormSuccessBanner extends StatelessWidget {
   }
 }
 
-/// Modern text field with soft error fill, custom error row, and press-safe focus.
+/// Text field with soft feedback fills and native, attached validation errors.
 ///
 /// **Validation policy:** by default the field stays quiet while typing. Errors
 /// appear only after **focus is lost** (blur), then re-validate on each change
@@ -425,8 +439,9 @@ class _AppTextFormFieldState extends FormFieldState<String> {
       oldWidget.controller?.removeListener(_handleControllerChanged);
       widget.controller?.addListener(_handleControllerChanged);
       if (oldWidget.controller != null && widget.controller == null) {
-        _localController =
-            TextEditingController.fromValue(oldWidget.controller!.value);
+        _localController = TextEditingController.fromValue(
+          oldWidget.controller!.value,
+        );
       }
       if (widget.controller != null) {
         setValue(widget.controller!.text);
@@ -555,23 +570,13 @@ class _AppTextFormFieldState extends FormFieldState<String> {
     final showError = hasError && (errorText?.isNotEmpty ?? false);
     final showSuccess = !showError && _isShowingSuccess();
 
-    final fill = !filled
-        ? null
-        : showError && softErrorFill
-            ? context.sirati.redLight.withValues(alpha: .35)
-            : showSuccess
-                ? context.sirati.successLight.withValues(alpha: .35)
-                : context.sirati.surface;
-
-    final borderColor = showError
-        ? context.sirati.red.withValues(alpha: .5)
+    final c = context.sirati;
+    final fill = showError && softErrorFill
+        ? Color.alphaBlend(c.errorLight.withValues(alpha: .35), c.surface)
         : showSuccess
-            ? context.sirati.success.withValues(alpha: .55)
-            : _hasFocus
-                ? context.sirati.primary
-                : context.sirati.border;
-
-    final resolvedSuffix = showSuccess
+            ? Color.alphaBlend(c.successLight.withValues(alpha: .35), c.surface)
+            : c.surface;
+    final resolvedSuffix = showError || showSuccess
         ? Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -579,140 +584,100 @@ class _AppTextFormFieldState extends FormFieldState<String> {
               Padding(
                 padding: const EdgeInsetsDirectional.only(end: 10),
                 child: Icon(
-                  Icons.check_circle_rounded,
+                  showError
+                      ? Icons.error_outline_rounded
+                      : Icons.check_circle_rounded,
                   size: 20,
-                  color: context.sirati.success,
+                  color: showError ? c.error : c.success,
                 ),
               ),
             ],
           )
         : suffixIcon;
+    final successBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppFormStyles.radius),
+      borderSide: BorderSide(color: c.success, width: 1.4),
+    );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AnimatedContainer(
-          duration: MotionSettings.reduce(context)
-              ? Duration.zero
-              : MotionDurations.fast,
-          curve: MotionCurves.state,
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(AppFormStyles.radius),
-            border: Border.all(
-              color: borderColor,
-              width: (showError || showSuccess || _hasFocus) ? 1.4 : 1,
-            ),
-            boxShadow: showError
-                ? [
-                    BoxShadow(
-                      color: context.sirati.red.withValues(alpha: .06),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : showSuccess
-                    ? [
-                        BoxShadow(
-                          color: context.sirati.success.withValues(alpha: .06),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : _hasFocus
-                        ? [
-                            BoxShadow(
-                              color:
-                                  context.sirati.primary.withValues(alpha: .08),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
+    return TextField(
+      controller: _effectiveController,
+      focusNode: _focusNode,
+      enabled: enabled,
+      readOnly: readOnly,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
+      autofillHints: widget.autofillHints,
+      maxLines: obscureText ? 1 : maxLines,
+      minLines: minLines,
+      maxLength: maxLength,
+      textAlign: textAlign,
+      textDirection: textDirection ??
+          BidiTextUtils.detectBaseDirection(
+            _effectiveController.text,
+            fallback: Directionality.of(context),
           ),
-          child: TextField(
-            controller: _effectiveController,
-            focusNode: _focusNode,
-            enabled: enabled,
-            readOnly: readOnly,
-            obscureText: obscureText,
-            keyboardType: keyboardType,
-            textInputAction: textInputAction,
-            textCapitalization: textCapitalization,
-            inputFormatters: inputFormatters,
-            autofillHints: widget.autofillHints,
-            maxLines: obscureText ? 1 : maxLines,
-            minLines: minLines,
-            maxLength: maxLength,
-            textAlign: textAlign,
-            textDirection: textDirection ??
-                BidiTextUtils.detectBaseDirection(
-                  _effectiveController.text,
-                  fallback: Directionality.of(context),
+      style: AppTypography.of(context, AppTypography.bodyLg),
+      cursorColor: c.primaryInk,
+      onChanged: (value) {
+        didChange(value);
+        onChanged?.call(value);
+      },
+      onSubmitted: onFieldSubmitted,
+      decoration: InputDecoration(
+        hintText: hintText,
+        label: _tokenLabel(labelText),
+        prefixIcon: prefixIcon == null
+            ? null
+            : IconTheme(
+                data: IconThemeData(
+                  color: showError
+                      ? c.error
+                      : showSuccess
+                          ? c.success
+                          : _hasFocus
+                              ? c.primaryInk
+                              : c.textSecondary,
+                  size: 20,
                 ),
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.35,
-              fontWeight: FontWeight.w500,
-              color: context.sirati.textPrimary,
-            ),
-            cursorColor: context.sirati.primary,
-            onChanged: (value) {
-              didChange(value);
-              onChanged?.call(value);
-            },
-            onSubmitted: onFieldSubmitted,
-            decoration: InputDecoration(
-              hintText: hintText,
-              labelText: labelText,
-              prefixIcon: prefixIcon == null
-                  ? null
-                  : IconTheme(
-                      data: IconThemeData(
-                        color: showError
-                            ? context.sirati.red.withValues(alpha: .85)
-                            : showSuccess
-                                ? context.sirati.success
-                                : context.sirati.textSecondary,
-                        size: 20,
-                      ),
-                      child: prefixIcon,
-                    ),
-              suffixIcon: resolvedSuffix,
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              focusedErrorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              contentPadding: contentPadding ??
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              errorStyle: const TextStyle(height: 0, fontSize: 0),
-              errorText: null,
-              counterText: '',
-            ),
-          ),
+                child: prefixIcon,
+              ),
+        suffixIcon: resolvedSuffix,
+        filled: filled,
+        fillColor: fill,
+        enabledBorder: showSuccess ? successBorder : null,
+        focusedBorder: showSuccess ? successBorder : null,
+        contentPadding: contentPadding ??
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        // Native errors are associated with the editable semantics node and
+        // announced by InputDecorator's live region, including on submit.
+        errorText: showError ? errorText : null,
+        errorMaxLines: 100,
+        helperText: showSuccess ? widget.successMessage : null,
+        helperMaxLines: 100,
+        helperStyle: AppTypography.of(
+          context,
+          AppTypography.bodySm,
+          color: c.onSuccessContainer,
         ),
-        AnimatedSize(
-          duration: MotionDurations.fast,
-          curve: MotionCurves.state,
-          alignment: Alignment.topCenter,
-          child: showError
-              ? AppFieldError(message: errorText!)
-              : showSuccess && (widget.successMessage?.isNotEmpty ?? false)
-                  ? Padding(
-                      padding: const EdgeInsetsDirectional.only(
-                          top: 8, start: 2, end: 2),
-                      child: Text(
-                        widget.successMessage!,
-                        textAlign: TextAlign.start,
-                        style: AppFormStyles.successTextStyle(context.sirati),
-                      ),
-                    )
-                  : const SizedBox(width: double.infinity),
-        ),
-      ],
+        counterText: '',
+      ),
     );
   }
+}
+
+/// Label widget that inherits the decoration's resolved (floating/focused) style but replaces Flutter's
+/// hard-coded `height: 1` with the typography token's line height.
+Widget? _tokenLabel(String? text) {
+  if (text == null) return null;
+  return Builder(
+    builder: (context) => Text(
+      text,
+      style: DefaultTextStyle.of(context).style.copyWith(
+            height: AppTypography.of(context, AppTypography.bodyMd).height,
+          ),
+    ),
+  );
 }

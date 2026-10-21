@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark surface, matching SiratiColors.dark.background, so night launch
+         does not flash the light cream before Flutter paints. -->
+    <color name="splash_background">#121614</color>
+</resources>
