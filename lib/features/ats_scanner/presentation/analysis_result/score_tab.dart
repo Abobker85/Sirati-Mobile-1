@@ -268,7 +268,7 @@ class _CriterionRow extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
-                  criterion.label,
+                  _criterionLabel(AppLocalizations.of(context), criterion),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -392,4 +392,19 @@ class _KeywordHeading extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Localized criterion name by its stable backend key; falls back to the
+/// backend label for unknown keys and for analyses saved before keys existed.
+String _criterionLabel(AppLocalizations l10n, ScoreCriterion criterion) {
+  return switch (criterion.key) {
+    'format' => l10n.atsCriterionFormat,
+    'keywords' => l10n.atsCriterionKeywords,
+    'structure' => l10n.atsCriterionStructure,
+    'experience' => l10n.atsCriterionExperience,
+    'education' => l10n.atsCriterionEducation,
+    'summary' => l10n.atsCriterionSummary,
+    'contact' => l10n.atsCriterionContact,
+    _ => criterion.label,
+  };
 }

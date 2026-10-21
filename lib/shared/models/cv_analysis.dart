@@ -123,11 +123,14 @@ class CvAnalysis {
 }
 
 class ScoreCriterion {
+  /// Stable backend key (format, keywords, ...); empty for older saved analyses.
+  final String key;
   final String label;
   final int score;
   final int max;
 
   const ScoreCriterion({
+    this.key = '',
     required this.label,
     required this.score,
     required this.max,
@@ -135,6 +138,7 @@ class ScoreCriterion {
 
   factory ScoreCriterion.fromJson(Map<String, dynamic> json) {
     return ScoreCriterion(
+      key: json['key']?.toString() ?? '',
       label: json['label']?.toString() ?? '',
       score: _asInt(json['score']),
       max: _asInt(json['max'], fallback: 1),

@@ -654,5 +654,12 @@
         "type": "int"
       }
     }
-  }
+  },
+  "atsCriterionFormat": "Format and readability",
+  "atsCriterionKeywords": "Keywords and match",
+  "atsCriterionStructure": "Structure and sections",
+  "atsCriterionExperience": "Experience and achievements",
+  "atsCriterionEducation": "Education and certificates",
+  "atsCriterionSummary": "Professional summary",
+  "atsCriterionContact": "Contact details"
 }

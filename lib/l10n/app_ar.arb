@@ -661,5 +661,12 @@
         "type": "int"
       }
     }
-  }
+  },
+  "atsCriterionFormat": "التنسيق وقابلية القراءة",
+  "atsCriterionKeywords": "الكلمات المفتاحية والتطابق",
+  "atsCriterionStructure": "الهيكل والأقسام",
+  "atsCriterionExperience": "جودة الخبرة والإنجازات",
+  "atsCriterionEducation": "التعليم والشهادات",
+  "atsCriterionSummary": "الملخص المهني",
+  "atsCriterionContact": "معلومات التواصل"
 }
