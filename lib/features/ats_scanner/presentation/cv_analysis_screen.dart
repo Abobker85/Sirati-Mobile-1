@@ -37,11 +37,15 @@ class CvAnalysisScreen extends ConsumerStatefulWidget {
     this.savedCvs,
     this.onRetrySaved,
     this.initialCvId,
+    this.initialMarkdown,
   });
 
   final AsyncValue<List<SavedAnalysisCv>>? savedCvs;
   final VoidCallback? onRetrySaved;
   final int? initialCvId;
+
+  /// Text supplied for [initialCvId]. Blank text uses the saved-CV fetch path.
+  final String? initialMarkdown;
 
   @override
   ConsumerState<CvAnalysisScreen> createState() => _CvAnalysisScreenState();
@@ -85,15 +89,29 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
     super.dispose();
   }
 
+  String? get _selectedInitialMarkdown {
+    final markdown = widget.initialMarkdown;
+    return _selectedCvId != null &&
+            _selectedCvId == widget.initialCvId &&
+            markdown?.trim().isNotEmpty == true
+        ? markdown
+        : null;
+  }
+
+  String get _savedResumeText {
+    final supplied = _selectedInitialMarkdown;
+    if (supplied != null) return supplied;
+    final id = _selectedCvId;
+    return id == null
+        ? ''
+        : ref.read(analysisSavedCvProvider(id)).value?.generatedMarkdown ?? '';
+  }
+
   AnalysisDraft get _draft => AnalysisDraft(
     jobTitle: _jobTitleController.text,
     jobDescription: _jobDescriptionController.text,
     resumeText: _source == AnalysisCvSource.saved
-        ? (ref
-                  .read(analysisSavedCvProvider(_selectedCvId!))
-                  .value
-                  ?.generatedMarkdown ??
-              '')
+        ? _savedResumeText
         : _source == AnalysisCvSource.paste
         ? _resumeTextController.text
         : '',
@@ -144,13 +162,7 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
     if (_source == AnalysisCvSource.saved &&
         (_selectedCvId == null ||
             saved.value?.any((cv) => cv.id == _selectedCvId) != true ||
-            ref
-                    .read(analysisSavedCvProvider(_selectedCvId!))
-                    .value
-                    ?.generatedMarkdown
-                    .trim()
-                    .isNotEmpty !=
-                true)) {
+            _savedResumeText.trim().isEmpty)) {
       AppSnackBar.error(
         context,
         AppLocalizations.of(context).atsInputSelectSourceRequired,
@@ -328,7 +340,9 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
     final selectedId = rows.any((cv) => cv.id == _selectedCvId)
         ? _selectedCvId
         : null;
-    final detail = _source == AnalysisCvSource.saved && selectedId != null
+    final detail = _source == AnalysisCvSource.saved &&
+            selectedId != null &&
+            _selectedInitialMarkdown == null
         ? ref.watch(analysisSavedCvProvider(selectedId))
         : null;
     final file = _uploadedFile;

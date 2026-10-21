@@ -121,10 +121,15 @@ class Api extends CvApiService {
   String? submittedText;
   String? submittedJd;
   http.MultipartFile? submittedFile;
+  final fetchedCvIds = <int>[];
+  int get savedCvFetches => fetchedCvIds.length;
   @override
-  Future<GeneratedCv> getGeneratedCv(int id) async => latest?.id == id
-      ? latest!
-      : cv(72, id: id, text: 'CV $id SQL خبرة مهنية');
+  Future<GeneratedCv> getGeneratedCv(int id) async {
+    fetchedCvIds.add(id);
+    return latest?.id == id
+        ? latest!
+        : cv(72, id: id, text: 'CV $id SQL خبرة مهنية');
+  }
   @override
   Future<CvAnalysis> submitAnalysis({
     required String targetJobTitle,
@@ -366,7 +371,123 @@ void main() {
     expect(find.byType(AnalysisResultScreen), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+  const markdowns = {
+    'Arabic': '# الخبرات\n\n- تطوير الأنظمة وتحليل البيانات\n- إدارة المشاريع',
+    'Latin': '# Experience\n\n- Platform engineering\n- SQL and C++\n',
+    'mixed multiline': '  ## الخبرات Experience\n\n**مهندسة Systems**\n- C++ / SQL\n\n',
+  };
+  const savedRows = AsyncData([
+    SavedAnalysisCv(id: 83, title: 'Another CV'),
+    SavedAnalysisCv(id: 71, title: 'Selected CV'),
+  ]);
+  for (final entry in markdowns.entries) {
+    testWidgets(
+      'hub markdown reaches the analysis without a saved-CV refetch (${entry.key})',
+      (tester) async {
+        final api = Api(latest: cv(72, text: 'Stale server version'));
+        await tester.pumpWidget(app(
+          CvAnalysisScreen(
+            initialCvId: 71,
+            initialMarkdown: entry.value,
+            savedCvs: savedRows,
+          ),
+          arabic: true, dark: true, scale: 1, api: api,
+        ));
+        await tester.pumpAndSettle();
+        expect(tester.widget<DropdownButtonFormField<int>>(
+            find.byType(DropdownButtonFormField<int>)).initialValue, 71);
+        expect(api.savedCvFetches, 0);
+        await submitSavedAnalysis(tester);
+        expect(api.submittedText, entry.value);
+        expect(api.submittedFile, isNull);
+        expect(api.savedCvFetches, 0);
+        expect(find.byType(AnalysisResultScreen), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    for (final seed in [null, '', ' \t\n ']) {
+      final label = seed == null ? 'only initialCvId' :
+          seed.isEmpty ? 'empty hub markdown' : 'blank hub markdown';
+      testWidgets('$label falls back to the fetched saved CV (${entry.key})',
+          (tester) async {
+        final api = Api(latest: cv(72, text: entry.value));
+        await tester.pumpWidget(app(
+          CvAnalysisScreen(initialCvId: 71, initialMarkdown: seed, savedCvs: savedRows),
+          arabic: false, dark: false, scale: 1, api: api,
+        ));
+        await tester.pumpAndSettle();
+        expect(tester.widget<DropdownButtonFormField<int>>(
+            find.byType(DropdownButtonFormField<int>)).initialValue, 71);
+        await submitSavedAnalysis(tester);
+        expect(api.submittedText, entry.value);
+        expect(api.submittedFile, isNull);
+        expect(api.savedCvFetches, greaterThanOrEqualTo(1));
+        expect(api.fetchedCvIds, everyElement(71));
+        expect(find.byType(AnalysisResultScreen), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('changing the selected CV stops using hub markdown (${entry.key})',
+        (tester) async {
+      final api = Api();
+      await tester.pumpWidget(app(
+        CvAnalysisScreen(initialCvId: 71, initialMarkdown: entry.value, savedCvs: savedRows),
+        arabic: false, dark: false, scale: 1, api: api,
+      ));
+      await tester.pumpAndSettle();
+      expect(api.savedCvFetches, 0);
+      final dropdown = find.byType(DropdownButtonFormField<int>);
+      await tester.ensureVisible(dropdown);
+      await tester.tap(dropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Another CV').last);
+      await tester.pumpAndSettle();
+      expect(tester.widget<DropdownButtonFormField<int>>(dropdown).initialValue, 83);
+      await submitSavedAnalysis(tester);
+      expect(api.submittedText, 'CV 83 SQL خبرة مهنية');
+      expect(api.fetchedCvIds, isNotEmpty);
+      expect(api.fetchedCvIds, everyElement(83));
+      expect(find.byType(AnalysisResultScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('carried markdown cannot bypass a missing saved CV (${entry.key})',
+        (tester) async {
+      final api = Api();
+      await tester.pumpWidget(app(
+        CvAnalysisScreen(initialCvId: 999, initialMarkdown: entry.value, savedCvs: savedRows),
+        arabic: false, dark: false, scale: 1, api: api,
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.widget<DropdownButtonFormField<int>>(
+          find.byType(DropdownButtonFormField<int>)).initialValue, isNull);
+      await tester.ensureVisible(find.byKey(const ValueKey('ats-input-job-title')));
+      await tester.enterText(find.byKey(const ValueKey('ats-input-job-title')), 'Engineer');
+      await tester.tap(find.byKey(const ValueKey('ats-input-docked-analyze')));
+      await tester.pumpAndSettle();
+      expect(api.submittedText, isNull);
+      expect(api.savedCvFetches, 0);
+      expect(find.byType(AnalysisResultScreen), findsNothing);
+      final l = AppLocalizations.of(tester.element(find.byType(CvAnalysisScreen)));
+      expect(find.text(l.atsInputSelectSourceRequired), findsOneWidget);
+    });
+  }
   additionalTests();
+}
+
+Future<void> submitSavedAnalysis(WidgetTester tester) async {
+  final title = find.byKey(const ValueKey('ats-input-job-title'));
+  final description = find.byKey(const ValueKey('ats-input-job-description'));
+  await tester.ensureVisible(title);
+  await tester.enterText(title, 'مهندس نظم Systems Engineer');
+  await tester.ensureVisible(description);
+  await tester.enterText(description, 'SQL وتطوير الأنظمة');
+  await tester.tap(find.byKey(const ValueKey('ats-input-docked-analyze')));
+  for (var i = 0; i < 30 && find.byType(AnalysisResultScreen).evaluate().isEmpty; i++) {
+    await tester.pump(const Duration(milliseconds: 300));
+  }
 }
 
 Finder verticalScroll() => find

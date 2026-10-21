@@ -27,7 +27,6 @@ import 'package:sirati/features/settings/presentation/deleted_account_cleanup_sc
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
-import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
@@ -38,8 +37,7 @@ void registerSiratiRouteWidgets() {
   GeneratedCvHubLinks.atsCheck = openCvHubAtsCheck;
 }
 
-/// CV input carried to the detailed ATS route for its CV-aware integration.
-/// The current input screen still requires the user to paste or upload a CV.
+/// Source CV and its current text carried into the ATS input screen.
 class CvHubAtsCheckArguments {
   const CvHubAtsCheckArguments({required this.cvId, required this.markdown});
 
@@ -48,32 +46,16 @@ class CvHubAtsCheckArguments {
 }
 
 Future<void> openCvHubAtsCheck(BuildContext context, GeneratedCv cv) async {
-  final l = AppLocalizations.of(context);
-  final proceed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l.cvHubCheckAts),
-      content: Text(l.cvHubAtsNewFormNotice),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(l.cvHubAtsStay),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(l.cvHubAtsOpenNewForm),
-        ),
-      ],
-    ),
-  );
-  if (proceed != true || !context.mounted) return;
   await Navigator.of(context).push<void>(MaterialPageRoute<void>(
     settings: RouteSettings(
         arguments: CvHubAtsCheckArguments(
       cvId: cv.id,
       markdown: cv.generatedMarkdown,
     )),
-    builder: (_) => const CvAnalysisScreen(),
+    builder: (_) => CvAnalysisScreen(
+      initialCvId: cv.id,
+      initialMarkdown: cv.generatedMarkdown,
+    ),
   ));
 }
 
