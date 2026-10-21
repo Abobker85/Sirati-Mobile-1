@@ -38,7 +38,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
       final onboarding =
           find.text('مرحباً بك في سيرتي').evaluate().isNotEmpty ||
-              find.text('Welcome to Sirati').evaluate().isNotEmpty;
+              find.text('Welcome to Siratie').evaluate().isNotEmpty;
       final welcome =
           find.text('اصنع سيرتك الذاتية باحترافية').evaluate().isNotEmpty ||
               find.text('Build your CV professionally').evaluate().isNotEmpty;

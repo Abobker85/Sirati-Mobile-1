@@ -9,7 +9,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import '../../support/contrast_probe.dart';
 
 const _titles = {
-  'en': ['Welcome to Sirati', 'Instant ATS analysis', 'AI CV in minutes'],
+  'en': ['Welcome to Siratie', 'Instant ATS analysis', 'AI CV in minutes'],
   'ar': ['مرحباً بك في سيرتي', 'تحليل ATS فوري', 'سيرة بالذكاء في دقائق'],
 };
 

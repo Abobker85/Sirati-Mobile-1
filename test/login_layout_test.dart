@@ -70,10 +70,10 @@ void main() {
     ));
 
     expect(find.byType(AuthFormConstraint), findsOneWidget);
-    expect(find.text('Welcome to Sirati'), findsOneWidget);
+    expect(find.text('Welcome to Siratie'), findsOneWidget);
     expect(find.text('Sign in to continue'), findsOneWidget);
 
-    final title = tester.widget<Text>(find.text('Welcome to Sirati'));
+    final title = tester.widget<Text>(find.text('Welcome to Siratie'));
     expect(title.textAlign, TextAlign.center);
 
     final subtitle = tester.widget<Text>(find.text('Sign in to continue'));
@@ -87,7 +87,7 @@ void main() {
     expect(
       find.descendant(
         of: scroll,
-        matching: find.text('Welcome to Sirati'),
+        matching: find.text('Welcome to Siratie'),
       ),
       findsOneWidget,
     );
@@ -153,7 +153,7 @@ void phoneLoginTest({required bool arabic, required bool dark}) {
         .position;
     expect(position.maxScrollExtent, greaterThan(0));
 
-    final title = find.text(arabic ? 'مرحباً بك في سيرتي' : 'Welcome to Sirati');
+    final title = find.text(arabic ? 'مرحباً بك في سيرتي' : 'Welcome to Siratie');
     final titleBefore = tester.getTopLeft(title).dy;
     await tester.drag(scroll, const Offset(0, -240));
     await tester.pump();
