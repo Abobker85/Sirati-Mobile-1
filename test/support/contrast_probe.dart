@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/shared/theme/app_contrast.dart';
 
@@ -75,21 +76,19 @@ List<Color> paintedBackgroundsOf(Element element) {
   return layers;
 }
 
-/// Accumulates painted opacity from ancestor [Opacity], [AnimatedOpacity],
-/// and [FadeTransition] widgets.
+/// Counts each painted opacity render layer once, using its current value.
+/// AnimatedOpacity and its internal FadeTransition share one such layer.
 double effectiveAncestorOpacityOf(Element element) {
   var opacity = 1.0;
-  element.visitAncestorElements((ancestor) {
-    final widget = ancestor.widget;
-    if (widget is Opacity) {
-      opacity *= widget.opacity;
-    } else if (widget is AnimatedOpacity) {
-      opacity *= widget.opacity;
-    } else if (widget is FadeTransition) {
-      opacity *= widget.opacity.value;
+  RenderObject? ancestor = element.findRenderObject()?.parent;
+  while (ancestor != null) {
+    if (ancestor is RenderOpacity) {
+      opacity *= ancestor.opacity;
+    } else if (ancestor is RenderAnimatedOpacity) {
+      opacity *= ancestor.opacity.value;
     }
-    return true;
-  });
+    ancestor = ancestor.parent;
+  }
   return opacity;
 }
 
@@ -100,8 +99,15 @@ void expectAllTextAa(String label) {
   expect(texts, isNotEmpty, reason: label);
   for (final element in texts) {
     final text = element.widget as Text;
-    final color =
-        text.style?.color ?? DefaultTextStyle.of(element).style.color!;
+    final ancestorOpacity = effectiveAncestorOpacityOf(element);
+    // Opacity 0 is not painted: hint placeholders kept for layout, and the
+    // first frame of an entrance fade. Partial fades are still checked.
+    if (ancestorOpacity == 0) continue;
+    final paragraph = element.findRenderObject()! as RenderParagraph;
+    final ink = paragraph.text.style!.color!;
+    final color = ink.withValues(
+      alpha: (ink.a * ancestorOpacity).clamp(0.0, 1.0),
+    );
     for (final background in paintedBackgroundsOf(element)) {
       expect(
         AppContrast.ratio(Color.alphaBlend(color, background), background),

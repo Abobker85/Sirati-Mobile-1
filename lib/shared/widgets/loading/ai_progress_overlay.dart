@@ -287,43 +287,46 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
     final reduce = MotionSettings.reduce(context);
 
     // System back always cancels and dismisses the overlay immediately.
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        widget.onCancel();
-      },
-      child: Material(
-        type: MaterialType.transparency,
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 360),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                  ),
-                  child: ValueListenableBuilder<bool>(
-                    valueListenable: widget.finished,
-                    builder: (context, finished, _) {
-                      return ValueListenableBuilder<AiProgressPhase>(
-                        valueListenable: widget.phase,
-                        builder: (context, phase, __) {
-                          final step =
-                              (finished ? _steps.length - 1 : phase.index)
-                                  .clamp(0, _steps.length - 1);
+    return TickerMode(
+      enabled: !reduce,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          widget.onCancel();
+        },
+        child: Material(
+          type: MaterialType.transparency,
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                    ),
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: widget.finished,
+                      builder: (context, finished, _) {
+                        return ValueListenableBuilder<AiProgressPhase>(
+                          valueListenable: widget.phase,
+                          builder: (context, phase, __) {
+                            final step =
+                                (finished ? _steps.length - 1 : phase.index)
+                                    .clamp(0, _steps.length - 1);
 
-                          return _card(
-                            c: c,
-                            en: en,
-                            reduce: reduce,
-                            step: step,
-                            finished: finished,
-                          );
-                        },
-                      );
-                    },
+                            return _card(
+                              c: c,
+                              en: en,
+                              reduce: reduce,
+                              step: step,
+                              finished: finished,
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -383,6 +386,8 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
+            // Indeterminate sweep is a repeating ticker. Mute it under reduced
+            // motion; a fixed value would pretend the job has a percentage.
             LinearProgressIndicator(
               value: finished ? 1 : null,
               minHeight: 6,

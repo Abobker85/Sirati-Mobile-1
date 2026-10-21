@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,36 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
+
+import 'support/contrast_probe.dart';
+
+void expectHeaderPaint(WidgetTester tester) {
+  final mark = tester.element(find.byType(SiratiMark));
+  final colors = Theme.of(mark).extension<SiratiColors>()!;
+  expect(paintedBackgroundsOf(mark), [colors.surface]);
+  final headers = <BoxDecoration>[];
+  mark.visitAncestorElements((ancestor) {
+    if (ancestor.widget is DecoratedBox) {
+      final paint = ancestor.findRenderObject()! as RenderDecoratedBox;
+      final decoration = paint.decoration;
+      if (decoration is BoxDecoration && decoration.border != null) {
+        headers.add(decoration);
+      }
+    }
+    return true;
+  });
+  expect(headers, hasLength(1));
+  expect(headers.single.color, colors.surface);
+  final border = headers.single.border! as Border;
+  expect(border.bottom.color, colors.outline);
+  expect(border.bottom.width, greaterThan(0));
+  final markPaint = tester.renderObject<RenderDecoratedBox>(find.descendant(
+    of: find.byType(SiratiMark), matching: find.byType(DecoratedBox)));
+  final decoration = markPaint.decoration as BoxDecoration;
+  expect(decoration.shape, BoxShape.circle);
+  expect(decoration.gradient, isA<LinearGradient>());
+  expect(decoration.boxShadow, isNull);
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -70,7 +101,9 @@ void main() {
     for (final dark in [false, true]) {
       phoneLoginTest(arabic: arabic, dark: dark);
     }
-    for (final size in const [Size(390, 844), Size(390, 480)]) {
+    for (final size in const [
+      Size(390, 844), Size(390, 520), Size(390, 519), Size(390, 480),
+    ]) {
       shortLoginTest(arabic: arabic, size: size, keyboard: false);
       if (size.height < 520) {
         shortLoginTest(arabic: arabic, size: size, keyboard: true);
@@ -105,6 +138,8 @@ void phoneLoginTest({required bool arabic, required bool dark}) {
     ));
     await tester.pump();
 
+    expectHeaderPaint(tester);
+
     final scroll = find.byType(SingleChildScrollView);
     final position = tester
         .state<ScrollableState>(
@@ -122,6 +157,7 @@ void phoneLoginTest({required bool arabic, required bool dark}) {
     final titleBefore = tester.getTopLeft(title).dy;
     await tester.drag(scroll, const Offset(0, -240));
     await tester.pump();
+    expectHeaderPaint(tester);
     expect(
       tester.getTopLeft(title).dy,
       lessThan(titleBefore),
@@ -166,6 +202,8 @@ void shortLoginTest({
       ));
       await tester.pump();
 
+      expectHeaderPaint(tester);
+
       final scroll = find.byType(SingleChildScrollView);
       expect(scroll, findsOneWidget);
       expect(
@@ -189,6 +227,7 @@ void shortLoginTest({
         tester.view.viewInsets = const FakeViewPadding(bottom: 320);
         addTearDown(tester.view.resetViewInsets);
         await tester.pump();
+        expectHeaderPaint(tester);
         expect(
           tester.widget<SiratiMark>(find.byType(SiratiMark)).size,
           lessThan(56),

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
@@ -31,6 +30,7 @@ Widget app(
   TextDirection direction,
   Widget child, {
   bool disableAnimations = true,
+  bool? supportsAnnounce,
 }) =>
     MaterialApp(
       theme: theme,
@@ -41,11 +41,50 @@ Widget app(
         data: MediaQuery.of(context).copyWith(
           textScaler: const TextScaler.linear(2),
           disableAnimations: disableAnimations,
+          supportsAnnounce: supportsAnnounce,
         ),
         child: Directionality(textDirection: direction, child: body!),
       ),
       home: Scaffold(body: SingleChildScrollView(child: child)),
     );
+
+/// InputDecorator attaches [message] as the field hint, and adds a live
+/// region for that same text only when the platform cannot announce
+/// (`liveRegion: !MediaQuery.supportsAnnounceOf`).
+void expectFieldAnnouncesErrorOnce(
+  WidgetTester tester, {
+  required String message,
+  required Finder fieldFinder,
+}) {
+  final supportsAnnounce = MediaQuery.supportsAnnounceOf(
+    tester.element(fieldFinder),
+  );
+  final all = nodes(
+    tester.binding.renderViews.single.owner!.semanticsOwner!.rootSemanticsNode!,
+  ).toList();
+  final field = nodes(tester.getSemantics(fieldFinder))
+      .singleWhere((node) => node.flagsCollection.isTextField);
+  expect(
+    field.hint,
+    message,
+    reason: 'error text must be on the field semantics node',
+  );
+  final live = all.where((node) => node.flagsCollection.isLiveRegion &&
+      [node.label, node.hint, node.value].any((text) => text.contains(message)))
+      .toList();
+  if (supportsAnnounce) {
+    expect(
+      live,
+      isEmpty,
+      reason: 'announce support means the error is not also a live region',
+    );
+  } else {
+    expect(live, hasLength(1));
+    final spoken =
+        '${live.single.label} ${live.single.hint} ${live.single.value}';
+    expect(spoken, contains(message));
+  }
+}
 
 Iterable<SemanticsNode> nodes(SemanticsNode node) sync* {
   yield node;
@@ -70,6 +109,24 @@ void uiPair(Color ink, Color fill) => expect(
       greaterThanOrEqualTo(3),
       reason: '$ink on $fill',
     );
+
+double _indeterminateSweep(WidgetTester tester) {
+  final paint = tester.renderObject<RenderCustomPaint>(
+    find.descendant(
+      of: find.byType(LinearProgressIndicator),
+      matching: find.byType(CustomPaint),
+    ),
+  );
+  final painter = paint.painter;
+  if (painter == null) {
+    fail('indeterminate bar has no painter');
+  }
+  final value = (painter as dynamic).animationValue;
+  if (value is! num) {
+    fail('indeterminate bar painter exposes no animation value');
+  }
+  return value.toDouble();
+}
 
 Color renderedTextColor(WidgetTester tester, Finder finder) {
   final renderParagraph = tester.renderObject<RenderParagraph>(finder);
@@ -273,12 +330,68 @@ void main() {
         theme.extension<SiratiColors>()!.onSuccessContainer,
       );
 
+      final siratiColors = theme.extension<SiratiColors>()!;
+      const submitLabel = 'Sign in';
       await tester.pumpWidget(
         app(
           theme,
           direction,
           SubmitButton(
-            label: 'Sign in',
+            label: submitLabel,
+            icon: Icons.check,
+            onPressed: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+      final enabledSubmitBg = paintedBackgroundsOf(
+          tester.element(find.text(submitLabel))).single;
+      expect(enabledSubmitBg, siratiColors.primary);
+      expect(
+        paintedBackgroundsOf(tester.element(find.text(submitLabel))),
+        contains(siratiColors.primary),
+      );
+      final enabledSubmitFg = renderedTextColor(tester, find.text(submitLabel));
+      expect(enabledSubmitFg, siratiColors.onPrimary);
+      expect(
+        AppContrast.ratio(enabledSubmitFg, enabledSubmitBg),
+        greaterThanOrEqualTo(4.5),
+      );
+      expectAllTextAa('SubmitButton enabled dark=$dark');
+
+      await tester.pumpWidget(
+        app(
+          theme,
+          direction,
+          const SubmitButton(label: submitLabel, onPressed: null),
+        ),
+      );
+      await tester.pump();
+      final disabledSubmitBg = paintedBackgroundsOf(
+          tester.element(find.text(submitLabel))).single;
+      expect(disabledSubmitBg, siratiColors.surfaceHigh);
+      expect(disabledSubmitBg, isNot(enabledSubmitBg));
+      expect(
+        paintedBackgroundsOf(tester.element(find.text(submitLabel))),
+        contains(siratiColors.surfaceHigh),
+      );
+      final disabledSubmitFg =
+          renderedTextColor(tester, find.text(submitLabel));
+      expect(disabledSubmitFg, siratiColors.textSecondary);
+      expect(disabledSubmitFg, isNot(enabledSubmitFg));
+      expect(
+        AppContrast.ratio(disabledSubmitFg, disabledSubmitBg),
+        greaterThanOrEqualTo(4.5),
+        reason: 'disabled SubmitButton text on its own fill',
+      );
+      expectAllTextAa('SubmitButton disabled dark=$dark');
+
+      await tester.pumpWidget(
+        app(
+          theme,
+          direction,
+          SubmitButton(
+            label: submitLabel,
             loadingLabel: 'Signing in',
             isLoading: true,
             onPressed: () {},
@@ -286,7 +399,18 @@ void main() {
         ),
       );
       await tester.pump();
-      expectAllTextAa('disabled submit dark=$dark');
+      final loadingSubmit =
+          tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(
+        loadingSubmit.style!.backgroundColor!
+            .resolve(const <WidgetState>{WidgetState.disabled}),
+        siratiColors.primary,
+      );
+      expect(
+        renderedTextColor(tester, find.text('Signing in')),
+        siratiColors.onPrimary,
+      );
+      expectAllTextAa('SubmitButton loading dark=$dark');
 
       await tester.pumpWidget(
         app(
@@ -299,7 +423,6 @@ void main() {
       expectAllTextAa('secondary button dark=$dark');
 
       // ── B1: AppButton enabled / loading / disabled painted-colour tests ──
-      final siratiColors = theme.extension<SiratiColors>()!;
       for (final variant in [
         AppButtonVariant.primary,
         AppButtonVariant.destructive,
@@ -686,81 +809,81 @@ void main() {
           final form = GlobalKey<FormState>();
           const message = 'Enter a valid value يرجى إدخال قيمة صحيحة';
           try {
-            await tester.pumpWidget(
-              app(
-                theme,
-                direction,
-                Form(
-                  key: form,
-                  child: AppTextFormField(
-                    labelText: 'Contact التواصل',
-                    validator: (_) => message,
+            for (final supportsAnnounce in [false, true]) {
+              await tester.pumpWidget(
+                app(
+                  theme,
+                  direction,
+                  Form(
+                    key: form,
+                    child: AppTextFormField(
+                      labelText: 'Contact التواصل',
+                      validator: (_) => message,
+                    ),
                   ),
+                  supportsAnnounce: supportsAnnounce,
                 ),
-              ),
-            );
-            form.currentState!.validate();
-            await tester.pumpAndSettle();
-            final field = tester.widget<TextField>(find.byType(TextField));
-            expect(field.decoration!.errorText, message);
-            expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
-            final all = nodes(
-              tester.binding.renderViews.single.owner!.semanticsOwner!
-                  .rootSemanticsNode!,
-            ).toList();
-            all.singleWhere(
-              // exactly one text-field node
-              (node) => node.flagsCollection.isTextField,
-            );
-            final liveNodes = all
-                .where(
-                  (node) => node.flagsCollection.isLiveRegion,
-                )
-                .toList();
-            // Flutter's InputDecorator announces the error itself: as a live region where the platform has no
-            // announce API, via the announce API otherwise. Never both, and no extra wrapper may add a second one.
-            expect(liveNodes.length, lessThanOrEqualTo(1));
-            expect(
-              all.any(
-                (n) => '${n.label} ${n.hint} ${n.value}'.contains(message),
-              ),
-              isTrue,
-              reason: 'the error text must be reachable in the semantics tree',
-            );
+              );
+              form.currentState!.validate();
+              await tester.pumpAndSettle();
+              final field = tester.widget<TextField>(find.byType(TextField));
+              expect(field.decoration!.errorText, message);
+              expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
+              expectFieldAnnouncesErrorOnce(tester,
+                  message: message, fieldFinder: find.byType(TextField));
 
-            // A4: AppInput error semantics: exactly one live-region error node tied to the field
-            await tester.pumpWidget(
-              app(
-                theme,
-                direction,
-                const AppInput(
-                  label: 'Contact التواصل',
-                  errorText: message,
+              await tester.pumpWidget(
+                app(
+                  theme,
+                  direction,
+                  const AppInput(
+                    label: 'Contact التواصل',
+                    errorText: message,
+                  ),
+                  supportsAnnounce: supportsAnnounce,
                 ),
-              ),
-            );
-            await tester.pumpAndSettle();
-            final allInput = nodes(
-              tester.binding.renderViews.single.owner!.semanticsOwner!
-                  .rootSemanticsNode!,
-            ).toList();
-            final inputEditable = allInput.singleWhere(
-              (node) => node.flagsCollection.isTextField,
-            );
-            expect(inputEditable.hint, contains(message));
-            final inputLiveNodes = allInput
-                .where(
-                  (node) => node.flagsCollection.isLiveRegion,
-                )
-                .toList();
-            expect(inputLiveNodes.length, lessThanOrEqualTo(1));
-            expect(
-              allInput.any(
-                (n) => '${n.label} ${n.hint} ${n.value}'.contains(message),
-              ),
-              isTrue,
-            );
-            expect(tester.takeException(), isNull);
+              );
+              await tester.pumpAndSettle();
+              expectFieldAnnouncesErrorOnce(tester,
+                  message: message, fieldFinder: find.byType(TextField));
+              expect(tester.takeException(), isNull);
+            }
+          } finally {
+            handle.dispose();
+          }
+        },
+      );
+
+      testWidgets(
+        'error semantics rejects unrelated and duplicate errors ($suffix)',
+        (tester) async {
+          final handle = tester.ensureSemantics();
+          try {
+            for (final supportsAnnounce in [false, true]) {
+              for (final nativeError in [false, true]) {
+                final message = direction == TextDirection.rtl
+                    ? 'راجع هذا الحقل'
+                    : 'Check this field';
+                await tester.pumpWidget(app(
+                  theme,
+                  direction,
+                  Column(children: [
+                    AppInput(
+                      label: 'Contact',
+                      errorText: nativeError ? message : null,
+                    ),
+                    AppFieldError(message: message),
+                  ]),
+                  supportsAnnounce: supportsAnnounce,
+                ));
+                await tester.pumpAndSettle();
+                expect(
+                  () => expectFieldAnnouncesErrorOnce(tester,
+                      message: message, fieldFinder: find.byType(TextField)),
+                  throwsA(isA<TestFailure>()),
+                );
+              }
+            }
           } finally {
             handle.dispose();
           }
@@ -1029,20 +1152,58 @@ void main() {
     }
   }
 
-  test('night launch theme uses the dark surface', () {
-    final styles = File(
-      'android/app/src/main/res/values-night/styles.xml',
-    ).readAsStringSync();
-    final colors = File(
-      'android/app/src/main/res/values-night/colors.xml',
-    ).readAsStringSync();
-    final day = File(
-      'android/app/src/main/res/values/colors.xml',
-    ).readAsStringSync();
-    expect(styles.contains('Theme.Light'), isFalse);
-    expect(styles.contains('Theme.Black.NoTitleBar'), isTrue);
-    expect(colors.toLowerCase().contains('#121614'), isTrue);
-    expect(day.toLowerCase().contains('#faf7f2'), isTrue);
+  testWidgets('reduced motion stops the indeterminate AI bar', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    Future<double> sweepDelta({required bool reduce}) async {
+      await tester.pumpWidget(
+        app(
+          AppTheme.light,
+          TextDirection.ltr,
+          const SizedBox(),
+          disableAnimations: reduce,
+        ),
+      );
+      final context = tester.element(find.byType(Scaffold));
+      late AiProgressHandle handle;
+      final future = AiProgressOverlay.show(
+        context,
+        kind: AiProgressKind.analysis,
+        english: true,
+      ).then((value) => handle = value);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await future;
+      expect(
+        tester
+            .widget<LinearProgressIndicator>(
+              find.byType(LinearProgressIndicator),
+            )
+            .value,
+        isNull,
+      );
+      final start = _indeterminateSweep(tester);
+      if (reduce) {
+        expect(tester.binding.transientCallbackCount, 0,
+            reason: 'no overlay animation may keep scheduling ticks');
+      }
+      await tester.pump(const Duration(milliseconds: 700));
+      final delta = (_indeterminateSweep(tester) - start).abs();
+      if (reduce) expect(tester.binding.transientCallbackCount, 0);
+      await handle.dismiss();
+      await tester.pumpWidget(const SizedBox());
+      return delta;
+    }
+
+    expect(
+      await sweepDelta(reduce: false),
+      greaterThan(0),
+      reason: 'the bar sweeps when motion is allowed',
+    );
+    expect(await sweepDelta(reduce: true), 0);
   });
 
   testWidgets('bootstrap status icons follow platform brightness', (

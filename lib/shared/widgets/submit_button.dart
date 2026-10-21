@@ -29,8 +29,12 @@ class SubmitButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !isLoading;
     final text = isLoading ? (loadingLabel ?? label) : label;
-    final spinnerColor =
-        outlined ? context.sirati.primaryInk : context.sirati.onPrimary;
+    final c = context.sirati;
+    // Filled disabled must not inherit the enabled onPrimary ink. The button
+    // animates foreground, so the label sets its own colour on the first frame.
+    final filledForeground = !enabled && !isLoading ? c.textSecondary : c.onPrimary;
+    final spinnerColor = outlined ? c.primaryInk : c.onPrimary;
+    final iconColor = outlined ? null : filledForeground;
 
     final content = Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -47,10 +51,16 @@ class SubmitButton extends StatelessWidget {
           )
         else if (icon != null)
           DirectionalIcon.isDirectional(icon!)
-              ? DirectionalIcon(icon!, size: 18)
-              : Icon(icon, size: 18),
+              ? DirectionalIcon(icon!, size: 18, color: iconColor)
+              : Icon(icon, size: 18, color: iconColor),
         if (isLoading || icon != null) const SizedBox(width: AppSpacing.xs),
-        Flexible(child: Text(text, textAlign: TextAlign.center)),
+        Flexible(
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: outlined ? null : TextStyle(color: filledForeground),
+          ),
+        ),
       ],
     );
 
@@ -76,10 +86,14 @@ class SubmitButton extends StatelessWidget {
                 height.clamp(AppTouchTarget.min, double.infinity),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              backgroundColor: context.sirati.primary,
-              foregroundColor: context.sirati.onPrimary,
-              disabledBackgroundColor: context.sirati.primary,
-              disabledForegroundColor: context.sirati.onPrimary,
+              backgroundColor: c.primary,
+              foregroundColor: c.onPrimary,
+              // Loading keeps the enabled pair. A disabled control uses the
+              // same neutral pair as AppButton so it does not look pressable.
+              disabledBackgroundColor:
+                  isLoading ? c.primary : c.surfaceHigh,
+              disabledForegroundColor:
+                  isLoading ? c.onPrimary : c.textSecondary,
             ),
             child: content,
           );

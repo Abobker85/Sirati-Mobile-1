@@ -2,34 +2,39 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/shared/theme/sirati_colors.dart';
 import 'package:xml/xml.dart';
 
-/// Night [LaunchTheme] must paint a dark colour on the first frame.
-///
-/// An unqualified `launch_background` drawable is inflated with the default
-/// colour table, so `@color/splash_background` inside it stays the day cream
-/// even when the night theme points at that drawable. Colour references on
-/// the night theme itself, and drawables that live in a night directory,
-/// use the night colour table.
+/// Resolve the launch theme's layer-list and night-qualified resources.
 void main() {
-  test('night LaunchTheme windowBackground resolves to the dark splash colour',
-      () {
-    final table = AndroidResourceTable.parse(
-      Directory('android/app/src/main/res'),
-    );
+  for (final api in [19, 21, 34]) {
+    test('night LaunchTheme resolves the dark surface and centred mark (API $api)',
+        () {
+      final table = AndroidResourceTable.parse(
+        Directory('android/app/src/main/res'),
+        api: api,
+      );
 
-    final night = table.launchWindowColor(night: true);
-    final day = table.launchWindowColor(night: false);
-    final nightSplash = table.colorValue('splash_background', night: true);
-    final daySplash = table.colorValue('splash_background', night: false);
+      final night = table.launchWindowColor(night: true);
+      final day = table.launchWindowColor(night: false);
+      final nightSplash = table.colorValue('splash_background', night: true);
+      final daySplash = table.colorValue('splash_background', night: false);
 
-    expect(night, nightSplash);
-    expect(day, daySplash);
-    expect(night, isNot(day));
-    expect(_luminance(night), lessThanOrEqualTo(0.15));
-    expect(_luminance(day), greaterThanOrEqualTo(0.7));
-    expect(_luminance(night), lessThan(_luminance(day)));
-  });
+      expect(night, nightSplash);
+      expect(night, SiratiColors.dark.background.toARGB32());
+      expect(day, daySplash);
+      expect(night, isNot(day));
+      expect(_luminance(night), lessThanOrEqualTo(0.15));
+      expect(_luminance(day), greaterThanOrEqualTo(0.7));
+      expect(_luminance(night), lessThan(_luminance(day)));
+
+      final drawable = table.launchBackground(night: true);
+      expect(drawable.nightQualified, isTrue);
+      expect(drawable.hasCenteredMark, isTrue);
+      expect(drawable.color, nightSplash);
+      expect(drawable.color, night);
+    });
+  }
 }
 
 double _luminance(int argb) {
@@ -62,6 +67,18 @@ int _parseColor(String raw) {
   return int.parse(withAlpha, radix: 16);
 }
 
+class ResolvedLaunchDrawable {
+  ResolvedLaunchDrawable({
+    required this.color,
+    required this.nightQualified,
+    required this.hasCenteredMark,
+  });
+
+  final int color;
+  final bool nightQualified;
+  final bool hasCenteredMark;
+}
+
 class _ResourceFile {
   _ResourceFile({
     required this.type,
@@ -79,11 +96,12 @@ class _ResourceFile {
 }
 
 class AndroidResourceTable {
-  AndroidResourceTable._(this._files);
+  AndroidResourceTable._(this._files, {required this.api});
 
   final List<_ResourceFile> _files;
+  final int api;
 
-  static AndroidResourceTable parse(Directory res) {
+  static AndroidResourceTable parse(Directory res, {int api = 34}) {
     final files = <_ResourceFile>[];
     for (final entity in res.listSync(followLinks: false)) {
       if (entity is! Directory) continue;
@@ -109,10 +127,47 @@ class AndroidResourceTable {
         );
       }
     }
-    return AndroidResourceTable._(files);
+    return AndroidResourceTable._(files, api: api);
   }
 
   int launchWindowColor({required bool night}) {
+    final located = _launchTheme(night: night);
+    return _resolve(
+      located.reference,
+      deviceNight: night,
+    );
+  }
+
+  /// The drawable [LaunchTheme] actually inflates for [night], including
+  /// whether that layer-list centres a bitmap mark.
+  ResolvedLaunchDrawable launchBackground({required bool night}) {
+    final located = _launchTheme(night: night);
+    final reference = located.reference;
+    if (!reference.startsWith('@drawable/')) {
+      fail(
+        'LaunchTheme windowBackground is $reference, expected a drawable',
+      );
+    }
+    final drawable = _best(
+      _files.where(
+        (file) =>
+            file.type == 'drawable' &&
+            file.name == reference.substring('@drawable/'.length),
+      ),
+      night: night,
+    );
+    final root = drawable.document.rootElement;
+    if (root.name.local != 'layer-list') {
+      fail('${drawable.name} is not a layer-list (${root.name.local})');
+    }
+    return ResolvedLaunchDrawable(
+      color: _drawableColor(drawable, deviceNight: night),
+      nightQualified: drawable.night,
+      hasCenteredMark: _centeredMark(root),
+    );
+  }
+
+  ({_ResourceFile style, String reference}) _launchTheme({required bool night}) {
     final style = _best(
       _files.where(
         (file) =>
@@ -135,11 +190,7 @@ class AndroidResourceTable {
     if (reference == null || reference.isEmpty) {
       fail('LaunchTheme has no android:windowBackground item');
     }
-    return _resolve(
-      reference,
-      deviceNight: night,
-      colorTableNight: style.night,
-    );
+    return (style: style, reference: reference);
   }
 
   int colorValue(String name, {required bool night}) {
@@ -161,13 +212,12 @@ class AndroidResourceTable {
   int _resolve(
     String reference, {
     required bool deviceNight,
-    required bool colorTableNight,
   }) {
     if (reference.startsWith('#')) return _parseColor(reference);
     if (reference.startsWith('@color/')) {
       return colorValue(
         reference.substring('@color/'.length),
-        night: colorTableNight,
+        night: deviceNight,
       );
     }
     if (reference.startsWith('@drawable/')) {
@@ -196,8 +246,6 @@ class AndroidResourceTable {
         return _resolve(
           direct,
           deviceNight: deviceNight,
-          // Unqualified launch drawables keep the day colour table.
-          colorTableNight: drawable.night && deviceNight,
         );
       }
       for (final child in item.childElements) {
@@ -207,7 +255,6 @@ class AndroidResourceTable {
           return _resolve(
             nested,
             deviceNight: deviceNight,
-            colorTableNight: drawable.night && deviceNight,
           );
         }
       }
@@ -215,8 +262,22 @@ class AndroidResourceTable {
     fail('${drawable.name} has no colour layer');
   }
 
+  bool _centeredMark(XmlElement layerList) {
+    for (final item in layerList.childElements) {
+      if (item.name.local != 'item') continue;
+      for (final child in item.childElements) {
+        if (child.name.local != 'bitmap') continue;
+        final src = _attr(child, 'src');
+        if (_attr(child, 'gravity') == 'center' &&
+            src == '@drawable/splash_logo') {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   _ResourceFile _best(Iterable<_ResourceFile> candidates, {required bool night}) {
-    const api = 34;
     final compatible = candidates.where((file) {
       final minApi = file.minApi;
       if (minApi != null && api < minApi) return false;

@@ -172,49 +172,71 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      children: [
-                        if (Navigator.of(context).canPop())
-                          IconButton(
-                            onPressed: () => Navigator.maybePop(context),
-                            tooltip: MaterialLocalizations.of(context)
-                                .backButtonTooltip,
-                            icon: DirectionalIcon(
-                              Icons.arrow_back_ios_new_rounded,
-                              color: context.sirati.textPrimary,
-                              size: 18,
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: context.sirati.surface,
+                        border: Border(
+                          bottom: BorderSide(color: context.sirati.outline),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                if (Navigator.of(context).canPop())
+                                  IconButton(
+                                    onPressed: () => Navigator.maybePop(context),
+                                    tooltip: MaterialLocalizations.of(context)
+                                        .backButtonTooltip,
+                                    icon: DirectionalIcon(
+                                      Icons.arrow_back_ios_new_rounded,
+                                      color: context.sirati.textPrimary,
+                                      size: 18,
+                                    ),
+                                  ),
+                                const Spacer(),
+                                const LanguageToggle(),
+                              ],
                             ),
-                          ),
-                        const Spacer(),
-                        const LanguageToggle(),
-                      ],
-                    ),
-                    SizedBox(height: sectionGap),
-                    Center(
-                      child: SiratiMark(
-                        size: compact ? _loginCompactMarkSize : _loginMarkSize,
-                      ),
-                    ),
-                    SizedBox(height: sectionGap),
-                    Text(
-                      english ? 'Welcome to Sirati' : 'مرحباً بك في سيرتي',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.of(
-                        context,
-                        compact
-                            ? AppTypography.titleLg
-                            : AppTypography.headlineMd,
-                        color: context.sirati.primaryInk,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      english ? 'Sign in to continue' : 'سجّل دخولك للمتابعة',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.of(
-                        context,
-                        AppTypography.bodyMd,
-                        color: context.sirati.textSecondary,
+                            SizedBox(height: sectionGap),
+                            Center(
+                              child: SiratiMark(
+                                size: compact
+                                    ? _loginCompactMarkSize
+                                    : _loginMarkSize,
+                              ),
+                            ),
+                            SizedBox(height: sectionGap),
+                            Text(
+                              english
+                                  ? 'Welcome to Sirati'
+                                  : 'مرحباً بك في سيرتي',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.of(
+                                context,
+                                compact
+                                    ? AppTypography.titleLg
+                                    : AppTypography.headlineMd,
+                                color: context.sirati.primaryInk,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              english
+                                  ? 'Sign in to continue'
+                                  : 'سجّل دخولك للمتابعة',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.bodyMd,
+                                color: context.sirati.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     SizedBox(height: sectionGap),
