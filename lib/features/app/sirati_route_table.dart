@@ -55,6 +55,8 @@ Future<void> openCvHubAtsCheck(BuildContext context, GeneratedCv cv) async {
     builder: (_) => CvAnalysisScreen(
       initialCvId: cv.id,
       initialMarkdown: cv.generatedMarkdown,
+      initialJobTitle: cv.targetJobTitle,
+      initialJobDescription: cv.jobDescriptionInput,
     ),
   ));
 }

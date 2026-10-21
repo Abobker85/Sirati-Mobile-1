@@ -51,7 +51,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 : 'الاحتفاظ بالبيانات وحذفها',
             body: english
                 ? 'Your data is retained while your account is active. You can delete individual generated CVs from My CVs. You can permanently delete your entire account and all associated data at any time from Settings → Delete account. Transient guest web analyses are automatically pruned within 24 hours.'
-                : 'نحتفظ ببياناتك طوال فترة نشاط حسابك. يمكنك حذف السير الفردية من شاشة سيراتي. ويمكنك حذف حسابك بالكامل وجميع بياناتك نهائياً في أي وقت من الإعدادات ← حذف الحساب. كما تُحذف التحليلات المؤقتة لزوار الويب تلقائياً خلال 24 ساعة.',
+                : 'نحتفظ ببياناتك طوال فترة نشاط حسابك. يمكنك حذف السير الفردية من شاشة سيرتي. ويمكنك حذف حسابك بالكامل وجميع بياناتك نهائياً في أي وقت من الإعدادات ← حذف الحساب. كما تُحذف التحليلات المؤقتة لزوار الويب تلقائياً خلال 24 ساعة.',
           ),
           _Section(
             title: english ? 'Contact & Support' : 'التواصل والدعم',

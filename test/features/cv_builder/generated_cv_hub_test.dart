@@ -33,6 +33,7 @@ GeneratedCv _cv(
       'full_name': 'سارة أحمد Sara Ahmed',
       'target_job_title': 'مهندسة نظم Distributed Systems Engineer',
       'language': language,
+      'job_description_input': 'Role $id: SQL, C++ وتحليل البيانات.',
       'generated_markdown': markdown ??
           '## Summary\n'
               '${List.generate(12, (i) => 'Experience $i: تحليل البيانات C++ and SQL.').join('\n')}\n'
@@ -73,7 +74,8 @@ Future<void> _pump(
     overrides: [
       cvApiServiceProvider.overrideWithValue(api ?? _Api()),
       if (analysisCvs != null)
-        analysisSavedCvsProvider.overrideWith((ref, english) async => analysisCvs),
+        analysisSavedCvsProvider
+            .overrideWith((ref, english) async => analysisCvs),
       authApiServiceProvider.overrideWithValue(FakeAuth(subscription())),
     ],
     child: MaterialApp(
@@ -291,11 +293,13 @@ void main() {
   const markdowns = {
     'Arabic': '# الخبرات\n\n- تطوير الأنظمة وتحليل البيانات\n- إدارة المشاريع',
     'Latin': '# Experience\n\n- Platform engineering\n- SQL and C++\n',
-    'mixed multiline': '  ## الخبرات Experience\n\n**مهندسة Systems**\n- C++ / SQL\n\n',
+    'mixed multiline':
+        '  ## الخبرات Experience\n\n**مهندسة Systems**\n- C++ / SQL\n\n',
   };
   for (final id in [7, 91, 503]) {
     for (final entry in markdowns.entries) {
-      testWidgets('ATS opens prefilled with the source CV (id $id, ${entry.key})',
+      testWidgets(
+          'ATS opens prefilled with the source CV (id $id, ${entry.key})',
           (tester) async {
         usePhoneViewAtTextScale(tester);
         final api = _Api();
@@ -310,21 +314,37 @@ void main() {
         await _tap(tester, GeneratedCvScreen.atsStepKey);
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.byType(CvAnalysisScreen), findsOneWidget);
-        final screen = tester.widget<CvAnalysisScreen>(
-            find.byType(CvAnalysisScreen));
+        final screen =
+            tester.widget<CvAnalysisScreen>(find.byType(CvAnalysisScreen));
         expect(screen.initialCvId, id);
         expect(screen.initialMarkdown, entry.value);
-        final args = ModalRoute.of(tester.element(find.byType(CvAnalysisScreen)))!
-            .settings.arguments as CvHubAtsCheckArguments;
+        // The scanner opens with the CV's own job title and job description.
+        expect(
+            screen.initialJobTitle, 'مهندسة نظم Distributed Systems Engineer');
+        expect(screen.initialJobDescription,
+            'Role $id: SQL, C++ وتحليل البيانات.');
+        expect(find.text('مهندسة نظم Distributed Systems Engineer'),
+            findsOneWidget);
+        expect(
+            find.text('Role $id: SQL, C++ وتحليل البيانات.'), findsOneWidget);
+        final args =
+            ModalRoute.of(tester.element(find.byType(CvAnalysisScreen)))!
+                .settings
+                .arguments as CvHubAtsCheckArguments;
         expect(args.cvId, id);
         expect(args.markdown, entry.value);
-        expect(tester.widget<DropdownButtonFormField<int>>(
-            find.byType(DropdownButtonFormField<int>)).initialValue, id);
+        expect(
+            tester
+                .widget<DropdownButtonFormField<int>>(
+                    find.byType(DropdownButtonFormField<int>))
+                .initialValue,
+            id);
         final savedSource = tester
             .element(find.byKey(const ValueKey(AnalysisCvSource.saved)))
             .findAncestorWidgetOfExactType<Semantics>()!;
         expect(savedSource.properties.selected, isTrue);
-        expect(find.byKey(const ValueKey('ats-input-resume-text')), findsNothing);
+        expect(
+            find.byKey(const ValueKey('ats-input-resume-text')), findsNothing);
         expect(api.fetches, 0);
       });
     }

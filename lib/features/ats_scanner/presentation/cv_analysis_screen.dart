@@ -38,6 +38,8 @@ class CvAnalysisScreen extends ConsumerStatefulWidget {
     this.onRetrySaved,
     this.initialCvId,
     this.initialMarkdown,
+    this.initialJobTitle,
+    this.initialJobDescription,
   });
 
   final AsyncValue<List<SavedAnalysisCv>>? savedCvs;
@@ -46,6 +48,10 @@ class CvAnalysisScreen extends ConsumerStatefulWidget {
 
   /// Text supplied for [initialCvId]. Blank text uses the saved-CV fetch path.
   final String? initialMarkdown;
+
+  /// Prefill for the target job title / description (e.g. from the CV hub).
+  final String? initialJobTitle;
+  final String? initialJobDescription;
 
   @override
   ConsumerState<CvAnalysisScreen> createState() => _CvAnalysisScreenState();
@@ -72,6 +78,8 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
   void initState() {
     super.initState();
     _selectedCvId = widget.initialCvId;
+    _jobTitleController.text = widget.initialJobTitle?.trim() ?? '';
+    _jobDescriptionController.text = widget.initialJobDescription?.trim() ?? '';
     WidgetsBinding.instance.addObserver(this);
   }
 

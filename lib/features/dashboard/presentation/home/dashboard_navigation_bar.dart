@@ -30,7 +30,7 @@ const _items = {
   DashboardTab.myCvs: _NavItem(
     icon: Icons.description_outlined,
     selectedIcon: Icons.description_rounded,
-    labelAr: 'سيراتي',
+    labelAr: 'سيرتي',
     labelEn: 'My CVs',
   ),
   DashboardTab.education: _NavItem(
