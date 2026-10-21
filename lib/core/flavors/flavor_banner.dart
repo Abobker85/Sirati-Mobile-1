@@ -17,7 +17,7 @@ class FlavorBanner extends StatelessWidget {
       location: BannerLocation.topEnd,
       color: flavor.bannerColor,
       textStyle: const TextStyle(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         fontSize: 10,
         letterSpacing: 0.6,
         color: Colors.white, // ignore: hardcoded_color -- non_prod_build_marker

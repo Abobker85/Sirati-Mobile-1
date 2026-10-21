@@ -266,7 +266,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                               : 'صانع الإنجازات المقاسة (معادلة XYZ)',
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             color: c.textPrimary,
                           ),
                         ),
@@ -278,7 +278,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                           style: TextStyle(
                             fontSize: 12,
                             color: c.textSecondary,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],

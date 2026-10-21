@@ -246,7 +246,7 @@ class _EmailVerificationScreenState
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 22,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: context.sirati.textPrimary,
                             ),
                           ),

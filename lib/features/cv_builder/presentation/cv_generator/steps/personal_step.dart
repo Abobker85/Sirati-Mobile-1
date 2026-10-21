@@ -230,7 +230,7 @@ class _JobDescriptionField extends StatelessWidget {
                           style: TextStyle(
                             color: context.sirati.textHint,
                             fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),

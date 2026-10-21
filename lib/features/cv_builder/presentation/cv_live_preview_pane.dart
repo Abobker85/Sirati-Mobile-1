@@ -359,7 +359,7 @@ class _CvLivePreviewPaneState extends State<CvLivePreviewPane> {
               style: const TextStyle(
                   fontSize: 10.5,
                   color: _PaperPalette.inkMuted,
-                  fontWeight: FontWeight.w500),
+                  fontWeight: FontWeight.w600),
             ),
           if (entry.narrative.resolve(language).isNotEmpty)
             Padding(

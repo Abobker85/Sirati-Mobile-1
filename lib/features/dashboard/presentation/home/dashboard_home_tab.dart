@@ -315,7 +315,7 @@ class _DashboardList extends StatelessWidget {
                 l.homeActivityTitle,
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: context.sirati.textPrimary,
                 ),
               ),

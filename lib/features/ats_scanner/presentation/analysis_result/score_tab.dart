@@ -99,7 +99,7 @@ class _ScoreHero extends StatelessWidget {
                     : 'تقدير  ${analysis.grade}',
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: band.onContainer(c),
                 ),
               ),

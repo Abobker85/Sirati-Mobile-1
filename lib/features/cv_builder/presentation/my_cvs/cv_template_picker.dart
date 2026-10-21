@@ -30,7 +30,7 @@ class CvTemplatePicker extends StatelessWidget {
                 textAlign: TextAlign.start,
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: context.sirati.textPrimary,
                 ),
               ),
@@ -52,7 +52,7 @@ class CvTemplatePicker extends StatelessWidget {
               title: Text(
                 template.name,
                 textAlign: TextAlign.start,
-                style: const TextStyle(fontWeight: FontWeight.w800),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
                 template.isDefault
