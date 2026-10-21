@@ -135,7 +135,7 @@ class CvStatusBanner extends StatelessWidget {
                 fontSize: 13,
                 height: 1.4,
                 color: ink,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),

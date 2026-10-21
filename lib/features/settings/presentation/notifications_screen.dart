@@ -199,7 +199,7 @@ class NotificationCard extends StatelessWidget {
                           textAlign: TextAlign.start,
                           style: AppTextStyles.titleSm(c).copyWith(
                             fontWeight:
-                                item.isRead ? FontWeight.w600 : FontWeight.w800,
+                                item.isRead ? FontWeight.w600 : FontWeight.w700,
                           ),
                         ),
                       ),

@@ -92,7 +92,7 @@ class _Section extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 height: 1.3,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 // 18px bold is below the large-text size: needs 4.5:1.
                 color: context.sirati.primaryInk,
               ),

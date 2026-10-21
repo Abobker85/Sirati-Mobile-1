@@ -160,7 +160,7 @@ class _NumberMarker extends StatelessWidget {
         '$number',
         style: TextStyle(
           fontSize: 11,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           // onWarningContainer, not amber: amber on amberLight is ~3:1 and
           // fails AA for this 11px numeral.
           color: c.onWarningContainer,

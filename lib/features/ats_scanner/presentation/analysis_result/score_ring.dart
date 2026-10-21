@@ -59,7 +59,7 @@ class AnimatedScoreRing extends StatelessWidget {
                               '$display',
                               style: TextStyle(
                                 fontSize: 30,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 // The ring carries the band colour; the number
                                 // stays in a text tone (primary is ~2.9:1).
                                 color: context.sirati.textPrimary,
@@ -71,7 +71,7 @@ class AnimatedScoreRing extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: context.sirati.textSecondary,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ],

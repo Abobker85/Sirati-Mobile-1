@@ -137,7 +137,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
       textAlign: TextAlign.center,
       style: TextStyle(
         fontSize: 34,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         letterSpacing: -0.4,
         color: context.sirati.primaryInk,
       ),
@@ -147,7 +147,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
       textAlign: TextAlign.center,
       style: AppTextStyles.bodySm(context.sirati).copyWith(
         color: context.sirati.textSecondary,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w400,
       ),
     );
 
@@ -162,7 +162,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
               en ? 'Siratie' : 'سيرتي',
               style: TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: context.sirati.primaryInk,
               ),
             ),
@@ -207,7 +207,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
                     en ? 'Siratie' : 'سيرتي',
                     style: TextStyle(
                       fontSize: 22,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: -0.2,
                       color: context.sirati.primaryInk,
                     ),

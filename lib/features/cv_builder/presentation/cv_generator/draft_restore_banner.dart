@@ -62,7 +62,7 @@ class DraftRestoreBanner extends StatelessWidget {
                         relative,
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w400,
                           color: c.textSecondary,
                         ),
                       ),

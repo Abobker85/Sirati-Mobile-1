@@ -168,7 +168,7 @@ class DashboardCvHero extends ConsumerWidget {
                                 style: TextStyle(
                                   color: c.textPrimary,
                                   fontSize: 22,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),

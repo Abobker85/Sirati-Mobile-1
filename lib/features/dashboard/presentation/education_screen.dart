@@ -228,7 +228,7 @@ class _ComingSoonHero extends StatelessWidget {
               english ? '✨ COMING SOON' : '✨ قريباً في سيرتي',
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: context.sirati.primaryInk,
                 letterSpacing: 0.5,
               ),

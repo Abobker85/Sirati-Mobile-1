@@ -65,7 +65,7 @@ class WelcomeBody extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 28,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           color: context.sirati.primaryInk,
                         ),
                       ),
@@ -160,7 +160,7 @@ class _ValueCard extends StatelessWidget {
             textAlign: TextAlign.start,
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: context.sirati.textPrimary,
               height: 1.3,
             ),

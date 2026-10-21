@@ -325,7 +325,7 @@ class _OnboardingPageView extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: titleSize,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     height: 1.25,
                     color: context.sirati.textPrimary,
                   ),

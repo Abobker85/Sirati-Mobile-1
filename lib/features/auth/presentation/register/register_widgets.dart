@@ -62,7 +62,7 @@ class RegisterHero extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: context.sirati.textPrimary,
           ),
         ),
