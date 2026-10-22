@@ -77,14 +77,12 @@ workflows:
       # App Store uploads require the iOS 26 SDK (Xcode 26).
       xcode: 26
       cocoapods: default
-      # Explicit references to the code signing identities saved in Codemagic
-      # (Teams > Code signing identities). Matching by bundle id alone failed with
-      # "No matching profiles found" when several profiles existed.
+      # Automatic signing: Codemagic fetches or creates the Apple Distribution
+      # certificate and App Store profile through the App Store Connect integration.
+      # Manually saved profiles did not match the certificates held in Codemagic.
       ios_signing:
-        provisioning_profiles:
-          - sirati_app_store_profile
-        certificates:
-          - sirati_distribution_cert
+        distribution_type: app_store
+        bundle_identifier: com.sirati.sirati
       vars:
         SIRATI_API_BASE_URL: "https://siratie.com/api"
     scripts:
