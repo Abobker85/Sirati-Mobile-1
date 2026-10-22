@@ -77,12 +77,10 @@ workflows:
       # App Store uploads require the iOS 26 SDK (Xcode 26).
       xcode: 26
       cocoapods: default
-      # Automatic signing: Codemagic fetches or creates the Apple Distribution
-      # certificate and App Store profile through the App Store Connect integration.
-      # Manually saved profiles did not match the certificates held in Codemagic.
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.sirati.sirati
+      # CERTIFICATE_PRIVATE_KEY (secure variable in this group) lets the signing
+      # step create the Apple Distribution certificate and App Store profile itself.
+      groups:
+        - sirati_ios
       vars:
         SIRATI_API_BASE_URL: "https://siratie.com/api"
     scripts:
@@ -105,7 +103,13 @@ workflows:
       - name: Run tests
         script: flutter test --exclude-tags golden
       - name: Set up code signing
-        script: xcode-project use-profiles
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "com.sirati.sirati" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Validate privacy manifest
         script: plutil -lint ios/Runner/PrivacyInfo.xcprivacy
       - name: Build iOS IPA
