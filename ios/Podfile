@@ -66,14 +66,27 @@ post_install do |installer|
       '$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)',
       '${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}.debug.dylib',
     ]
+    # Firebase may come from CocoaPods or, with Flutter's Swift Package Manager
+    # integration, from SPM; the Crashlytics run script lives in a different place for each.
+    crashlytics_script = <<~'SH'
+      POD_RUN="${PODS_ROOT}/FirebaseCrashlytics/run"
+      SPM_RUN="${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
+      if [ -f "$POD_RUN" ]; then
+        "$POD_RUN"
+      elif [ -f "$SPM_RUN" ]; then
+        "$SPM_RUN"
+      else
+        echo "warning: Crashlytics run script not found; dSYMs were not uploaded"
+      fi
+    SH
     existing_phase = runner_target.shell_script_build_phases.find { |phase| phase.name == phase_name }
 
     if existing_phase
-      existing_phase.shell_script = '"${PODS_ROOT}/FirebaseCrashlytics/run"'
+      existing_phase.shell_script = crashlytics_script
       existing_phase.input_paths = crashlytics_input_paths
     else
       crashlytics_phase = runner_target.new_shell_script_build_phase(phase_name)
-      crashlytics_phase.shell_script = '"${PODS_ROOT}/FirebaseCrashlytics/run"'
+      crashlytics_phase.shell_script = crashlytics_script
       crashlytics_phase.input_paths = crashlytics_input_paths
     end
     runner_project.save
