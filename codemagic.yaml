@@ -117,7 +117,9 @@ workflows:
         script: plutil -lint ios/Runner/PrivacyInfo.xcprivacy
       - name: Build iOS IPA
         script: |
-          BUILD_NUM=${BUILD_NUMBER:-22}
+          # App Store Connect already has builds up to 23 from earlier uploads, ahead
+          # of Codemagic's own counter, so offset it to stay above them.
+          BUILD_NUM=$(( ${BUILD_NUMBER:-0} + 100 ))
           flutter build ipa --release \
             --export-options-plist=/Users/builder/export_options.plist \
             --build-number=$BUILD_NUM \
