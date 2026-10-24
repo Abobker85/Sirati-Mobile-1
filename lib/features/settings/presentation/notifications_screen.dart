@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/dashboard/domain/notification_target.dart';
 import 'package:sirati/features/settings/application/settings_controllers.dart';
 import 'package:sirati/features/settings/domain/notification_item.dart';
 import 'package:sirati/shared/services/notification_service.dart';
@@ -53,7 +54,7 @@ class NotificationsScreen extends ConsumerWidget {
       final startUser = SessionCache.instance.user.value;
       // Same router as a tapped push. Screen targets may switch a Home tab,
       // so leave the inbox first to make the result visible.
-      if (item.actionType == 'screen') Navigator.of(context).pop();
+      if (item.target is! OpenExternalUrl) Navigator.of(context).pop();
       handler(item.routePayload);
       if (!await inbox.markRead(item) &&
           SessionCache.instance.generation == startGen &&

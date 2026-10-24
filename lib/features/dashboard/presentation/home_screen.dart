@@ -7,6 +7,7 @@ import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
+import 'package:sirati/features/cv_builder/presentation/generated_cv_loader_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/features/dashboard/domain/dashboard_tab.dart';
 import 'package:sirati/features/dashboard/domain/notification_target.dart';
@@ -123,6 +124,9 @@ class _HomeScreenState extends State<HomeScreen> {
         if (educationId != null) {
           _push(EducationDetailScreen(id: educationId, fallback: const {}));
         }
+      case OpenGeneratedCv(:final id):
+        _setTab(DashboardTab.myCvs);
+        _push(GeneratedCvLoaderScreen(cvId: id));
       case OpenScreen(:final screen):
         _push(switch (screen) {
           NotificationScreen.notifications => const NotificationsScreen(),

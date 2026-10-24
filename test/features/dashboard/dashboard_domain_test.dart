@@ -78,6 +78,41 @@ void main() {
       }
     });
 
+    test('a CV route with a positive id opens that CV, else the My CVs tab',
+        () {
+      for (final root in ['cv', 'my-cvs', 'mycvs', 'CV']) {
+        for (final id in [1, 9, 40213]) {
+          for (final form in ['$root/$id', '/$root/$id/', '$root/$id?x=1']) {
+            expect(resolveScreenRoute(form), OpenGeneratedCv(id),
+                reason: form);
+          }
+        }
+        for (final bad in ['0', '-2', 'abc', '']) {
+          expect(resolveScreenRoute('$root/$bad'),
+              const OpenTab(DashboardTab.myCvs),
+              reason: '$root/$bad');
+        }
+      }
+    });
+
+    test('a leading mobile/ segment is ignored for every route', () {
+      for (final route in [
+        ...aliases.keys,
+        'education/7',
+        'cv/3',
+        'job-news/12',
+        'analysis/4',
+      ]) {
+        for (final prefix in ['mobile/', '/mobile/', 'MOBILE/']) {
+          expect(resolveScreenRoute('$prefix$route'),
+              resolveScreenRoute(route),
+              reason: '$prefix$route');
+        }
+      }
+      expect(resolveScreenRoute('mobile'),
+          const OpenScreen(NotificationScreen.notifications));
+    });
+
     test('a specific analysis opens history; a bare one starts a new one', () {
       expect(resolveScreenRoute('analysis/42'),
           const OpenScreen(NotificationScreen.history));
@@ -103,6 +138,27 @@ void main() {
           resolveNotificationTarget({'action_type': 'url', 'action_url': url}),
           OpenExternalUrl(url),
         );
+      }
+    });
+
+    test('open_cv and job_news resolve their url like a screen route', () {
+      for (final type in ['open_cv', 'job_news']) {
+        for (final url in [
+          '/cv/5',
+          'my-cvs/8',
+          '/mobile/job-news/3',
+          'jobs',
+          'education/2',
+          null,
+          '',
+          'admin',
+        ]) {
+          expect(
+            resolveNotificationTarget({'action_type': type, 'action_url': url}),
+            resolveScreenRoute(url),
+            reason: '$type $url',
+          );
+        }
       }
     });
 

@@ -1,3 +1,5 @@
+import 'package:sirati/features/dashboard/domain/notification_target.dart';
+
 /// One row of the in-app notification inbox.
 class NotificationItem {
   const NotificationItem({
@@ -35,10 +37,13 @@ class NotificationItem {
   final String actionType;
   final String actionUrl;
 
-  /// Whether tapping should navigate: only `url` and `screen` actions lead
-  /// somewhere. Anything else would reopen the inbox the user is already in.
+  /// Whether tapping should navigate: decided by the same resolver as a
+  /// tapped push. A row that resolves to the inbox would only reopen it.
   bool get opensSomething =>
-      (actionType == 'url' || actionType == 'screen') && actionUrl.isNotEmpty;
+      actionUrl.isNotEmpty &&
+      target != const OpenScreen(NotificationScreen.notifications);
+
+  NotificationTarget get target => resolveNotificationTarget(routePayload);
 
   /// Payload in the push-notification shape, so taps reuse the push router.
   Map<String, dynamic> get routePayload => {

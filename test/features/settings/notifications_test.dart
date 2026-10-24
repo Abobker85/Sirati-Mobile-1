@@ -94,10 +94,16 @@ void main() {
   }
 
   group('NotificationItem', () {
-    test('only url/screen actions with a target open something', () {
+    test('a row opens something exactly when it resolves past the inbox', () {
       for (final (type, url, opens) in <(String?, String?, bool)>[
         ('url', 'https://x.io', true),
         ('screen', 'jobs', true),
+        ('screen', 'my-cvs/12', true),
+        ('open_cv', '/cv/12', true),
+        ('job_news', '/mobile/job-news/4', true),
+        ('screen', 'notifications', false),
+        ('screen', 'admin', false),
+        ('open_cv', '', false),
         ('screen', '', false),
         ('notifications', 'x', false),
         (null, 'jobs', false),

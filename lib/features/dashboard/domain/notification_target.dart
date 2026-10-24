@@ -48,6 +48,22 @@ final class OpenScreen extends NotificationTarget {
   String toString() => 'OpenScreen($screen)';
 }
 
+/// Open generated CV [id] (on top of the My CVs tab).
+final class OpenGeneratedCv extends NotificationTarget {
+  const OpenGeneratedCv(this.id);
+
+  final int id;
+
+  @override
+  bool operator ==(Object other) => other is OpenGeneratedCv && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() => 'OpenGeneratedCv($id)';
+}
+
 /// Open [url] externally. The launcher validates the scheme; an unsafe or
 /// missing URL is a no-op there.
 final class OpenExternalUrl extends NotificationTarget {
@@ -67,27 +83,33 @@ final class OpenExternalUrl extends NotificationTarget {
 }
 
 /// Resolves a notification payload (`action_type` / `action_url`) to a
-/// target. Anything unrecognised falls back to the notifications inbox so a
+/// target. `open_cv` and `job_news` are the action types the server's CV-ready
+/// and matching-job pushes use; their urls are in-app routes too. Anything
+/// unrecognised falls back to the notifications inbox so a
 /// tap is never silently dropped.
 NotificationTarget resolveNotificationTarget(Map<String, dynamic> data) {
   final actionType = data['action_type']?.toString();
   final actionUrl = data['action_url']?.toString();
   return switch (actionType) {
     'url' => OpenExternalUrl(actionUrl),
-    'screen' => resolveScreenRoute(actionUrl),
+    'screen' || 'open_cv' || 'job_news' => resolveScreenRoute(actionUrl),
     _ => const OpenScreen(NotificationScreen.notifications),
   };
 }
 
-/// Maps an in-app route such as `/education/12` or `jobs?ref=push`.
+/// Maps an in-app route such as `/education/12` or `jobs?ref=push`. A leading
+/// `mobile/` (API-style paths such as `/mobile/job-news/5`) is ignored.
 NotificationTarget resolveScreenRoute(String? route) {
   const inbox = OpenScreen(NotificationScreen.notifications);
   // Leading slashes are stripped first: `//home` would otherwise parse as a
   // host, not a path.
   final path = (route ?? '').trim().replaceFirst(RegExp('^/+'), '');
   final uri = Uri.tryParse(path);
-  final segments =
+  var segments =
       uri?.pathSegments.where((s) => s.isNotEmpty).toList() ?? const <String>[];
+  if (segments.length > 1 && segments.first.toLowerCase() == 'mobile') {
+    segments = segments.sublist(1);
+  }
   if (segments.isEmpty) return inbox;
 
   final root = segments.first.toLowerCase();
@@ -95,7 +117,9 @@ NotificationTarget resolveScreenRoute(String? route) {
 
   return switch (root) {
     'home' => const OpenTab(DashboardTab.home),
-    'my-cvs' || 'mycvs' => const OpenTab(DashboardTab.myCvs),
+    'my-cvs' || 'mycvs' || 'cv' => id != null && id > 0
+        ? OpenGeneratedCv(id)
+        : const OpenTab(DashboardTab.myCvs),
     'education' => OpenTab(
         DashboardTab.education,
         educationId: id != null && id > 0 ? id : null,

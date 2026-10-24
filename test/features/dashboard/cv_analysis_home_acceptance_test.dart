@@ -326,6 +326,56 @@ void main() {
       }
     }
   }
+  testWidgets('tool cards share one width, and one height side by side', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    var sideBySide = 0;
+    for (final arabic in [true, false]) {
+      for (final width in [360.0, 375.0, 390.0, 430.0, 768.0]) {
+        for (final scale in [1.0, 1.3]) {
+          final label = 'arabic=$arabic width=$width scale=$scale';
+          tester.view.physicalSize = Size(width, 2400);
+          await tester.pumpWidget(
+            app(
+              Scaffold(body: DashboardHomeTab(onNavigate: (_) {})),
+              arabic: arabic,
+              dark: false,
+              scale: scale,
+            ),
+          );
+          await tester.pumpAndSettle();
+          final cards = find.byType(DashboardToolCard);
+          await tester.scrollUntilVisible(
+            cards.first,
+            300,
+            scrollable: find
+                .byWidgetPredicate(
+                  (w) =>
+                      w is Scrollable &&
+                      axisDirectionToAxis(w.axisDirection) == Axis.vertical,
+                )
+                .first,
+          );
+          await tester.pumpAndSettle();
+          final first = tester.getRect(cards.first);
+          final second = tester.getRect(cards.last);
+          expect(first.width, second.width, reason: label);
+          if (second.top < first.bottom) {
+            sideBySide++;
+            expect(first.top, second.top, reason: label);
+            expect(first.height, second.height, reason: label);
+          } else {
+            expect(first.left, second.left, reason: label);
+          }
+          expect(tester.takeException(), isNull, reason: label);
+          await tester.pumpWidget(const SizedBox());
+        }
+      }
+    }
+    expect(sideBySide, greaterThan(0), reason: 'row layout was exercised');
+  });
   testWidgets('saved CV markdown and JD reach analysis result without upload', (
     tester,
   ) async {
