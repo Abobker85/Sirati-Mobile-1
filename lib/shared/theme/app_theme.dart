@@ -438,10 +438,25 @@ class SiratiMark extends StatelessWidget {
   final double size;
   final bool elevated;
 
-  const SiratiMark({super.key, this.size = 56, this.elevated = false});
+  /// False only for app icons, which the OS rounds to its own shape.
+  final bool rounded;
+
+  const SiratiMark({
+    super.key,
+    this.size = 56,
+    this.elevated = false,
+    this.rounded = true,
+  });
 
   /// Corner radius as a share of the side.
   static const cornerRatio = 0.22;
+
+  /// The logo's fill, shared with generated icon backgrounds.
+  static const gradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF12384F), Color(0xFF0E8F86)],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -449,14 +464,10 @@ class SiratiMark extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF12384F), Color(0xFF0E8F86)],
-        ),
+        gradient: gradient,
         // The agreed brand logo is a rounded square (Salem review,
         // 2026-10-24), replacing the circle of SIRATI-99.
-        borderRadius: BorderRadius.circular(size * cornerRatio),
+        borderRadius: rounded ? BorderRadius.circular(size * cornerRatio) : null,
         boxShadow: elevated
             ? const [
                 BoxShadow(
@@ -470,6 +481,20 @@ class SiratiMark extends StatelessWidget {
       child: CustomPaint(painter: _SiratiMarkPainter()),
     );
   }
+}
+
+/// The logo's white check alone, laid out as on [SiratiMark] of the same
+/// [size]. For Android adaptive-icon foregrounds over the logo's gradient.
+class SiratiCheck extends StatelessWidget {
+  const SiratiCheck({super.key, required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.square(
+        dimension: size,
+        child: CustomPaint(painter: _SiratiMarkPainter()),
+      );
 }
 
 class _SiratiMarkPainter extends CustomPainter {

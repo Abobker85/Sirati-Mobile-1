@@ -13,7 +13,10 @@
     <!-- Theme applied to the Android Window as soon as the process has started.
          Edge-to-edge: Flutter paints under system bars; SafeArea insets content. -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">@color/splash_background</item>
+        <!-- Flutter switches to this theme at once; keeping the launch
+             background holds the logo on screen until Flutter's first frame
+             (a plain colour left a blank screen while the engine started). -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>

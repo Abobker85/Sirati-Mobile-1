@@ -8,6 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
+import 'generate_brand_assets_test.dart'
+    show adaptiveCheckShare, android12IconBox, launchLogoSize;
+
 Directory _resolveFlutterAppDir() {
   final current = Directory.current;
   if (File('${current.path}/pubspec.yaml').existsSync() &&
@@ -69,165 +72,162 @@ void _expectColorsMatch(
 
 void main() {
   group('Brand Mark Pixel Consistency (In-App Mark vs Generated Icons)', () {
-    testWidgets(
-        'in-app SiratiMark renders identical gradient circle colours to generated icon PNG',
-        (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1024, 1024));
+    Future<(ByteData, int, int)> decode(WidgetTester tester, String path) async {
+      final file = File('${_resolveFlutterAppDir().path}/$path');
+      expect(file.existsSync(), isTrue, reason: '$path must exist');
+      final codec =
+          await tester.runAsync(() => ui.instantiateImageCodec(file.readAsBytesSync()));
+      final image = (await tester.runAsync(() => codec!.getNextFrame()))!.image;
+      final data = await tester
+          .runAsync(() => image.toByteData(format: ui.ImageByteFormat.rawRgba));
+      return (data!, image.width, image.height);
+    }
+
+    Future<ByteData> render(WidgetTester tester, Widget widget, int side) async {
+      await tester.binding.setSurfaceSize(Size.square(side.toDouble()));
       addTearDown(() => tester.binding.setSurfaceSize(null));
+      final key = GlobalKey();
+      await tester.pumpWidget(Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(child: RepaintBoundary(key: key, child: widget)),
+      ));
+      final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final image = await tester.runAsync(boundary.toImage);
+      return (await tester.runAsync(
+          () => image!.toByteData(format: ui.ImageByteFormat.rawRgba)))!;
+    }
 
-      final appDir = _resolveFlutterAppDir();
-      final iconFile =
-          File('${appDir.path}/assets/branding/sirati_app_icon_1024.png');
-      expect(iconFile.existsSync(), isTrue,
-          reason: 'App icon 1024 must exist on disk');
-
-      // 1. Decode PNG from disk into raw RGBA bytes
-      final iconBytes = iconFile.readAsBytesSync();
-      final codec = await tester.runAsync(() => ui.instantiateImageCodec(iconBytes));
-      final frame = await tester.runAsync(() => codec!.getNextFrame());
-      final diskImage = frame!.image;
-      expect(diskImage.width, 1024);
-      expect(diskImage.height, 1024);
-      final diskByteData = await tester
-          .runAsync(() => diskImage.toByteData(format: ui.ImageByteFormat.rawRgba));
-
-      // 2. Render in-app SiratiMark with identical widget hierarchy
-      final repaintKey = GlobalKey();
-      await tester.pumpWidget(
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: Center(
-            child: RepaintBoundary(
-              key: repaintKey,
-              child: Container(
-                width: 1024,
-                height: 1024,
-                color: const Color(0xFF12384F),
-                alignment: Alignment.center,
-                child: const SiratiMark(size: 635, elevated: false),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final boundary = repaintKey.currentContext!.findRenderObject()
-          as RenderRepaintBoundary;
-      final inAppImage =
-          await tester.runAsync(() => boundary.toImage(pixelRatio: 1.0));
-      final inAppByteData = await tester.runAsync(
-          () => inAppImage!.toByteData(format: ui.ImageByteFormat.rawRgba));
-
-      // 3. Sample center pixel (512, 512):
-      // The mark center is the gradient midpoint between #12384F and #0E8F86.
-      final diskCenter = _getPixel(diskByteData!, 1024, 512, 512);
-      final inAppCenter = _getPixel(inAppByteData!, 1024, 512, 512);
-
-      _expectColorsMatch(
-        diskCenter,
-        inAppCenter,
-        tolerance: 2,
-        reason: 'Center pixel of generated icon must match in-app mark',
-      );
-
-      // Verify center color matches theoretical gradient t=0.5:
-      // (18+14)/2 = 16, (56+143)/2 ≈ 100, (79+134)/2 ≈ 107
-      expect((diskCenter.r - 16).abs(), lessThanOrEqualTo(2));
-      expect((diskCenter.g - 100).abs(), lessThanOrEqualTo(2));
-      expect((diskCenter.b - 107).abs(), lessThanOrEqualTo(2));
-      expect(diskCenter.a, 255);
-
-      // 4. Sample ring pixels around the center at radius r = 200:
-      // Angles: 135° (bottom-right: towards #0E8F86), 315° (top-left: towards #12384F)
-      const ringRadius = 200.0;
-      final sampleAngles = [
-        -3 * pi / 4, // top-left (navy gradient start)
-        -pi / 4, // top-right
-        pi / 4, // bottom-right (teal gradient end)
-        3 * pi / 4, // bottom-left
-      ];
-
-      for (final angle in sampleAngles) {
-        final x = (512 + ringRadius * cos(angle)).round();
-        final y = (512 + ringRadius * sin(angle)).round();
-
-        final diskRing = _getPixel(diskByteData, 1024, x, y);
-        final inAppRing = _getPixel(inAppByteData, 1024, x, y);
-
-        _expectColorsMatch(
-          diskRing,
-          inAppRing,
-          tolerance: 2,
-          reason: 'Ring pixel at ($x, $y) must match in-app mark',
-        );
-      }
-
-      // 5. Verify gradient directionality across ring:
-      // Top-left should have higher blue/navy, bottom-right should have higher teal/green.
-      final tlPixel = _getPixel(diskByteData, 1024, (512 - 141), (512 - 141));
-      final brPixel = _getPixel(diskByteData, 1024, (512 + 141), (512 + 141));
-      expect(brPixel.g, greaterThan(tlPixel.g),
-          reason: 'Teal bottom-right must have higher green than navy top-left');
-
-      // 6. Full-bleed background verification: no transparent corners for iOS!
-      final corners = [
-        const Point(0, 0),
-        const Point(1023, 0),
-        const Point(0, 1023),
-        const Point(1023, 1023),
-      ];
-      for (final pt in corners) {
-        final cornerPixel = _getPixel(diskByteData, 1024, pt.x, pt.y);
-        expect(cornerPixel.a, 255,
-            reason: 'App icon corner at ${pt.x},${pt.y} must be fully opaque');
-        expect(cornerPixel.r, 18, reason: 'Background must be navy #12384F');
-        expect(cornerPixel.g, 56, reason: 'Background must be navy #12384F');
-        expect(cornerPixel.b, 79, reason: 'Background must be navy #12384F');
+    testWidgets(
+        'icons the OS rounds are the logo edge to edge: the in-app gradient and check',
+        (tester) async {
+      for (final path in [
+        'assets/branding/sirati_app_icon_1024.png',
+        'ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png',
+      ]) {
+        final (disk, w, h) = await decode(tester, path);
+        expect((w, h), (1024, 1024), reason: path);
+        final inApp = await render(
+            tester, const SiratiMark(size: 1024, rounded: false), 1024);
+        // Corners, edges and inner points all match the in-app logo: no
+        // frame of another colour, no transparency (App Store rule).
+        for (final (x, y) in [
+          (0, 0), (1023, 0), (0, 1023), (1023, 1023), (512, 0), (0, 512),
+          (512, 512), (300, 300), (724, 724), (180, 560), (760, 230),
+        ]) {
+          final pixel = _getPixel(disk, w, x, y);
+          expect(pixel.a, 255, reason: '$path ($x,$y) opaque');
+          _expectColorsMatch(pixel, _getPixel(inApp, 1024, x, y),
+              tolerance: 3, reason: '$path ($x,$y)');
+        }
       }
     });
 
     testWidgets(
-        'Android adaptive foreground PNG has transparent corners and mark within safe zone',
+        'Android adaptive icon: gradient background, white check inside the safe circle',
         (tester) async {
-      final appDir = _resolveFlutterAppDir();
-      final adaptiveFile = File(
-          '${appDir.path}/assets/branding/sirati_adaptive_foreground_1024.png');
-      expect(adaptiveFile.existsSync(), isTrue);
+      final (back, bw, _) =
+          await decode(tester, 'assets/branding/sirati_adaptive_background_1024.png');
+      final gradient = await render(
+          tester,
+          const SizedBox.square(
+              dimension: 1024,
+              child: DecoratedBox(
+                  decoration: BoxDecoration(gradient: SiratiMark.gradient))),
+          1024);
+      for (final (x, y) in [(0, 0), (1023, 1023), (512, 512), (200, 800)]) {
+        _expectColorsMatch(_getPixel(back, bw, x, y), _getPixel(gradient, 1024, x, y),
+            tolerance: 3, reason: 'background ($x,$y)');
+      }
 
-      final bytes = adaptiveFile.readAsBytesSync();
-      final codec = await tester.runAsync(() => ui.instantiateImageCodec(bytes));
-      final frame = await tester.runAsync(() => codec!.getNextFrame());
-      final img = frame!.image;
-      expect(img.width, 1024);
-      expect(img.height, 1024);
-
-      final byteData =
-          await tester.runAsync(() => img.toByteData(format: ui.ImageByteFormat.rawRgba));
-
-      // Corners must be 100% transparent
-      final cornerTL = _getPixel(byteData!, 1024, 0, 0);
-      final cornerBR = _getPixel(byteData, 1024, 1023, 1023);
-      expect(cornerTL.a, 0, reason: 'Adaptive icon foreground corner must be transparent');
-      expect(cornerBR.a, 0, reason: 'Adaptive icon foreground corner must be transparent');
-
-      // Center must be opaque and match gradient center
-      final center = _getPixel(byteData, 1024, 512, 512);
-      expect(center.a, 255);
-      expect((center.r - 16).abs(), lessThanOrEqualTo(2));
-      expect((center.g - 100).abs(), lessThanOrEqualTo(2));
-      expect((center.b - 107).abs(), lessThanOrEqualTo(2));
-
-      // Whatever the launcher's mask (circle, squircle, teardrop), every
-      // painted pixel must sit inside the 66/108 safe circle.
+      final (fore, fw, _) =
+          await decode(tester, 'assets/branding/sirati_adaptive_foreground_1024.png');
+      expect(_getPixel(fore, fw, 0, 0).a, 0, reason: 'foreground corners transparent');
       const safeRadius = 1024 * 33 / 108;
+      var white = 0;
       for (var y = 0; y < 1024; y += 4) {
         for (var x = 0; x < 1024; x += 4) {
-          if (_getPixel(byteData, 1024, x, y).a == 0) continue;
+          final p = _getPixel(fore, fw, x, y);
+          if (p.a == 0) continue;
+          // Edge pixels are anti-aliased (and premultiplied): only solid
+          // pixels must be pure white.
+          if (p.a == 255) {
+            expect((p.r, p.g, p.b), (255, 255, 255), reason: 'only the white check ($x,$y)');
+            white++;
+          }
           final d = sqrt(pow(x + .5 - 512, 2) + pow(y + .5 - 512, 2));
           expect(d, lessThanOrEqualTo(safeRadius),
               reason: 'painted pixel ($x, $y) is outside the safe zone');
         }
       }
+      // The check fills the visible 72dp about as it fills the logo.
+      expect(white, greaterThan(2500));
+      expect(adaptiveCheckShare * 1024, greaterThan(1024 * 72 / 108 * 0.9));
+
+      // No navy frame or extra inset left in the generated launcher files.
+      final xml = File('${_resolveFlutterAppDir().path}/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml')
+          .readAsStringSync();
+      expect(xml, contains('@drawable/ic_launcher_background'));
+      expect(xml, isNot(contains('android:inset="16%"')));
+    });
+
+    testWidgets('every launch screen shows the rounded logo at the Flutter splash size',
+        (tester) async {
+      final root = _resolveFlutterAppDir().path;
+      for (final (path, side) in [
+        ('android/app/src/main/res/drawable-mdpi/splash_logo.png', 1.0),
+        ('android/app/src/main/res/drawable-hdpi/splash_logo.png', 1.5),
+        ('android/app/src/main/res/drawable-xhdpi/splash_logo.png', 2.0),
+        ('android/app/src/main/res/drawable-xxhdpi/splash_logo.png', 3.0),
+        ('android/app/src/main/res/drawable-xxxhdpi/splash_logo.png', 4.0),
+        ('ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png', 1.0),
+        ('ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png', 2.0),
+        ('ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png', 3.0),
+      ]) {
+        final (data, w, h) = await decode(tester, path);
+        final px = (launchLogoSize * side).round();
+        expect((w, h), (px, px), reason: path);
+        expect(_getPixel(data, w, 0, 0).a, lessThan(60), reason: '$path rounded corner');
+        expect(_getPixel(data, w, w ~/ 7, h ~/ 7).a, 255, reason: '$path square body');
+      }
+      // Android 12+: the same logo, same size, centred in the 288dp box.
+      for (final (density, scale) in const [
+        ('mdpi', 1.0), ('hdpi', 1.5), ('xhdpi', 2.0), ('xxhdpi', 3.0), ('xxxhdpi', 4.0),
+      ]) {
+        final path = 'android/app/src/main/res/drawable-$density/splash_icon.png';
+        final (data, w, h) = await decode(tester, path);
+        final box = (android12IconBox * scale).round();
+        expect((w, h), (box, box), reason: path);
+        final logo = launchLogoSize * scale;
+        final edge = ((box - logo) / 2).round();
+        expect(_getPixel(data, w, edge - 2, box ~/ 2).a, 0, reason: '$path left of logo');
+        expect(_getPixel(data, w, edge + 3, box ~/ 2).a, 255, reason: '$path logo body');
+        expect(_getPixel(data, w, box ~/ 2, box ~/ 2).a, 255, reason: '$path centre');
+        expect(_getPixel(data, w, box - edge + 2, box ~/ 2).a, 0,
+            reason: '$path right of logo');
+      }
+      for (final v31 in ['values-v31', 'values-night-v31']) {
+        final styles =
+            File('$root/android/app/src/main/res/$v31/styles.xml').readAsStringSync();
+        expect(styles, contains('@drawable/splash_icon'), reason: v31);
+        expect(styles, contains('@color/splash_background'), reason: v31);
+      }
+      // Flutter swaps to NormalTheme at once: it must keep the logo up until
+      // Flutter's first frame, in light and dark.
+      for (final values in ['values', 'values-night']) {
+        final styles =
+            File('$root/android/app/src/main/res/$values/styles.xml').readAsStringSync();
+        final normal = styles.substring(styles.indexOf('name="NormalTheme"'));
+        expect(
+          normal.substring(0, normal.indexOf('</style>')),
+          contains('<item name="android:windowBackground">@drawable/launch_background</item>'),
+          reason: values,
+        );
+      }
+      expect(
+        File('$root/ios/Runner/Base.lproj/LaunchScreen.storyboard').readAsStringSync(),
+        contains('<image name="LaunchImage" width="${launchLogoSize.round()}" '
+            'height="${launchLogoSize.round()}"/>'),
+      );
     });
 
     testWidgets('the mark is the agreed rounded square at every size',
