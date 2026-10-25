@@ -112,6 +112,19 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
 
   Future<void> _download(CvListItem item) async {
     final english = _english;
+    // The PDF link opens in a browser; a CV the server refuses would land
+    // on an error page there, so explain the gap here instead.
+    final export = item.export;
+    if (export != null && !export.ready) {
+      AppSnackBar.warning(
+        context,
+        export.message(english: english) ??
+            (english
+                ? 'This CV is not ready to send to an employer yet.'
+                : 'هذه السيرة غير جاهزة للإرسال إلى جهة التوظيف بعد.'),
+      );
+      return;
+    }
     final api = ref.read(cvApiServiceProvider);
     final String? slug;
     if (item.offersTemplateChoice) {

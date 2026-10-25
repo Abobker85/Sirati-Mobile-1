@@ -1,5 +1,6 @@
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
+import 'package:sirati/shared/models/cv_export_state.dart';
 
 class GeneratedCv {
   final int id;
@@ -32,6 +33,9 @@ class GeneratedCv {
   /// the server did not send one.
   final Map<String, dynamic>? document;
 
+  /// Server-side export readiness; null when the server did not send it.
+  final CvExportState? export;
+
   const GeneratedCv({
     required this.id,
     required this.fullName,
@@ -59,6 +63,7 @@ class GeneratedCv {
     required this.templatePdfUrl,
     required this.createdAt,
     this.document,
+    this.export,
   });
 
   factory GeneratedCv.fromJson(Map<String, dynamic> json) {
@@ -97,6 +102,7 @@ class GeneratedCv {
       document: json['document'] is Map
           ? Map<String, dynamic>.from(json['document'] as Map)
           : null,
+      export: CvExportState.fromJson(json['export']),
     );
   }
 

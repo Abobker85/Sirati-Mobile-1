@@ -1,3 +1,4 @@
+import 'package:sirati/shared/models/cv_export_state.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 
 /// One row of the "My CVs" list.
@@ -12,6 +13,7 @@ class CvListItem {
     required this.templatePdfUrl,
     required this.updatedAt,
     required this.updatedLabel,
+    this.export,
   });
 
   factory CvListItem.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,7 @@ class CvListItem {
       templatePdfUrl: _text(json['template_pdf_url']),
       updatedAt: _date(json['updated_at']) ?? _date(json['created_at']),
       updatedLabel: _text(json['updated_label']),
+      export: CvExportState.fromJson(json['export']),
     );
   }
 
@@ -43,6 +46,9 @@ class CvListItem {
 
   /// Server-formatted fallback when no timestamp is present.
   final String updatedLabel;
+
+  /// Whether the server will export this CV; null from older servers.
+  final CvExportState? export;
 
   /// Stored link to use when the CV can't be re-fetched.
   String get storedPdfUrl =>

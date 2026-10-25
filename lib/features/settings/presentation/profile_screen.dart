@@ -30,11 +30,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _otherCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _locationCtrl = TextEditingController();
   bool _submitted = false;
 
   /// Once the user edits a field, late server data must not overwrite it.
   bool _nameEdited = false;
   bool _jobTitleEdited = false;
+  bool _locationEdited = false;
   int? _selectedId;
 
   @override
@@ -54,12 +58,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _otherCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
+    _locationCtrl.dispose();
     super.dispose();
   }
 
   void _prefill(AuthUser? user) {
     if (user == null) return;
+    _emailCtrl.text = user.email;
+    _phoneCtrl.text = user.phone ?? '';
     if (!_nameEdited) _nameCtrl.text = user.name;
+    if (!_locationEdited) _locationCtrl.text = user.location ?? '';
     if (!_jobTitleEdited) {
       _selectedId = user.jobTitleId;
       _otherCtrl.text = user.jobTitleOther ?? '';
@@ -95,7 +105,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final outcome = await ref
         .read(profileSaveProvider.notifier)
-        .save(ProfileUpdate(name: _nameCtrl.text, jobTitle: jobTitle));
+        .save(ProfileUpdate(
+          name: _nameCtrl.text,
+          jobTitle: jobTitle,
+          location: _locationEdited ? _locationCtrl.text : null,
+        ));
     if (!mounted) return;
     switch (outcome) {
       case ProfileSaved():
@@ -177,9 +191,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(text, textAlign: TextAlign.start, style: labelStyle),
           );
-      Widget readOnlyField(String value, IconData icon, {bool ltr = false}) =>
+      // Rows above (the "Other" job title field) appear once titles load, so
+      // every field is keyed and controller-backed: an index-matched field
+      // must never keep a neighbour's text.
+      Widget readOnlyField(
+        String id,
+        TextEditingController controller,
+        IconData icon, {
+        bool ltr = false,
+      }) =>
           AppTextFormField(
-            initialValue: value,
+            key: ValueKey('profile-$id'),
+            controller: controller,
             enabled: false,
             readOnly: true,
             textDirection: ltr ? TextDirection.ltr : null,
@@ -282,7 +305,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: AppSpacing.md),
             label(en ? 'Email' : 'البريد الإلكتروني'),
             readOnlyField(
-              user?.email ?? '',
+              'email',
+              _emailCtrl,
               Icons.mail_outline_rounded,
               ltr: true,
             ),
@@ -298,14 +322,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             if ((user?.phone ?? '').isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
               label(en ? 'Phone' : 'الجوال'),
-              readOnlyField(user!.phone!, Icons.phone_iphone_outlined,
+              readOnlyField('phone', _phoneCtrl, Icons.phone_iphone_outlined,
                   ltr: true),
             ],
-            if ((user?.location ?? '').isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.md),
-              label(en ? 'Location' : 'الموقع'),
-              readOnlyField(user!.location!, Icons.place_outlined),
-            ],
+            const SizedBox(height: AppSpacing.md),
+            label(en ? 'City/Country' : 'المدينة/الدولة'),
+            AppTextFormField(
+              key: const ValueKey('profile-location'),
+              controller: _locationCtrl,
+              autovalidateMode: autovalidate,
+              textAlign: TextAlign.start,
+              textInputAction: TextInputAction.done,
+              maxLength: ProfileRules.locationMax,
+              onChanged: (_) => _locationEdited = true,
+              onFieldSubmitted: (_) => unawaited(_save(titles)),
+              prefixIcon: const Icon(Icons.place_outlined),
+              hintText: en ? 'Riyadh, Saudi Arabia' : 'الرياض، السعودية',
+              validator: (v) => _errorText(
+                ProfileRules.location(v),
+                en: en,
+                requiredEn: '',
+                requiredAr: '',
+                max: ProfileRules.locationMax,
+              ),
+            ),
             const SizedBox(height: AppSpacing.xl),
             SubmitButton(
               label: en ? 'Save changes' : 'حفظ التغييرات',

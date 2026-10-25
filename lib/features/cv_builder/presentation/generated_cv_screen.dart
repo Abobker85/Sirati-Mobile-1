@@ -33,9 +33,19 @@ TextDirection cvContentDirection(GeneratedCv cv) => switch (cv.language) {
         ),
     };
 
-/// Whether the CV can be handed to an employer (AI finished or not used).
+/// Whether the CV can be handed to an employer. The server's export check
+/// decides (it also needs contact details and structured experience); the
+/// AI status is only a fallback for servers that don't send it.
 bool isCvReadyToSend(GeneratedCv cv) =>
-    !AiStatus.isPending(cv.aiStatus) && cv.aiStatus != AiStatus.failed;
+    cv.export?.ready ??
+    (!AiStatus.isPending(cv.aiStatus) && cv.aiStatus != AiStatus.failed);
+
+/// What the user has to do before the CV can be sent.
+String cvNotReadyMessage(GeneratedCv cv, {required bool english}) =>
+    cv.export?.message(english: english) ??
+    (english
+        ? 'This CV is not ready to send to an employer yet.'
+        : 'هذه السيرة غير جاهزة للإرسال إلى جهة التوظيف بعد.');
 
 class GeneratedCvScreen extends ConsumerStatefulWidget {
   const GeneratedCvScreen({super.key, required this.generatedCv});
@@ -43,6 +53,7 @@ class GeneratedCvScreen extends ConsumerStatefulWidget {
   final GeneratedCv generatedCv;
 
   static const previewKey = ValueKey('cv-hub-preview');
+  static const notReadyKey = ValueKey('cv-hub-not-ready');
   static const previewToggleKey = ValueKey('cv-hub-preview-toggle');
   static const atsScoreKey = ValueKey('cv-hub-ats-score');
   static const downloadKey = ValueKey('cv-hub-download');
@@ -86,12 +97,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
     if (_isDownloading) return;
     final english = AppLocale.isEnglish(context);
     if (!isCvReadyToSend(_cv)) {
-      AppSnackBar.warning(
-        context,
-        english
-            ? 'This CV is not ready to send to an employer yet.'
-            : 'هذه السيرة غير جاهزة للإرسال إلى جهة التوظيف بعد.',
-      );
+      AppSnackBar.warning(context, cvNotReadyMessage(_cv, english: english));
       return;
     }
     final api = ref.read(cvApiServiceProvider);
@@ -210,10 +216,20 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
             AppSpacing.xxl,
           ),
           children: [
-            if (scored) ...[
+            // "Ready" only when the server agrees; otherwise say what is
+            // missing (the failed-AI banner below covers that case).
+            if (scored && ready) ...[
               CvStatusBanner.success(
                 margin: EdgeInsets.zero,
                 message: l.cvHubReady,
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ] else if (!ready &&
+                !(_cv.aiStatus == AiStatus.failed && aiError != null)) ...[
+              CvStatusBanner.warning(
+                key: GeneratedCvScreen.notReadyKey,
+                margin: EdgeInsets.zero,
+                message: cvNotReadyMessage(_cv, english: english),
               ),
               const SizedBox(height: AppSpacing.md),
             ],

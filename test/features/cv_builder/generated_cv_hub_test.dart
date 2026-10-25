@@ -27,7 +27,8 @@ GeneratedCv _cv(
         int score = 83,
         String status = 'completed',
         String language = 'ar',
-        String? markdown}) =>
+        String? markdown,
+        Map<String, dynamic>? export}) =>
     GeneratedCv.fromJson({
       'id': id,
       'full_name': 'سارة أحمد Sara Ahmed',
@@ -45,6 +46,7 @@ GeneratedCv _cv(
       'score_total': score,
       'grade': 'B',
       'pdf_url': 'https://example.test/cvs/$id.pdf?signature=fresh',
+      if (export != null) 'export': export,
     });
 
 class _Api extends FakeJobMatchApi {
@@ -66,6 +68,7 @@ Future<void> _pump(
   _Api? api,
   String? markdown,
   List<SavedAnalysisCv>? analysisCvs,
+  Map<String, dynamic>? export,
 }) async {
   AppLocale.languageCode.value = language;
   registerSiratiRouteWidgets();
@@ -93,7 +96,8 @@ Future<void> _pump(
               score: score,
               status: status,
               language: language,
-              markdown: markdown)),
+              markdown: markdown,
+              export: export)),
     ),
   ));
   await tester.pumpAndSettle();
@@ -133,6 +137,60 @@ void main() {
     messenger.setMockMethodCallHandler(launcher, null);
     messenger.setMockMethodCallHandler(share, null);
   });
+
+  // The server's export check decides readiness whatever the AI status says:
+  // a blocked CV never opens the PDF link, shows the server's reason instead
+  // of "ready", and an allowed one downloads.
+  for (final language in ['ar', 'en']) {
+    for (final status in ['completed', 'processing', 'failed', 'not_configured']) {
+      for (final reason in [
+        null,
+        'generating',
+        'missing_contact',
+        'unstructured_experience',
+      ]) {
+        testWidgets('$language/$status/export=${reason ?? 'ready'}: '
+            'server readiness decides', (tester) async {
+          usePhoneViewAtTextScale(tester);
+          final message = reason == null ? null : '$language message: $reason';
+          final api = _Api();
+          await _pump(tester,
+              language: language,
+              status: status,
+              api: api,
+              export: {
+                'ready': reason == null,
+                'blocked_reason': reason,
+                'message_ar': language == 'ar' ? message : null,
+                'message_en': language == 'en' ? message : null,
+              });
+          final l = AppLocalizations.of(
+              tester.element(find.byType(GeneratedCvScreen)));
+
+          if (reason == null) {
+            expect(find.byKey(GeneratedCvScreen.notReadyKey), findsNothing);
+          } else {
+            expect(find.text(l.cvHubReady), findsNothing);
+            if (status != 'failed') {
+              expect(
+                  find.descendant(
+                      of: find.byKey(GeneratedCvScreen.notReadyKey),
+                      matching: find.text(message!)),
+                  findsOneWidget);
+            }
+          }
+
+          await _tap(tester, GeneratedCvScreen.downloadKey);
+          expect(_launched, reason == null ? _cv().pdfUrl : isNull);
+          if (reason != null) {
+            expect(find.text(message!), findsWidgets,
+                reason: 'the tap explains what is missing');
+          }
+          await tester.pump(const Duration(seconds: 5));
+        });
+      }
+    }
+  }
 
   for (final language in ['ar', 'en']) {
     for (final dark in [false, true]) {

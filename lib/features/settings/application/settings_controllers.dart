@@ -175,14 +175,22 @@ class ProfileSaveController extends Notifier<bool> {
       final auth = ref.read(authApiServiceProvider);
       switch (update.jobTitle) {
         case JobTitleUnchanged():
-          await auth.updateProfile(name: update.name);
+          await auth.updateProfile(
+            name: update.name,
+            location: update.location,
+          );
         case JobTitleCleared():
-          await auth.updateProfile(name: update.name, clearJobTitle: true);
+          await auth.updateProfile(
+            name: update.name,
+            clearJobTitle: true,
+            location: update.location,
+          );
         case JobTitleSelected(:final id, :final otherText):
           await auth.updateProfile(
             name: update.name,
             jobTitleId: id,
             jobTitleOther: otherText?.trim(),
+            location: update.location,
           );
       }
       return const ProfileSaved();

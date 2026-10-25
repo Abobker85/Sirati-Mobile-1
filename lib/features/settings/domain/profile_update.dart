@@ -3,10 +3,17 @@
 abstract final class ProfileRules {
   static const nameMax = 255;
   static const jobTitleOtherMax = 120;
+  static const locationMax = 120;
 
   /// Null when valid, otherwise whether it is missing or too long.
   static ProfileFieldError? name(String? value) =>
       _requiredWithin(value, nameMax);
+
+  /// Optional: empty clears the saved location.
+  static ProfileFieldError? location(String? value) =>
+      (value?.trim().length ?? 0) > locationMax
+          ? ProfileFieldError.tooLong
+          : null;
 
   static ProfileFieldError? jobTitleOther(String? value,
           {required bool isOther}) =>
@@ -47,9 +54,17 @@ final class JobTitleSelected extends JobTitleChange {
 
 /// A validated profile edit.
 class ProfileUpdate {
-  ProfileUpdate({required String name, required this.jobTitle})
-      : name = name.trim();
+  ProfileUpdate({
+    required String name,
+    required this.jobTitle,
+    String? location,
+  })  : name = name.trim(),
+        location = location?.trim();
 
   final String name;
   final JobTitleChange jobTitle;
+
+  /// Null when the user did not touch it, so the saved value is kept;
+  /// empty clears it.
+  final String? location;
 }

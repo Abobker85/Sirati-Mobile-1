@@ -210,10 +210,14 @@ class AuthApiService {
     int? jobTitleId,
     String? jobTitleOther,
     bool clearJobTitle = false,
+    String? location,
   }) async {
     final body = <String, dynamic>{
       'name': name.trim(),
     };
+    if (location != null) {
+      body['location'] = location.trim().isEmpty ? null : location.trim();
+    }
     if (clearJobTitle) {
       body['job_title_id'] = null;
       body['job_title_other'] = null;

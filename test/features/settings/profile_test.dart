@@ -17,11 +17,13 @@ import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 class _Call {
-  _Call(this.name, this.jobTitleId, this.jobTitleOther, this.clear);
+  _Call(this.name, this.jobTitleId, this.jobTitleOther, this.clear,
+      this.location);
   final String name;
   final int? jobTitleId;
   final String? jobTitleOther;
   final bool clear;
+  final String? location;
 
   /// Whether the request body mentions the job title at all — mirrors
   /// AuthApiService.updateProfile's body construction.
@@ -49,8 +51,9 @@ class _FakeAuth extends AuthApiService {
     int? jobTitleId,
     String? jobTitleOther,
     bool clearJobTitle = false,
+    String? location,
   }) async {
-    calls.add(_Call(name, jobTitleId, jobTitleOther, clearJobTitle));
+    calls.add(_Call(name, jobTitleId, jobTitleOther, clearJobTitle, location));
     await saveGate?.future;
     return user;
   }
@@ -80,6 +83,15 @@ void main() {
         expect(rule('a' * (max + 1)), ProfileFieldError.tooLong);
       }
       expect(ProfileRules.jobTitleOther('', isOther: false), isNull);
+    });
+
+    test('location: optional, trimmed, bounded', () {
+      for (final blank in [null, '', '   ']) {
+        expect(ProfileRules.location(blank), isNull);
+      }
+      const max = ProfileRules.locationMax;
+      expect(ProfileRules.location('  ${'a' * max}  '), isNull);
+      expect(ProfileRules.location('a' * (max + 1)), ProfileFieldError.tooLong);
     });
   });
 
@@ -113,6 +125,24 @@ void main() {
       expect(auth.calls[2].jobTitleOther, isNull);
       expect(auth.calls[3].jobTitleId, 9);
       expect(auth.calls[3].jobTitleOther, 'Chef');
+    });
+
+    test('location reaches the request for every job-title change', () async {
+      const changes = <JobTitleChange>[
+        JobTitleUnchanged(),
+        JobTitleCleared(),
+        JobTitleSelected(3),
+        JobTitleSelected(9, otherText: 'Chef'),
+      ];
+      for (final location in [null, '', '  Jeddah  ', 'الخبر، السعودية']) {
+        auth.calls.clear();
+        for (final change in changes) {
+          await container.read(profileSaveProvider.notifier).save(
+              ProfileUpdate(name: 'Sara', jobTitle: change, location: location));
+        }
+        expect(auth.calls.map((c) => c.location).toSet(), {location?.trim()},
+            reason: 'location "$location" must pass through unchanged');
+      }
     });
 
     test('a second save while one is running is ignored', () async {
@@ -204,6 +234,96 @@ void main() {
           expect(tester.takeException(), isNull);
         });
       }
+    }
+
+    String fieldText(WidgetTester tester, String id) => tester
+        .widget<TextField>(find.descendant(
+          of: find.byKey(ValueKey('profile-$id')),
+          matching: find.byType(TextField),
+        ))
+        .controller!
+        .text;
+
+    // Rows appear and disappear above the contact fields (the "Other" title
+    // row shows once the catalogue loads; phone only when set). Whatever the
+    // order of arrival, each field must show its own value.
+    for (final cached in [false, true]) {
+      for (final other in [false, true]) {
+        for (final phone in [null, '+966 55 123 4567']) {
+          for (final location in [null, 'Dammam', 'الدمام']) {
+            testWidgets(
+                'contact fields keep their own values '
+                '(cached=$cached, other=$other, phone=$phone, '
+                'location=$location)', (tester) async {
+              final user = AuthUser(
+                id: 1,
+                name: 'Salem',
+                email: 'salem@x.io',
+                phone: phone,
+                location: location,
+                jobTitleId: other ? 2 : 5,
+                jobTitleOther: other ? 'E-Commerce specialist' : null,
+              );
+              if (cached) SessionCache.instance.setUser(user);
+              final catalogue = Completer<List<JobTitle>>();
+              final auth = _FakeAuth(user: user);
+              tester.view.physicalSize = const Size(1080, 3000);
+              tester.view.devicePixelRatio = 1;
+              addTearDown(tester.view.reset);
+              await tester.pumpWidget(ProviderScope(
+                overrides: [
+                  authApiServiceProvider.overrideWithValue(auth),
+                  jobTitlesProvider.overrideWith((ref) => catalogue.future),
+                ],
+                child: MaterialApp(
+                  theme: AppTheme.lightFor(arabic: false),
+                  locale: const Locale('en'),
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
+                  home: const ProfileScreen(),
+                ),
+              ));
+              await tester.pump();
+              catalogue.complete([_title(5, 'pm'), _title(2, 'other')]);
+              await tester.pumpAndSettle();
+
+              expect(fieldText(tester, 'email'), 'salem@x.io');
+              if (phone == null) {
+                expect(find.byKey(const ValueKey('profile-phone')),
+                    findsNothing);
+              } else {
+                expect(fieldText(tester, 'phone'), phone);
+              }
+              expect(fieldText(tester, 'location'), location ?? '');
+            });
+          }
+        }
+      }
+    }
+
+    for (final typed in [null, 'Riyadh', '  الرياض  ', '']) {
+      testWidgets('location is sent only when edited (typed=$typed)',
+          (tester) async {
+        final auth = _FakeAuth(
+          user: const AuthUser(
+              id: 1, name: 'Sara', email: 'sara@x.io', location: 'Dammam'),
+        );
+        await pump(tester, auth, titles: () async => [_title(5, 'pm')]);
+
+        if (typed != null) {
+          await tester.enterText(
+              find.descendant(
+                of: find.byKey(const ValueKey('profile-location')),
+                matching: find.byType(TextField),
+              ),
+              typed);
+        }
+        await tester.tap(find.text('Save changes'));
+        await tester.pumpAndSettle();
+        expect(auth.calls.single.location, typed?.trim(),
+            reason: 'untouched location must not be sent; edits are trimmed');
+      });
     }
 
     testWidgets('a late profile response does not overwrite typed edits',
