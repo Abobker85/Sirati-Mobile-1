@@ -216,6 +216,55 @@ void main() {
       expect((center.r - 16).abs(), lessThanOrEqualTo(2));
       expect((center.g - 100).abs(), lessThanOrEqualTo(2));
       expect((center.b - 107).abs(), lessThanOrEqualTo(2));
+
+      // Whatever the launcher's mask (circle, squircle, teardrop), every
+      // painted pixel must sit inside the 66/108 safe circle.
+      const safeRadius = 1024 * 33 / 108;
+      for (var y = 0; y < 1024; y += 4) {
+        for (var x = 0; x < 1024; x += 4) {
+          if (_getPixel(byteData, 1024, x, y).a == 0) continue;
+          final d = sqrt(pow(x + .5 - 512, 2) + pow(y + .5 - 512, 2));
+          expect(d, lessThanOrEqualTo(safeRadius),
+              reason: 'painted pixel ($x, $y) is outside the safe zone');
+        }
+      }
+    });
+
+    testWidgets('the mark is the agreed rounded square at every size',
+        (tester) async {
+      for (final side in [22.0, 56.0, 96.0, 288.0, 635.0]) {
+        await tester.binding.setSurfaceSize(Size.square(side));
+        final key = GlobalKey();
+        await tester.pumpWidget(Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: RepaintBoundary(
+              key: key,
+              child: SiratiMark(size: side),
+            ),
+          ),
+        ));
+        final boundary =
+            key.currentContext!.findRenderObject() as RenderRepaintBoundary;
+        final image = await tester.runAsync(boundary.toImage);
+        final data = await tester.runAsync(
+            () => image!.toByteData(format: ui.ImageByteFormat.rawRgba));
+        final n = side.round();
+        _RgbaColor at(double fx, double fy) => _getPixel(
+            data!, n, (fx * (n - 1)).round(), (fy * (n - 1)).round());
+
+        // Inside a square but outside the circle it replaced: painted.
+        for (final (fx, fy) in [(.14, .14), (.86, .14), (.14, .86), (.86, .86)]) {
+          expect(at(fx, fy).a, greaterThan(200),
+              reason: '$side: ($fx, $fy) must be painted (square body)');
+        }
+        // The very corners are rounded off: transparent.
+        for (final (fx, fy) in [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)]) {
+          expect(at(fx, fy).a, lessThan(60),
+              reason: '$side: corner ($fx, $fy) must be rounded off');
+        }
+      }
+      await tester.binding.setSurfaceSize(null);
     });
   });
 

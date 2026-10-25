@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 
-enum DashboardToolTone { ats, jobMatch }
+enum DashboardToolTone { ats, jobMatch, create, education }
 
 /// Compact tool entry. Height follows content, including at 2x text size.
 class DashboardToolCard extends StatelessWidget {
@@ -9,25 +10,29 @@ class DashboardToolCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.subtitle,
-    required this.action,
     required this.icon,
     required this.onTap,
+    this.action,
     this.tone = DashboardToolTone.ats,
   });
   final DashboardToolTone tone;
   final String title;
   final String subtitle;
-  final String action;
+
+  /// Call to action under the text; without one the card shows a chevron.
+  final String? action;
   final IconData icon;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    final ink = tone == DashboardToolTone.ats ? c.primaryInk : c.tertiary;
-    final tint = tone == DashboardToolTone.ats
-        ? c.primaryLight
-        : c.tertiaryLight;
+    final secondary = switch (tone) {
+      DashboardToolTone.ats || DashboardToolTone.create => false,
+      DashboardToolTone.jobMatch || DashboardToolTone.education => true,
+    };
+    final ink = secondary ? c.tertiary : c.primaryInk;
+    final tint = secondary ? c.tertiaryLight : c.primaryLight;
     return Material(
       color: c.surface,
       shape: RoundedRectangleBorder(
@@ -42,13 +47,24 @@ class DashboardToolCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: tint,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: ink),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: tint,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: ink),
+                  ),
+                  const Spacer(),
+                  if (action == null)
+                    DirectionalIcon(
+                      Icons.chevron_right_rounded,
+                      color: ink,
+                    ),
+                ],
               ),
               const SizedBox(height: 12),
               Text(
@@ -64,15 +80,17 @@ class DashboardToolCard extends StatelessWidget {
                 subtitle,
                 style: TextStyle(color: c.textSecondary, fontSize: 12),
               ),
-              const SizedBox(height: 12),
-              Text(
-                action,
-                style: TextStyle(
-                  color: ink,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+              if (action != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  action!,
+                  style: TextStyle(
+                    color: ink,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

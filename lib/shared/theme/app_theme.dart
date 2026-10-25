@@ -440,6 +440,9 @@ class SiratiMark extends StatelessWidget {
 
   const SiratiMark({super.key, this.size = 56, this.elevated = false});
 
+  /// Corner radius as a share of the side.
+  static const cornerRatio = 0.22;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -451,12 +454,9 @@ class SiratiMark extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [Color(0xFF12384F), Color(0xFF0E8F86)],
         ),
-        // Circular mark (SIRATI-99). The check-path in _SiratiMarkPainter is
-        // authored in a unit square whose reachable extents (including the
-        // top-right dot + stroke half-width) sit within the inscribed circle
-        // of radius 0.5, so the glyph is not clipped by the switch to
-        // BoxShape.circle.
-        shape: BoxShape.circle,
+        // The agreed brand logo is a rounded square (Salem review,
+        // 2026-10-24), replacing the circle of SIRATI-99.
+        borderRadius: BorderRadius.circular(size * cornerRatio),
         boxShadow: elevated
             ? const [
                 BoxShadow(

@@ -11,10 +11,13 @@ import 'package:sirati/features/ats_scanner/domain/analysis_draft.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/prioritized_fixes.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
+import 'package:sirati/features/dashboard/domain/dashboard_tab.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_cv_hero.dart';
+import 'package:sirati/features/dashboard/presentation/home/dashboard_home_header.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_tab.dart';
-import 'package:sirati/features/dashboard/presentation/home/dashboard_stat_card.dart';
+import 'package:sirati/features/dashboard/presentation/home/dashboard_jobs_section.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_tool_card.dart';
+import 'package:sirati/features/jobs/presentation/widgets/job_news_card.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
@@ -66,6 +69,14 @@ CvAnalysis analysis(int score) => CvAnalysis.fromJson({
       ],
     });
 
+/// More jobs than Home shows, so the section's limit is exercised.
+const homeJobTitles = [
+  'Web developer مطور ويب',
+  'HR specialist أخصائي موارد بشرية',
+  'Accountant محاسب',
+  'Data engineer مهندس بيانات',
+];
+
 class Content extends MobileContentService {
   Content({this.latest, this.rows});
   final GeneratedCv? latest;
@@ -88,6 +99,27 @@ class Content extends MobileContentService {
           'subtitle': 'Registration opens tomorrow يبدأ التسجيل غداً',
         },
       };
+  @override
+  Future<Map<String, dynamic>> jobNews(
+    bool english, {
+    String? category,
+    String? preset,
+    String? city,
+    int? jobTitleId,
+    bool? isRemote,
+    bool? isVerified,
+    String? sourceType,
+    String? employmentType,
+    String? query,
+    bool force = false,
+  }) async =>
+      {
+        'items': [
+          for (final (i, title) in homeJobTitles.indexed)
+            {'id': 500 + i, 'title': title, 'company': 'Company $i شركة'},
+        ],
+      };
+
   @override
   Future<Map<String, dynamic>> myCvs(
     bool english, {
@@ -769,10 +801,7 @@ void additionalTests() {
           );
           await tester.pumpAndSettle();
           final hero = find.byType(DashboardCvHero);
-          final analyze = find.descendant(
-            of: hero,
-            matching: find.byType(SubmitButton),
-          );
+          final analyze = find.byKey(DashboardCvHero.primaryKey);
           await tester.scrollUntilVisible(
             analyze,
             250,
@@ -787,14 +816,30 @@ void additionalTests() {
             '2026-10-19T12:00:00Z',
           ).toLocal();
           final materialL = MaterialLocalizations.of(heroContext);
+          // 67 sits in the "very good" band.
           expect(
             find.descendant(
-              of: hero,
+              of: find.byKey(DashboardCvHero.scoreKey),
               matching: find.text(
-                '${heroL.homeHeroAtsScore} · ${heroL.homeHeroBandVeryGood}',
+                heroL.homeHeroScoreTitle(
+                  AppFormat.digits('67', english: !arabic),
+                ),
               ),
             ),
             findsOneWidget,
+          );
+          expect(
+            find.descendant(
+              of: find.byKey(DashboardCvHero.scoreKey),
+              matching: find.text(heroL.homeHeroScoreVeryGood),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            tester
+                .widget<SubmitButton>(find.byKey(DashboardCvHero.secondaryKey))
+                .label,
+            heroL.homeHeroTargetJob,
           );
           expect(
             find.descendant(
@@ -855,73 +900,68 @@ void additionalTests() {
           await tester.pumpAndSettle();
           Navigator.of(tester.element(find.byType(CvAnalysisScreen))).pop();
           await tester.pumpAndSettle();
-          for (final key in ['home-stat-cvs', 'home-stat-analyses']) {
-            await tester.scrollUntilVisible(
-              find.byKey(ValueKey(key)),
-              300,
-              scrollable: verticalScroll(),
-            );
-            await tester.pumpAndSettle();
-            final stat = tester.widget<DashboardStatCard>(
-              find.byKey(ValueKey(key)),
-            );
-            expect(stat.count, key.endsWith('cvs') ? 17 : 23);
-            expect(
-              find.descendant(
-                of: find.byKey(ValueKey(key)),
-                matching: find.text(
-                  AppFormat.digits(stat.count.toString(), english: !arabic),
-                ),
-              ),
-              findsOneWidget,
-            );
-            expect(
-              find.descendant(
-                of: find.byKey(ValueKey(key)),
-                matching: find.byType(CountUpValue),
-              ),
-              findsOneWidget,
-            );
-          }
+          // Returning user: the header greets by the server's name with the
+          // "improve" hint, and the first tool creates another CV.
+          await tester.drag(verticalScroll(), const Offset(0, 4000));
+          await tester.pumpAndSettle();
+          final homeL = AppLocalizations.of(
+            tester.element(find.byType(DashboardHomeTab)),
+          );
+          final header = find.byType(DashboardHomeHeader);
+          expect(
+            find.descendant(
+              of: header,
+              matching: find.textContaining('سارة Sara'),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(
+              of: header,
+              matching: find.text(homeL.homeHeaderSubtitleReturning),
+            ),
+            findsOneWidget,
+          );
           await tester.scrollUntilVisible(
-            find.byKey(const ValueKey('home-primary-action')),
+            find.byKey(const ValueKey('home-tool-create')),
             300,
             scrollable: verticalScroll(),
           );
-          expect(
-            find.text('Build your professional CV ابنِ سيرتك'),
-            findsOneWidget,
-          );
-          expect(
-            find.text('Server action description وصف الإجراء'),
-            findsOneWidget,
-          );
-          await tester.scrollUntilVisible(
-            find.text('Create now ابدأ الآن'),
-            250,
-            scrollable: verticalScroll(),
-          );
           await tester.pumpAndSettle();
-          await tester.tap(find.text('Create now ابدأ الآن'));
+          expect(find.byKey(const ValueKey('home-tool-ats')), findsNothing);
+          await tester.tap(find.byKey(const ValueKey('home-tool-create')));
           await tester.pumpAndSettle();
           expect(find.text('CV builder destination'), findsOneWidget);
           Navigator.of(
             tester.element(find.text('CV builder destination')),
           ).pop();
           await tester.pumpAndSettle();
+          // Jobs for you: the feed's first jobs, never more than the limit.
           await tester.scrollUntilVisible(
-            find.byKey(const ValueKey('home-latest-news')),
+            find.byType(DashboardJobsSection),
             300,
             scrollable: verticalScroll(),
           );
-          expect(find.text('Career workshop ورشة مهنية'), findsOneWidget);
+          await tester.pumpAndSettle();
           expect(
-            find.text('Registration opens tomorrow يبدأ التسجيل غداً'),
-            findsOneWidget,
+            find.descendant(
+              of: find.byType(DashboardJobsSection),
+              matching: find.byType(JobNewsCard),
+            ),
+            findsNWidgets(DashboardJobsSection.limit),
           );
+          // In feed order; cards render bilingual titles on two lines, so
+          // compare the jobs they carry.
+          expect(
+            tester
+                .widgetList<JobNewsCard>(find.byType(JobNewsCard))
+                .map((card) => card.item.title),
+            homeJobTitles.take(DashboardJobsSection.limit),
+          );
+          // The tools sit above the jobs.
           await tester.scrollUntilVisible(
-            find.byType(DashboardToolCard).first,
-            300,
+            find.byKey(const ValueKey('home-tool-education')),
+            -300,
             scrollable: verticalScroll(),
           );
           await tester.pumpAndSettle();
@@ -965,6 +1005,92 @@ void additionalTests() {
           expect(tester.takeException(), isNull);
         },
       );
+    }
+  }
+  // A new user (no CV yet) gets the start state of the agreed design: start
+  // a CV or bring an old one, the ATS tool, and every Home exit lands where
+  // it says.
+  for (final arabic in [false, true]) {
+    for (final dark in [false, true]) {
+      testWidgets('new user home and its exits ar=$arabic dark=$dark', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(390, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final navigated = <DashboardTab>[];
+        await tester.pumpWidget(
+          app(
+            Scaffold(body: DashboardHomeTab(onNavigate: navigated.add)),
+            arabic: arabic,
+            dark: dark,
+            scale: 1,
+          ),
+        );
+        await tester.pumpAndSettle();
+        final l = AppLocalizations.of(
+          tester.element(find.byType(DashboardHomeTab)),
+        );
+        final hero = find.byType(DashboardCvHero);
+        expect(
+          find.descendant(of: hero, matching: find.text(l.homeHeroStartTitle)),
+          findsOneWidget,
+        );
+        expect(find.byKey(DashboardCvHero.scoreKey), findsNothing);
+        expect(
+          find.descendant(
+            of: find.byType(DashboardHomeHeader),
+            matching: find.text(l.homeHeaderSubtitleNew),
+          ),
+          findsOneWidget,
+        );
+        await checkScroll(tester, 'new user ar=$arabic dark=$dark');
+        await tester.drag(verticalScroll(), const Offset(0, 4000));
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('home-tool-ats')),
+          300,
+          scrollable: verticalScroll(),
+        );
+        expect(find.byKey(const ValueKey('home-tool-create')), findsNothing);
+        await tester.drag(verticalScroll(), const Offset(0, 4000));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(DashboardCvHero.primaryKey));
+        await tester.pumpAndSettle();
+        expect(find.text('CV builder destination'), findsOneWidget);
+        Navigator.of(tester.element(find.text('CV builder destination'))).pop();
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(DashboardCvHero.secondaryKey));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<CvAnalysisScreen>(find.byType(CvAnalysisScreen))
+              .initialCvId,
+          isNull,
+          reason: 'an old CV is uploaded, not picked from saved ones',
+        );
+        Navigator.of(tester.element(find.byType(CvAnalysisScreen))).pop();
+        await tester.pumpAndSettle();
+
+        for (final (finder, tab) in [
+          (find.byKey(const ValueKey('home-tool-education')),
+              DashboardTab.education),
+          (find.byKey(DashboardJobsSection.viewAllKey), DashboardTab.jobNews),
+        ]) {
+          await tester.scrollUntilVisible(
+            finder,
+            300,
+            scrollable: verticalScroll(),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(finder);
+          await tester.pumpAndSettle();
+          expect(navigated.last, tab);
+        }
+        expect(tester.takeException(), isNull);
+      });
     }
   }
   testWidgets(

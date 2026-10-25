@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:http/http.dart' as http;
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
@@ -231,7 +232,27 @@ class AuthApiService {
       }
     }
 
-    final response = await _apiClient.putJson('/auth/profile', body);
+    return _userFrom(await _apiClient.putJson('/auth/profile', body));
+  }
+
+  /// Uploads a square PNG profile photo (see `AvatarCropScreen`).
+  Future<AuthUser> uploadAvatar(List<int> pngBytes) async =>
+      _userFrom(await _apiClient.postMultipart(
+        '/auth/avatar',
+        fields: const {},
+        // The server checks the image by its content, not the declared type.
+        file: http.MultipartFile.fromBytes(
+          'avatar',
+          pngBytes,
+          filename: 'avatar.png',
+        ),
+      ));
+
+  Future<AuthUser> deleteAvatar() async =>
+      _userFrom(await _apiClient.deleteJson('/auth/avatar'));
+
+  /// The `data` user of a profile response, also made the cached session user.
+  AuthUser _userFrom(Map<String, dynamic> response) {
     final data = response['data'];
     final user = AuthUser.fromJson(
       data is Map<String, dynamic> ? data : const {},

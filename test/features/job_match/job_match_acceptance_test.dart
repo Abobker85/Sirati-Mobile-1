@@ -20,6 +20,7 @@ import 'package:sirati/features/job_match/presentation/job_match_screen.dart';
 import 'package:sirati/features/job_match/presentation/widgets/job_match_suggestion_card.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/routing/app_router.dart';
+import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/cv_api_service.dart';
@@ -251,6 +252,7 @@ void main() {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         mobileContentServiceProvider.overrideWithValue(content),
+        cvApiServiceProvider.overrideWithValue(_HomeCvApi()),
         authApiServiceProvider.overrideWithValue(FakeAuth(subscription(subscribed: false))),
       ],
       child: MaterialApp(
@@ -263,7 +265,8 @@ void main() {
       ),
     ));
     await settle(tester);
-    await tapVisible(tester, find.text(l10n(tester).jobMatchEntryButton));
+    // Home's "Target a job" (returning user) is the way into job match.
+    await tapVisible(tester, find.text(l10n(tester).homeHeroTargetJob));
     await settle(tester);
     expect(find.byType(JobMatchScreen), findsOneWidget);
     expect(find.text(l10n(tester).jobMatchPaywallTitle), findsOneWidget);
@@ -274,9 +277,39 @@ void main() {
   });
 }
 
+/// Home loads the user's latest CV through the CV API.
+class _HomeCvApi extends FakeJobMatchApi {
+  @override
+  Future<GeneratedCv> getGeneratedCv(int id) async => cvs.first;
+}
+
 class _DashboardContent extends MobileContentService {
   int loads = 0;
   bool forced = false;
+
+  @override
+  Future<Map<String, dynamic>> myCvs(bool english, {bool force = false}) async =>
+      {
+        'items': [
+          {'id': 1, 'title': 'Saved CV', 'updated_at': '2026-10-19T12:00:00Z'},
+        ],
+      };
+
+  @override
+  Future<Map<String, dynamic>> jobNews(
+    bool english, {
+    String? category,
+    String? preset,
+    String? city,
+    int? jobTitleId,
+    bool? isRemote,
+    bool? isVerified,
+    String? sourceType,
+    String? employmentType,
+    String? query,
+    bool force = false,
+  }) async =>
+      {'items': const []};
 
   @override
   Future<Map<String, dynamic>> dashboard(bool english, {bool force = false}) async {

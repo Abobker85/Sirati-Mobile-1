@@ -49,6 +49,27 @@ void main() {
     );
   }
 
+  /// The splash shows the agreed rounded-square logo on its own (Salem
+  /// review, 2026-10-24): no circular frame around it.
+  void expectBareRoundedLogo(WidgetTester tester, Finder area) {
+    expect(
+        find.descendant(
+            of: area,
+            matching: find.byWidgetPredicate((w) =>
+                w is Container &&
+                w.decoration is BoxDecoration &&
+                (w.decoration as BoxDecoration).shape == BoxShape.circle)),
+        findsNothing);
+    final mark = find.descendant(of: area, matching: find.byType(SiratiMark));
+    expect(mark, findsOneWidget);
+    final box = tester
+        .widget<Container>(
+            find.descendant(of: mark, matching: find.byType(Container)).first)
+        .decoration as BoxDecoration;
+    expect(box.shape, BoxShape.rectangle);
+    expect(box.borderRadius, isNotNull);
+  }
+
   group('SplashScreen Circular Reveal & Transitions (SIRATI-59)', () {
     testWidgets('Renders centered circular element in light theme (RTL)',
         (tester) async {
@@ -58,9 +79,7 @@ void main() {
       final circleFinder = find.byKey(const ValueKey('splash_circle'));
       expect(circleFinder, findsOneWidget);
 
-      final Container container = tester.widget(circleFinder);
-      final box = container.decoration as BoxDecoration;
-      expect(box.shape, BoxShape.circle);
+      expectBareRoundedLogo(tester, circleFinder);
 
       final Size size = tester.getSize(circleFinder);
       expect(size.width, 220);
@@ -80,8 +99,7 @@ void main() {
 
       final circleFinder = find.byKey(const ValueKey('splash_circle'));
       expect(circleFinder, findsOneWidget);
-      final Container container = tester.widget(circleFinder);
-      expect((container.decoration as BoxDecoration).shape, BoxShape.circle);
+      expectBareRoundedLogo(tester, circleFinder);
     });
 
     testWidgets('Honours MediaQuery.disableAnimations fallback',
@@ -91,8 +109,7 @@ void main() {
 
       final circleFinder = find.byKey(const ValueKey('splash_circle'));
       expect(circleFinder, findsOneWidget);
-      final Container container = tester.widget(circleFinder);
-      expect((container.decoration as BoxDecoration).shape, BoxShape.circle);
+      expectBareRoundedLogo(tester, circleFinder);
     });
 
     testWidgets('second splash beat reveals the brand mark in the circle',

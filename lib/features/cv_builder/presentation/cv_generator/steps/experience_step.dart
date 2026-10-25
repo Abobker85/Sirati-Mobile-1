@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/features/cv_builder/domain/cv_entries.dart';
 import 'package:sirati/features/cv_builder/domain/cv_form_data.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator/entry_cards.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator/entry_list_field.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_widgets.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ai_cv_field.dart';
-import 'package:sirati/shared/widgets/form_fields.dart';
 
-/// Step 3: work experience, with the XYZ achievement builder and an
-/// optional "target shape" hint shown the first time the field is focused.
+/// Step 3: work experience as separate jobs — title, employer, period and
+/// achievements each — with the XYZ achievement builder (Salem review,
+/// issue 3).
 class ExperienceStep extends StatelessWidget {
   const ExperienceStep({
     super.key,
     required this.props,
-    required this.focusNode,
-    required this.showShapeHint,
-    required this.onDismissShapeHint,
+    required this.language,
     required this.onOpenAchievementBuilder,
   });
 
   final WizardStepProps props;
-  final FocusNode focusNode;
-  final bool showShapeHint;
-  final VoidCallback onDismissShapeHint;
+
+  /// CV language: the period's "Present" is written in it.
+  final String language;
   final VoidCallback onOpenAchievementBuilder;
 
   @override
@@ -42,17 +43,14 @@ class ExperienceStep extends StatelessWidget {
             english: english,
             isLoading: enhancing,
             minimumCharacters: CvFormData.minExperienceChars,
-            leadingHint: showShapeHint
-                ? _ShapeHint(english: english, onDismiss: onDismissShapeHint)
-                : null,
             helperText: english
-                ? 'Example: Backend Developer — Company — 2022–present; improved API response time by 35%.'
-                : 'مثال: مطور Backend — الشركة — 2022 حتى الآن؛ حسّنت سرعة API بنسبة 35%.',
+                ? 'Add each job separately, newest first.'
+                : 'أضف كل وظيفة على حدة، الأحدث أولاً.',
             result: props.fieldResults['experience'],
             onEnhance: () => props.onEnhance('experience'),
             onDismissResult: () => props.onDismissResult('experience'),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Container(
                   margin: const EdgeInsets.only(bottom: 10),
@@ -78,74 +76,27 @@ class ExperienceStep extends StatelessWidget {
                     ),
                   ),
                 ),
-                AppTextFormField(
+                EntryListField<ExperienceEntry>(
+                  key: const ValueKey('experience-entries'),
                   controller: props.fields.experience,
-                  focusNode: focusNode,
-                  textAlign: TextAlign.start,
-                  maxLines: 10,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => props.onPrimaryAction(),
-                  enabled: !enhancing,
-                  hintText: english
-                      ? 'Role, company, period\n- Achievement with a measurable result'
-                      : 'المسمى، الشركة، الفترة\n- إنجاز بنتيجة قابلة للقياس',
-                  validator: (value) {
-                    if ((value?.trim().length ?? 0) <
-                        CvFormData.minExperienceChars) {
-                      return english
-                          ? 'Write at least ${CvFormData.minExperienceChars} characters about your experience.'
-                          : 'اكتب الخبرات العملية بتفاصيل لا تقل عن ${CvFormData.minExperienceChars} حرفاً.';
-                    }
-                    return null;
-                  },
+                  english: english,
+                  autovalidateMode: props.autovalidateMode,
+                  parse: parseExperience,
+                  serialize: (entries) => serializeExperience(entries, language),
+                  problems: experienceProblems,
+                  blank: const ExperienceEntry(),
+                  isBlank: (e) => e.isBlank,
+                  minimumCharacters: CvFormData.minExperienceChars,
+                  addLabel: english ? 'Add another job' : 'إضافة خبرة أخرى',
+                  cardBuilder: (context, entry, onChanged, problems) =>
+                      experienceCard(context, entry, onChanged, problems,
+                          english: english),
                 ),
               ],
             ),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ShapeHint extends StatelessWidget {
-  const _ShapeHint({required this.english, required this.onDismiss});
-
-  final bool english;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.sirati;
-    return Container(
-      key: const Key('experience_shape_hint'),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: c.infoLight,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.lightbulb_outline_rounded, size: 19, color: c.info),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              english
-                  ? 'Target shape: role — company — period, then one or two achievements with numbers.'
-                  : 'الشكل المستهدف: المسمى — الشركة — الفترة، ثم إنجاز أو اثنان بأرقام.',
-              style:
-                  TextStyle(color: c.textPrimary, fontSize: 12.5, height: 1.45),
-            ),
-          ),
-          IconButton(
-            tooltip: english ? 'Dismiss' : 'إخفاء',
-            visualDensity: VisualDensity.compact,
-            onPressed: onDismiss,
-            icon: const Icon(Icons.close_rounded, size: 18),
-          ),
-        ],
-      ),
     );
   }
 }

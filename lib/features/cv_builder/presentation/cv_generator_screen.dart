@@ -57,7 +57,6 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
   static const _stepCount = 4;
 
   final _fields = CvFormControllers();
-  final _experienceFocusNode = FocusNode();
   final _stepFormKeys =
       List.generate(_stepCount, (_) => GlobalKey<FormState>());
 
@@ -78,8 +77,6 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
   String _language = 'ar';
   List<JobTitle> _jobTitles = const [];
 
-  bool _showExperienceShapeHint = false;
-  bool _experienceHintDismissed = false;
 
   /// True after any user edit since the last save/generate/restore.
   bool _isDirty = false;
@@ -113,7 +110,6 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     }
 
     _fields.addListener(_onAnyFieldChanged);
-    _experienceFocusNode.addListener(_onExperienceFocusChanged);
 
     unawaited(
       AnalyticsService.logWizardStarted(mode: _isEditMode ? 'edit' : 'create'),
@@ -135,8 +131,6 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     }
     _fields.removeListener(_onAnyFieldChanged);
     _fields.dispose();
-    _experienceFocusNode.removeListener(_onExperienceFocusChanged);
-    _experienceFocusNode.dispose();
     super.dispose();
   }
 
@@ -183,15 +177,6 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     return _draftStore.save(_fields.read(language: _language), step: _step);
   }
 
-  void _onExperienceFocusChanged() {
-    if (!_experienceFocusNode.hasFocus ||
-        _fields.experience.text.trim().isNotEmpty ||
-        _experienceHintDismissed ||
-        !mounted) {
-      return;
-    }
-    setState(() => _showExperienceShapeHint = true);
-  }
 
   void _setLanguage(String code) {
     if (_language == code) return;
@@ -627,15 +612,10 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       1 => SkillsStep(props: props, jobTitles: _jobTitles),
       2 => ExperienceStep(
           props: props,
-          focusNode: _experienceFocusNode,
-          showShapeHint: _showExperienceShapeHint,
-          onDismissShapeHint: () => setState(() {
-            _showExperienceShapeHint = false;
-            _experienceHintDismissed = true;
-          }),
+          language: _language,
           onOpenAchievementBuilder: () => _openAchievementBuilder(english),
         ),
-      _ => EducationStep(props: props),
+      _ => EducationStep(props: props, language: _language),
     };
   }
 

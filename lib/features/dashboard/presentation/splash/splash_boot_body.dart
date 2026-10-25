@@ -156,7 +156,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SiratiMark(size: 64, elevated: true),
+            const SiratiMark(size: 96, elevated: true),
             const SizedBox(height: AppSpacing.sm),
             Text(
               en ? 'Siratie' : 'سيرتي',
@@ -196,7 +196,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
             children: [
               Transform.scale(
                 scale: _logoScale.value,
-                child: const SiratiMark(size: 64, elevated: true),
+                child: const SiratiMark(size: 96, elevated: true),
               ),
               const SizedBox(height: AppSpacing.sm),
               SlideTransition(
@@ -342,26 +342,12 @@ class _SplashMarkCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    // The rounded-square logo stands on its own, as in the agreed welcome
+    // design; the old circular frame is gone.
+    return SizedBox(
       key: const ValueKey('splash_circle'),
       width: 220,
       height: 220,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: context.sirati.surface,
-        border: Border.all(
-          color: context.sirati.primaryLight,
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: context.sirati.primary.withValues(alpha: 0.15),
-            blurRadius: 32,
-            spreadRadius: 2,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
       child: Center(child: child),
     );
   }

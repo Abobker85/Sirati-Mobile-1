@@ -34,7 +34,9 @@ void expectHeaderPaint(WidgetTester tester) {
   final markPaint = tester.renderObject<RenderDecoratedBox>(find.descendant(
     of: find.byType(SiratiMark), matching: find.byType(DecoratedBox)));
   final decoration = markPaint.decoration as BoxDecoration;
-  expect(decoration.shape, BoxShape.circle);
+  // The agreed brand logo is a rounded square (Salem review, 2026-10-24).
+  expect(decoration.shape, BoxShape.rectangle);
+  expect(decoration.borderRadius, isNotNull);
   expect(decoration.gradient, isA<LinearGradient>());
   expect(decoration.boxShadow, isNull);
 }

@@ -83,9 +83,10 @@ void main() {
     expect(appIconFile.existsSync(), isTrue);
 
     // 2. assets/branding/sirati_adaptive_foreground_1024.png
-    // Transparent-background circle foreground for Android adaptive icon.
-    // The mark sits strictly inside the 66/108 safe zone:
-    // (66 / 108) * 1024 = 625.77px -> size: 624.
+    // Transparent-background foreground for the Android adaptive icon. The
+    // launcher may mask to a circle of diameter 66/108 (625.8px), so the
+    // rounded square's farthest point, (s/2 - r)·√2 + r with r = 0.22·s,
+    // i.e. 0.616·s, must stay within 312.9px: s <= 507 -> size: 500.
     final adaptiveBytes = await _renderWidgetToPng(
       tester: tester,
       widget: Container(
@@ -93,7 +94,7 @@ void main() {
         height: 1024,
         color: Colors.transparent,
         alignment: Alignment.center,
-        child: const SiratiMark(size: 624, elevated: false),
+        child: const SiratiMark(size: adaptiveMarkSize, elevated: false),
       ),
       size: const Size(1024, 1024),
     );
@@ -168,5 +169,36 @@ void main() {
     maskable512File.parent.createSync(recursive: true);
     maskable512File.writeAsBytesSync(icon512Bytes);
     expect(maskable512File.existsSync(), isTrue);
+
+    // 8. Native launch screens: the transparent mark the OS shows before
+    // Flutter starts (Android 72dp per density, iOS 128pt @1x/2x/3x).
+    final launchImages = <String, int>{
+      'android/app/src/main/res/drawable-mdpi/splash_logo.png': 72,
+      'android/app/src/main/res/drawable-hdpi/splash_logo.png': 96,
+      'android/app/src/main/res/drawable-xhdpi/splash_logo.png': 144,
+      'android/app/src/main/res/drawable-xxhdpi/splash_logo.png': 192,
+      'android/app/src/main/res/drawable-xxxhdpi/splash_logo.png': 288,
+      'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png': 128,
+      'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png':
+          256,
+      'ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png':
+          384,
+    };
+    for (final MapEntry(key: path, value: side) in launchImages.entries) {
+      final bytes = await _renderWidgetToPng(
+        tester: tester,
+        widget: SizedBox.square(
+          dimension: side.toDouble(),
+          child: SiratiMark(size: side.toDouble(), elevated: false),
+        ),
+        size: Size.square(side.toDouble()),
+      );
+      final file = File('${appDir.path}/$path');
+      file.parent.createSync(recursive: true);
+      file.writeAsBytesSync(bytes);
+    }
   });
 }
+
+/// Side of the mark on the Android adaptive foreground (see step 2).
+const adaptiveMarkSize = 500.0;

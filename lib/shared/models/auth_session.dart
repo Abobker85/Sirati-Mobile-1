@@ -24,6 +24,9 @@ class AuthUser {
   final String email;
   final String? phone;
   final String? location;
+
+  /// Public URL of the profile photo; null without one.
+  final String? avatarUrl;
   final int? jobTitleId;
   final String? jobTitleOther;
   final Map<String, dynamic>? jobTitle;
@@ -39,6 +42,7 @@ class AuthUser {
     required this.email,
     this.phone,
     this.location,
+    this.avatarUrl,
     this.jobTitleId,
     this.jobTitleOther,
     this.jobTitle,
@@ -54,6 +58,7 @@ class AuthUser {
       email: json['email']?.toString() ?? '',
       phone: json['phone']?.toString(),
       location: json['location']?.toString(),
+      avatarUrl: _nullable(json['avatar_url']),
       jobTitleId: _asNullableInt(json['job_title_id']),
       jobTitleOther: _nullable(json['job_title_other']),
       jobTitle: rawTitle is Map ? Map<String, dynamic>.from(rawTitle) : null,
@@ -80,6 +85,7 @@ class AuthUser {
       email: email,
       phone: phone ?? this.phone,
       location: location ?? this.location,
+      avatarUrl: avatarUrl,
       jobTitleId: jobTitleId ?? this.jobTitleId,
       jobTitleOther: jobTitleOther ?? this.jobTitleOther,
       jobTitle: jobTitle ?? this.jobTitle,

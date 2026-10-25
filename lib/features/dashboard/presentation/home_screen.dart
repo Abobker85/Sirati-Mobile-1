@@ -154,11 +154,16 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: context.sirati.background,
         body: MotionTabStack(
           currentIndex: _tab.index,
+          // Built from the enum so page order always matches the nav bar.
           children: [
-            DashboardHomeTab(onNavigate: _setTab),
-            const MyCvsScreen(),
-            const EducationScreen(),
-            JobNewsScreen(isActive: _tab == DashboardTab.jobNews),
+            for (final tab in DashboardTab.values)
+              switch (tab) {
+                DashboardTab.home => DashboardHomeTab(onNavigate: _setTab),
+                DashboardTab.myCvs => const MyCvsScreen(),
+                DashboardTab.jobNews =>
+                  JobNewsScreen(isActive: _tab == DashboardTab.jobNews),
+                DashboardTab.education => const EducationScreen(),
+              },
           ],
         ),
         bottomNavigationBar: DashboardNavigationBar(

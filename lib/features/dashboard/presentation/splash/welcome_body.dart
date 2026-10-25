@@ -5,7 +5,9 @@ import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
-/// Signed-out landing: brand, value proposition, register / sign-in.
+/// Signed-out landing, as agreed in Salem's review (2026-10-24): LinkedIn-style
+/// hierarchy — logo, name and brand slogan, one value card, then the two
+/// account actions and the privacy link.
 class WelcomeBody extends StatelessWidget {
   final VoidCallback onRegister;
   final VoidCallback onLogin;
@@ -18,14 +20,38 @@ class WelcomeBody extends StatelessWidget {
     required this.onPrivacy,
   });
 
+  static const logoKey = ValueKey('welcome-logo');
+  static const sloganKey = ValueKey('welcome-slogan');
+  static const valueCardKey = ValueKey('welcome-value-card');
+
+  /// The brand slogan from the agreed identity banner.
+  static String slogan({required bool english}) => english
+      ? 'Every career path\npasses through our station'
+      : 'عندما تسعى لتطوير مسارك المهني،\nلا بد أن تمر على محطتنا';
+
+  static String valueTitle({required bool english}) =>
+      english ? 'Your career starts with your CV' : 'مسارك المهني يبدأ من سيرتك';
+
+  static List<String> valuePoints({required bool english}) => english
+      ? const [
+          'Build a CV that passes automated screening (ATS)',
+          'Analyze your CV with an ATS check',
+          'Tailor your CV to a job description',
+          'Learning and career development',
+          'Job openings in the government and private sectors',
+        ]
+      : const [
+          'إنشاء سيرة ذاتية متوافقة مع أنظمة الفرز الآلي',
+          'تحليل سيرتك بنظام ATS',
+          'تعديل السيرة الذاتية لتلائم الوصف الوظيفي',
+          'تعليم وتطوير مهني',
+          'إعلانات لفرص وظيفية في القطاع الحكومي والقطاع الخاص',
+        ];
+
   @override
   Widget build(BuildContext context) {
     final en = AppLocale.isEnglish(context);
-    final cardTitle =
-        en ? 'Build your CV professionally' : 'اصنع سيرتك الذاتية باحترافية';
-    final cardBody = en
-        ? 'Create an ATS-ready CV that reaches employers with world-class design, in minutes.'
-        : 'أنشئ سيرة ذاتية متوافقة مع أنظمة ATS وتصل لأصحاب العمل خلال دقائق.';
+    final c = context.sirati;
 
     return SafeArea(
       child: LayoutBuilder(
@@ -50,58 +76,59 @@ class WelcomeBody extends StatelessWidget {
                         child: LanguageToggle(),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xxl + 4),
+                    const SizedBox(height: AppSpacing.xl),
                     const MotionReveal(
                       order: 1,
                       offset: Offset(0, 0.04),
                       duration: MotionDurations.slow,
-                      child: Center(child: _SplashLogo()),
+                      child: Center(
+                        child: SiratiMark(key: logoKey, size: 96),
+                      ),
                     ),
-                    const SizedBox(height: AppSpacing.lg - 2),
+                    const SizedBox(height: AppSpacing.md),
                     MotionReveal(
                       order: 2,
                       child: Text(
                         en ? 'Siratie' : 'سيرتي',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 28,
+                          fontSize: 30,
                           fontWeight: FontWeight.w700,
-                          color: context.sirati.primaryInk,
+                          color: c.primaryInk,
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.sm - 2),
+                    const SizedBox(height: AppSpacing.sm),
                     MotionReveal(
                       order: 2,
                       child: Text(
-                        en
-                            ? 'Your first step towards a better professional future'
-                            : 'خطوتك الأولى نحو مستقبل مهني أفضل',
+                        slogan(english: en),
+                        key: sloganKey,
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.bodyMd(context.sirati).copyWith(
+                        style: AppTextStyles.bodyMd(c).copyWith(
                           height: 1.7,
-                          color: context.sirati.textSecondary,
+                          color: c.textSecondary,
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xl + 4),
+                    const SizedBox(height: AppSpacing.xl),
                     MotionReveal(
                       order: 3,
                       child: _ValueCard(
-                        title: cardTitle,
-                        body: cardBody,
+                        key: valueCardKey,
+                        title: valueTitle(english: en),
+                        points: valuePoints(english: en),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xl + 4),
+                    const SizedBox(height: AppSpacing.xl),
                     MotionReveal(
                       order: 4,
                       child: SubmitButton(
                         label: en ? 'Create New Account' : 'إنشاء حساب جديد',
-                        icon: Icons.arrow_forward,
                         onPressed: onRegister,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
+                    const SizedBox(height: AppSpacing.sm + 2),
                     MotionReveal(
                       order: 4,
                       child: SubmitButton(
@@ -117,9 +144,9 @@ class WelcomeBody extends StatelessWidget {
                         onPressed: onPrivacy,
                         child: Text(
                           en ? 'Privacy Policy' : 'سياسة الخصوصية',
-                          style: AppTextStyles.labelMd(context.sirati).copyWith(
+                          style: AppTextStyles.labelMd(c).copyWith(
                             fontWeight: FontWeight.w700,
-                            color: context.sirati.textHint,
+                            color: c.textHint,
                           ),
                         ),
                       ),
@@ -135,22 +162,28 @@ class WelcomeBody extends StatelessWidget {
   }
 }
 
-/// Elevated hero card — surface + border + soft shadow so it reads as content.
+/// The selling-point card: a heading and one check per thing the app does.
 class _ValueCard extends StatelessWidget {
   final String title;
-  final String body;
+  final List<String> points;
 
-  const _ValueCard({required this.title, required this.body});
+  const _ValueCard({super.key, required this.title, required this.points});
 
   @override
   Widget build(BuildContext context) {
+    final c = context.sirati;
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl - 2),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
       decoration: BoxDecoration(
-        color: context.sirati.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.sirati.border),
-        boxShadow: context.sirati.softShadow,
+        border: Border.all(color: c.border),
+        boxShadow: c.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,48 +192,43 @@ class _ValueCard extends StatelessWidget {
             title,
             textAlign: TextAlign.start,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 19,
               fontWeight: FontWeight.w700,
-              color: context.sirati.textPrimary,
-              height: 1.3,
+              color: c.textPrimary,
+              height: 1.35,
             ),
           ),
-          const SizedBox(height: AppSpacing.sm - 2),
-          Text(
-            body,
-            textAlign: TextAlign.start,
-            style: AppTextStyles.bodySm(context.sirati).copyWith(
-              height: 1.75,
-              color: context.sirati.textSecondary,
+          const SizedBox(height: AppSpacing.sm + 2),
+          for (final point in points)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(
+                      Icons.check_circle_rounded,
+                      size: 20,
+                      color: c.primaryInk,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      point,
+                      textAlign: TextAlign.start,
+                      style: AppTextStyles.bodySm(c).copyWith(
+                        height: 1.6,
+                        color: c.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
-    );
-  }
-}
-
-class _SplashLogo extends StatelessWidget {
-  const _SplashLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 112,
-      height: 112,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: context.sirati.surface,
-        border: Border.all(color: context.sirati.primaryLight, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: context.sirati.primary.withValues(alpha: 0.12),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: const Center(child: SiratiMark(size: 64, elevated: true)),
     );
   }
 }

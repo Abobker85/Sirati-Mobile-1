@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/settings/application/settings_controllers.dart';
 import 'package:sirati/features/settings/domain/profile_update.dart';
+import 'package:sirati/features/settings/presentation/avatar_crop_screen.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/models/job_title.dart';
+import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/job_titles_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -17,6 +20,7 @@ import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/job_title_picker_field.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/profile_photo.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -74,6 +78,150 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _selectedId = user.jobTitleId;
       _otherCtrl.text = user.jobTitleOther ?? '';
     }
+  }
+
+  static const photoKey = ValueKey('profile-photo-button');
+
+  bool _photoBusy = false;
+
+  /// Gallery, camera or remove; then crop and upload (Salem review, issue 5).
+  Future<void> _changePhoto({required bool hasPhoto}) async {
+    if (_photoBusy) return;
+    final en = AppLocale.isEnglish(context);
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const ValueKey('profile-photo-gallery'),
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(en ? 'Choose from gallery' : 'اختر من المعرض'),
+              onTap: () => Navigator.of(context).pop('gallery'),
+            ),
+            ListTile(
+              key: const ValueKey('profile-photo-camera'),
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: Text(en ? 'Take a photo' : 'التقط صورة'),
+              onTap: () => Navigator.of(context).pop('camera'),
+            ),
+            if (hasPhoto)
+              ListTile(
+                key: const ValueKey('profile-photo-remove'),
+                leading: Icon(Icons.delete_outline_rounded,
+                    color: context.sirati.error),
+                title: Text(
+                  en ? 'Remove photo' : 'إزالة الصورة',
+                  style: TextStyle(color: context.sirati.error),
+                ),
+                onTap: () => Navigator.of(context).pop('remove'),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+
+    final auth = ref.read(authApiServiceProvider);
+    try {
+      if (choice == 'remove') {
+        setState(() => _photoBusy = true);
+        await auth.deleteAvatar();
+      } else {
+        final bytes = await ref.read(profilePhotoPickerProvider)(
+          choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        );
+        if (bytes == null || !mounted) return;
+        final cropped = await Navigator.of(context).push<Uint8List>(
+          MaterialPageRoute(
+            builder: (_) => AvatarCropScreen(bytes: bytes, english: en),
+          ),
+        );
+        if (cropped == null || !mounted) return;
+        setState(() => _photoBusy = true);
+        await auth.uploadAvatar(cropped);
+      }
+      ref.invalidate(settingsUserProvider);
+      if (mounted) {
+        AppSnackBar.success(
+          context,
+          choice == 'remove'
+              ? (en ? 'Photo removed.' : 'تمت إزالة الصورة.')
+              : (en ? 'Photo updated.' : 'تم تحديث الصورة.'),
+        );
+      }
+    } on ApiException catch (error) {
+      if (mounted) AppSnackBar.fromException(context, error);
+    } catch (_) {
+      if (mounted) {
+        AppSnackBar.error(
+          context,
+          en ? 'Could not update the photo.' : 'تعذر تحديث الصورة.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _photoBusy = false);
+    }
+  }
+
+  Widget _photo(AuthUser? user, bool en) {
+    final c = context.sirati;
+    return ValueListenableBuilder<AuthUser?>(
+      valueListenable: SessionCache.instance.user,
+      builder: (context, cached, _) {
+        final url = cached?.avatarUrl ?? user?.avatarUrl;
+        final hasPhoto = url != null && url.isNotEmpty;
+        return Column(
+          children: [
+            Semantics(
+              button: true,
+              label: en ? 'Change profile photo' : 'تغيير صورة الملف',
+              child: InkResponse(
+                key: photoKey,
+                onTap: () => unawaited(_changePhoto(hasPhoto: hasPhoto)),
+                radius: 56,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ProfilePhoto(url: url, name: _nameCtrl.text, size: 96),
+                    if (_photoBusy)
+                      const Positioned.fill(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    PositionedDirectional(
+                      bottom: 0,
+                      end: 0,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: c.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: c.background, width: 2),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Icon(Icons.photo_camera_rounded,
+                              size: 16, color: c.onPrimary),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              en
+                  ? 'Shown on your profile and at the top of your CV.'
+                  : 'تظهر في ملفك وأعلى سيرتك الذاتية.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodySm(c).copyWith(color: c.textSecondary),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   JobTitle? _selected(List<JobTitle> titles) {
@@ -216,6 +364,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
           children: [
+            _photo(user, en),
+            const SizedBox(height: AppSpacing.lg),
             label(en ? 'Full name' : 'الاسم الكامل'),
             AppTextFormField(
               controller: _nameCtrl,

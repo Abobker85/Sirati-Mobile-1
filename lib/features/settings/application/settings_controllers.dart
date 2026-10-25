@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/storage/preference_store.dart';
 import 'package:sirati/features/settings/domain/notification_item.dart';
@@ -135,6 +138,22 @@ class NotificationPreferenceController extends AsyncNotifier<bool> {
     return ok;
   }
 }
+
+/// Picks a photo's bytes from the gallery or camera; null when cancelled.
+/// A provider so tests can hand in images without the platform plugin.
+final profilePhotoPickerProvider =
+    Provider<Future<Uint8List?> Function(ImageSource source)>(
+  (ref) => (source) async {
+    final file = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      imageQuality: 95,
+      preferredCameraDevice: CameraDevice.front,
+    );
+    return file?.readAsBytes();
+  },
+);
 
 sealed class ProfileSaveOutcome {
   const ProfileSaveOutcome();

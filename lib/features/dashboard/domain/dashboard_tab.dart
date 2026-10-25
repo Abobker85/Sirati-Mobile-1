@@ -1,9 +1,10 @@
-/// Bottom-navigation tabs of the authenticated shell, in display order.
+/// Bottom-navigation tabs of the authenticated shell, in display order
+/// (Salem review: Home · My CVs · Jobs · Education).
 enum DashboardTab {
   home('dashboard'),
   myCvs('my_cvs'),
-  education('education'),
-  jobNews('job_news');
+  jobNews('job_news'),
+  education('education');
 
   const DashboardTab(this.screenName);
 

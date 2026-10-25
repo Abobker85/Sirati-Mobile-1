@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:sirati/features/dashboard/presentation/splash/welcome_body.dart';
 import 'package:sirati/main.dart';
 
 void main() {
@@ -39,9 +40,7 @@ void main() {
       final onboarding =
           find.text('مرحباً بك في سيرتي').evaluate().isNotEmpty ||
               find.text('Welcome to Siratie').evaluate().isNotEmpty;
-      final welcome =
-          find.text('اصنع سيرتك الذاتية باحترافية').evaluate().isNotEmpty ||
-              find.text('Build your CV professionally').evaluate().isNotEmpty;
+      final welcome = find.byType(WelcomeBody).evaluate().isNotEmpty;
       if (onboarding || welcome) {
         sawGate = true;
         break;

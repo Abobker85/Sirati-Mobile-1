@@ -55,6 +55,10 @@ dependencies:
   in_app_review: ^2.0.10
   flutter_riverpod: ^3.4.3
 
+  # Profile photo from the gallery or camera (official flutter.dev plugin;
+  # file_picker has no camera). Cropping is done in-app with dart:ui.
+  image_picker: ^1.2.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -84,6 +88,8 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/branding/sirati_app_icon_1024.png
+  # The App Store rejects icons with an alpha channel; ours is fully opaque.
+  remove_alpha_ios: true
   min_sdk_android: 21
   adaptive_icon_background: "#12384F"
   adaptive_icon_foreground: assets/branding/sirati_adaptive_foreground_1024.png
