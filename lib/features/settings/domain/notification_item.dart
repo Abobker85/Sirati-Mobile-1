@@ -1,4 +1,4 @@
-import 'package:sirati/features/dashboard/domain/notification_target.dart';
+import 'package:sirati/shared/navigation/notification_target.dart';
 
 /// One row of the in-app notification inbox.
 class NotificationItem {

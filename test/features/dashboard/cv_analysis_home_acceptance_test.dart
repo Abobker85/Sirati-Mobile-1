@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,7 +12,6 @@ import 'package:sirati/features/ats_scanner/domain/analysis_draft.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/prioritized_fixes.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
-import 'package:sirati/features/dashboard/domain/dashboard_tab.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_cv_hero.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_header.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_tab.dart';
@@ -21,6 +21,7 @@ import 'package:sirati/features/jobs/presentation/widgets/job_news_card.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
+import 'package:sirati/shared/navigation/dashboard_tab.dart';
 import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';

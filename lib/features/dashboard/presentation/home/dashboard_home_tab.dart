@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
@@ -9,7 +10,6 @@ import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
 import 'package:sirati/features/dashboard/application/dashboard_controller.dart';
 import 'package:sirati/features/dashboard/application/history_controllers.dart';
 import 'package:sirati/features/dashboard/domain/dashboard_summary.dart';
-import 'package:sirati/features/dashboard/domain/dashboard_tab.dart';
 import 'package:sirati/features/dashboard/presentation/history_screen.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_cv_hero.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_header.dart';
@@ -20,6 +20,7 @@ import 'package:sirati/features/jobs/application/job_news_controllers.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/navigation/dashboard_tab.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';

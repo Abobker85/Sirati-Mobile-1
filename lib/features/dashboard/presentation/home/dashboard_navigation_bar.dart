@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/features/dashboard/domain/dashboard_tab.dart';
+import 'package:sirati/shared/navigation/dashboard_tab.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 

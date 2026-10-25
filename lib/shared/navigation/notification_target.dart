@@ -1,4 +1,4 @@
-import 'package:sirati/features/dashboard/domain/dashboard_tab.dart';
+import 'package:sirati/shared/navigation/dashboard_tab.dart';
 
 /// Screens a push notification can open on top of the shell.
 enum NotificationScreen {

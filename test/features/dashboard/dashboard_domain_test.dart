@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/features/dashboard/domain/dashboard_summary.dart';
-import 'package:sirati/features/dashboard/domain/dashboard_tab.dart';
-import 'package:sirati/features/dashboard/domain/notification_target.dart';
+import 'package:sirati/shared/navigation/dashboard_tab.dart';
+import 'package:sirati/shared/navigation/notification_target.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 
 void main() {

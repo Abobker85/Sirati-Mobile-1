@@ -9,8 +9,6 @@ import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_loader_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
-import 'package:sirati/features/dashboard/domain/dashboard_tab.dart';
-import 'package:sirati/features/dashboard/domain/notification_target.dart';
 import 'package:sirati/features/dashboard/presentation/education_detail_screen.dart';
 import 'package:sirati/features/dashboard/presentation/education_screen.dart';
 import 'package:sirati/features/dashboard/presentation/history_screen.dart';
@@ -19,6 +17,8 @@ import 'package:sirati/features/dashboard/presentation/home/dashboard_navigation
 import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
+import 'package:sirati/shared/navigation/dashboard_tab.dart';
+import 'package:sirati/shared/navigation/notification_target.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
 import 'package:sirati/shared/services/notification_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
