@@ -202,6 +202,14 @@ void _expectShipped(String label) {
       contains(weight),
       reason: '$label rendered $weight',
     );
+    // A style that loses the app font (e.g. a bare button textStyle) falls
+    // back to the system font, which draws Arabic in another typeface.
+    expect(
+      style?.fontFamily,
+      'IBM Plex Sans Arabic',
+      reason: '$label rendered "${(render as RenderParagraph).text.toPlainText()}" '
+          'in ${style?.fontFamily ?? 'the system font'}',
+    );
   }
 }
 

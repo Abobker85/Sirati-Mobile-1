@@ -118,10 +118,12 @@ class CvDocumentCard extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      textStyle: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      // From the type tokens, not a bare TextStyle: a style
+                      // without the app font fell back to the system font.
+                      textStyle: AppTypography.of(
+                        context,
+                        AppTypography.labelLg,
+                      ).copyWith(fontSize: 13),
                     ),
                   ),
                 ),
