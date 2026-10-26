@@ -69,43 +69,72 @@ class WizardHeader extends StatelessWidget {
           const SizedBox(height: 12),
           WizardProgressBar(progress: progress),
           const SizedBox(height: 14),
+          // One equal cell per step holds its dot, its halves of the
+          // connectors and its label, so each label sits under its dot.
           Row(
-            children: [
-              for (var i = 0; i < steps.length * 2 - 1; i++)
-                if (i.isOdd)
-                  Expanded(
-                    child: Container(
-                      height: 2,
-                      color: i ~/ 2 < step ? c.primaryContainer : c.surfaceHigh,
-                    ),
-                  )
-                else
-                  _StepDot(
-                    index: i ~/ 2,
-                    step: step,
-                    onTap: onStepTap,
-                  ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (var i = 0; i < steps.length; i++)
                 Expanded(
-                    child: Text(
-                  steps[i],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: i <= step ? c.primaryInk : c.textHint,
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _Connector(
+                              visible: i > 0,
+                              done: i <= step,
+                            ),
+                          ),
+                          _StepDot(index: i, step: step, onTap: onStepTap),
+                          Expanded(
+                            child: _Connector(
+                              visible: i < steps.length - 1,
+                              done: i < step,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        steps[i],
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: i <= step ? c.primaryInk : c.textHint,
+                        ),
+                      ),
+                    ],
                   ),
-                )),
+                ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Half of the line between two step dots; the first and last steps have
+/// no outer half.
+class _Connector extends StatelessWidget {
+  const _Connector({required this.visible, required this.done});
+
+  final bool visible;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+
+    return Container(
+      height: 2,
+      color: !visible
+          ? Colors.transparent
+          : done
+              ? c.primaryContainer
+              : c.surfaceHigh,
     );
   }
 }
