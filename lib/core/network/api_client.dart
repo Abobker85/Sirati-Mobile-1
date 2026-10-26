@@ -38,16 +38,31 @@ class ApiClient {
     return _decodeObject(response);
   }
 
-  Future<List<int>> getBytes(String path) async {
+  Future<List<int>> getBytes(
+    String path, {
+    Duration receiveTimeout = _timeout,
+    void Function(int received, int total)? onReceiveProgress,
+  }) async {
     final authorized = await _authorizedHeaders();
     final response = await _send(
-      () {
-        return _httpClient.get(
-          ApiConfig.uri(path),
-          headers: authorized.headers,
-        );
+      () async {
+        final request = http.Request('GET', ApiConfig.uri(path))
+          ..headers.addAll(authorized.headers);
+        final streamed = await _httpClient.send(request).timeout(receiveTimeout);
+        final bytes = <int>[];
+        await for (final chunk in streamed.stream.timeout(receiveTimeout)) {
+          bytes.addAll(chunk);
+          if (streamed.statusCode >= 200 && streamed.statusCode < 300) {
+            onReceiveProgress?.call(bytes.length, streamed.contentLength ?? -1);
+          }
+        }
+        return http.Response.bytes(bytes, streamed.statusCode,
+            headers: streamed.headers,
+            reasonPhrase: streamed.reasonPhrase,
+            request: streamed.request);
       },
       requestToken: authorized.token,
+      timeout: receiveTimeout,
     );
 
     return response.bodyBytes;
@@ -146,9 +161,10 @@ class ApiClient {
   Future<http.Response> _send(
     Future<http.Response> Function() request, {
     String? requestToken,
+    Duration timeout = _timeout,
   }) async {
     try {
-      final response = await request().timeout(_timeout);
+      final response = await request().timeout(timeout);
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return response;
       }

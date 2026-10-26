@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:http/http.dart' as http;
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
@@ -377,36 +379,45 @@ class CvApiService {
     void Function(T value)? onProgress,
   }) async {
     var current = initial;
-    var elapsed = Duration.zero;
+    final stopwatch = Stopwatch()..start();
 
     while (AiStatus.isPending(statusOf(current))) {
       if (isCancelled?.call() ?? false) {
         return AiPollResult(value: current, cancelled: true);
       }
 
-      if (isPaused?.call() ?? false) {
-        await _pollingDelay(const Duration(milliseconds: 250));
-        continue;
-      }
-
-      if (elapsed >= pollingTimeout) {
+      if (stopwatch.elapsed >= pollingTimeout) {
         return AiPollResult(value: current, timedOut: true);
       }
 
-      final delay = elapsed < const Duration(seconds: 30)
+      if (isPaused?.call() ?? false) {
+        const pauseDelay = Duration(milliseconds: 250);
+        final remaining = pollingTimeout - stopwatch.elapsed;
+        await _pollingDelay(pauseDelay < remaining ? pauseDelay : remaining);
+        continue;
+      }
+
+      final delay = stopwatch.elapsed < const Duration(seconds: 30)
           ? const Duration(seconds: 2)
           : const Duration(seconds: 5);
-      await _pollingDelay(delay);
-      elapsed += delay;
+      final remaining = pollingTimeout - stopwatch.elapsed;
+      await _pollingDelay(delay < remaining ? delay : remaining);
 
       if (isCancelled?.call() ?? false) {
         return AiPollResult(value: current, cancelled: true);
       }
+      if (stopwatch.elapsed >= pollingTimeout) {
+        return AiPollResult(value: current, timedOut: true);
+      }
       if (isPaused?.call() ?? false) {
         continue;
       }
 
-      current = await refresh();
+      try {
+        current = await refresh().timeout(pollingTimeout - stopwatch.elapsed);
+      } on TimeoutException {
+        return AiPollResult(value: current, timedOut: true);
+      }
       onProgress?.call(current);
     }
 
