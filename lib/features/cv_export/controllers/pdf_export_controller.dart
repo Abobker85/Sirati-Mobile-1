@@ -177,16 +177,22 @@ class PdfExportController extends ChangeNotifier {
   Future<bool> exportPdf() async {
     _state = _state.copyWith(
       status: ExportStatus.downloading,
-      progress: 0.15,
+      progress: 0.0,
     );
     notifyListeners();
 
     try {
-      _state = _state.copyWith(progress: 0.45);
-      notifyListeners();
-
       final bytes = await _apiClient.getBytes(
         '/generated-cvs/${_cv.id}/download?template=${_state.template.slug}&language=${_state.exportLanguage}',
+        receiveTimeout: const Duration(seconds: 90),
+        onReceiveProgress: (received, total) {
+          if (total > 0) {
+            _state = _state.copyWith(
+              progress: (received / total).clamp(0.0, 1.0),
+            );
+            notifyListeners();
+          }
+        },
       );
 
       final uint8Bytes = Uint8List.fromList(bytes);

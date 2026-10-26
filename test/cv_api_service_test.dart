@@ -165,14 +165,15 @@ void main() {
       expect(delays, const [Duration(seconds: 2), Duration(seconds: 2)]);
     });
 
-    test('polling gives up at the configured timeout', () async {
+    test('polling timeout includes time spent receiving an HTTP response', () async {
       var refreshes = 0;
       final service = CvApiService(
-        pollingTimeout: const Duration(seconds: 4),
+        pollingTimeout: const Duration(milliseconds: 80),
         pollingDelay: (_) async {},
         apiClient: ApiClient(
           httpClient: MockClient((request) async {
             refreshes++;
+            await Future<void>.delayed(const Duration(milliseconds: 150));
             return _jsonResponse({
               'data': {
                 ..._analysisJson(),
@@ -191,7 +192,26 @@ void main() {
 
       expect(result.timedOut, isTrue);
       expect(result.value.scoreTotal, 82);
-      expect(refreshes, 2);
+      expect(refreshes, 1);
+    });
+
+    test('paused polling still expires without issuing HTTP requests', () async {
+      var refreshes = 0;
+      final service = CvApiService(
+        pollingTimeout: const Duration(milliseconds: 40),
+        pollingDelay: (_) => Future<void>.delayed(const Duration(milliseconds: 25)),
+        apiClient: ApiClient(httpClient: MockClient((_) async {
+          refreshes++;
+          return _jsonResponse({'data': _analysisJson()});
+        })),
+      );
+      final initial = CvAnalysis.fromJson({
+        ..._analysisJson(),
+        'ai_status': AiStatus.queued,
+      });
+      final result = await service.pollAnalysis(initial, isPaused: () => true);
+      expect(result.timedOut, isTrue);
+      expect(refreshes, 0);
     });
   });
 

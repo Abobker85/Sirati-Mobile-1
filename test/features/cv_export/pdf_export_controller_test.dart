@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -139,6 +141,69 @@ void main() {
           contains('هذا القالب متاح للمشتركين فقط'));
     });
 
+    test('progress follows received chunks instead of an estimated percentage', () async {
+      final chunks = StreamController<List<int>>();
+      final requested = Completer<void>();
+      final client = ApiClient(httpClient: MockClient.streaming((request, _) async {
+        requested.complete();
+        return http.StreamedResponse(chunks.stream, 200, contentLength: 20);
+      }));
+      final controller = PdfExportController(
+        apiClient: client,
+        cv: testCv,
+        initialTemplate: freeTemplate,
+      );
+      final progress = <double>[];
+      controller.addListener(() => progress.add(controller.state.progress));
+      final download = controller.exportPdf();
+      await requested.future;
+      expect(controller.state.progress, 0);
+      chunks.add(List.filled(5, 1));
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.state.progress, 0.25);
+      chunks.add(List.filled(10, 2));
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.state.progress, 0.75);
+      chunks.add(List.filled(5, 3));
+      await chunks.close();
+      expect(await download, isTrue);
+      expect(progress, containsAllInOrder([0.0, 0.25, 0.75, 1.0]));
+      expect(controller.state.pdfBytes, [
+        ...List.filled(5, 1),
+        ...List.filled(10, 2),
+        ...List.filled(5, 3),
+      ]);
+      controller.dispose();
+    });
+
+    testWidgets('PDF times out at 90 seconds while JSON keeps its 45 second limit', (tester) async {
+      final transport = _PendingHttpClient();
+      final client = ApiClient(httpClient: transport);
+      final controller = PdfExportController(
+        apiClient: client,
+        cv: testCv,
+        initialTemplate: freeTemplate,
+      );
+      final download = controller.exportPdf();
+      Object? jsonError;
+      final json = client.getJson('/other').catchError((Object error) {
+        jsonError = error;
+        return <String, dynamic>{};
+      });
+      await tester.pump();
+      expect(transport.requests, 2);
+      await tester.pump(const Duration(seconds: 46));
+      expect(jsonError, isNotNull);
+      expect(controller.state.status, ExportStatus.downloading);
+      await tester.pump(const Duration(seconds: 43));
+      expect(controller.state.status, ExportStatus.downloading);
+      await tester.pump(const Duration(seconds: 2));
+      expect(controller.state.status, ExportStatus.error);
+      expect(await download, isFalse);
+      await json;
+      controller.dispose();
+    });
+
     test('loads preview and captures watermark state', () async {
       final client = ApiClient(
         httpClient: MockClient((req) async {
@@ -162,4 +227,14 @@ void main() {
       expect(controller.state.isWatermarked, isTrue);
     });
   });
+}
+
+class _PendingHttpClient extends http.BaseClient {
+  int requests = 0;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    requests++;
+    return Completer<http.StreamedResponse>().future;
+  }
 }
