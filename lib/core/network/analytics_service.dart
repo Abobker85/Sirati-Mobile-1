@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:sirati/core/l10n/remote_l10n_models.dart';
 
 /// Thin, never-throwing analytics facade.
 ///
@@ -56,8 +57,8 @@ class AnalyticsService {
     }
   }
 
-  static Future<void> setAppLanguage(String lang) =>
-      setUserProperty(name: 'app_language', value: lang == 'en' ? 'en' : 'ar');
+  static Future<void> setAppLanguage(String lang) => setUserProperty(
+      name: 'app_language', value: normalizeLanguageCode(lang) ?? 'ar');
 
   static Future<void> setThemeMode(String mode) {
     final normalized = (mode == 'light' || mode == 'dark' || mode == 'system')
@@ -156,7 +157,7 @@ class AnalyticsService {
 
   static Future<void> logLanguageChanged({required String lang}) =>
       logEvent('language_changed', {
-        'lang': lang == 'en' ? 'en' : 'ar',
+        'lang': normalizeLanguageCode(lang) ?? 'ar',
       });
 
   static Future<void> logOfflineFallbackShown({required String surface}) =>

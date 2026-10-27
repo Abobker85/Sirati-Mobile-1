@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' as intl;
 
+import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/storage/preference_store.dart';
 import 'package:sirati/core/utils/bidi_text.dart';
@@ -15,23 +17,41 @@ const gulfCountryCodes = <String>{'SA', 'AE', 'KW', 'QA', 'BH', 'OM'};
 class AppLocale {
   static final ValueNotifier<String> languageCode = ValueNotifier<String>('ar');
 
+  /// Enabled languages from the server (cached). `ar` and `en` are always
+  /// available, also while this is empty.
+  static final ValueNotifier<RemoteLanguageList> catalog =
+      ValueNotifier<RemoteLanguageList>(RemoteLanguageList.empty);
+
   static PreferenceStore _prefs = const PreferenceStore();
+  static List<Locale> _deviceLocales = const [];
+
+  /// Stored choice that is not enabled right now; applied when the catalog
+  /// enables it (e.g. the cache was unreadable at launch).
+  static String? _pendingStored;
 
   /// Load persisted language before [runApp].
   ///
   /// Priority: URL `?lang=` (web preview) → secure storage → device locales
-  /// (Arabic / Gulf → `ar`, English → `en`) → Arabic product default.
+  /// (Arabic / Gulf → `ar`, then the first enabled device language) →
+  /// Arabic product default. Codes that are not enabled are skipped.
   static Future<void> bootstrap({
     List<Locale>? deviceLocales,
     PreferenceStore? prefs,
   }) async {
     if (prefs != null) _prefs = prefs;
+    _deviceLocales =
+        deviceLocales ?? WidgetsBinding.instance.platformDispatcher.locales;
+    final stored = await _readStoredLanguage();
     final resolved = resolveLanguageCode(
       urlLang: Uri.base.queryParameters['lang'],
-      storedLang: await _readStoredLanguage(),
-      deviceLocales:
-          deviceLocales ?? WidgetsBinding.instance.platformDispatcher.locales,
+      storedLang: stored,
+      deviceLocales: _deviceLocales,
+      available: availableCodes,
     );
+    final storedCode = normalizeLanguageCode(stored);
+    _pendingStored = storedCode != null && !availableCodes.contains(storedCode)
+        ? storedCode
+        : null;
     languageCode.value = resolved;
   }
 
@@ -43,14 +63,27 @@ class AppLocale {
     }
   }
 
-  /// Pure locale policy. Tested across arbitrary device locales.
+  /// Pure locale policy. Tested across arbitrary codes and device locales.
+  ///
+  /// [available] lists enabled codes; `ar` and `en` are always enabled.
   static String resolveLanguageCode({
     String? urlLang,
     String? storedLang,
     List<Locale> deviceLocales = const [],
+    Set<String> available = bundledLanguageCodes,
   }) {
-    if (urlLang == 'en' || urlLang == 'ar') return urlLang!;
-    if (storedLang == 'en' || storedLang == 'ar') return storedLang!;
+    String? enabled(String? raw) {
+      final code = normalizeLanguageCode(raw);
+      if (code == null) return null;
+      return bundledLanguageCodes.contains(code) || available.contains(code)
+          ? code
+          : null;
+    }
+
+    final fromUrl = enabled(urlLang);
+    if (fromUrl != null) return fromUrl;
+    final fromStore = enabled(storedLang);
+    if (fromStore != null) return fromStore;
 
     for (final locale in deviceLocales) {
       if (locale.languageCode.toLowerCase() == 'ar') return 'ar';
@@ -58,30 +91,94 @@ class AppLocale {
       if (country != null && gulfCountryCodes.contains(country)) return 'ar';
     }
     for (final locale in deviceLocales) {
-      if (locale.languageCode.toLowerCase() == 'en') return 'en';
+      final code = enabled(languageCodeOfLocale(locale, available));
+      if (code != null) return code;
     }
     return 'ar';
   }
 
-  static Locale get locale {
-    return languageCode.value == 'en'
-        ? const Locale('en', 'US')
-        : const Locale('ar', 'SA');
+  /// `ar`, `en` and every enabled remote language.
+  static Set<String> get availableCodes => {
+        ...bundledLanguageCodes,
+        for (final language in catalog.value.languages) language.code,
+      };
+
+  /// Languages for the picker: server order, `ar`/`en` always present.
+  static List<RemoteLanguage> get pickerLanguages => [
+        if (catalog.value.byCode('ar') == null) RemoteLanguage.arabic,
+        if (catalog.value.byCode('en') == null) RemoteLanguage.english,
+        ...catalog.value.languages,
+      ];
+
+  static RemoteLanguage? recordFor(String code) =>
+      catalog.value.byCode(code) ??
+      switch (code) {
+        'ar' => RemoteLanguage.arabic,
+        'en' => RemoteLanguage.english,
+        _ => null,
+      };
+
+  /// Applies a new languages list. A selected language that is no longer
+  /// enabled falls back by the normal policy (the stored choice is kept, so
+  /// it returns when re-enabled); a pending stored choice enabled now wins.
+  static void updateCatalog(RemoteLanguageList languages) {
+    catalog.value = languages;
+    final pending = _pendingStored;
+    if (pending != null && availableCodes.contains(pending)) {
+      _pendingStored = null;
+      languageCode.value = pending;
+      return;
+    }
+    if (!availableCodes.contains(languageCode.value)) {
+      _pendingStored ??= languageCode.value;
+      languageCode.value = resolveLanguageCode(
+        urlLang: Uri.base.queryParameters['lang'],
+        deviceLocales: _deviceLocales,
+        available: availableCodes,
+      );
+    }
   }
 
-  static bool isEnglish(BuildContext context) {
-    return Localizations.localeOf(context).languageCode == 'en';
+  /// Bundled language (`ar`/`en`) whose strings and content back [code],
+  /// following the language's fallback chain (default English).
+  static String baseLanguageOf(String code) {
+    var current = code;
+    final seen = <String>{};
+    while (!bundledLanguageCodes.contains(current)) {
+      if (!seen.add(current) || seen.length > 4) return 'en';
+      current = catalog.value.byCode(current)?.fallback ?? 'en';
+    }
+    return current;
   }
 
-  static bool get isRtl => languageCode.value != 'en';
-
-  static TextDirection direction(BuildContext context) {
-    return isEnglish(context) ? TextDirection.ltr : TextDirection.rtl;
+  /// Text direction of [code]: its language record's, else intl's RTL list.
+  static TextDirection directionOf(String code) {
+    final record = recordFor(code);
+    if (record != null) return record.direction;
+    return intl.Bidi.isRtlLanguage(code)
+        ? TextDirection.rtl
+        : TextDirection.ltr;
   }
 
-  static TextDirection get currentDirection {
-    return languageCode.value == 'en' ? TextDirection.ltr : TextDirection.rtl;
-  }
+  /// `ar` or `en`: the content language for API calls and bilingual data.
+  static String get baseLanguage => baseLanguageOf(languageCode.value);
+
+  static Locale get locale => localeForLanguageCode(languageCode.value);
+
+  static String _codeOf(BuildContext context) =>
+      languageCodeOfLocale(Localizations.localeOf(context), availableCodes);
+
+  /// True when the ambient language is backed by English: English itself,
+  /// or a remote language whose fallback chain ends at English.
+  static bool isEnglish(BuildContext context) =>
+      baseLanguageOf(_codeOf(context)) == 'en';
+
+  static bool get isRtl => currentDirection == TextDirection.rtl;
+
+  static TextDirection direction(BuildContext context) =>
+      directionOf(_codeOf(context));
+
+  static TextDirection get currentDirection => directionOf(languageCode.value);
 
   /// Prefer this over left/right — follows ambient [Directionality].
   static const TextAlign textStart = TextAlign.start;
@@ -106,8 +203,13 @@ class AppLocale {
     return LocaleFormat.mixedBody(body, english: isEnglish(context));
   }
 
+  /// Selects [code] when it is enabled; anything else selects Arabic.
   static Future<void> setLanguage(String code) async {
-    final next = code == 'en' ? 'en' : 'ar';
+    final normalized = normalizeLanguageCode(code);
+    final next = normalized != null && availableCodes.contains(normalized)
+        ? normalized
+        : 'ar';
+    _pendingStored = null;
     final changed = languageCode.value != next;
     languageCode.value = next;
     try {
@@ -132,8 +234,16 @@ class AppLocale {
   }
 
   @visibleForTesting
-  static void resetForTest({String language = 'ar'}) {
-    languageCode.value = language == 'en' ? 'en' : 'ar';
+  static void resetForTest({
+    String language = 'ar',
+    RemoteLanguageList languages = RemoteLanguageList.empty,
+  }) {
+    catalog.value = languages;
+    final code = normalizeLanguageCode(language);
+    languageCode.value =
+        code != null && availableCodes.contains(code) ? code : 'ar';
     _prefs = const PreferenceStore();
+    _deviceLocales = const [];
+    _pendingStored = null;
   }
 }

@@ -7,12 +7,14 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sirati/core/errors/app_crash_view.dart';
 import 'package:sirati/core/flavors/app_flavor.dart';
 import 'package:sirati/core/flavors/flavor_banner.dart';
+import 'package:sirati/core/l10n/remote_l10n.dart';
+import 'package:sirati/core/l10n/remote_l10n_repository.dart';
+import 'package:sirati/core/l10n/remote_localizations_delegate.dart';
 import 'package:sirati/core/logging/app_log.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/routing/app_router.dart';
@@ -96,6 +98,13 @@ Future<void> startSiratiApp() async {
       };
 
       // Local prefs first — never block the UI shell on Firebase.
+      // Cached remote labels/languages (disk only) so the stored language
+      // and its strings apply on the first frame.
+      try {
+        await RemoteL10n.loadCache();
+      } catch (e, st) {
+        debugPrint('[Boot] RemoteL10n cache failed: $e\n$st');
+      }
       try {
         await AppLocale.bootstrap();
       } catch (e, st) {
@@ -128,6 +137,11 @@ Future<void> startSiratiApp() async {
       // must still open SplashScreen instead of dying on a white/native shell.
       final initialRoute = AppRouter.resolveInitialRoute();
       runApp(ProviderScope(child: SiratiApp(initialRoute: initialRoute)));
+      try {
+        RemoteL10n.start();
+      } catch (e, st) {
+        debugPrint('[Boot] RemoteL10n refresh failed: $e\n$st');
+      }
 
       if (kDebugMode) {
         debugPrint(
@@ -258,86 +272,84 @@ class SiratiApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     registerSiratiRouteWidgets();
-    return ValueListenableBuilder<String>(
-      valueListenable: AppLocale.languageCode,
-      builder: (context, language, _) {
-        return ValueListenableBuilder<ThemeMode>(
-          valueListenable: AppThemeController.themeMode,
-          builder: (context, themeMode, _) {
-            return MaterialApp(
-              navigatorKey: siratiNavigatorKey,
-              title: language == 'en' ? 'Siratie' : 'سيرتي',
-              debugShowCheckedModeBanner: false,
-              onGenerateTitle: (context) {
-                final l10n = AppLocalizations.of(context);
-                return l10n.appTitle;
-              },
-              theme: AppTheme.lightFor(arabic: language != 'en'),
-              darkTheme: AppTheme.darkFor(arabic: language != 'en'),
-              themeMode: themeMode,
-              locale: AppLocale.locale,
-              navigatorObservers: AnalyticsService.navigatorObservers,
-              supportedLocales: const [
-                Locale('ar', 'SA'),
-                Locale('en', 'US'),
-              ],
-              localizationsDelegates: const [
-                AppLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              builder: (context, child) {
-                final sirati = context.sirati;
-                final brightness = Theme.of(context).brightness;
-                final overlayStyle =
-                    AppTheme.systemUiOverlayStyle(sirati, brightness);
-                return AnnotatedRegion<SystemUiOverlayStyle>(
-                  value: overlayStyle,
-                  child: FlavorBanner(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final platform = Theme.of(context).platform;
-                        final isNativeMobile = !kIsWeb &&
-                            (platform == TargetPlatform.android ||
-                                platform == TargetPlatform.iOS);
-                        final width = isNativeMobile
-                            ? constraints.maxWidth
-                            : (constraints.maxWidth > 480
-                                ? 430.0
-                                : constraints.maxWidth);
+    return ValueListenableBuilder<RemoteL10nState>(
+      valueListenable: RemoteL10n.state,
+      builder: (context, remoteL10n, _) => ValueListenableBuilder<String>(
+        valueListenable: AppLocale.languageCode,
+        builder: (context, language, _) {
+          final rtl = AppLocale.directionOf(language) == TextDirection.rtl;
+          return ValueListenableBuilder<ThemeMode>(
+            valueListenable: AppThemeController.themeMode,
+            builder: (context, themeMode, _) {
+              return MaterialApp(
+                navigatorKey: siratiNavigatorKey,
+                title: AppLocale.baseLanguageOf(language) == 'en'
+                    ? 'Siratie'
+                    : 'سيرتي',
+                debugShowCheckedModeBanner: false,
+                onGenerateTitle: (context) {
+                  final l10n = AppLocalizations.of(context);
+                  return l10n.appTitle;
+                },
+                theme: AppTheme.lightFor(arabic: rtl),
+                darkTheme: AppTheme.darkFor(arabic: rtl),
+                themeMode: themeMode,
+                locale: AppLocale.locale,
+                navigatorObservers: AnalyticsService.navigatorObservers,
+                supportedLocales: appSupportedLocales(remoteL10n),
+                localizationsDelegates: appLocalizationsDelegates(remoteL10n),
+                builder: (context, child) {
+                  final sirati = context.sirati;
+                  final brightness = Theme.of(context).brightness;
+                  final overlayStyle =
+                      AppTheme.systemUiOverlayStyle(sirati, brightness);
+                  return AnnotatedRegion<SystemUiOverlayStyle>(
+                    value: overlayStyle,
+                    child: FlavorBanner(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final platform = Theme.of(context).platform;
+                          final isNativeMobile = !kIsWeb &&
+                              (platform == TargetPlatform.android ||
+                                  platform == TargetPlatform.iOS);
+                          final width = isNativeMobile
+                              ? constraints.maxWidth
+                              : (constraints.maxWidth > 480
+                                  ? 430.0
+                                  : constraints.maxWidth);
 
-                        return ColoredBox(
-                          color: sirati.background,
-                          child: Align(
-                            alignment: Alignment.topCenter,
-                            child: SizedBox(
-                              width: width,
-                              height: constraints.maxHeight,
-                              child: MediaQuery.withClampedTextScaling(
-                                minScaleFactor: 0.8,
-                                maxScaleFactor: 2.0,
-                                child: Directionality(
-                                  textDirection: AppLocale.direction(context),
-                                  child: child ?? const SizedBox.shrink(),
+                          return ColoredBox(
+                            color: sirati.background,
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: SizedBox(
+                                width: width,
+                                height: constraints.maxHeight,
+                                child: MediaQuery.withClampedTextScaling(
+                                  minScaleFactor: 0.8,
+                                  maxScaleFactor: 2.0,
+                                  child: Directionality(
+                                    textDirection: AppLocale.direction(context),
+                                    child: child ?? const SizedBox.shrink(),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                );
-              },
-              initialRoute: initialRoute ?? AppRoutes.splash,
-              onGenerateInitialRoutes: AppRouter.onGenerateInitialRoutes,
-              onGenerateRoute: AppRouter.onGenerateRoute,
-              onUnknownRoute: AppRouter.onUnknownRoute,
-            );
-          },
-        );
-      },
+                  );
+                },
+                initialRoute: initialRoute ?? AppRoutes.splash,
+                onGenerateInitialRoutes: AppRouter.onGenerateInitialRoutes,
+                onGenerateRoute: AppRouter.onGenerateRoute,
+                onUnknownRoute: AppRouter.onUnknownRoute,
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

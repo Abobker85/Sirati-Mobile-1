@@ -29,7 +29,7 @@ class NotificationEngagementService {
 
     try {
       await _client.postJson('/mobile/activity', {
-        'language': AppLocale.languageCode.value == 'en' ? 'en' : 'ar',
+        'language': AppLocale.baseLanguage,
         'timezone_offset_minutes': now.timeZoneOffset.inMinutes,
         if (event != null) 'event': event,
       });
@@ -79,7 +79,7 @@ class NotificationEngagementService {
     try {
       await _client.putJson('/mobile/notification-preferences', {
         'enabled': enabled,
-        'language': AppLocale.languageCode.value == 'en' ? 'en' : 'ar',
+        'language': AppLocale.baseLanguage,
         'timezone_offset_minutes': DateTime.now().timeZoneOffset.inMinutes,
       });
     } catch (_) {}

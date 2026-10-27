@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sirati/core/l10n/remote_l10n_models.dart';
 
 /// Lightweight secure preferences (language, notification opt-in, CV draft).
 ///
@@ -28,8 +29,12 @@ class PreferenceStore {
 
   Future<String?> readLanguage() => _storage.read(key: langKey);
 
-  Future<void> saveLanguage(String code) =>
-      _storage.write(key: langKey, value: code == 'en' ? 'en' : 'ar');
+  /// Stores an app language code (`ar`, `en` or an enabled remote code).
+  /// Codes that are not plain language tags store Arabic.
+  Future<void> saveLanguage(String code) => _storage.write(
+        key: langKey,
+        value: normalizeLanguageCode(code) ?? 'ar',
+      );
 
   /// Defaults to enabled when unset.
   Future<bool> readNotificationsEnabled() async {

@@ -11,6 +11,7 @@ import 'package:sirati/features/settings/presentation/change_password_screen.dar
 import 'package:sirati/features/settings/presentation/delete_account_screen.dart';
 import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
 import 'package:sirati/features/settings/presentation/profile_screen.dart';
+import 'package:sirati/features/settings/presentation/settings/language_picker_sheet.dart';
 import 'package:sirati/features/settings/presentation/settings/settings_widgets.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
@@ -134,10 +135,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final userAsync = ref.watch(settingsUserProvider);
     final notifications = ref.watch(notificationPreferenceProvider);
     final cachedUser = SessionCache.instance.user.value;
-    final linkStyle = TextStyle(
-      color: context.sirati.primaryInk,
-      fontWeight: FontWeight.w700,
-    );
 
     Widget body;
     if (userAsync.isLoading && !userAsync.hasValue && cachedUser == null) {
@@ -198,20 +195,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           AppListTile(
             leadingIcon: Icons.language_rounded,
             title: l10n.language,
-            subtitle: english ? l10n.languageEnglish : l10n.languageArabic,
-            showChevron: false,
-            trailing: TextButton(
-              onPressed: () => unawaited(AppLocale.setLanguage(
-                english ? 'ar' : 'en',
-              )),
-              child: Text(
-                english ? l10n.languageArabic : l10n.languageEnglish,
-                style: linkStyle,
-              ),
-            ),
-            onTap: () => unawaited(AppLocale.setLanguage(
-              english ? 'ar' : 'en',
-            )),
+            subtitle: currentLanguageName(),
+            onTap: () => unawaited(showLanguagePicker(context)),
           ),
           const SizedBox(height: AppSpacing.sm),
           ValueListenableBuilder<ThemeMode>(

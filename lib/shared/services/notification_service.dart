@@ -230,7 +230,7 @@ class NotificationService {
         'device_id': deviceId,
         'platform': platform,
         'app_version': ApiConfig.appVersion,
-        'language': AppLocale.languageCode.value == 'en' ? 'en' : 'ar',
+        'language': AppLocale.baseLanguage,
         'timezone_offset_minutes': now.timeZoneOffset.inMinutes,
         'notifications_enabled': notificationsEnabled,
       });

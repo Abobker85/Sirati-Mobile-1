@@ -134,7 +134,7 @@ class AppShadows {
 ///
 /// All styles come from [AppTypography] tokens (SIRATI-18).
 class AppTextStyles {
-  static bool _arabicDefault() => AppLocale.languageCode.value != 'en';
+  static bool _arabicDefault() => AppLocale.isRtl;
 
   static TextStyle titleLg(SiratiColors colors, {bool? arabic}) {
     return AppTypography.titleLg.resolve(
@@ -467,7 +467,8 @@ class SiratiMark extends StatelessWidget {
         gradient: gradient,
         // The agreed brand logo is a rounded square (Salem review,
         // 2026-10-24), replacing the circle of SIRATI-99.
-        borderRadius: rounded ? BorderRadius.circular(size * cornerRatio) : null,
+        borderRadius:
+            rounded ? BorderRadius.circular(size * cornerRatio) : null,
         boxShadow: elevated
             ? const [
                 BoxShadow(
