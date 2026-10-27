@@ -1342,404 +1342,6 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('jm4HonestyHint') ?? _base.jm4HonestyHint;
 
   @override
-  String get jobsFilterAll =>
-      remote.text('jobsFilterAll') ?? _base.jobsFilterAll;
-
-  @override
-  String get jobsPresetMatched =>
-      remote.text('jobsPresetMatched') ?? _base.jobsPresetMatched;
-
-  @override
-  String get jobsPresetGov =>
-      remote.text('jobsPresetGov') ?? _base.jobsPresetGov;
-
-  @override
-  String get jobsPresetEnterprise =>
-      remote.text('jobsPresetEnterprise') ?? _base.jobsPresetEnterprise;
-
-  @override
-  String get jobsPresetTamheer =>
-      remote.text('jobsPresetTamheer') ?? _base.jobsPresetTamheer;
-
-  @override
-  String get jobsFilterRemote =>
-      remote.text('jobsFilterRemote') ?? _base.jobsFilterRemote;
-
-  @override
-  String get jobsSearchHint =>
-      remote.text('jobsSearchHint') ?? _base.jobsSearchHint;
-
-  @override
-  String get jobsCategoryTech =>
-      remote.text('jobsCategoryTech') ?? _base.jobsCategoryTech;
-
-  @override
-  String get jobsCategoryFinance =>
-      remote.text('jobsCategoryFinance') ?? _base.jobsCategoryFinance;
-
-  @override
-  String get jobsCategoryHealth =>
-      remote.text('jobsCategoryHealth') ?? _base.jobsCategoryHealth;
-
-  @override
-  String get jobsCityAll => remote.text('jobsCityAll') ?? _base.jobsCityAll;
-
-  @override
-  String get jobsCityRiyadh =>
-      remote.text('jobsCityRiyadh') ?? _base.jobsCityRiyadh;
-
-  @override
-  String get jobsCityJeddah =>
-      remote.text('jobsCityJeddah') ?? _base.jobsCityJeddah;
-
-  @override
-  String get jobsCityDammam =>
-      remote.text('jobsCityDammam') ?? _base.jobsCityDammam;
-
-  @override
-  String get jobsCityKhobar =>
-      remote.text('jobsCityKhobar') ?? _base.jobsCityKhobar;
-
-  @override
-  String get jobsCityMecca =>
-      remote.text('jobsCityMecca') ?? _base.jobsCityMecca;
-
-  @override
-  String get jobsCityMedina =>
-      remote.text('jobsCityMedina') ?? _base.jobsCityMedina;
-
-  @override
-  String get jobsPersonalizedTitle =>
-      remote.text('jobsPersonalizedTitle') ?? _base.jobsPersonalizedTitle;
-
-  @override
-  String get jobsPersonalizedFallback =>
-      remote.text('jobsPersonalizedFallback') ?? _base.jobsPersonalizedFallback;
-
-  @override
-  String get jobsMatchedActive =>
-      remote.text('jobsMatchedActive') ?? _base.jobsMatchedActive;
-
-  @override
-  String get jobsMatchToggle =>
-      remote.text('jobsMatchToggle') ?? _base.jobsMatchToggle;
-
-  @override
-  String get jobsEmptyFeed =>
-      remote.text('jobsEmptyFeed') ?? _base.jobsEmptyFeed;
-
-  @override
-  String get jobsLoadFailed =>
-      remote.text('jobsLoadFailed') ?? _base.jobsLoadFailed;
-
-  @override
-  String get jobsLatestPostings =>
-      remote.text('jobsLatestPostings') ?? _base.jobsLatestPostings;
-
-  @override
-  String get jobsDetailTitle =>
-      remote.text('jobsDetailTitle') ?? _base.jobsDetailTitle;
-
-  @override
-  String get jobsVerifiedSourceDetail =>
-      remote.text('jobsVerifiedSourceDetail') ?? _base.jobsVerifiedSourceDetail;
-
-  @override
-  String get jobsTamheerProgram =>
-      remote.text('jobsTamheerProgram') ?? _base.jobsTamheerProgram;
-
-  @override
-  String get jobsCompatibilityTitle =>
-      remote.text('jobsCompatibilityTitle') ?? _base.jobsCompatibilityTitle;
-
-  @override
-  String get jobsSkillsRequired =>
-      remote.text('jobsSkillsRequired') ?? _base.jobsSkillsRequired;
-
-  @override
-  String get jobsDescriptionTitle =>
-      remote.text('jobsDescriptionTitle') ?? _base.jobsDescriptionTitle;
-
-  @override
-  String get jobsTailorCv => remote.text('jobsTailorCv') ?? _base.jobsTailorCv;
-
-  @override
-  String get jobsOpenApplyFailed =>
-      remote.text('jobsOpenApplyFailed') ?? _base.jobsOpenApplyFailed;
-
-  @override
-  String get jobsApplyOfficialSite =>
-      remote.text('jobsApplyOfficialSite') ?? _base.jobsApplyOfficialSite;
-
-  @override
-  String get jobsVerifiedSourceCard =>
-      remote.text('jobsVerifiedSourceCard') ?? _base.jobsVerifiedSourceCard;
-
-  @override
-  String get jobsTamheerBadge =>
-      remote.text('jobsTamheerBadge') ?? _base.jobsTamheerBadge;
-
-  @override
-  String get jobsNewBadge => remote.text('jobsNewBadge') ?? _base.jobsNewBadge;
-
-  @override
-  String get jobsDetailsLink =>
-      remote.text('jobsDetailsLink') ?? _base.jobsDetailsLink;
-
-  @override
-  String get jobsVerifiedSourceFeatured =>
-      remote.text('jobsVerifiedSourceFeatured') ??
-      _base.jobsVerifiedSourceFeatured;
-
-  @override
-  String get jobsTamheerBadgeFeatured =>
-      remote.text('jobsTamheerBadgeFeatured') ?? _base.jobsTamheerBadgeFeatured;
-
-  @override
-  String get jobsApplyNow => remote.text('jobsApplyNow') ?? _base.jobsApplyNow;
-
-  @override
-  String atsFileTooLarge(int size) =>
-      remote.format(
-        'atsFileTooLarge',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'size': size},
-        ),
-      ) ??
-      _base.atsFileTooLarge(size);
-
-  @override
-  String get atsUnsupportedFileType =>
-      remote.text('atsUnsupportedFileType') ?? _base.atsUnsupportedFileType;
-
-  @override
-  String get atsResumeRequired =>
-      remote.text('atsResumeRequired') ?? _base.atsResumeRequired;
-
-  @override
-  String get atsCancelled => remote.text('atsCancelled') ?? _base.atsCancelled;
-
-  @override
-  String get atsAiStillWorkingAnalysis =>
-      remote.text('atsAiStillWorkingAnalysis') ??
-      _base.atsAiStillWorkingAnalysis;
-
-  @override
-  String get atsAnalyzeUnexpectedError =>
-      remote.text('atsAnalyzeUnexpectedError') ??
-      _base.atsAnalyzeUnexpectedError;
-
-  @override
-  String get atsOpenAnalysisFailed =>
-      remote.text('atsOpenAnalysisFailed') ?? _base.atsOpenAnalysisFailed;
-
-  @override
-  String get atsResultsTitle =>
-      remote.text('atsResultsTitle') ?? _base.atsResultsTitle;
-
-  @override
-  String get atsTabScore => remote.text('atsTabScore') ?? _base.atsTabScore;
-
-  @override
-  String get atsTabRecommendations =>
-      remote.text('atsTabRecommendations') ?? _base.atsTabRecommendations;
-
-  @override
-  String get atsGenerateImprovedCv =>
-      remote.text('atsGenerateImprovedCv') ?? _base.atsGenerateImprovedCv;
-
-  @override
-  String get atsGenerating =>
-      remote.text('atsGenerating') ?? _base.atsGenerating;
-
-  @override
-  String get atsGenerateUnexpectedError =>
-      remote.text('atsGenerateUnexpectedError') ??
-      _base.atsGenerateUnexpectedError;
-
-  @override
-  String get atsAiStillWorkingGeneration =>
-      remote.text('atsAiStillWorkingGeneration') ??
-      _base.atsAiStillWorkingGeneration;
-
-  @override
-  String get atsUploadTapHint =>
-      remote.text('atsUploadTapHint') ?? _base.atsUploadTapHint;
-
-  @override
-  String get atsUploadMaxSize =>
-      remote.text('atsUploadMaxSize') ?? _base.atsUploadMaxSize;
-
-  @override
-  String get atsRemoveFile =>
-      remote.text('atsRemoveFile') ?? _base.atsRemoveFile;
-
-  @override
-  String get atsOr => remote.text('atsOr') ?? _base.atsOr;
-
-  @override
-  String get atsNoKeywords =>
-      remote.text('atsNoKeywords') ?? _base.atsNoKeywords;
-
-  @override
-  String atsShowMoreCount(int count) =>
-      remote.format(
-        'atsShowMoreCount',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'count': count},
-        ),
-      ) ??
-      _base.atsShowMoreCount(count);
-
-  @override
-  String atsKeywordDialogTitle(String keyword) =>
-      remote.format(
-        'atsKeywordDialogTitle',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'keyword': keyword},
-        ),
-      ) ??
-      _base.atsKeywordDialogTitle(keyword);
-
-  @override
-  String atsKeywordDialogBody(String keyword) =>
-      remote.format(
-        'atsKeywordDialogBody',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'keyword': keyword},
-        ),
-      ) ??
-      _base.atsKeywordDialogBody(keyword);
-
-  @override
-  String get atsGotIt => remote.text('atsGotIt') ?? _base.atsGotIt;
-
-  @override
-  String get atsCriteriaDetails =>
-      remote.text('atsCriteriaDetails') ?? _base.atsCriteriaDetails;
-
-  @override
-  String get atsKeywordsTitle =>
-      remote.text('atsKeywordsTitle') ?? _base.atsKeywordsTitle;
-
-  @override
-  String atsGradeLabel(String grade) =>
-      remote.format(
-        'atsGradeLabel',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'grade': grade},
-        ),
-      ) ??
-      _base.atsGradeLabel(grade);
-
-  @override
-  String get atsJobMatchSemantic =>
-      remote.text('atsJobMatchSemantic') ?? _base.atsJobMatchSemantic;
-
-  @override
-  String get atsJobMatchPercentage =>
-      remote.text('atsJobMatchPercentage') ?? _base.atsJobMatchPercentage;
-
-  @override
-  String atsKeywordsFound(int count) =>
-      remote.format(
-        'atsKeywordsFound',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'count': count},
-        ),
-      ) ??
-      _base.atsKeywordsFound(count);
-
-  @override
-  String atsKeywordsMissing(int count) =>
-      remote.format(
-        'atsKeywordsMissing',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'count': count},
-        ),
-      ) ??
-      _base.atsKeywordsMissing(count);
-
-  @override
-  String get atsNoStrengths =>
-      remote.text('atsNoStrengths') ?? _base.atsNoStrengths;
-
-  @override
-  String get atsQuickWins => remote.text('atsQuickWins') ?? _base.atsQuickWins;
-
-  @override
-  String get atsNoQuickWins =>
-      remote.text('atsNoQuickWins') ?? _base.atsNoQuickWins;
-
-  @override
-  String get atsUpgradeTitle =>
-      remote.text('atsUpgradeTitle') ?? _base.atsUpgradeTitle;
-
-  @override
-  String get atsUpgradeBody =>
-      remote.text('atsUpgradeBody') ?? _base.atsUpgradeBody;
-
-  @override
-  String get atsKeywordSourceJd =>
-      remote.text('atsKeywordSourceJd') ?? _base.atsKeywordSourceJd;
-
-  @override
-  String get atsKeywordSourceGeneric =>
-      remote.text('atsKeywordSourceGeneric') ?? _base.atsKeywordSourceGeneric;
-
-  @override
-  String get atsBandExcellent =>
-      remote.text('atsBandExcellent') ?? _base.atsBandExcellent;
-
-  @override
-  String get atsBandVeryGood =>
-      remote.text('atsBandVeryGood') ?? _base.atsBandVeryGood;
-
-  @override
-  String get atsBandFair => remote.text('atsBandFair') ?? _base.atsBandFair;
-
-  @override
-  String get atsBandWeak => remote.text('atsBandWeak') ?? _base.atsBandWeak;
-
-  @override
-  String jobsMatchScore(int score) =>
-      remote.format(
-        'jobsMatchScore',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'score': score},
-        ),
-      ) ??
-      _base.jobsMatchScore(score);
-
-  @override
-  String atsBenchmark(String category) =>
-      remote.format(
-        'atsBenchmark',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'category': category},
-        ),
-      ) ??
-      _base.atsBenchmark(category);
-
-  @override
   String get atsInputTitle =>
       remote.text('atsInputTitle') ?? _base.atsInputTitle;
 
@@ -3016,6 +2618,1695 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('dashboardEducationDetailNoContent') ??
       _base.dashboardEducationDetailNoContent;
 
+  @override
+  String get cvDraftAvailable =>
+      remote.text('cvDraftAvailable') ?? _base.cvDraftAvailable;
+
+  @override
+  String get cvDraftContinueTitle =>
+      remote.text('cvDraftContinueTitle') ?? _base.cvDraftContinueTitle;
+
+  @override
+  String get cvDraftStartFresh =>
+      remote.text('cvDraftStartFresh') ?? _base.cvDraftStartFresh;
+
+  @override
+  String get cvDraftRestore =>
+      remote.text('cvDraftRestore') ?? _base.cvDraftRestore;
+
+  @override
+  String get cvDiscardChangesTitle =>
+      remote.text('cvDiscardChangesTitle') ?? _base.cvDiscardChangesTitle;
+
+  @override
+  String get cvDiscardChangesBody =>
+      remote.text('cvDiscardChangesBody') ?? _base.cvDiscardChangesBody;
+
+  @override
+  String get cvDiscard => remote.text('cvDiscard') ?? _base.cvDiscard;
+
+  @override
+  String get cvSaveProgressTitle =>
+      remote.text('cvSaveProgressTitle') ?? _base.cvSaveProgressTitle;
+
+  @override
+  String get cvSaveProgressBody =>
+      remote.text('cvSaveProgressBody') ?? _base.cvSaveProgressBody;
+
+  @override
+  String get cvSaveDraft => remote.text('cvSaveDraft') ?? _base.cvSaveDraft;
+
+  @override
+  String get cvEntryRequired =>
+      remote.text('cvEntryRequired') ?? _base.cvEntryRequired;
+
+  @override
+  String get cvEntryChooseStart =>
+      remote.text('cvEntryChooseStart') ?? _base.cvEntryChooseStart;
+
+  @override
+  String get cvEntryChooseEnd =>
+      remote.text('cvEntryChooseEnd') ?? _base.cvEntryChooseEnd;
+
+  @override
+  String get cvEntryEndBeforeStart =>
+      remote.text('cvEntryEndBeforeStart') ?? _base.cvEntryEndBeforeStart;
+
+  @override
+  String get cvEntryFrom => remote.text('cvEntryFrom') ?? _base.cvEntryFrom;
+
+  @override
+  String get cvEntryTo => remote.text('cvEntryTo') ?? _base.cvEntryTo;
+
+  @override
+  String get cvEntryJobTitle =>
+      remote.text('cvEntryJobTitle') ?? _base.cvEntryJobTitle;
+
+  @override
+  String get cvEntryJobTitleHint =>
+      remote.text('cvEntryJobTitleHint') ?? _base.cvEntryJobTitleHint;
+
+  @override
+  String get cvEntryCompany =>
+      remote.text('cvEntryCompany') ?? _base.cvEntryCompany;
+
+  @override
+  String get cvEntryCity => remote.text('cvEntryCity') ?? _base.cvEntryCity;
+
+  @override
+  String get cvEntryWorkCurrent =>
+      remote.text('cvEntryWorkCurrent') ?? _base.cvEntryWorkCurrent;
+
+  @override
+  String get cvEntryDuties =>
+      remote.text('cvEntryDuties') ?? _base.cvEntryDuties;
+
+  @override
+  String get cvEntryDutiesHint =>
+      remote.text('cvEntryDutiesHint') ?? _base.cvEntryDutiesHint;
+
+  @override
+  String get cvEntryDegree =>
+      remote.text('cvEntryDegree') ?? _base.cvEntryDegree;
+
+  @override
+  String get cvEntryDegreeHint =>
+      remote.text('cvEntryDegreeHint') ?? _base.cvEntryDegreeHint;
+
+  @override
+  String get cvEntryInstitution =>
+      remote.text('cvEntryInstitution') ?? _base.cvEntryInstitution;
+
+  @override
+  String get cvEntryStudyCurrent =>
+      remote.text('cvEntryStudyCurrent') ?? _base.cvEntryStudyCurrent;
+
+  @override
+  String get cvEntryEducationDetails =>
+      remote.text('cvEntryEducationDetails') ?? _base.cvEntryEducationDetails;
+
+  @override
+  String get cvEntryCertName =>
+      remote.text('cvEntryCertName') ?? _base.cvEntryCertName;
+
+  @override
+  String get cvEntryCertIssuer =>
+      remote.text('cvEntryCertIssuer') ?? _base.cvEntryCertIssuer;
+
+  @override
+  String get cvEntryCertDate =>
+      remote.text('cvEntryCertDate') ?? _base.cvEntryCertDate;
+
+  @override
+  String get cvEntriesCompleteHighlighted =>
+      remote.text('cvEntriesCompleteHighlighted') ??
+      _base.cvEntriesCompleteHighlighted;
+
+  @override
+  String get cvEntriesAddOne =>
+      remote.text('cvEntriesAddOne') ?? _base.cvEntriesAddOne;
+
+  @override
+  String get cvEntriesMoreDetail =>
+      remote.text('cvEntriesMoreDetail') ?? _base.cvEntriesMoreDetail;
+
+  @override
+  String get cvEntryRemove =>
+      remote.text('cvEntryRemove') ?? _base.cvEntryRemove;
+
+  @override
+  String get cvMonthChoose =>
+      remote.text('cvMonthChoose') ?? _base.cvMonthChoose;
+
+  @override
+  String get cvMonthYearTitle =>
+      remote.text('cvMonthYearTitle') ?? _base.cvMonthYearTitle;
+
+  @override
+  String get cvMonthYearDone =>
+      remote.text('cvMonthYearDone') ?? _base.cvMonthYearDone;
+
+  @override
+  String get cvWizardUpdate =>
+      remote.text('cvWizardUpdate') ?? _base.cvWizardUpdate;
+
+  @override
+  String get cvWizardGenerate =>
+      remote.text('cvWizardGenerate') ?? _base.cvWizardGenerate;
+
+  @override
+  String get cvWizardGenerating =>
+      remote.text('cvWizardGenerating') ?? _base.cvWizardGenerating;
+
+  @override
+  String get cvWizardStepPersonal =>
+      remote.text('cvWizardStepPersonal') ?? _base.cvWizardStepPersonal;
+
+  @override
+  String get cvWizardStepSkills =>
+      remote.text('cvWizardStepSkills') ?? _base.cvWizardStepSkills;
+
+  @override
+  String get cvWizardStepExperience =>
+      remote.text('cvWizardStepExperience') ?? _base.cvWizardStepExperience;
+
+  @override
+  String get cvWizardStepEducation =>
+      remote.text('cvWizardStepEducation') ?? _base.cvWizardStepEducation;
+
+  @override
+  String cvWizardStepOf(int step, int total) =>
+      remote.format(
+        'cvWizardStepOf',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'step': step, 'total': total},
+        ),
+      ) ??
+      _base.cvWizardStepOf(step, total);
+
+  @override
+  String get cvWizardReviewFields =>
+      remote.text('cvWizardReviewFields') ?? _base.cvWizardReviewFields;
+
+  @override
+  String get cvEducationStepTitle =>
+      remote.text('cvEducationStepTitle') ?? _base.cvEducationStepTitle;
+
+  @override
+  String get cvEducationLabel =>
+      remote.text('cvEducationLabel') ?? _base.cvEducationLabel;
+
+  @override
+  String get cvEducationAdd =>
+      remote.text('cvEducationAdd') ?? _base.cvEducationAdd;
+
+  @override
+  String get cvCertificationsLabel =>
+      remote.text('cvCertificationsLabel') ?? _base.cvCertificationsLabel;
+
+  @override
+  String get cvCertificationsAdd =>
+      remote.text('cvCertificationsAdd') ?? _base.cvCertificationsAdd;
+
+  @override
+  String get cvExperienceStepTitle =>
+      remote.text('cvExperienceStepTitle') ?? _base.cvExperienceStepTitle;
+
+  @override
+  String get cvExperienceLabel =>
+      remote.text('cvExperienceLabel') ?? _base.cvExperienceLabel;
+
+  @override
+  String get cvExperienceHelper =>
+      remote.text('cvExperienceHelper') ?? _base.cvExperienceHelper;
+
+  @override
+  String get cvExperienceXyzBuilder =>
+      remote.text('cvExperienceXyzBuilder') ?? _base.cvExperienceXyzBuilder;
+
+  @override
+  String get cvExperienceAdd =>
+      remote.text('cvExperienceAdd') ?? _base.cvExperienceAdd;
+
+  @override
+  String get cvPersonalStepTitle =>
+      remote.text('cvPersonalStepTitle') ?? _base.cvPersonalStepTitle;
+
+  @override
+  String get cvPersonalFullName =>
+      remote.text('cvPersonalFullName') ?? _base.cvPersonalFullName;
+
+  @override
+  String get cvPersonalFullNameHint =>
+      remote.text('cvPersonalFullNameHint') ?? _base.cvPersonalFullNameHint;
+
+  @override
+  String get cvPersonalFullNameRequired =>
+      remote.text('cvPersonalFullNameRequired') ??
+      _base.cvPersonalFullNameRequired;
+
+  @override
+  String get cvPersonalEmailRequired =>
+      remote.text('cvPersonalEmailRequired') ?? _base.cvPersonalEmailRequired;
+
+  @override
+  String get cvPersonalEmailInvalid =>
+      remote.text('cvPersonalEmailInvalid') ?? _base.cvPersonalEmailInvalid;
+
+  @override
+  String get cvPersonalPhone =>
+      remote.text('cvPersonalPhone') ?? _base.cvPersonalPhone;
+
+  @override
+  String get cvPersonalPhoneRequired =>
+      remote.text('cvPersonalPhoneRequired') ?? _base.cvPersonalPhoneRequired;
+
+  @override
+  String get cvPersonalLinkedin =>
+      remote.text('cvPersonalLinkedin') ?? _base.cvPersonalLinkedin;
+
+  @override
+  String get cvPersonalTargetJob =>
+      remote.text('cvPersonalTargetJob') ?? _base.cvPersonalTargetJob;
+
+  @override
+  String get cvPersonalTargetJobHint =>
+      remote.text('cvPersonalTargetJobHint') ?? _base.cvPersonalTargetJobHint;
+
+  @override
+  String get cvPersonalTargetJobRequired =>
+      remote.text('cvPersonalTargetJobRequired') ??
+      _base.cvPersonalTargetJobRequired;
+
+  @override
+  String get cvPersonalJobDescription =>
+      remote.text('cvPersonalJobDescription') ?? _base.cvPersonalJobDescription;
+
+  @override
+  String get cvPersonalCvLanguage =>
+      remote.text('cvPersonalCvLanguage') ?? _base.cvPersonalCvLanguage;
+
+  @override
+  String get cvPersonalEnhancingJobDescription =>
+      remote.text('cvPersonalEnhancingJobDescription') ??
+      _base.cvPersonalEnhancingJobDescription;
+
+  @override
+  String get cvPersonalJobDescriptionHint =>
+      remote.text('cvPersonalJobDescriptionHint') ??
+      _base.cvPersonalJobDescriptionHint;
+
+  @override
+  String get cvEnhance => remote.text('cvEnhance') ?? _base.cvEnhance;
+
+  @override
+  String get cvEnhancing => remote.text('cvEnhancing') ?? _base.cvEnhancing;
+
+  @override
+  String get cvPersonalWriteMore =>
+      remote.text('cvPersonalWriteMore') ?? _base.cvPersonalWriteMore;
+
+  @override
+  String get cvSkillsStepTitle =>
+      remote.text('cvSkillsStepTitle') ?? _base.cvSkillsStepTitle;
+
+  @override
+  String get cvSkillsCore => remote.text('cvSkillsCore') ?? _base.cvSkillsCore;
+
+  @override
+  String get cvSkillsHelper =>
+      remote.text('cvSkillsHelper') ?? _base.cvSkillsHelper;
+
+  @override
+  String get cvSkillsRequired =>
+      remote.text('cvSkillsRequired') ?? _base.cvSkillsRequired;
+
+  @override
+  String get cvSummaryLabel =>
+      remote.text('cvSummaryLabel') ?? _base.cvSummaryLabel;
+
+  @override
+  String get cvSummaryHelper =>
+      remote.text('cvSummaryHelper') ?? _base.cvSummaryHelper;
+
+  @override
+  String get cvSummaryHint =>
+      remote.text('cvSummaryHint') ?? _base.cvSummaryHint;
+
+  @override
+  String get cvDraftSaved => remote.text('cvDraftSaved') ?? _base.cvDraftSaved;
+
+  @override
+  String get cvAchievementDuplicate =>
+      remote.text('cvAchievementDuplicate') ?? _base.cvAchievementDuplicate;
+
+  @override
+  String get cvAchievementAdded =>
+      remote.text('cvAchievementAdded') ?? _base.cvAchievementAdded;
+
+  @override
+  String get cvGenerationCancelled =>
+      remote.text('cvGenerationCancelled') ?? _base.cvGenerationCancelled;
+
+  @override
+  String get cvRetryShort => remote.text('cvRetryShort') ?? _base.cvRetryShort;
+
+  @override
+  String get cvGenerationUnexpectedError =>
+      remote.text('cvGenerationUnexpectedError') ??
+      _base.cvGenerationUnexpectedError;
+
+  @override
+  String get cvGenerationStillRunning =>
+      remote.text('cvGenerationStillRunning') ?? _base.cvGenerationStillRunning;
+
+  @override
+  String get cvEnterTargetJobFirst =>
+      remote.text('cvEnterTargetJobFirst') ?? _base.cvEnterTargetJobFirst;
+
+  @override
+  String get cvEnhanceFieldFailed =>
+      remote.text('cvEnhanceFieldFailed') ?? _base.cvEnhanceFieldFailed;
+
+  @override
+  String get cvFieldEnhanced =>
+      remote.text('cvFieldEnhanced') ?? _base.cvFieldEnhanced;
+
+  @override
+  String get cvUndo => remote.text('cvUndo') ?? _base.cvUndo;
+
+  @override
+  String get cvJobDescriptionTooShort =>
+      remote.text('cvJobDescriptionTooShort') ?? _base.cvJobDescriptionTooShort;
+
+  @override
+  String get cvEnhanceJobDescriptionFailed =>
+      remote.text('cvEnhanceJobDescriptionFailed') ??
+      _base.cvEnhanceJobDescriptionFailed;
+
+  @override
+  String get cvJobDescriptionEnhanced =>
+      remote.text('cvJobDescriptionEnhanced') ?? _base.cvJobDescriptionEnhanced;
+
+  @override
+  String get cvGeneratorEditTitle =>
+      remote.text('cvGeneratorEditTitle') ?? _base.cvGeneratorEditTitle;
+
+  @override
+  String get cvGeneratorCreateTitle =>
+      remote.text('cvGeneratorCreateTitle') ?? _base.cvGeneratorCreateTitle;
+
+  @override
+  String get cvOpenFailed => remote.text('cvOpenFailed') ?? _base.cvOpenFailed;
+
+  @override
+  String get cvNotReadyToSend =>
+      remote.text('cvNotReadyToSend') ?? _base.cvNotReadyToSend;
+
+  @override
+  String get cvOpeningPdf => remote.text('cvOpeningPdf') ?? _base.cvOpeningPdf;
+
+  @override
+  String get cvPdfLinkUnavailable =>
+      remote.text('cvPdfLinkUnavailable') ?? _base.cvPdfLinkUnavailable;
+
+  @override
+  String get cvPdfLinkOpenFailed =>
+      remote.text('cvPdfLinkOpenFailed') ?? _base.cvPdfLinkOpenFailed;
+
+  @override
+  String get cvTemplatesLoadFailed =>
+      remote.text('cvTemplatesLoadFailed') ?? _base.cvTemplatesLoadFailed;
+
+  @override
+  String get cvDeleteTitle =>
+      remote.text('cvDeleteTitle') ?? _base.cvDeleteTitle;
+
+  @override
+  String get cvDeleteBody => remote.text('cvDeleteBody') ?? _base.cvDeleteBody;
+
+  @override
+  String get cvDeleteFailed =>
+      remote.text('cvDeleteFailed') ?? _base.cvDeleteFailed;
+
+  @override
+  String get cvPdfLinkNotFound =>
+      remote.text('cvPdfLinkNotFound') ?? _base.cvPdfLinkNotFound;
+
+  @override
+  String get cvPdfOpenFailed =>
+      remote.text('cvPdfOpenFailed') ?? _base.cvPdfOpenFailed;
+
+  @override
+  String get cvListLoadFailed =>
+      remote.text('cvListLoadFailed') ?? _base.cvListLoadFailed;
+
+  @override
+  String get cvListEmptyTitle =>
+      remote.text('cvListEmptyTitle') ?? _base.cvListEmptyTitle;
+
+  @override
+  String get cvListEmptyBody =>
+      remote.text('cvListEmptyBody') ?? _base.cvListEmptyBody;
+
+  @override
+  String get cvCreateNew => remote.text('cvCreateNew') ?? _base.cvCreateNew;
+
+  @override
+  String get cvUntitled => remote.text('cvUntitled') ?? _base.cvUntitled;
+
+  @override
+  String get cvCardEdit => remote.text('cvCardEdit') ?? _base.cvCardEdit;
+
+  @override
+  String get cvCardDownload =>
+      remote.text('cvCardDownload') ?? _base.cvCardDownload;
+
+  @override
+  String get cvTemplatePickerTitle =>
+      remote.text('cvTemplatePickerTitle') ?? _base.cvTemplatePickerTitle;
+
+  @override
+  String get cvTemplateDefault =>
+      remote.text('cvTemplateDefault') ?? _base.cvTemplateDefault;
+
+  @override
+  String get cvXyzFormula => remote.text('cvXyzFormula') ?? _base.cvXyzFormula;
+
+  @override
+  String get cvXyzPresetsTitle =>
+      remote.text('cvXyzPresetsTitle') ?? _base.cvXyzPresetsTitle;
+
+  @override
+  String get cvXyzPresetTech =>
+      remote.text('cvXyzPresetTech') ?? _base.cvXyzPresetTech;
+
+  @override
+  String get cvXyzPresetSales =>
+      remote.text('cvXyzPresetSales') ?? _base.cvXyzPresetSales;
+
+  @override
+  String get cvXyzPresetProject =>
+      remote.text('cvXyzPresetProject') ?? _base.cvXyzPresetProject;
+
+  @override
+  String get cvXyzActionLabel =>
+      remote.text('cvXyzActionLabel') ?? _base.cvXyzActionLabel;
+
+  @override
+  String get cvXyzActionHint =>
+      remote.text('cvXyzActionHint') ?? _base.cvXyzActionHint;
+
+  @override
+  String get cvXyzMetricLabel =>
+      remote.text('cvXyzMetricLabel') ?? _base.cvXyzMetricLabel;
+
+  @override
+  String get cvXyzMetricHint =>
+      remote.text('cvXyzMetricHint') ?? _base.cvXyzMetricHint;
+
+  @override
+  String get cvXyzMethodLabel =>
+      remote.text('cvXyzMethodLabel') ?? _base.cvXyzMethodLabel;
+
+  @override
+  String get cvXyzMethodHint =>
+      remote.text('cvXyzMethodHint') ?? _base.cvXyzMethodHint;
+
+  @override
+  String get cvXyzPreviewTitle =>
+      remote.text('cvXyzPreviewTitle') ?? _base.cvXyzPreviewTitle;
+
+  @override
+  String get cvXyzInsert => remote.text('cvXyzInsert') ?? _base.cvXyzInsert;
+
+  @override
+  String cvSkillsSelectedCount(int count) =>
+      remote.format(
+        'cvSkillsSelectedCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.cvSkillsSelectedCount(count);
+
+  @override
+  String get cvSkillsClearAll =>
+      remote.text('cvSkillsClearAll') ?? _base.cvSkillsClearAll;
+
+  @override
+  String get cvSkillsEmpty =>
+      remote.text('cvSkillsEmpty') ?? _base.cvSkillsEmpty;
+
+  @override
+  String get cvSkillsInputHint =>
+      remote.text('cvSkillsInputHint') ?? _base.cvSkillsInputHint;
+
+  @override
+  String get cvSkillsSuggested =>
+      remote.text('cvSkillsSuggested') ?? _base.cvSkillsSuggested;
+
+  @override
+  String get cvExportOptionsTitle =>
+      remote.text('cvExportOptionsTitle') ?? _base.cvExportOptionsTitle;
+
+  @override
+  String get cvExportLanguage =>
+      remote.text('cvExportLanguage') ?? _base.cvExportLanguage;
+
+  @override
+  String get cvExportSelectedTemplate =>
+      remote.text('cvExportSelectedTemplate') ?? _base.cvExportSelectedTemplate;
+
+  @override
+  String get cvExportFileName =>
+      remote.text('cvExportFileName') ?? _base.cvExportFileName;
+
+  @override
+  String get cvExportLatinFilename =>
+      remote.text('cvExportLatinFilename') ?? _base.cvExportLatinFilename;
+
+  @override
+  String get cvExportPremiumWatermark =>
+      remote.text('cvExportPremiumWatermark') ?? _base.cvExportPremiumWatermark;
+
+  @override
+  String get cvExportSubscriptionRequired =>
+      remote.text('cvExportSubscriptionRequired') ??
+      _base.cvExportSubscriptionRequired;
+
+  @override
+  String get cvExportUpgrade =>
+      remote.text('cvExportUpgrade') ?? _base.cvExportUpgrade;
+
+  @override
+  String get cvExportPreparing =>
+      remote.text('cvExportPreparing') ?? _base.cvExportPreparing;
+
+  @override
+  String get cvExportDownload =>
+      remote.text('cvExportDownload') ?? _base.cvExportDownload;
+
+  @override
+  String get cvExportSuccess =>
+      remote.text('cvExportSuccess') ?? _base.cvExportSuccess;
+
+  @override
+  String get cvExportSharePdf =>
+      remote.text('cvExportSharePdf') ?? _base.cvExportSharePdf;
+
+  @override
+  String get settingsOnboardingWelcomeBody =>
+      remote.text('settingsOnboardingWelcomeBody') ??
+      _base.settingsOnboardingWelcomeBody;
+
+  @override
+  String get settingsOnboardingAtsTitle =>
+      remote.text('settingsOnboardingAtsTitle') ??
+      _base.settingsOnboardingAtsTitle;
+
+  @override
+  String get settingsOnboardingAtsBody =>
+      remote.text('settingsOnboardingAtsBody') ??
+      _base.settingsOnboardingAtsBody;
+
+  @override
+  String get settingsOnboardingAiTitle =>
+      remote.text('settingsOnboardingAiTitle') ??
+      _base.settingsOnboardingAiTitle;
+
+  @override
+  String get settingsOnboardingAiBody =>
+      remote.text('settingsOnboardingAiBody') ?? _base.settingsOnboardingAiBody;
+
+  @override
+  String get settingsOnboardingPrevious =>
+      remote.text('settingsOnboardingPrevious') ??
+      _base.settingsOnboardingPrevious;
+
+  @override
+  String get settingsOnboardingSkip =>
+      remote.text('settingsOnboardingSkip') ?? _base.settingsOnboardingSkip;
+
+  @override
+  String settingsOnboardingPageOf(int page, int count) =>
+      remote.format(
+        'settingsOnboardingPageOf',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'page': page, 'count': count},
+        ),
+      ) ??
+      _base.settingsOnboardingPageOf(page, count);
+
+  @override
+  String authFieldTooLong(int max) =>
+      remote.format(
+        'authFieldTooLong',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'max': max},
+        ),
+      ) ??
+      _base.authFieldTooLong(max);
+
+  @override
+  String authPasswordTooShort(int min) =>
+      remote.format(
+        'authPasswordTooShort',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'min': min},
+        ),
+      ) ??
+      _base.authPasswordTooShort(min);
+
+  @override
+  String get authEmailInvalid =>
+      remote.text('authEmailInvalid') ?? _base.authEmailInvalid;
+
+  @override
+  String get authPhoneInvalid =>
+      remote.text('authPhoneInvalid') ?? _base.authPhoneInvalid;
+
+  @override
+  String get authRegisterHeroTitle =>
+      remote.text('authRegisterHeroTitle') ?? _base.authRegisterHeroTitle;
+
+  @override
+  String get authRegisterHeroSubtitle =>
+      remote.text('authRegisterHeroSubtitle') ?? _base.authRegisterHeroSubtitle;
+
+  @override
+  String get authTermsAgreePrefix =>
+      remote.text('authTermsAgreePrefix') ?? _base.authTermsAgreePrefix;
+
+  @override
+  String get authTermsLink =>
+      remote.text('authTermsLink') ?? _base.authTermsLink;
+
+  @override
+  String get authHaveAccount =>
+      remote.text('authHaveAccount') ?? _base.authHaveAccount;
+
+  @override
+  String get authAgreeTermsRequired =>
+      remote.text('authAgreeTermsRequired') ?? _base.authAgreeTermsRequired;
+
+  @override
+  String get authRetry => remote.text('authRetry') ?? _base.authRetry;
+
+  @override
+  String get authRegisterUnexpectedError =>
+      remote.text('authRegisterUnexpectedError') ??
+      _base.authRegisterUnexpectedError;
+
+  @override
+  String get authLooksGood =>
+      remote.text('authLooksGood') ?? _base.authLooksGood;
+
+  @override
+  String get authJobTitleOtherRequired =>
+      remote.text('authJobTitleOtherRequired') ??
+      _base.authJobTitleOtherRequired;
+
+  @override
+  String get authFixHighlightedFields =>
+      remote.text('authFixHighlightedFields') ?? _base.authFixHighlightedFields;
+
+  @override
+  String get authFullNameLabel =>
+      remote.text('authFullNameLabel') ?? _base.authFullNameLabel;
+
+  @override
+  String get authFullNameHint =>
+      remote.text('authFullNameHint') ?? _base.authFullNameHint;
+
+  @override
+  String get authNameRequired =>
+      remote.text('authNameRequired') ?? _base.authNameRequired;
+
+  @override
+  String get authEmailAddressLabel =>
+      remote.text('authEmailAddressLabel') ?? _base.authEmailAddressLabel;
+
+  @override
+  String get authEmailRequired =>
+      remote.text('authEmailRequired') ?? _base.authEmailRequired;
+
+  @override
+  String get authPhoneLabel =>
+      remote.text('authPhoneLabel') ?? _base.authPhoneLabel;
+
+  @override
+  String get authPhoneRequired =>
+      remote.text('authPhoneRequired') ?? _base.authPhoneRequired;
+
+  @override
+  String get authLocationLabel =>
+      remote.text('authLocationLabel') ?? _base.authLocationLabel;
+
+  @override
+  String get authLocationHint =>
+      remote.text('authLocationHint') ?? _base.authLocationHint;
+
+  @override
+  String get authLocationRequired =>
+      remote.text('authLocationRequired') ?? _base.authLocationRequired;
+
+  @override
+  String get authJobTitleOptionalLabel =>
+      remote.text('authJobTitleOptionalLabel') ??
+      _base.authJobTitleOptionalLabel;
+
+  @override
+  String get authJobTitleOtherLabel =>
+      remote.text('authJobTitleOtherLabel') ?? _base.authJobTitleOtherLabel;
+
+  @override
+  String get authJobTitleOtherHint =>
+      remote.text('authJobTitleOtherHint') ?? _base.authJobTitleOtherHint;
+
+  @override
+  String get authPasswordLabel =>
+      remote.text('authPasswordLabel') ?? _base.authPasswordLabel;
+
+  @override
+  String get authPasswordRequired =>
+      remote.text('authPasswordRequired') ?? _base.authPasswordRequired;
+
+  @override
+  String get authCreateAccountButton =>
+      remote.text('authCreateAccountButton') ?? _base.authCreateAccountButton;
+
+  @override
+  String get authCreatingAccount =>
+      remote.text('authCreatingAccount') ?? _base.authCreatingAccount;
+
+  @override
+  String get authContinueWithoutAccount =>
+      remote.text('authContinueWithoutAccount') ??
+      _base.authContinueWithoutAccount;
+
+  @override
+  String get authSessionExpired =>
+      remote.text('authSessionExpired') ?? _base.authSessionExpired;
+
+  @override
+  String get authLoginUnexpectedError =>
+      remote.text('authLoginUnexpectedError') ?? _base.authLoginUnexpectedError;
+
+  @override
+  String authSocialSignInSoon(String provider) =>
+      remote.format(
+        'authSocialSignInSoon',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'provider': provider},
+        ),
+      ) ??
+      _base.authSocialSignInSoon(provider);
+
+  @override
+  String get authLoginSubtitle =>
+      remote.text('authLoginSubtitle') ?? _base.authLoginSubtitle;
+
+  @override
+  String get authForgotPasswordLink =>
+      remote.text('authForgotPasswordLink') ?? _base.authForgotPasswordLink;
+
+  @override
+  String get authSignInButton =>
+      remote.text('authSignInButton') ?? _base.authSignInButton;
+
+  @override
+  String get authSigningIn =>
+      remote.text('authSigningIn') ?? _base.authSigningIn;
+
+  @override
+  String get authOrContinueWith =>
+      remote.text('authOrContinueWith') ?? _base.authOrContinueWith;
+
+  @override
+  String get authNoAccount =>
+      remote.text('authNoAccount') ?? _base.authNoAccount;
+
+  @override
+  String get authCreateAccountLink =>
+      remote.text('authCreateAccountLink') ?? _base.authCreateAccountLink;
+
+  @override
+  String get authForgotEmailInvalidNotice =>
+      remote.text('authForgotEmailInvalidNotice') ??
+      _base.authForgotEmailInvalidNotice;
+
+  @override
+  String get authForgotSendFailed =>
+      remote.text('authForgotSendFailed') ?? _base.authForgotSendFailed;
+
+  @override
+  String get authForgotResetFailed =>
+      remote.text('authForgotResetFailed') ?? _base.authForgotResetFailed;
+
+  @override
+  String get authForgotTitle =>
+      remote.text('authForgotTitle') ?? _base.authForgotTitle;
+
+  @override
+  String get authForgotCodeIntro =>
+      remote.text('authForgotCodeIntro') ?? _base.authForgotCodeIntro;
+
+  @override
+  String get authForgotEmailIntro =>
+      remote.text('authForgotEmailIntro') ?? _base.authForgotEmailIntro;
+
+  @override
+  String get authForgotEmailInvalid =>
+      remote.text('authForgotEmailInvalid') ?? _base.authForgotEmailInvalid;
+
+  @override
+  String get authForgotSendCode =>
+      remote.text('authForgotSendCode') ?? _base.authForgotSendCode;
+
+  @override
+  String get authSending => remote.text('authSending') ?? _base.authSending;
+
+  @override
+  String get authVerificationCodeLabel =>
+      remote.text('authVerificationCodeLabel') ??
+      _base.authVerificationCodeLabel;
+
+  @override
+  String get authCodeRequired =>
+      remote.text('authCodeRequired') ?? _base.authCodeRequired;
+
+  @override
+  String get authNewPasswordLabel =>
+      remote.text('authNewPasswordLabel') ?? _base.authNewPasswordLabel;
+
+  @override
+  String get authForgotNewPasswordRequired =>
+      remote.text('authForgotNewPasswordRequired') ??
+      _base.authForgotNewPasswordRequired;
+
+  @override
+  String get authForgotConfirmPasswordLabel =>
+      remote.text('authForgotConfirmPasswordLabel') ??
+      _base.authForgotConfirmPasswordLabel;
+
+  @override
+  String get authForgotConfirmPasswordRequired =>
+      remote.text('authForgotConfirmPasswordRequired') ??
+      _base.authForgotConfirmPasswordRequired;
+
+  @override
+  String get authPasswordsDoNotMatch =>
+      remote.text('authPasswordsDoNotMatch') ?? _base.authPasswordsDoNotMatch;
+
+  @override
+  String get authForgotResetButton =>
+      remote.text('authForgotResetButton') ?? _base.authForgotResetButton;
+
+  @override
+  String get authSaving => remote.text('authSaving') ?? _base.authSaving;
+
+  @override
+  String authResendCodeIn(int seconds) =>
+      remote.format(
+        'authResendCodeIn',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'seconds': seconds},
+        ),
+      ) ??
+      _base.authResendCodeIn(seconds);
+
+  @override
+  String get authResendCode =>
+      remote.text('authResendCode') ?? _base.authResendCode;
+
+  @override
+  String get authForgotUseDifferentEmail =>
+      remote.text('authForgotUseDifferentEmail') ??
+      _base.authForgotUseDifferentEmail;
+
+  @override
+  String get authVerifySuccess =>
+      remote.text('authVerifySuccess') ?? _base.authVerifySuccess;
+
+  @override
+  String get authVerifyUnexpectedError =>
+      remote.text('authVerifyUnexpectedError') ??
+      _base.authVerifyUnexpectedError;
+
+  @override
+  String get authVerifyResendFailed =>
+      remote.text('authVerifyResendFailed') ?? _base.authVerifyResendFailed;
+
+  @override
+  String get authVerifyBackToSignIn =>
+      remote.text('authVerifyBackToSignIn') ?? _base.authVerifyBackToSignIn;
+
+  @override
+  String get authVerifyTitle =>
+      remote.text('authVerifyTitle') ?? _base.authVerifyTitle;
+
+  @override
+  String get authVerifyCodeSentTo =>
+      remote.text('authVerifyCodeSentTo') ?? _base.authVerifyCodeSentTo;
+
+  @override
+  String get authVerifyButton =>
+      remote.text('authVerifyButton') ?? _base.authVerifyButton;
+
+  @override
+  String get authVerifying =>
+      remote.text('authVerifying') ?? _base.authVerifying;
+
+  @override
+  String get authVerifyCheckSpam =>
+      remote.text('authVerifyCheckSpam') ?? _base.authVerifyCheckSpam;
+
+  @override
+  String get settingsPrivacyTitle =>
+      remote.text('settingsPrivacyTitle') ?? _base.settingsPrivacyTitle;
+
+  @override
+  String get settingsPrivacyCollectTitle =>
+      remote.text('settingsPrivacyCollectTitle') ??
+      _base.settingsPrivacyCollectTitle;
+
+  @override
+  String get settingsPrivacyCollectBody =>
+      remote.text('settingsPrivacyCollectBody') ??
+      _base.settingsPrivacyCollectBody;
+
+  @override
+  String get settingsPrivacyUseTitle =>
+      remote.text('settingsPrivacyUseTitle') ?? _base.settingsPrivacyUseTitle;
+
+  @override
+  String get settingsPrivacyUseBody =>
+      remote.text('settingsPrivacyUseBody') ?? _base.settingsPrivacyUseBody;
+
+  @override
+  String get settingsPrivacyProcessorsTitle =>
+      remote.text('settingsPrivacyProcessorsTitle') ??
+      _base.settingsPrivacyProcessorsTitle;
+
+  @override
+  String get settingsPrivacyProcessorsBody =>
+      remote.text('settingsPrivacyProcessorsBody') ??
+      _base.settingsPrivacyProcessorsBody;
+
+  @override
+  String get settingsPrivacyRetentionTitle =>
+      remote.text('settingsPrivacyRetentionTitle') ??
+      _base.settingsPrivacyRetentionTitle;
+
+  @override
+  String get settingsPrivacyRetentionBody =>
+      remote.text('settingsPrivacyRetentionBody') ??
+      _base.settingsPrivacyRetentionBody;
+
+  @override
+  String get settingsPrivacyContactTitle =>
+      remote.text('settingsPrivacyContactTitle') ??
+      _base.settingsPrivacyContactTitle;
+
+  @override
+  String settingsPrivacyContactBody(String email) =>
+      remote.format(
+        'settingsPrivacyContactBody',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'email': email},
+        ),
+      ) ??
+      _base.settingsPrivacyContactBody(email);
+
+  @override
+  String get settingsNotificationsUpdateFailed =>
+      remote.text('settingsNotificationsUpdateFailed') ??
+      _base.settingsNotificationsUpdateFailed;
+
+  @override
+  String get settingsNotificationsTitle =>
+      remote.text('settingsNotificationsTitle') ??
+      _base.settingsNotificationsTitle;
+
+  @override
+  String get settingsNotificationsReadAll =>
+      remote.text('settingsNotificationsReadAll') ??
+      _base.settingsNotificationsReadAll;
+
+  @override
+  String get settingsNotificationsLoadFailed =>
+      remote.text('settingsNotificationsLoadFailed') ??
+      _base.settingsNotificationsLoadFailed;
+
+  @override
+  String get settingsNotificationsEmptyTitle =>
+      remote.text('settingsNotificationsEmptyTitle') ??
+      _base.settingsNotificationsEmptyTitle;
+
+  @override
+  String get settingsNotificationsEmptyBody =>
+      remote.text('settingsNotificationsEmptyBody') ??
+      _base.settingsNotificationsEmptyBody;
+
+  @override
+  String get settingsNotificationsUnread =>
+      remote.text('settingsNotificationsUnread') ??
+      _base.settingsNotificationsUnread;
+
+  @override
+  String get settingsCleanupFailed =>
+      remote.text('settingsCleanupFailed') ?? _base.settingsCleanupFailed;
+
+  @override
+  String get settingsCleanupMessage =>
+      remote.text('settingsCleanupMessage') ?? _base.settingsCleanupMessage;
+
+  @override
+  String get settingsCleanupRetry =>
+      remote.text('settingsCleanupRetry') ?? _base.settingsCleanupRetry;
+
+  @override
+  String get settingsCleanupClearing =>
+      remote.text('settingsCleanupClearing') ?? _base.settingsCleanupClearing;
+
+  @override
+  String get settingsPasswordChanged =>
+      remote.text('settingsPasswordChanged') ?? _base.settingsPasswordChanged;
+
+  @override
+  String get settingsCurrentPasswordIncorrect =>
+      remote.text('settingsCurrentPasswordIncorrect') ??
+      _base.settingsCurrentPasswordIncorrect;
+
+  @override
+  String get settingsPasswordChangeFailed =>
+      remote.text('settingsPasswordChangeFailed') ??
+      _base.settingsPasswordChangeFailed;
+
+  @override
+  String get settingsCurrentPasswordLabel =>
+      remote.text('settingsCurrentPasswordLabel') ??
+      _base.settingsCurrentPasswordLabel;
+
+  @override
+  String get settingsCurrentPasswordRequired =>
+      remote.text('settingsCurrentPasswordRequired') ??
+      _base.settingsCurrentPasswordRequired;
+
+  @override
+  String get settingsNewPasswordRequired =>
+      remote.text('settingsNewPasswordRequired') ??
+      _base.settingsNewPasswordRequired;
+
+  @override
+  String get settingsNewPasswordSameAsCurrent =>
+      remote.text('settingsNewPasswordSameAsCurrent') ??
+      _base.settingsNewPasswordSameAsCurrent;
+
+  @override
+  String get settingsConfirmNewPasswordLabel =>
+      remote.text('settingsConfirmNewPasswordLabel') ??
+      _base.settingsConfirmNewPasswordLabel;
+
+  @override
+  String get settingsConfirmNewPasswordRequired =>
+      remote.text('settingsConfirmNewPasswordRequired') ??
+      _base.settingsConfirmNewPasswordRequired;
+
+  @override
+  String get settingsUpdatePassword =>
+      remote.text('settingsUpdatePassword') ?? _base.settingsUpdatePassword;
+
+  @override
+  String get settingsUpdatingPassword =>
+      remote.text('settingsUpdatingPassword') ?? _base.settingsUpdatingPassword;
+
+  @override
+  String get settingsDeleteConfirmTitle =>
+      remote.text('settingsDeleteConfirmTitle') ??
+      _base.settingsDeleteConfirmTitle;
+
+  @override
+  String get settingsDeleteConfirmBody =>
+      remote.text('settingsDeleteConfirmBody') ??
+      _base.settingsDeleteConfirmBody;
+
+  @override
+  String get settingsDeleteForever =>
+      remote.text('settingsDeleteForever') ?? _base.settingsDeleteForever;
+
+  @override
+  String get settingsAccountDeleted =>
+      remote.text('settingsAccountDeleted') ?? _base.settingsAccountDeleted;
+
+  @override
+  String get settingsDeletePasswordIncorrect =>
+      remote.text('settingsDeletePasswordIncorrect') ??
+      _base.settingsDeletePasswordIncorrect;
+
+  @override
+  String get settingsDeleteFailed =>
+      remote.text('settingsDeleteFailed') ?? _base.settingsDeleteFailed;
+
+  @override
+  String get settingsDeleteWarning =>
+      remote.text('settingsDeleteWarning') ?? _base.settingsDeleteWarning;
+
+  @override
+  String get settingsDeleteConfirmWithPassword =>
+      remote.text('settingsDeleteConfirmWithPassword') ??
+      _base.settingsDeleteConfirmWithPassword;
+
+  @override
+  String get settingsDeletePasswordRequired =>
+      remote.text('settingsDeletePasswordRequired') ??
+      _base.settingsDeletePasswordRequired;
+
+  @override
+  String get settingsDeleteMyAccount =>
+      remote.text('settingsDeleteMyAccount') ?? _base.settingsDeleteMyAccount;
+
+  @override
+  String get settingsDeleting =>
+      remote.text('settingsDeleting') ?? _base.settingsDeleting;
+
+  @override
+  String get settingsAvatarCropTitle =>
+      remote.text('settingsAvatarCropTitle') ?? _base.settingsAvatarCropTitle;
+
+  @override
+  String get settingsAvatarOpenFailed =>
+      remote.text('settingsAvatarOpenFailed') ?? _base.settingsAvatarOpenFailed;
+
+  @override
+  String get settingsAvatarUsePhoto =>
+      remote.text('settingsAvatarUsePhoto') ?? _base.settingsAvatarUsePhoto;
+
+  @override
+  String get settingsPhotoGallery =>
+      remote.text('settingsPhotoGallery') ?? _base.settingsPhotoGallery;
+
+  @override
+  String get settingsPhotoCamera =>
+      remote.text('settingsPhotoCamera') ?? _base.settingsPhotoCamera;
+
+  @override
+  String get settingsPhotoRemove =>
+      remote.text('settingsPhotoRemove') ?? _base.settingsPhotoRemove;
+
+  @override
+  String get settingsPhotoRemoved =>
+      remote.text('settingsPhotoRemoved') ?? _base.settingsPhotoRemoved;
+
+  @override
+  String get settingsPhotoUpdated =>
+      remote.text('settingsPhotoUpdated') ?? _base.settingsPhotoUpdated;
+
+  @override
+  String get settingsPhotoUpdateFailed =>
+      remote.text('settingsPhotoUpdateFailed') ??
+      _base.settingsPhotoUpdateFailed;
+
+  @override
+  String get settingsPhotoChange =>
+      remote.text('settingsPhotoChange') ?? _base.settingsPhotoChange;
+
+  @override
+  String get settingsPhotoHint =>
+      remote.text('settingsPhotoHint') ?? _base.settingsPhotoHint;
+
+  @override
+  String get settingsProfileUpdated =>
+      remote.text('settingsProfileUpdated') ?? _base.settingsProfileUpdated;
+
+  @override
+  String get settingsProfileUpdateFailed =>
+      remote.text('settingsProfileUpdateFailed') ??
+      _base.settingsProfileUpdateFailed;
+
+  @override
+  String get settingsProfileLoadFailed =>
+      remote.text('settingsProfileLoadFailed') ??
+      _base.settingsProfileLoadFailed;
+
+  @override
+  String get settingsProfileFullNameLabel =>
+      remote.text('settingsProfileFullNameLabel') ??
+      _base.settingsProfileFullNameLabel;
+
+  @override
+  String get settingsProfileNameHint =>
+      remote.text('settingsProfileNameHint') ?? _base.settingsProfileNameHint;
+
+  @override
+  String get settingsProfileNameRequired =>
+      remote.text('settingsProfileNameRequired') ??
+      _base.settingsProfileNameRequired;
+
+  @override
+  String get settingsProfileJobTitleLabel =>
+      remote.text('settingsProfileJobTitleLabel') ??
+      _base.settingsProfileJobTitleLabel;
+
+  @override
+  String get settingsProfileJobTitlesLoadFailed =>
+      remote.text('settingsProfileJobTitlesLoadFailed') ??
+      _base.settingsProfileJobTitlesLoadFailed;
+
+  @override
+  String get settingsProfileEmailReadOnly =>
+      remote.text('settingsProfileEmailReadOnly') ??
+      _base.settingsProfileEmailReadOnly;
+
+  @override
+  String get settingsProfilePhoneLabel =>
+      remote.text('settingsProfilePhoneLabel') ??
+      _base.settingsProfilePhoneLabel;
+
+  @override
+  String get settingsProfileSaveChanges =>
+      remote.text('settingsProfileSaveChanges') ??
+      _base.settingsProfileSaveChanges;
+
+  @override
+  String get settingsProfileTitle =>
+      remote.text('settingsProfileTitle') ?? _base.settingsProfileTitle;
+
+  @override
+  String get jobsFilterAll =>
+      remote.text('jobsFilterAll') ?? _base.jobsFilterAll;
+
+  @override
+  String get jobsPresetMatched =>
+      remote.text('jobsPresetMatched') ?? _base.jobsPresetMatched;
+
+  @override
+  String get jobsPresetGov =>
+      remote.text('jobsPresetGov') ?? _base.jobsPresetGov;
+
+  @override
+  String get jobsPresetEnterprise =>
+      remote.text('jobsPresetEnterprise') ?? _base.jobsPresetEnterprise;
+
+  @override
+  String get jobsPresetTamheer =>
+      remote.text('jobsPresetTamheer') ?? _base.jobsPresetTamheer;
+
+  @override
+  String get jobsFilterRemote =>
+      remote.text('jobsFilterRemote') ?? _base.jobsFilterRemote;
+
+  @override
+  String get jobsSearchHint =>
+      remote.text('jobsSearchHint') ?? _base.jobsSearchHint;
+
+  @override
+  String get jobsCategoryTech =>
+      remote.text('jobsCategoryTech') ?? _base.jobsCategoryTech;
+
+  @override
+  String get jobsCategoryFinance =>
+      remote.text('jobsCategoryFinance') ?? _base.jobsCategoryFinance;
+
+  @override
+  String get jobsCategoryHealth =>
+      remote.text('jobsCategoryHealth') ?? _base.jobsCategoryHealth;
+
+  @override
+  String get jobsCityAll => remote.text('jobsCityAll') ?? _base.jobsCityAll;
+
+  @override
+  String get jobsCityRiyadh =>
+      remote.text('jobsCityRiyadh') ?? _base.jobsCityRiyadh;
+
+  @override
+  String get jobsCityJeddah =>
+      remote.text('jobsCityJeddah') ?? _base.jobsCityJeddah;
+
+  @override
+  String get jobsCityDammam =>
+      remote.text('jobsCityDammam') ?? _base.jobsCityDammam;
+
+  @override
+  String get jobsCityKhobar =>
+      remote.text('jobsCityKhobar') ?? _base.jobsCityKhobar;
+
+  @override
+  String get jobsCityMecca =>
+      remote.text('jobsCityMecca') ?? _base.jobsCityMecca;
+
+  @override
+  String get jobsCityMedina =>
+      remote.text('jobsCityMedina') ?? _base.jobsCityMedina;
+
+  @override
+  String get jobsPersonalizedTitle =>
+      remote.text('jobsPersonalizedTitle') ?? _base.jobsPersonalizedTitle;
+
+  @override
+  String get jobsPersonalizedFallback =>
+      remote.text('jobsPersonalizedFallback') ?? _base.jobsPersonalizedFallback;
+
+  @override
+  String get jobsMatchedActive =>
+      remote.text('jobsMatchedActive') ?? _base.jobsMatchedActive;
+
+  @override
+  String get jobsMatchToggle =>
+      remote.text('jobsMatchToggle') ?? _base.jobsMatchToggle;
+
+  @override
+  String get jobsEmptyFeed =>
+      remote.text('jobsEmptyFeed') ?? _base.jobsEmptyFeed;
+
+  @override
+  String get jobsLoadFailed =>
+      remote.text('jobsLoadFailed') ?? _base.jobsLoadFailed;
+
+  @override
+  String get jobsLatestPostings =>
+      remote.text('jobsLatestPostings') ?? _base.jobsLatestPostings;
+
+  @override
+  String get jobsDetailTitle =>
+      remote.text('jobsDetailTitle') ?? _base.jobsDetailTitle;
+
+  @override
+  String get jobsVerifiedSourceDetail =>
+      remote.text('jobsVerifiedSourceDetail') ?? _base.jobsVerifiedSourceDetail;
+
+  @override
+  String get jobsTamheerProgram =>
+      remote.text('jobsTamheerProgram') ?? _base.jobsTamheerProgram;
+
+  @override
+  String get jobsCompatibilityTitle =>
+      remote.text('jobsCompatibilityTitle') ?? _base.jobsCompatibilityTitle;
+
+  @override
+  String get jobsSkillsRequired =>
+      remote.text('jobsSkillsRequired') ?? _base.jobsSkillsRequired;
+
+  @override
+  String get jobsDescriptionTitle =>
+      remote.text('jobsDescriptionTitle') ?? _base.jobsDescriptionTitle;
+
+  @override
+  String get jobsTailorCv => remote.text('jobsTailorCv') ?? _base.jobsTailorCv;
+
+  @override
+  String get jobsOpenApplyFailed =>
+      remote.text('jobsOpenApplyFailed') ?? _base.jobsOpenApplyFailed;
+
+  @override
+  String get jobsApplyOfficialSite =>
+      remote.text('jobsApplyOfficialSite') ?? _base.jobsApplyOfficialSite;
+
+  @override
+  String get jobsVerifiedSourceCard =>
+      remote.text('jobsVerifiedSourceCard') ?? _base.jobsVerifiedSourceCard;
+
+  @override
+  String get jobsTamheerBadge =>
+      remote.text('jobsTamheerBadge') ?? _base.jobsTamheerBadge;
+
+  @override
+  String get jobsNewBadge => remote.text('jobsNewBadge') ?? _base.jobsNewBadge;
+
+  @override
+  String get jobsDetailsLink =>
+      remote.text('jobsDetailsLink') ?? _base.jobsDetailsLink;
+
+  @override
+  String get jobsVerifiedSourceFeatured =>
+      remote.text('jobsVerifiedSourceFeatured') ??
+      _base.jobsVerifiedSourceFeatured;
+
+  @override
+  String get jobsTamheerBadgeFeatured =>
+      remote.text('jobsTamheerBadgeFeatured') ?? _base.jobsTamheerBadgeFeatured;
+
+  @override
+  String get jobsApplyNow => remote.text('jobsApplyNow') ?? _base.jobsApplyNow;
+
+  @override
+  String atsFileTooLarge(int size) =>
+      remote.format(
+        'atsFileTooLarge',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'size': size},
+        ),
+      ) ??
+      _base.atsFileTooLarge(size);
+
+  @override
+  String get atsUnsupportedFileType =>
+      remote.text('atsUnsupportedFileType') ?? _base.atsUnsupportedFileType;
+
+  @override
+  String get atsResumeRequired =>
+      remote.text('atsResumeRequired') ?? _base.atsResumeRequired;
+
+  @override
+  String get atsCancelled => remote.text('atsCancelled') ?? _base.atsCancelled;
+
+  @override
+  String get atsAiStillWorkingAnalysis =>
+      remote.text('atsAiStillWorkingAnalysis') ??
+      _base.atsAiStillWorkingAnalysis;
+
+  @override
+  String get atsAnalyzeUnexpectedError =>
+      remote.text('atsAnalyzeUnexpectedError') ??
+      _base.atsAnalyzeUnexpectedError;
+
+  @override
+  String get atsOpenAnalysisFailed =>
+      remote.text('atsOpenAnalysisFailed') ?? _base.atsOpenAnalysisFailed;
+
+  @override
+  String get atsResultsTitle =>
+      remote.text('atsResultsTitle') ?? _base.atsResultsTitle;
+
+  @override
+  String get atsTabScore => remote.text('atsTabScore') ?? _base.atsTabScore;
+
+  @override
+  String get atsTabRecommendations =>
+      remote.text('atsTabRecommendations') ?? _base.atsTabRecommendations;
+
+  @override
+  String get atsGenerateImprovedCv =>
+      remote.text('atsGenerateImprovedCv') ?? _base.atsGenerateImprovedCv;
+
+  @override
+  String get atsGenerating =>
+      remote.text('atsGenerating') ?? _base.atsGenerating;
+
+  @override
+  String get atsGenerateUnexpectedError =>
+      remote.text('atsGenerateUnexpectedError') ??
+      _base.atsGenerateUnexpectedError;
+
+  @override
+  String get atsAiStillWorkingGeneration =>
+      remote.text('atsAiStillWorkingGeneration') ??
+      _base.atsAiStillWorkingGeneration;
+
+  @override
+  String get atsUploadTapHint =>
+      remote.text('atsUploadTapHint') ?? _base.atsUploadTapHint;
+
+  @override
+  String get atsUploadMaxSize =>
+      remote.text('atsUploadMaxSize') ?? _base.atsUploadMaxSize;
+
+  @override
+  String get atsRemoveFile =>
+      remote.text('atsRemoveFile') ?? _base.atsRemoveFile;
+
+  @override
+  String get atsOr => remote.text('atsOr') ?? _base.atsOr;
+
+  @override
+  String get atsNoKeywords =>
+      remote.text('atsNoKeywords') ?? _base.atsNoKeywords;
+
+  @override
+  String atsShowMoreCount(int count) =>
+      remote.format(
+        'atsShowMoreCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.atsShowMoreCount(count);
+
+  @override
+  String atsKeywordDialogTitle(String keyword) =>
+      remote.format(
+        'atsKeywordDialogTitle',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'keyword': keyword},
+        ),
+      ) ??
+      _base.atsKeywordDialogTitle(keyword);
+
+  @override
+  String atsKeywordDialogBody(String keyword) =>
+      remote.format(
+        'atsKeywordDialogBody',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'keyword': keyword},
+        ),
+      ) ??
+      _base.atsKeywordDialogBody(keyword);
+
+  @override
+  String get atsGotIt => remote.text('atsGotIt') ?? _base.atsGotIt;
+
+  @override
+  String get atsCriteriaDetails =>
+      remote.text('atsCriteriaDetails') ?? _base.atsCriteriaDetails;
+
+  @override
+  String get atsKeywordsTitle =>
+      remote.text('atsKeywordsTitle') ?? _base.atsKeywordsTitle;
+
+  @override
+  String atsGradeLabel(String grade) =>
+      remote.format(
+        'atsGradeLabel',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'grade': grade},
+        ),
+      ) ??
+      _base.atsGradeLabel(grade);
+
+  @override
+  String get atsJobMatchSemantic =>
+      remote.text('atsJobMatchSemantic') ?? _base.atsJobMatchSemantic;
+
+  @override
+  String get atsJobMatchPercentage =>
+      remote.text('atsJobMatchPercentage') ?? _base.atsJobMatchPercentage;
+
+  @override
+  String atsKeywordsFound(int count) =>
+      remote.format(
+        'atsKeywordsFound',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.atsKeywordsFound(count);
+
+  @override
+  String atsKeywordsMissing(int count) =>
+      remote.format(
+        'atsKeywordsMissing',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.atsKeywordsMissing(count);
+
+  @override
+  String get atsNoStrengths =>
+      remote.text('atsNoStrengths') ?? _base.atsNoStrengths;
+
+  @override
+  String get atsQuickWins => remote.text('atsQuickWins') ?? _base.atsQuickWins;
+
+  @override
+  String get atsNoQuickWins =>
+      remote.text('atsNoQuickWins') ?? _base.atsNoQuickWins;
+
+  @override
+  String get atsUpgradeTitle =>
+      remote.text('atsUpgradeTitle') ?? _base.atsUpgradeTitle;
+
+  @override
+  String get atsUpgradeBody =>
+      remote.text('atsUpgradeBody') ?? _base.atsUpgradeBody;
+
+  @override
+  String get atsKeywordSourceJd =>
+      remote.text('atsKeywordSourceJd') ?? _base.atsKeywordSourceJd;
+
+  @override
+  String get atsKeywordSourceGeneric =>
+      remote.text('atsKeywordSourceGeneric') ?? _base.atsKeywordSourceGeneric;
+
+  @override
+  String get atsBandExcellent =>
+      remote.text('atsBandExcellent') ?? _base.atsBandExcellent;
+
+  @override
+  String get atsBandVeryGood =>
+      remote.text('atsBandVeryGood') ?? _base.atsBandVeryGood;
+
+  @override
+  String get atsBandFair => remote.text('atsBandFair') ?? _base.atsBandFair;
+
+  @override
+  String get atsBandWeak => remote.text('atsBandWeak') ?? _base.atsBandWeak;
+
+  @override
+  String jobsMatchScore(int score) =>
+      remote.format(
+        'jobsMatchScore',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'score': score},
+        ),
+      ) ??
+      _base.jobsMatchScore(score);
+
+  @override
+  String atsBenchmark(String category) =>
+      remote.format(
+        'atsBenchmark',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'category': category},
+        ),
+      ) ??
+      _base.atsBenchmark(category);
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -3330,89 +4621,6 @@ class RemoteAppLocalizations extends AppLocalizations {
     'sharedLoading': [],
     'jm4ConfirmFact': [],
     'jm4HonestyHint': [],
-    'jobsFilterAll': [],
-    'jobsPresetMatched': [],
-    'jobsPresetGov': [],
-    'jobsPresetEnterprise': [],
-    'jobsPresetTamheer': [],
-    'jobsFilterRemote': [],
-    'jobsSearchHint': [],
-    'jobsCategoryTech': [],
-    'jobsCategoryFinance': [],
-    'jobsCategoryHealth': [],
-    'jobsCityAll': [],
-    'jobsCityRiyadh': [],
-    'jobsCityJeddah': [],
-    'jobsCityDammam': [],
-    'jobsCityKhobar': [],
-    'jobsCityMecca': [],
-    'jobsCityMedina': [],
-    'jobsPersonalizedTitle': [],
-    'jobsPersonalizedFallback': [],
-    'jobsMatchedActive': [],
-    'jobsMatchToggle': [],
-    'jobsEmptyFeed': [],
-    'jobsLoadFailed': [],
-    'jobsLatestPostings': [],
-    'jobsDetailTitle': [],
-    'jobsVerifiedSourceDetail': [],
-    'jobsTamheerProgram': [],
-    'jobsCompatibilityTitle': [],
-    'jobsSkillsRequired': [],
-    'jobsDescriptionTitle': [],
-    'jobsTailorCv': [],
-    'jobsOpenApplyFailed': [],
-    'jobsApplyOfficialSite': [],
-    'jobsVerifiedSourceCard': [],
-    'jobsTamheerBadge': [],
-    'jobsNewBadge': [],
-    'jobsDetailsLink': [],
-    'jobsVerifiedSourceFeatured': [],
-    'jobsTamheerBadgeFeatured': [],
-    'jobsApplyNow': [],
-    'atsFileTooLarge': ['int'],
-    'atsUnsupportedFileType': [],
-    'atsResumeRequired': [],
-    'atsCancelled': [],
-    'atsAiStillWorkingAnalysis': [],
-    'atsAnalyzeUnexpectedError': [],
-    'atsOpenAnalysisFailed': [],
-    'atsResultsTitle': [],
-    'atsTabScore': [],
-    'atsTabRecommendations': [],
-    'atsGenerateImprovedCv': [],
-    'atsGenerating': [],
-    'atsGenerateUnexpectedError': [],
-    'atsAiStillWorkingGeneration': [],
-    'atsUploadTapHint': [],
-    'atsUploadMaxSize': [],
-    'atsRemoveFile': [],
-    'atsOr': [],
-    'atsNoKeywords': [],
-    'atsShowMoreCount': ['int'],
-    'atsKeywordDialogTitle': ['String'],
-    'atsKeywordDialogBody': ['String'],
-    'atsGotIt': [],
-    'atsCriteriaDetails': [],
-    'atsKeywordsTitle': [],
-    'atsGradeLabel': ['String'],
-    'atsJobMatchSemantic': [],
-    'atsJobMatchPercentage': [],
-    'atsKeywordsFound': ['int'],
-    'atsKeywordsMissing': ['int'],
-    'atsNoStrengths': [],
-    'atsQuickWins': [],
-    'atsNoQuickWins': [],
-    'atsUpgradeTitle': [],
-    'atsUpgradeBody': [],
-    'atsKeywordSourceJd': [],
-    'atsKeywordSourceGeneric': [],
-    'atsBandExcellent': [],
-    'atsBandVeryGood': [],
-    'atsBandFair': [],
-    'atsBandWeak': [],
-    'jobsMatchScore': ['int'],
-    'atsBenchmark': ['String'],
     'atsInputTitle': [],
     'atsInputIntroduction': [],
     'atsInputCvSource': [],
@@ -3678,6 +4886,386 @@ class RemoteAppLocalizations extends AppLocalizations {
     'dashboardEducationDetailLoadFailed': [],
     'dashboardUntitled': [],
     'dashboardEducationDetailNoContent': [],
+    'cvDraftAvailable': [],
+    'cvDraftContinueTitle': [],
+    'cvDraftStartFresh': [],
+    'cvDraftRestore': [],
+    'cvDiscardChangesTitle': [],
+    'cvDiscardChangesBody': [],
+    'cvDiscard': [],
+    'cvSaveProgressTitle': [],
+    'cvSaveProgressBody': [],
+    'cvSaveDraft': [],
+    'cvEntryRequired': [],
+    'cvEntryChooseStart': [],
+    'cvEntryChooseEnd': [],
+    'cvEntryEndBeforeStart': [],
+    'cvEntryFrom': [],
+    'cvEntryTo': [],
+    'cvEntryJobTitle': [],
+    'cvEntryJobTitleHint': [],
+    'cvEntryCompany': [],
+    'cvEntryCity': [],
+    'cvEntryWorkCurrent': [],
+    'cvEntryDuties': [],
+    'cvEntryDutiesHint': [],
+    'cvEntryDegree': [],
+    'cvEntryDegreeHint': [],
+    'cvEntryInstitution': [],
+    'cvEntryStudyCurrent': [],
+    'cvEntryEducationDetails': [],
+    'cvEntryCertName': [],
+    'cvEntryCertIssuer': [],
+    'cvEntryCertDate': [],
+    'cvEntriesCompleteHighlighted': [],
+    'cvEntriesAddOne': [],
+    'cvEntriesMoreDetail': [],
+    'cvEntryRemove': [],
+    'cvMonthChoose': [],
+    'cvMonthYearTitle': [],
+    'cvMonthYearDone': [],
+    'cvWizardUpdate': [],
+    'cvWizardGenerate': [],
+    'cvWizardGenerating': [],
+    'cvWizardStepPersonal': [],
+    'cvWizardStepSkills': [],
+    'cvWizardStepExperience': [],
+    'cvWizardStepEducation': [],
+    'cvWizardStepOf': ['int', 'int'],
+    'cvWizardReviewFields': [],
+    'cvEducationStepTitle': [],
+    'cvEducationLabel': [],
+    'cvEducationAdd': [],
+    'cvCertificationsLabel': [],
+    'cvCertificationsAdd': [],
+    'cvExperienceStepTitle': [],
+    'cvExperienceLabel': [],
+    'cvExperienceHelper': [],
+    'cvExperienceXyzBuilder': [],
+    'cvExperienceAdd': [],
+    'cvPersonalStepTitle': [],
+    'cvPersonalFullName': [],
+    'cvPersonalFullNameHint': [],
+    'cvPersonalFullNameRequired': [],
+    'cvPersonalEmailRequired': [],
+    'cvPersonalEmailInvalid': [],
+    'cvPersonalPhone': [],
+    'cvPersonalPhoneRequired': [],
+    'cvPersonalLinkedin': [],
+    'cvPersonalTargetJob': [],
+    'cvPersonalTargetJobHint': [],
+    'cvPersonalTargetJobRequired': [],
+    'cvPersonalJobDescription': [],
+    'cvPersonalCvLanguage': [],
+    'cvPersonalEnhancingJobDescription': [],
+    'cvPersonalJobDescriptionHint': [],
+    'cvEnhance': [],
+    'cvEnhancing': [],
+    'cvPersonalWriteMore': [],
+    'cvSkillsStepTitle': [],
+    'cvSkillsCore': [],
+    'cvSkillsHelper': [],
+    'cvSkillsRequired': [],
+    'cvSummaryLabel': [],
+    'cvSummaryHelper': [],
+    'cvSummaryHint': [],
+    'cvDraftSaved': [],
+    'cvAchievementDuplicate': [],
+    'cvAchievementAdded': [],
+    'cvGenerationCancelled': [],
+    'cvRetryShort': [],
+    'cvGenerationUnexpectedError': [],
+    'cvGenerationStillRunning': [],
+    'cvEnterTargetJobFirst': [],
+    'cvEnhanceFieldFailed': [],
+    'cvFieldEnhanced': [],
+    'cvUndo': [],
+    'cvJobDescriptionTooShort': [],
+    'cvEnhanceJobDescriptionFailed': [],
+    'cvJobDescriptionEnhanced': [],
+    'cvGeneratorEditTitle': [],
+    'cvGeneratorCreateTitle': [],
+    'cvOpenFailed': [],
+    'cvNotReadyToSend': [],
+    'cvOpeningPdf': [],
+    'cvPdfLinkUnavailable': [],
+    'cvPdfLinkOpenFailed': [],
+    'cvTemplatesLoadFailed': [],
+    'cvDeleteTitle': [],
+    'cvDeleteBody': [],
+    'cvDeleteFailed': [],
+    'cvPdfLinkNotFound': [],
+    'cvPdfOpenFailed': [],
+    'cvListLoadFailed': [],
+    'cvListEmptyTitle': [],
+    'cvListEmptyBody': [],
+    'cvCreateNew': [],
+    'cvUntitled': [],
+    'cvCardEdit': [],
+    'cvCardDownload': [],
+    'cvTemplatePickerTitle': [],
+    'cvTemplateDefault': [],
+    'cvXyzFormula': [],
+    'cvXyzPresetsTitle': [],
+    'cvXyzPresetTech': [],
+    'cvXyzPresetSales': [],
+    'cvXyzPresetProject': [],
+    'cvXyzActionLabel': [],
+    'cvXyzActionHint': [],
+    'cvXyzMetricLabel': [],
+    'cvXyzMetricHint': [],
+    'cvXyzMethodLabel': [],
+    'cvXyzMethodHint': [],
+    'cvXyzPreviewTitle': [],
+    'cvXyzInsert': [],
+    'cvSkillsSelectedCount': ['int'],
+    'cvSkillsClearAll': [],
+    'cvSkillsEmpty': [],
+    'cvSkillsInputHint': [],
+    'cvSkillsSuggested': [],
+    'cvExportOptionsTitle': [],
+    'cvExportLanguage': [],
+    'cvExportSelectedTemplate': [],
+    'cvExportFileName': [],
+    'cvExportLatinFilename': [],
+    'cvExportPremiumWatermark': [],
+    'cvExportSubscriptionRequired': [],
+    'cvExportUpgrade': [],
+    'cvExportPreparing': [],
+    'cvExportDownload': [],
+    'cvExportSuccess': [],
+    'cvExportSharePdf': [],
+    'settingsOnboardingWelcomeBody': [],
+    'settingsOnboardingAtsTitle': [],
+    'settingsOnboardingAtsBody': [],
+    'settingsOnboardingAiTitle': [],
+    'settingsOnboardingAiBody': [],
+    'settingsOnboardingPrevious': [],
+    'settingsOnboardingSkip': [],
+    'settingsOnboardingPageOf': ['int', 'int'],
+    'authFieldTooLong': ['int'],
+    'authPasswordTooShort': ['int'],
+    'authEmailInvalid': [],
+    'authPhoneInvalid': [],
+    'authRegisterHeroTitle': [],
+    'authRegisterHeroSubtitle': [],
+    'authTermsAgreePrefix': [],
+    'authTermsLink': [],
+    'authHaveAccount': [],
+    'authAgreeTermsRequired': [],
+    'authRetry': [],
+    'authRegisterUnexpectedError': [],
+    'authLooksGood': [],
+    'authJobTitleOtherRequired': [],
+    'authFixHighlightedFields': [],
+    'authFullNameLabel': [],
+    'authFullNameHint': [],
+    'authNameRequired': [],
+    'authEmailAddressLabel': [],
+    'authEmailRequired': [],
+    'authPhoneLabel': [],
+    'authPhoneRequired': [],
+    'authLocationLabel': [],
+    'authLocationHint': [],
+    'authLocationRequired': [],
+    'authJobTitleOptionalLabel': [],
+    'authJobTitleOtherLabel': [],
+    'authJobTitleOtherHint': [],
+    'authPasswordLabel': [],
+    'authPasswordRequired': [],
+    'authCreateAccountButton': [],
+    'authCreatingAccount': [],
+    'authContinueWithoutAccount': [],
+    'authSessionExpired': [],
+    'authLoginUnexpectedError': [],
+    'authSocialSignInSoon': ['String'],
+    'authLoginSubtitle': [],
+    'authForgotPasswordLink': [],
+    'authSignInButton': [],
+    'authSigningIn': [],
+    'authOrContinueWith': [],
+    'authNoAccount': [],
+    'authCreateAccountLink': [],
+    'authForgotEmailInvalidNotice': [],
+    'authForgotSendFailed': [],
+    'authForgotResetFailed': [],
+    'authForgotTitle': [],
+    'authForgotCodeIntro': [],
+    'authForgotEmailIntro': [],
+    'authForgotEmailInvalid': [],
+    'authForgotSendCode': [],
+    'authSending': [],
+    'authVerificationCodeLabel': [],
+    'authCodeRequired': [],
+    'authNewPasswordLabel': [],
+    'authForgotNewPasswordRequired': [],
+    'authForgotConfirmPasswordLabel': [],
+    'authForgotConfirmPasswordRequired': [],
+    'authPasswordsDoNotMatch': [],
+    'authForgotResetButton': [],
+    'authSaving': [],
+    'authResendCodeIn': ['int'],
+    'authResendCode': [],
+    'authForgotUseDifferentEmail': [],
+    'authVerifySuccess': [],
+    'authVerifyUnexpectedError': [],
+    'authVerifyResendFailed': [],
+    'authVerifyBackToSignIn': [],
+    'authVerifyTitle': [],
+    'authVerifyCodeSentTo': [],
+    'authVerifyButton': [],
+    'authVerifying': [],
+    'authVerifyCheckSpam': [],
+    'settingsPrivacyTitle': [],
+    'settingsPrivacyCollectTitle': [],
+    'settingsPrivacyCollectBody': [],
+    'settingsPrivacyUseTitle': [],
+    'settingsPrivacyUseBody': [],
+    'settingsPrivacyProcessorsTitle': [],
+    'settingsPrivacyProcessorsBody': [],
+    'settingsPrivacyRetentionTitle': [],
+    'settingsPrivacyRetentionBody': [],
+    'settingsPrivacyContactTitle': [],
+    'settingsPrivacyContactBody': ['String'],
+    'settingsNotificationsUpdateFailed': [],
+    'settingsNotificationsTitle': [],
+    'settingsNotificationsReadAll': [],
+    'settingsNotificationsLoadFailed': [],
+    'settingsNotificationsEmptyTitle': [],
+    'settingsNotificationsEmptyBody': [],
+    'settingsNotificationsUnread': [],
+    'settingsCleanupFailed': [],
+    'settingsCleanupMessage': [],
+    'settingsCleanupRetry': [],
+    'settingsCleanupClearing': [],
+    'settingsPasswordChanged': [],
+    'settingsCurrentPasswordIncorrect': [],
+    'settingsPasswordChangeFailed': [],
+    'settingsCurrentPasswordLabel': [],
+    'settingsCurrentPasswordRequired': [],
+    'settingsNewPasswordRequired': [],
+    'settingsNewPasswordSameAsCurrent': [],
+    'settingsConfirmNewPasswordLabel': [],
+    'settingsConfirmNewPasswordRequired': [],
+    'settingsUpdatePassword': [],
+    'settingsUpdatingPassword': [],
+    'settingsDeleteConfirmTitle': [],
+    'settingsDeleteConfirmBody': [],
+    'settingsDeleteForever': [],
+    'settingsAccountDeleted': [],
+    'settingsDeletePasswordIncorrect': [],
+    'settingsDeleteFailed': [],
+    'settingsDeleteWarning': [],
+    'settingsDeleteConfirmWithPassword': [],
+    'settingsDeletePasswordRequired': [],
+    'settingsDeleteMyAccount': [],
+    'settingsDeleting': [],
+    'settingsAvatarCropTitle': [],
+    'settingsAvatarOpenFailed': [],
+    'settingsAvatarUsePhoto': [],
+    'settingsPhotoGallery': [],
+    'settingsPhotoCamera': [],
+    'settingsPhotoRemove': [],
+    'settingsPhotoRemoved': [],
+    'settingsPhotoUpdated': [],
+    'settingsPhotoUpdateFailed': [],
+    'settingsPhotoChange': [],
+    'settingsPhotoHint': [],
+    'settingsProfileUpdated': [],
+    'settingsProfileUpdateFailed': [],
+    'settingsProfileLoadFailed': [],
+    'settingsProfileFullNameLabel': [],
+    'settingsProfileNameHint': [],
+    'settingsProfileNameRequired': [],
+    'settingsProfileJobTitleLabel': [],
+    'settingsProfileJobTitlesLoadFailed': [],
+    'settingsProfileEmailReadOnly': [],
+    'settingsProfilePhoneLabel': [],
+    'settingsProfileSaveChanges': [],
+    'settingsProfileTitle': [],
+    'jobsFilterAll': [],
+    'jobsPresetMatched': [],
+    'jobsPresetGov': [],
+    'jobsPresetEnterprise': [],
+    'jobsPresetTamheer': [],
+    'jobsFilterRemote': [],
+    'jobsSearchHint': [],
+    'jobsCategoryTech': [],
+    'jobsCategoryFinance': [],
+    'jobsCategoryHealth': [],
+    'jobsCityAll': [],
+    'jobsCityRiyadh': [],
+    'jobsCityJeddah': [],
+    'jobsCityDammam': [],
+    'jobsCityKhobar': [],
+    'jobsCityMecca': [],
+    'jobsCityMedina': [],
+    'jobsPersonalizedTitle': [],
+    'jobsPersonalizedFallback': [],
+    'jobsMatchedActive': [],
+    'jobsMatchToggle': [],
+    'jobsEmptyFeed': [],
+    'jobsLoadFailed': [],
+    'jobsLatestPostings': [],
+    'jobsDetailTitle': [],
+    'jobsVerifiedSourceDetail': [],
+    'jobsTamheerProgram': [],
+    'jobsCompatibilityTitle': [],
+    'jobsSkillsRequired': [],
+    'jobsDescriptionTitle': [],
+    'jobsTailorCv': [],
+    'jobsOpenApplyFailed': [],
+    'jobsApplyOfficialSite': [],
+    'jobsVerifiedSourceCard': [],
+    'jobsTamheerBadge': [],
+    'jobsNewBadge': [],
+    'jobsDetailsLink': [],
+    'jobsVerifiedSourceFeatured': [],
+    'jobsTamheerBadgeFeatured': [],
+    'jobsApplyNow': [],
+    'atsFileTooLarge': ['int'],
+    'atsUnsupportedFileType': [],
+    'atsResumeRequired': [],
+    'atsCancelled': [],
+    'atsAiStillWorkingAnalysis': [],
+    'atsAnalyzeUnexpectedError': [],
+    'atsOpenAnalysisFailed': [],
+    'atsResultsTitle': [],
+    'atsTabScore': [],
+    'atsTabRecommendations': [],
+    'atsGenerateImprovedCv': [],
+    'atsGenerating': [],
+    'atsGenerateUnexpectedError': [],
+    'atsAiStillWorkingGeneration': [],
+    'atsUploadTapHint': [],
+    'atsUploadMaxSize': [],
+    'atsRemoveFile': [],
+    'atsOr': [],
+    'atsNoKeywords': [],
+    'atsShowMoreCount': ['int'],
+    'atsKeywordDialogTitle': ['String'],
+    'atsKeywordDialogBody': ['String'],
+    'atsGotIt': [],
+    'atsCriteriaDetails': [],
+    'atsKeywordsTitle': [],
+    'atsGradeLabel': ['String'],
+    'atsJobMatchSemantic': [],
+    'atsJobMatchPercentage': [],
+    'atsKeywordsFound': ['int'],
+    'atsKeywordsMissing': ['int'],
+    'atsNoStrengths': [],
+    'atsQuickWins': [],
+    'atsNoQuickWins': [],
+    'atsUpgradeTitle': [],
+    'atsUpgradeBody': [],
+    'atsKeywordSourceJd': [],
+    'atsKeywordSourceGeneric': [],
+    'atsBandExcellent': [],
+    'atsBandVeryGood': [],
+    'atsBandFair': [],
+    'atsBandWeak': [],
+    'jobsMatchScore': ['int'],
+    'atsBenchmark': ['String'],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -4001,89 +5589,6 @@ class RemoteAppLocalizations extends AppLocalizations {
         'sharedLoading' => l.sharedLoading,
         'jm4ConfirmFact' => l.jm4ConfirmFact,
         'jm4HonestyHint' => l.jm4HonestyHint,
-        'jobsFilterAll' => l.jobsFilterAll,
-        'jobsPresetMatched' => l.jobsPresetMatched,
-        'jobsPresetGov' => l.jobsPresetGov,
-        'jobsPresetEnterprise' => l.jobsPresetEnterprise,
-        'jobsPresetTamheer' => l.jobsPresetTamheer,
-        'jobsFilterRemote' => l.jobsFilterRemote,
-        'jobsSearchHint' => l.jobsSearchHint,
-        'jobsCategoryTech' => l.jobsCategoryTech,
-        'jobsCategoryFinance' => l.jobsCategoryFinance,
-        'jobsCategoryHealth' => l.jobsCategoryHealth,
-        'jobsCityAll' => l.jobsCityAll,
-        'jobsCityRiyadh' => l.jobsCityRiyadh,
-        'jobsCityJeddah' => l.jobsCityJeddah,
-        'jobsCityDammam' => l.jobsCityDammam,
-        'jobsCityKhobar' => l.jobsCityKhobar,
-        'jobsCityMecca' => l.jobsCityMecca,
-        'jobsCityMedina' => l.jobsCityMedina,
-        'jobsPersonalizedTitle' => l.jobsPersonalizedTitle,
-        'jobsPersonalizedFallback' => l.jobsPersonalizedFallback,
-        'jobsMatchedActive' => l.jobsMatchedActive,
-        'jobsMatchToggle' => l.jobsMatchToggle,
-        'jobsEmptyFeed' => l.jobsEmptyFeed,
-        'jobsLoadFailed' => l.jobsLoadFailed,
-        'jobsLatestPostings' => l.jobsLatestPostings,
-        'jobsDetailTitle' => l.jobsDetailTitle,
-        'jobsVerifiedSourceDetail' => l.jobsVerifiedSourceDetail,
-        'jobsTamheerProgram' => l.jobsTamheerProgram,
-        'jobsCompatibilityTitle' => l.jobsCompatibilityTitle,
-        'jobsSkillsRequired' => l.jobsSkillsRequired,
-        'jobsDescriptionTitle' => l.jobsDescriptionTitle,
-        'jobsTailorCv' => l.jobsTailorCv,
-        'jobsOpenApplyFailed' => l.jobsOpenApplyFailed,
-        'jobsApplyOfficialSite' => l.jobsApplyOfficialSite,
-        'jobsVerifiedSourceCard' => l.jobsVerifiedSourceCard,
-        'jobsTamheerBadge' => l.jobsTamheerBadge,
-        'jobsNewBadge' => l.jobsNewBadge,
-        'jobsDetailsLink' => l.jobsDetailsLink,
-        'jobsVerifiedSourceFeatured' => l.jobsVerifiedSourceFeatured,
-        'jobsTamheerBadgeFeatured' => l.jobsTamheerBadgeFeatured,
-        'jobsApplyNow' => l.jobsApplyNow,
-        'atsFileTooLarge' => l.atsFileTooLarge(a[0] as int),
-        'atsUnsupportedFileType' => l.atsUnsupportedFileType,
-        'atsResumeRequired' => l.atsResumeRequired,
-        'atsCancelled' => l.atsCancelled,
-        'atsAiStillWorkingAnalysis' => l.atsAiStillWorkingAnalysis,
-        'atsAnalyzeUnexpectedError' => l.atsAnalyzeUnexpectedError,
-        'atsOpenAnalysisFailed' => l.atsOpenAnalysisFailed,
-        'atsResultsTitle' => l.atsResultsTitle,
-        'atsTabScore' => l.atsTabScore,
-        'atsTabRecommendations' => l.atsTabRecommendations,
-        'atsGenerateImprovedCv' => l.atsGenerateImprovedCv,
-        'atsGenerating' => l.atsGenerating,
-        'atsGenerateUnexpectedError' => l.atsGenerateUnexpectedError,
-        'atsAiStillWorkingGeneration' => l.atsAiStillWorkingGeneration,
-        'atsUploadTapHint' => l.atsUploadTapHint,
-        'atsUploadMaxSize' => l.atsUploadMaxSize,
-        'atsRemoveFile' => l.atsRemoveFile,
-        'atsOr' => l.atsOr,
-        'atsNoKeywords' => l.atsNoKeywords,
-        'atsShowMoreCount' => l.atsShowMoreCount(a[0] as int),
-        'atsKeywordDialogTitle' => l.atsKeywordDialogTitle(a[0] as String),
-        'atsKeywordDialogBody' => l.atsKeywordDialogBody(a[0] as String),
-        'atsGotIt' => l.atsGotIt,
-        'atsCriteriaDetails' => l.atsCriteriaDetails,
-        'atsKeywordsTitle' => l.atsKeywordsTitle,
-        'atsGradeLabel' => l.atsGradeLabel(a[0] as String),
-        'atsJobMatchSemantic' => l.atsJobMatchSemantic,
-        'atsJobMatchPercentage' => l.atsJobMatchPercentage,
-        'atsKeywordsFound' => l.atsKeywordsFound(a[0] as int),
-        'atsKeywordsMissing' => l.atsKeywordsMissing(a[0] as int),
-        'atsNoStrengths' => l.atsNoStrengths,
-        'atsQuickWins' => l.atsQuickWins,
-        'atsNoQuickWins' => l.atsNoQuickWins,
-        'atsUpgradeTitle' => l.atsUpgradeTitle,
-        'atsUpgradeBody' => l.atsUpgradeBody,
-        'atsKeywordSourceJd' => l.atsKeywordSourceJd,
-        'atsKeywordSourceGeneric' => l.atsKeywordSourceGeneric,
-        'atsBandExcellent' => l.atsBandExcellent,
-        'atsBandVeryGood' => l.atsBandVeryGood,
-        'atsBandFair' => l.atsBandFair,
-        'atsBandWeak' => l.atsBandWeak,
-        'jobsMatchScore' => l.jobsMatchScore(a[0] as int),
-        'atsBenchmark' => l.atsBenchmark(a[0] as String),
         'atsInputTitle' => l.atsInputTitle,
         'atsInputIntroduction' => l.atsInputIntroduction,
         'atsInputCvSource' => l.atsInputCvSource,
@@ -4371,6 +5876,396 @@ class RemoteAppLocalizations extends AppLocalizations {
         'dashboardUntitled' => l.dashboardUntitled,
         'dashboardEducationDetailNoContent' =>
           l.dashboardEducationDetailNoContent,
+        'cvDraftAvailable' => l.cvDraftAvailable,
+        'cvDraftContinueTitle' => l.cvDraftContinueTitle,
+        'cvDraftStartFresh' => l.cvDraftStartFresh,
+        'cvDraftRestore' => l.cvDraftRestore,
+        'cvDiscardChangesTitle' => l.cvDiscardChangesTitle,
+        'cvDiscardChangesBody' => l.cvDiscardChangesBody,
+        'cvDiscard' => l.cvDiscard,
+        'cvSaveProgressTitle' => l.cvSaveProgressTitle,
+        'cvSaveProgressBody' => l.cvSaveProgressBody,
+        'cvSaveDraft' => l.cvSaveDraft,
+        'cvEntryRequired' => l.cvEntryRequired,
+        'cvEntryChooseStart' => l.cvEntryChooseStart,
+        'cvEntryChooseEnd' => l.cvEntryChooseEnd,
+        'cvEntryEndBeforeStart' => l.cvEntryEndBeforeStart,
+        'cvEntryFrom' => l.cvEntryFrom,
+        'cvEntryTo' => l.cvEntryTo,
+        'cvEntryJobTitle' => l.cvEntryJobTitle,
+        'cvEntryJobTitleHint' => l.cvEntryJobTitleHint,
+        'cvEntryCompany' => l.cvEntryCompany,
+        'cvEntryCity' => l.cvEntryCity,
+        'cvEntryWorkCurrent' => l.cvEntryWorkCurrent,
+        'cvEntryDuties' => l.cvEntryDuties,
+        'cvEntryDutiesHint' => l.cvEntryDutiesHint,
+        'cvEntryDegree' => l.cvEntryDegree,
+        'cvEntryDegreeHint' => l.cvEntryDegreeHint,
+        'cvEntryInstitution' => l.cvEntryInstitution,
+        'cvEntryStudyCurrent' => l.cvEntryStudyCurrent,
+        'cvEntryEducationDetails' => l.cvEntryEducationDetails,
+        'cvEntryCertName' => l.cvEntryCertName,
+        'cvEntryCertIssuer' => l.cvEntryCertIssuer,
+        'cvEntryCertDate' => l.cvEntryCertDate,
+        'cvEntriesCompleteHighlighted' => l.cvEntriesCompleteHighlighted,
+        'cvEntriesAddOne' => l.cvEntriesAddOne,
+        'cvEntriesMoreDetail' => l.cvEntriesMoreDetail,
+        'cvEntryRemove' => l.cvEntryRemove,
+        'cvMonthChoose' => l.cvMonthChoose,
+        'cvMonthYearTitle' => l.cvMonthYearTitle,
+        'cvMonthYearDone' => l.cvMonthYearDone,
+        'cvWizardUpdate' => l.cvWizardUpdate,
+        'cvWizardGenerate' => l.cvWizardGenerate,
+        'cvWizardGenerating' => l.cvWizardGenerating,
+        'cvWizardStepPersonal' => l.cvWizardStepPersonal,
+        'cvWizardStepSkills' => l.cvWizardStepSkills,
+        'cvWizardStepExperience' => l.cvWizardStepExperience,
+        'cvWizardStepEducation' => l.cvWizardStepEducation,
+        'cvWizardStepOf' => l.cvWizardStepOf(a[0] as int, a[1] as int),
+        'cvWizardReviewFields' => l.cvWizardReviewFields,
+        'cvEducationStepTitle' => l.cvEducationStepTitle,
+        'cvEducationLabel' => l.cvEducationLabel,
+        'cvEducationAdd' => l.cvEducationAdd,
+        'cvCertificationsLabel' => l.cvCertificationsLabel,
+        'cvCertificationsAdd' => l.cvCertificationsAdd,
+        'cvExperienceStepTitle' => l.cvExperienceStepTitle,
+        'cvExperienceLabel' => l.cvExperienceLabel,
+        'cvExperienceHelper' => l.cvExperienceHelper,
+        'cvExperienceXyzBuilder' => l.cvExperienceXyzBuilder,
+        'cvExperienceAdd' => l.cvExperienceAdd,
+        'cvPersonalStepTitle' => l.cvPersonalStepTitle,
+        'cvPersonalFullName' => l.cvPersonalFullName,
+        'cvPersonalFullNameHint' => l.cvPersonalFullNameHint,
+        'cvPersonalFullNameRequired' => l.cvPersonalFullNameRequired,
+        'cvPersonalEmailRequired' => l.cvPersonalEmailRequired,
+        'cvPersonalEmailInvalid' => l.cvPersonalEmailInvalid,
+        'cvPersonalPhone' => l.cvPersonalPhone,
+        'cvPersonalPhoneRequired' => l.cvPersonalPhoneRequired,
+        'cvPersonalLinkedin' => l.cvPersonalLinkedin,
+        'cvPersonalTargetJob' => l.cvPersonalTargetJob,
+        'cvPersonalTargetJobHint' => l.cvPersonalTargetJobHint,
+        'cvPersonalTargetJobRequired' => l.cvPersonalTargetJobRequired,
+        'cvPersonalJobDescription' => l.cvPersonalJobDescription,
+        'cvPersonalCvLanguage' => l.cvPersonalCvLanguage,
+        'cvPersonalEnhancingJobDescription' =>
+          l.cvPersonalEnhancingJobDescription,
+        'cvPersonalJobDescriptionHint' => l.cvPersonalJobDescriptionHint,
+        'cvEnhance' => l.cvEnhance,
+        'cvEnhancing' => l.cvEnhancing,
+        'cvPersonalWriteMore' => l.cvPersonalWriteMore,
+        'cvSkillsStepTitle' => l.cvSkillsStepTitle,
+        'cvSkillsCore' => l.cvSkillsCore,
+        'cvSkillsHelper' => l.cvSkillsHelper,
+        'cvSkillsRequired' => l.cvSkillsRequired,
+        'cvSummaryLabel' => l.cvSummaryLabel,
+        'cvSummaryHelper' => l.cvSummaryHelper,
+        'cvSummaryHint' => l.cvSummaryHint,
+        'cvDraftSaved' => l.cvDraftSaved,
+        'cvAchievementDuplicate' => l.cvAchievementDuplicate,
+        'cvAchievementAdded' => l.cvAchievementAdded,
+        'cvGenerationCancelled' => l.cvGenerationCancelled,
+        'cvRetryShort' => l.cvRetryShort,
+        'cvGenerationUnexpectedError' => l.cvGenerationUnexpectedError,
+        'cvGenerationStillRunning' => l.cvGenerationStillRunning,
+        'cvEnterTargetJobFirst' => l.cvEnterTargetJobFirst,
+        'cvEnhanceFieldFailed' => l.cvEnhanceFieldFailed,
+        'cvFieldEnhanced' => l.cvFieldEnhanced,
+        'cvUndo' => l.cvUndo,
+        'cvJobDescriptionTooShort' => l.cvJobDescriptionTooShort,
+        'cvEnhanceJobDescriptionFailed' => l.cvEnhanceJobDescriptionFailed,
+        'cvJobDescriptionEnhanced' => l.cvJobDescriptionEnhanced,
+        'cvGeneratorEditTitle' => l.cvGeneratorEditTitle,
+        'cvGeneratorCreateTitle' => l.cvGeneratorCreateTitle,
+        'cvOpenFailed' => l.cvOpenFailed,
+        'cvNotReadyToSend' => l.cvNotReadyToSend,
+        'cvOpeningPdf' => l.cvOpeningPdf,
+        'cvPdfLinkUnavailable' => l.cvPdfLinkUnavailable,
+        'cvPdfLinkOpenFailed' => l.cvPdfLinkOpenFailed,
+        'cvTemplatesLoadFailed' => l.cvTemplatesLoadFailed,
+        'cvDeleteTitle' => l.cvDeleteTitle,
+        'cvDeleteBody' => l.cvDeleteBody,
+        'cvDeleteFailed' => l.cvDeleteFailed,
+        'cvPdfLinkNotFound' => l.cvPdfLinkNotFound,
+        'cvPdfOpenFailed' => l.cvPdfOpenFailed,
+        'cvListLoadFailed' => l.cvListLoadFailed,
+        'cvListEmptyTitle' => l.cvListEmptyTitle,
+        'cvListEmptyBody' => l.cvListEmptyBody,
+        'cvCreateNew' => l.cvCreateNew,
+        'cvUntitled' => l.cvUntitled,
+        'cvCardEdit' => l.cvCardEdit,
+        'cvCardDownload' => l.cvCardDownload,
+        'cvTemplatePickerTitle' => l.cvTemplatePickerTitle,
+        'cvTemplateDefault' => l.cvTemplateDefault,
+        'cvXyzFormula' => l.cvXyzFormula,
+        'cvXyzPresetsTitle' => l.cvXyzPresetsTitle,
+        'cvXyzPresetTech' => l.cvXyzPresetTech,
+        'cvXyzPresetSales' => l.cvXyzPresetSales,
+        'cvXyzPresetProject' => l.cvXyzPresetProject,
+        'cvXyzActionLabel' => l.cvXyzActionLabel,
+        'cvXyzActionHint' => l.cvXyzActionHint,
+        'cvXyzMetricLabel' => l.cvXyzMetricLabel,
+        'cvXyzMetricHint' => l.cvXyzMetricHint,
+        'cvXyzMethodLabel' => l.cvXyzMethodLabel,
+        'cvXyzMethodHint' => l.cvXyzMethodHint,
+        'cvXyzPreviewTitle' => l.cvXyzPreviewTitle,
+        'cvXyzInsert' => l.cvXyzInsert,
+        'cvSkillsSelectedCount' => l.cvSkillsSelectedCount(a[0] as int),
+        'cvSkillsClearAll' => l.cvSkillsClearAll,
+        'cvSkillsEmpty' => l.cvSkillsEmpty,
+        'cvSkillsInputHint' => l.cvSkillsInputHint,
+        'cvSkillsSuggested' => l.cvSkillsSuggested,
+        'cvExportOptionsTitle' => l.cvExportOptionsTitle,
+        'cvExportLanguage' => l.cvExportLanguage,
+        'cvExportSelectedTemplate' => l.cvExportSelectedTemplate,
+        'cvExportFileName' => l.cvExportFileName,
+        'cvExportLatinFilename' => l.cvExportLatinFilename,
+        'cvExportPremiumWatermark' => l.cvExportPremiumWatermark,
+        'cvExportSubscriptionRequired' => l.cvExportSubscriptionRequired,
+        'cvExportUpgrade' => l.cvExportUpgrade,
+        'cvExportPreparing' => l.cvExportPreparing,
+        'cvExportDownload' => l.cvExportDownload,
+        'cvExportSuccess' => l.cvExportSuccess,
+        'cvExportSharePdf' => l.cvExportSharePdf,
+        'settingsOnboardingWelcomeBody' => l.settingsOnboardingWelcomeBody,
+        'settingsOnboardingAtsTitle' => l.settingsOnboardingAtsTitle,
+        'settingsOnboardingAtsBody' => l.settingsOnboardingAtsBody,
+        'settingsOnboardingAiTitle' => l.settingsOnboardingAiTitle,
+        'settingsOnboardingAiBody' => l.settingsOnboardingAiBody,
+        'settingsOnboardingPrevious' => l.settingsOnboardingPrevious,
+        'settingsOnboardingSkip' => l.settingsOnboardingSkip,
+        'settingsOnboardingPageOf' =>
+          l.settingsOnboardingPageOf(a[0] as int, a[1] as int),
+        'authFieldTooLong' => l.authFieldTooLong(a[0] as int),
+        'authPasswordTooShort' => l.authPasswordTooShort(a[0] as int),
+        'authEmailInvalid' => l.authEmailInvalid,
+        'authPhoneInvalid' => l.authPhoneInvalid,
+        'authRegisterHeroTitle' => l.authRegisterHeroTitle,
+        'authRegisterHeroSubtitle' => l.authRegisterHeroSubtitle,
+        'authTermsAgreePrefix' => l.authTermsAgreePrefix,
+        'authTermsLink' => l.authTermsLink,
+        'authHaveAccount' => l.authHaveAccount,
+        'authAgreeTermsRequired' => l.authAgreeTermsRequired,
+        'authRetry' => l.authRetry,
+        'authRegisterUnexpectedError' => l.authRegisterUnexpectedError,
+        'authLooksGood' => l.authLooksGood,
+        'authJobTitleOtherRequired' => l.authJobTitleOtherRequired,
+        'authFixHighlightedFields' => l.authFixHighlightedFields,
+        'authFullNameLabel' => l.authFullNameLabel,
+        'authFullNameHint' => l.authFullNameHint,
+        'authNameRequired' => l.authNameRequired,
+        'authEmailAddressLabel' => l.authEmailAddressLabel,
+        'authEmailRequired' => l.authEmailRequired,
+        'authPhoneLabel' => l.authPhoneLabel,
+        'authPhoneRequired' => l.authPhoneRequired,
+        'authLocationLabel' => l.authLocationLabel,
+        'authLocationHint' => l.authLocationHint,
+        'authLocationRequired' => l.authLocationRequired,
+        'authJobTitleOptionalLabel' => l.authJobTitleOptionalLabel,
+        'authJobTitleOtherLabel' => l.authJobTitleOtherLabel,
+        'authJobTitleOtherHint' => l.authJobTitleOtherHint,
+        'authPasswordLabel' => l.authPasswordLabel,
+        'authPasswordRequired' => l.authPasswordRequired,
+        'authCreateAccountButton' => l.authCreateAccountButton,
+        'authCreatingAccount' => l.authCreatingAccount,
+        'authContinueWithoutAccount' => l.authContinueWithoutAccount,
+        'authSessionExpired' => l.authSessionExpired,
+        'authLoginUnexpectedError' => l.authLoginUnexpectedError,
+        'authSocialSignInSoon' => l.authSocialSignInSoon(a[0] as String),
+        'authLoginSubtitle' => l.authLoginSubtitle,
+        'authForgotPasswordLink' => l.authForgotPasswordLink,
+        'authSignInButton' => l.authSignInButton,
+        'authSigningIn' => l.authSigningIn,
+        'authOrContinueWith' => l.authOrContinueWith,
+        'authNoAccount' => l.authNoAccount,
+        'authCreateAccountLink' => l.authCreateAccountLink,
+        'authForgotEmailInvalidNotice' => l.authForgotEmailInvalidNotice,
+        'authForgotSendFailed' => l.authForgotSendFailed,
+        'authForgotResetFailed' => l.authForgotResetFailed,
+        'authForgotTitle' => l.authForgotTitle,
+        'authForgotCodeIntro' => l.authForgotCodeIntro,
+        'authForgotEmailIntro' => l.authForgotEmailIntro,
+        'authForgotEmailInvalid' => l.authForgotEmailInvalid,
+        'authForgotSendCode' => l.authForgotSendCode,
+        'authSending' => l.authSending,
+        'authVerificationCodeLabel' => l.authVerificationCodeLabel,
+        'authCodeRequired' => l.authCodeRequired,
+        'authNewPasswordLabel' => l.authNewPasswordLabel,
+        'authForgotNewPasswordRequired' => l.authForgotNewPasswordRequired,
+        'authForgotConfirmPasswordLabel' => l.authForgotConfirmPasswordLabel,
+        'authForgotConfirmPasswordRequired' =>
+          l.authForgotConfirmPasswordRequired,
+        'authPasswordsDoNotMatch' => l.authPasswordsDoNotMatch,
+        'authForgotResetButton' => l.authForgotResetButton,
+        'authSaving' => l.authSaving,
+        'authResendCodeIn' => l.authResendCodeIn(a[0] as int),
+        'authResendCode' => l.authResendCode,
+        'authForgotUseDifferentEmail' => l.authForgotUseDifferentEmail,
+        'authVerifySuccess' => l.authVerifySuccess,
+        'authVerifyUnexpectedError' => l.authVerifyUnexpectedError,
+        'authVerifyResendFailed' => l.authVerifyResendFailed,
+        'authVerifyBackToSignIn' => l.authVerifyBackToSignIn,
+        'authVerifyTitle' => l.authVerifyTitle,
+        'authVerifyCodeSentTo' => l.authVerifyCodeSentTo,
+        'authVerifyButton' => l.authVerifyButton,
+        'authVerifying' => l.authVerifying,
+        'authVerifyCheckSpam' => l.authVerifyCheckSpam,
+        'settingsPrivacyTitle' => l.settingsPrivacyTitle,
+        'settingsPrivacyCollectTitle' => l.settingsPrivacyCollectTitle,
+        'settingsPrivacyCollectBody' => l.settingsPrivacyCollectBody,
+        'settingsPrivacyUseTitle' => l.settingsPrivacyUseTitle,
+        'settingsPrivacyUseBody' => l.settingsPrivacyUseBody,
+        'settingsPrivacyProcessorsTitle' => l.settingsPrivacyProcessorsTitle,
+        'settingsPrivacyProcessorsBody' => l.settingsPrivacyProcessorsBody,
+        'settingsPrivacyRetentionTitle' => l.settingsPrivacyRetentionTitle,
+        'settingsPrivacyRetentionBody' => l.settingsPrivacyRetentionBody,
+        'settingsPrivacyContactTitle' => l.settingsPrivacyContactTitle,
+        'settingsPrivacyContactBody' =>
+          l.settingsPrivacyContactBody(a[0] as String),
+        'settingsNotificationsUpdateFailed' =>
+          l.settingsNotificationsUpdateFailed,
+        'settingsNotificationsTitle' => l.settingsNotificationsTitle,
+        'settingsNotificationsReadAll' => l.settingsNotificationsReadAll,
+        'settingsNotificationsLoadFailed' => l.settingsNotificationsLoadFailed,
+        'settingsNotificationsEmptyTitle' => l.settingsNotificationsEmptyTitle,
+        'settingsNotificationsEmptyBody' => l.settingsNotificationsEmptyBody,
+        'settingsNotificationsUnread' => l.settingsNotificationsUnread,
+        'settingsCleanupFailed' => l.settingsCleanupFailed,
+        'settingsCleanupMessage' => l.settingsCleanupMessage,
+        'settingsCleanupRetry' => l.settingsCleanupRetry,
+        'settingsCleanupClearing' => l.settingsCleanupClearing,
+        'settingsPasswordChanged' => l.settingsPasswordChanged,
+        'settingsCurrentPasswordIncorrect' =>
+          l.settingsCurrentPasswordIncorrect,
+        'settingsPasswordChangeFailed' => l.settingsPasswordChangeFailed,
+        'settingsCurrentPasswordLabel' => l.settingsCurrentPasswordLabel,
+        'settingsCurrentPasswordRequired' => l.settingsCurrentPasswordRequired,
+        'settingsNewPasswordRequired' => l.settingsNewPasswordRequired,
+        'settingsNewPasswordSameAsCurrent' =>
+          l.settingsNewPasswordSameAsCurrent,
+        'settingsConfirmNewPasswordLabel' => l.settingsConfirmNewPasswordLabel,
+        'settingsConfirmNewPasswordRequired' =>
+          l.settingsConfirmNewPasswordRequired,
+        'settingsUpdatePassword' => l.settingsUpdatePassword,
+        'settingsUpdatingPassword' => l.settingsUpdatingPassword,
+        'settingsDeleteConfirmTitle' => l.settingsDeleteConfirmTitle,
+        'settingsDeleteConfirmBody' => l.settingsDeleteConfirmBody,
+        'settingsDeleteForever' => l.settingsDeleteForever,
+        'settingsAccountDeleted' => l.settingsAccountDeleted,
+        'settingsDeletePasswordIncorrect' => l.settingsDeletePasswordIncorrect,
+        'settingsDeleteFailed' => l.settingsDeleteFailed,
+        'settingsDeleteWarning' => l.settingsDeleteWarning,
+        'settingsDeleteConfirmWithPassword' =>
+          l.settingsDeleteConfirmWithPassword,
+        'settingsDeletePasswordRequired' => l.settingsDeletePasswordRequired,
+        'settingsDeleteMyAccount' => l.settingsDeleteMyAccount,
+        'settingsDeleting' => l.settingsDeleting,
+        'settingsAvatarCropTitle' => l.settingsAvatarCropTitle,
+        'settingsAvatarOpenFailed' => l.settingsAvatarOpenFailed,
+        'settingsAvatarUsePhoto' => l.settingsAvatarUsePhoto,
+        'settingsPhotoGallery' => l.settingsPhotoGallery,
+        'settingsPhotoCamera' => l.settingsPhotoCamera,
+        'settingsPhotoRemove' => l.settingsPhotoRemove,
+        'settingsPhotoRemoved' => l.settingsPhotoRemoved,
+        'settingsPhotoUpdated' => l.settingsPhotoUpdated,
+        'settingsPhotoUpdateFailed' => l.settingsPhotoUpdateFailed,
+        'settingsPhotoChange' => l.settingsPhotoChange,
+        'settingsPhotoHint' => l.settingsPhotoHint,
+        'settingsProfileUpdated' => l.settingsProfileUpdated,
+        'settingsProfileUpdateFailed' => l.settingsProfileUpdateFailed,
+        'settingsProfileLoadFailed' => l.settingsProfileLoadFailed,
+        'settingsProfileFullNameLabel' => l.settingsProfileFullNameLabel,
+        'settingsProfileNameHint' => l.settingsProfileNameHint,
+        'settingsProfileNameRequired' => l.settingsProfileNameRequired,
+        'settingsProfileJobTitleLabel' => l.settingsProfileJobTitleLabel,
+        'settingsProfileJobTitlesLoadFailed' =>
+          l.settingsProfileJobTitlesLoadFailed,
+        'settingsProfileEmailReadOnly' => l.settingsProfileEmailReadOnly,
+        'settingsProfilePhoneLabel' => l.settingsProfilePhoneLabel,
+        'settingsProfileSaveChanges' => l.settingsProfileSaveChanges,
+        'settingsProfileTitle' => l.settingsProfileTitle,
+        'jobsFilterAll' => l.jobsFilterAll,
+        'jobsPresetMatched' => l.jobsPresetMatched,
+        'jobsPresetGov' => l.jobsPresetGov,
+        'jobsPresetEnterprise' => l.jobsPresetEnterprise,
+        'jobsPresetTamheer' => l.jobsPresetTamheer,
+        'jobsFilterRemote' => l.jobsFilterRemote,
+        'jobsSearchHint' => l.jobsSearchHint,
+        'jobsCategoryTech' => l.jobsCategoryTech,
+        'jobsCategoryFinance' => l.jobsCategoryFinance,
+        'jobsCategoryHealth' => l.jobsCategoryHealth,
+        'jobsCityAll' => l.jobsCityAll,
+        'jobsCityRiyadh' => l.jobsCityRiyadh,
+        'jobsCityJeddah' => l.jobsCityJeddah,
+        'jobsCityDammam' => l.jobsCityDammam,
+        'jobsCityKhobar' => l.jobsCityKhobar,
+        'jobsCityMecca' => l.jobsCityMecca,
+        'jobsCityMedina' => l.jobsCityMedina,
+        'jobsPersonalizedTitle' => l.jobsPersonalizedTitle,
+        'jobsPersonalizedFallback' => l.jobsPersonalizedFallback,
+        'jobsMatchedActive' => l.jobsMatchedActive,
+        'jobsMatchToggle' => l.jobsMatchToggle,
+        'jobsEmptyFeed' => l.jobsEmptyFeed,
+        'jobsLoadFailed' => l.jobsLoadFailed,
+        'jobsLatestPostings' => l.jobsLatestPostings,
+        'jobsDetailTitle' => l.jobsDetailTitle,
+        'jobsVerifiedSourceDetail' => l.jobsVerifiedSourceDetail,
+        'jobsTamheerProgram' => l.jobsTamheerProgram,
+        'jobsCompatibilityTitle' => l.jobsCompatibilityTitle,
+        'jobsSkillsRequired' => l.jobsSkillsRequired,
+        'jobsDescriptionTitle' => l.jobsDescriptionTitle,
+        'jobsTailorCv' => l.jobsTailorCv,
+        'jobsOpenApplyFailed' => l.jobsOpenApplyFailed,
+        'jobsApplyOfficialSite' => l.jobsApplyOfficialSite,
+        'jobsVerifiedSourceCard' => l.jobsVerifiedSourceCard,
+        'jobsTamheerBadge' => l.jobsTamheerBadge,
+        'jobsNewBadge' => l.jobsNewBadge,
+        'jobsDetailsLink' => l.jobsDetailsLink,
+        'jobsVerifiedSourceFeatured' => l.jobsVerifiedSourceFeatured,
+        'jobsTamheerBadgeFeatured' => l.jobsTamheerBadgeFeatured,
+        'jobsApplyNow' => l.jobsApplyNow,
+        'atsFileTooLarge' => l.atsFileTooLarge(a[0] as int),
+        'atsUnsupportedFileType' => l.atsUnsupportedFileType,
+        'atsResumeRequired' => l.atsResumeRequired,
+        'atsCancelled' => l.atsCancelled,
+        'atsAiStillWorkingAnalysis' => l.atsAiStillWorkingAnalysis,
+        'atsAnalyzeUnexpectedError' => l.atsAnalyzeUnexpectedError,
+        'atsOpenAnalysisFailed' => l.atsOpenAnalysisFailed,
+        'atsResultsTitle' => l.atsResultsTitle,
+        'atsTabScore' => l.atsTabScore,
+        'atsTabRecommendations' => l.atsTabRecommendations,
+        'atsGenerateImprovedCv' => l.atsGenerateImprovedCv,
+        'atsGenerating' => l.atsGenerating,
+        'atsGenerateUnexpectedError' => l.atsGenerateUnexpectedError,
+        'atsAiStillWorkingGeneration' => l.atsAiStillWorkingGeneration,
+        'atsUploadTapHint' => l.atsUploadTapHint,
+        'atsUploadMaxSize' => l.atsUploadMaxSize,
+        'atsRemoveFile' => l.atsRemoveFile,
+        'atsOr' => l.atsOr,
+        'atsNoKeywords' => l.atsNoKeywords,
+        'atsShowMoreCount' => l.atsShowMoreCount(a[0] as int),
+        'atsKeywordDialogTitle' => l.atsKeywordDialogTitle(a[0] as String),
+        'atsKeywordDialogBody' => l.atsKeywordDialogBody(a[0] as String),
+        'atsGotIt' => l.atsGotIt,
+        'atsCriteriaDetails' => l.atsCriteriaDetails,
+        'atsKeywordsTitle' => l.atsKeywordsTitle,
+        'atsGradeLabel' => l.atsGradeLabel(a[0] as String),
+        'atsJobMatchSemantic' => l.atsJobMatchSemantic,
+        'atsJobMatchPercentage' => l.atsJobMatchPercentage,
+        'atsKeywordsFound' => l.atsKeywordsFound(a[0] as int),
+        'atsKeywordsMissing' => l.atsKeywordsMissing(a[0] as int),
+        'atsNoStrengths' => l.atsNoStrengths,
+        'atsQuickWins' => l.atsQuickWins,
+        'atsNoQuickWins' => l.atsNoQuickWins,
+        'atsUpgradeTitle' => l.atsUpgradeTitle,
+        'atsUpgradeBody' => l.atsUpgradeBody,
+        'atsKeywordSourceJd' => l.atsKeywordSourceJd,
+        'atsKeywordSourceGeneric' => l.atsKeywordSourceGeneric,
+        'atsBandExcellent' => l.atsBandExcellent,
+        'atsBandVeryGood' => l.atsBandVeryGood,
+        'atsBandFair' => l.atsBandFair,
+        'atsBandWeak' => l.atsBandWeak,
+        'jobsMatchScore' => l.jobsMatchScore(a[0] as int),
+        'atsBenchmark' => l.atsBenchmark(a[0] as String),
         _ => throw ArgumentError.value(key, 'key'),
       };
 }
