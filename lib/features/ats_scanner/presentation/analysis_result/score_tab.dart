@@ -40,12 +40,12 @@ class ScoreTab extends StatelessWidget {
             style: TextStyle(color: context.sirati.textSecondary),
           ),
         const SizedBox(height: 24),
-        SectionTitle(english ? 'Criteria Details' : 'تفاصيل المعايير'),
+        SectionTitle(AppLocalizations.of(context).atsCriteriaDetails),
         const SizedBox(height: 12),
         _CriteriaCard(criteria: analysis.criteria),
         const SizedBox(height: 24),
         if (analysis.hasKeywordSummary)
-          SectionTitle(english ? 'Keywords' : 'الكلمات المفتاحية'),
+          SectionTitle(AppLocalizations.of(context).atsKeywordsTitle),
         const SizedBox(height: 12),
         if (analysis.hasKeywordSummary)
           _KeywordsCard(
@@ -94,9 +94,7 @@ class _ScoreHero extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                english
-                    ? 'Grade  ${analysis.grade}'
-                    : 'تقدير  ${analysis.grade}',
+                AppLocalizations.of(context).atsGradeLabel(analysis.grade),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -106,7 +104,7 @@ class _ScoreHero extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              band.description(english: english),
+              band.description(AppLocalizations.of(context)),
               style: TextStyle(
                 fontSize: 12,
                 color: c.textSecondary,
@@ -174,13 +172,13 @@ class _ScoreHero extends StatelessWidget {
               borderRadius: 6,
               // Primary score: haptic the moment the elastic fill settles.
               celebrateOnComplete: true,
-              semanticLabel: english ? 'Job match' : 'تطابق الوظيفة',
+              semanticLabel: AppLocalizations.of(context).atsJobMatchSemantic,
             ),
             const SizedBox(height: 6),
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: Text(
-                english ? 'Job match percentage' : 'نسبة التطابق مع الوظيفة',
+                AppLocalizations.of(context).atsJobMatchPercentage,
                 style: TextStyle(fontSize: 11, color: c.textHint),
               ),
             ),
@@ -200,8 +198,8 @@ class _ScoreHero extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '${english ? 'Benchmark: ' : 'معيار التقييم: '}'
-                    '${analysis.displayCategoryLabel(english: english)}',
+                    AppLocalizations.of(context).atsBenchmark(
+                        analysis.displayCategoryLabel(english: english)),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -336,9 +334,7 @@ class _KeywordsCard extends StatelessWidget {
           _KeywordHeading(
             dotColor: c.teal,
             textColor: c.tealDark,
-            label: english
-                ? 'Found  (${found.length})'
-                : 'موجودة  (${found.length})',
+            label: AppLocalizations.of(context).atsKeywordsFound(found.length),
           ),
           const SizedBox(height: 10),
           KeywordGroup(keywords: found, found: true, english: english),
@@ -348,9 +344,8 @@ class _KeywordsCard extends StatelessWidget {
           _KeywordHeading(
             dotColor: c.red,
             textColor: c.red,
-            label: english
-                ? 'Missing  (${missing.length})'
-                : 'ناقصة  (${missing.length})',
+            label:
+                AppLocalizations.of(context).atsKeywordsMissing(missing.length),
           ),
           const SizedBox(height: 10),
           KeywordGroup(keywords: missing, found: false, english: english),

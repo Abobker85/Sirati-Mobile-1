@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -17,17 +18,20 @@ class PresetChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final presets = [
-      _PresetOption('all', english ? 'All' : 'الكل', Icons.dashboard_outlined),
-      _PresetOption('matched', english ? 'Best Match' : 'مناسبة لي 🎯',
+      _PresetOption('all', AppLocalizations.of(context).jobsFilterAll,
+          Icons.dashboard_outlined),
+      _PresetOption('matched', AppLocalizations.of(context).jobsPresetMatched,
           Icons.stars_rounded),
-      _PresetOption('gov', english ? 'Government' : 'جهات حكومية 🏛️',
+      _PresetOption('gov', AppLocalizations.of(context).jobsPresetGov,
           Icons.account_balance_outlined),
-      _PresetOption('enterprise', english ? 'Enterprise' : 'شركات كبرى 🏢',
-          Icons.business_outlined),
-      _PresetOption('tamheer', english ? 'Tamheer' : 'تمهير وتدريب 🇸🇦',
-          Icons.school_outlined),
       _PresetOption(
-          'remote', english ? 'Remote' : 'عن بعد 🌐', Icons.public_rounded),
+          'enterprise',
+          AppLocalizations.of(context).jobsPresetEnterprise,
+          Icons.business_outlined),
+      _PresetOption('tamheer', AppLocalizations.of(context).jobsPresetTamheer,
+          Icons.school_outlined),
+      _PresetOption('remote', AppLocalizations.of(context).jobsFilterRemote,
+          Icons.public_rounded),
     ];
 
     return Material(
@@ -109,9 +113,7 @@ class JobSearchBar extends StatelessWidget {
         onChanged: onChanged,
         textAlign: TextAlign.start,
         decoration: InputDecoration(
-          hintText: english
-              ? 'Search for a job or company...'
-              : 'ابحث عن وظيفة أو شركة...',
+          hintText: AppLocalizations.of(context).jobsSearchHint,
           // Keep the search affordance on the physical leading edge of the field
           // (left) in both locales — matches the current product screenshots.
           prefixIcon:
@@ -157,10 +159,12 @@ class CategoryChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = [
-      _CategoryOption('all', english ? 'All' : 'الكل'),
-      _CategoryOption('tech', english ? 'Tech' : 'تقنية'),
-      _CategoryOption('finance', english ? 'Finance' : 'تمويل'),
-      _CategoryOption('health', english ? 'Health' : 'صحة'),
+      _CategoryOption('all', AppLocalizations.of(context).jobsFilterAll),
+      _CategoryOption('tech', AppLocalizations.of(context).jobsCategoryTech),
+      _CategoryOption(
+          'finance', AppLocalizations.of(context).jobsCategoryFinance),
+      _CategoryOption(
+          'health', AppLocalizations.of(context).jobsCategoryHealth),
     ];
 
     return Material(
@@ -173,8 +177,8 @@ class CategoryChips extends StatelessWidget {
             PressScale(
               pressedScale: .98,
               child: ChoiceChip(
-                    materialTapTargetSize: MaterialTapTargetSize.padded,
-                    visualDensity: VisualDensity.standard,
+                materialTapTargetSize: MaterialTapTargetSize.padded,
+                visualDensity: VisualDensity.standard,
                 label: Text(option.label),
                 selected: selectedCategory == option.key,
                 onSelected: (_) => onSelected(option.key),
@@ -221,14 +225,14 @@ class CityChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = [
-      _CategoryOption('all', english ? 'All Locations' : 'كل المناطق'),
-      _CategoryOption('riyadh', english ? 'Riyadh' : 'الرياض'),
-      _CategoryOption('jeddah', english ? 'Jeddah' : 'جدة'),
-      _CategoryOption('dammam', english ? 'Dammam' : 'الدمام'),
-      _CategoryOption('khobar', english ? 'Khobar' : 'الخبر'),
-      _CategoryOption('mecca', english ? 'Mecca' : 'مكة'),
-      _CategoryOption('medina', english ? 'Medina' : 'المدينة'),
-      _CategoryOption('remote', english ? 'Remote' : 'عن بعد 🌐'),
+      _CategoryOption('all', AppLocalizations.of(context).jobsCityAll),
+      _CategoryOption('riyadh', AppLocalizations.of(context).jobsCityRiyadh),
+      _CategoryOption('jeddah', AppLocalizations.of(context).jobsCityJeddah),
+      _CategoryOption('dammam', AppLocalizations.of(context).jobsCityDammam),
+      _CategoryOption('khobar', AppLocalizations.of(context).jobsCityKhobar),
+      _CategoryOption('mecca', AppLocalizations.of(context).jobsCityMecca),
+      _CategoryOption('medina', AppLocalizations.of(context).jobsCityMedina),
+      _CategoryOption('remote', AppLocalizations.of(context).jobsFilterRemote),
     ];
 
     return Material(

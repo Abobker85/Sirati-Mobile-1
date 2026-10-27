@@ -1342,6 +1342,404 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('jm4HonestyHint') ?? _base.jm4HonestyHint;
 
   @override
+  String get jobsFilterAll =>
+      remote.text('jobsFilterAll') ?? _base.jobsFilterAll;
+
+  @override
+  String get jobsPresetMatched =>
+      remote.text('jobsPresetMatched') ?? _base.jobsPresetMatched;
+
+  @override
+  String get jobsPresetGov =>
+      remote.text('jobsPresetGov') ?? _base.jobsPresetGov;
+
+  @override
+  String get jobsPresetEnterprise =>
+      remote.text('jobsPresetEnterprise') ?? _base.jobsPresetEnterprise;
+
+  @override
+  String get jobsPresetTamheer =>
+      remote.text('jobsPresetTamheer') ?? _base.jobsPresetTamheer;
+
+  @override
+  String get jobsFilterRemote =>
+      remote.text('jobsFilterRemote') ?? _base.jobsFilterRemote;
+
+  @override
+  String get jobsSearchHint =>
+      remote.text('jobsSearchHint') ?? _base.jobsSearchHint;
+
+  @override
+  String get jobsCategoryTech =>
+      remote.text('jobsCategoryTech') ?? _base.jobsCategoryTech;
+
+  @override
+  String get jobsCategoryFinance =>
+      remote.text('jobsCategoryFinance') ?? _base.jobsCategoryFinance;
+
+  @override
+  String get jobsCategoryHealth =>
+      remote.text('jobsCategoryHealth') ?? _base.jobsCategoryHealth;
+
+  @override
+  String get jobsCityAll => remote.text('jobsCityAll') ?? _base.jobsCityAll;
+
+  @override
+  String get jobsCityRiyadh =>
+      remote.text('jobsCityRiyadh') ?? _base.jobsCityRiyadh;
+
+  @override
+  String get jobsCityJeddah =>
+      remote.text('jobsCityJeddah') ?? _base.jobsCityJeddah;
+
+  @override
+  String get jobsCityDammam =>
+      remote.text('jobsCityDammam') ?? _base.jobsCityDammam;
+
+  @override
+  String get jobsCityKhobar =>
+      remote.text('jobsCityKhobar') ?? _base.jobsCityKhobar;
+
+  @override
+  String get jobsCityMecca =>
+      remote.text('jobsCityMecca') ?? _base.jobsCityMecca;
+
+  @override
+  String get jobsCityMedina =>
+      remote.text('jobsCityMedina') ?? _base.jobsCityMedina;
+
+  @override
+  String get jobsPersonalizedTitle =>
+      remote.text('jobsPersonalizedTitle') ?? _base.jobsPersonalizedTitle;
+
+  @override
+  String get jobsPersonalizedFallback =>
+      remote.text('jobsPersonalizedFallback') ?? _base.jobsPersonalizedFallback;
+
+  @override
+  String get jobsMatchedActive =>
+      remote.text('jobsMatchedActive') ?? _base.jobsMatchedActive;
+
+  @override
+  String get jobsMatchToggle =>
+      remote.text('jobsMatchToggle') ?? _base.jobsMatchToggle;
+
+  @override
+  String get jobsEmptyFeed =>
+      remote.text('jobsEmptyFeed') ?? _base.jobsEmptyFeed;
+
+  @override
+  String get jobsLoadFailed =>
+      remote.text('jobsLoadFailed') ?? _base.jobsLoadFailed;
+
+  @override
+  String get jobsLatestPostings =>
+      remote.text('jobsLatestPostings') ?? _base.jobsLatestPostings;
+
+  @override
+  String get jobsDetailTitle =>
+      remote.text('jobsDetailTitle') ?? _base.jobsDetailTitle;
+
+  @override
+  String get jobsVerifiedSourceDetail =>
+      remote.text('jobsVerifiedSourceDetail') ?? _base.jobsVerifiedSourceDetail;
+
+  @override
+  String get jobsTamheerProgram =>
+      remote.text('jobsTamheerProgram') ?? _base.jobsTamheerProgram;
+
+  @override
+  String get jobsCompatibilityTitle =>
+      remote.text('jobsCompatibilityTitle') ?? _base.jobsCompatibilityTitle;
+
+  @override
+  String get jobsSkillsRequired =>
+      remote.text('jobsSkillsRequired') ?? _base.jobsSkillsRequired;
+
+  @override
+  String get jobsDescriptionTitle =>
+      remote.text('jobsDescriptionTitle') ?? _base.jobsDescriptionTitle;
+
+  @override
+  String get jobsTailorCv => remote.text('jobsTailorCv') ?? _base.jobsTailorCv;
+
+  @override
+  String get jobsOpenApplyFailed =>
+      remote.text('jobsOpenApplyFailed') ?? _base.jobsOpenApplyFailed;
+
+  @override
+  String get jobsApplyOfficialSite =>
+      remote.text('jobsApplyOfficialSite') ?? _base.jobsApplyOfficialSite;
+
+  @override
+  String get jobsVerifiedSourceCard =>
+      remote.text('jobsVerifiedSourceCard') ?? _base.jobsVerifiedSourceCard;
+
+  @override
+  String get jobsTamheerBadge =>
+      remote.text('jobsTamheerBadge') ?? _base.jobsTamheerBadge;
+
+  @override
+  String get jobsNewBadge => remote.text('jobsNewBadge') ?? _base.jobsNewBadge;
+
+  @override
+  String get jobsDetailsLink =>
+      remote.text('jobsDetailsLink') ?? _base.jobsDetailsLink;
+
+  @override
+  String get jobsVerifiedSourceFeatured =>
+      remote.text('jobsVerifiedSourceFeatured') ??
+      _base.jobsVerifiedSourceFeatured;
+
+  @override
+  String get jobsTamheerBadgeFeatured =>
+      remote.text('jobsTamheerBadgeFeatured') ?? _base.jobsTamheerBadgeFeatured;
+
+  @override
+  String get jobsApplyNow => remote.text('jobsApplyNow') ?? _base.jobsApplyNow;
+
+  @override
+  String atsFileTooLarge(int size) =>
+      remote.format(
+        'atsFileTooLarge',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'size': size},
+        ),
+      ) ??
+      _base.atsFileTooLarge(size);
+
+  @override
+  String get atsUnsupportedFileType =>
+      remote.text('atsUnsupportedFileType') ?? _base.atsUnsupportedFileType;
+
+  @override
+  String get atsResumeRequired =>
+      remote.text('atsResumeRequired') ?? _base.atsResumeRequired;
+
+  @override
+  String get atsCancelled => remote.text('atsCancelled') ?? _base.atsCancelled;
+
+  @override
+  String get atsAiStillWorkingAnalysis =>
+      remote.text('atsAiStillWorkingAnalysis') ??
+      _base.atsAiStillWorkingAnalysis;
+
+  @override
+  String get atsAnalyzeUnexpectedError =>
+      remote.text('atsAnalyzeUnexpectedError') ??
+      _base.atsAnalyzeUnexpectedError;
+
+  @override
+  String get atsOpenAnalysisFailed =>
+      remote.text('atsOpenAnalysisFailed') ?? _base.atsOpenAnalysisFailed;
+
+  @override
+  String get atsResultsTitle =>
+      remote.text('atsResultsTitle') ?? _base.atsResultsTitle;
+
+  @override
+  String get atsTabScore => remote.text('atsTabScore') ?? _base.atsTabScore;
+
+  @override
+  String get atsTabRecommendations =>
+      remote.text('atsTabRecommendations') ?? _base.atsTabRecommendations;
+
+  @override
+  String get atsGenerateImprovedCv =>
+      remote.text('atsGenerateImprovedCv') ?? _base.atsGenerateImprovedCv;
+
+  @override
+  String get atsGenerating =>
+      remote.text('atsGenerating') ?? _base.atsGenerating;
+
+  @override
+  String get atsGenerateUnexpectedError =>
+      remote.text('atsGenerateUnexpectedError') ??
+      _base.atsGenerateUnexpectedError;
+
+  @override
+  String get atsAiStillWorkingGeneration =>
+      remote.text('atsAiStillWorkingGeneration') ??
+      _base.atsAiStillWorkingGeneration;
+
+  @override
+  String get atsUploadTapHint =>
+      remote.text('atsUploadTapHint') ?? _base.atsUploadTapHint;
+
+  @override
+  String get atsUploadMaxSize =>
+      remote.text('atsUploadMaxSize') ?? _base.atsUploadMaxSize;
+
+  @override
+  String get atsRemoveFile =>
+      remote.text('atsRemoveFile') ?? _base.atsRemoveFile;
+
+  @override
+  String get atsOr => remote.text('atsOr') ?? _base.atsOr;
+
+  @override
+  String get atsNoKeywords =>
+      remote.text('atsNoKeywords') ?? _base.atsNoKeywords;
+
+  @override
+  String atsShowMoreCount(int count) =>
+      remote.format(
+        'atsShowMoreCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.atsShowMoreCount(count);
+
+  @override
+  String atsKeywordDialogTitle(String keyword) =>
+      remote.format(
+        'atsKeywordDialogTitle',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'keyword': keyword},
+        ),
+      ) ??
+      _base.atsKeywordDialogTitle(keyword);
+
+  @override
+  String atsKeywordDialogBody(String keyword) =>
+      remote.format(
+        'atsKeywordDialogBody',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'keyword': keyword},
+        ),
+      ) ??
+      _base.atsKeywordDialogBody(keyword);
+
+  @override
+  String get atsGotIt => remote.text('atsGotIt') ?? _base.atsGotIt;
+
+  @override
+  String get atsCriteriaDetails =>
+      remote.text('atsCriteriaDetails') ?? _base.atsCriteriaDetails;
+
+  @override
+  String get atsKeywordsTitle =>
+      remote.text('atsKeywordsTitle') ?? _base.atsKeywordsTitle;
+
+  @override
+  String atsGradeLabel(String grade) =>
+      remote.format(
+        'atsGradeLabel',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'grade': grade},
+        ),
+      ) ??
+      _base.atsGradeLabel(grade);
+
+  @override
+  String get atsJobMatchSemantic =>
+      remote.text('atsJobMatchSemantic') ?? _base.atsJobMatchSemantic;
+
+  @override
+  String get atsJobMatchPercentage =>
+      remote.text('atsJobMatchPercentage') ?? _base.atsJobMatchPercentage;
+
+  @override
+  String atsKeywordsFound(int count) =>
+      remote.format(
+        'atsKeywordsFound',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.atsKeywordsFound(count);
+
+  @override
+  String atsKeywordsMissing(int count) =>
+      remote.format(
+        'atsKeywordsMissing',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.atsKeywordsMissing(count);
+
+  @override
+  String get atsNoStrengths =>
+      remote.text('atsNoStrengths') ?? _base.atsNoStrengths;
+
+  @override
+  String get atsQuickWins => remote.text('atsQuickWins') ?? _base.atsQuickWins;
+
+  @override
+  String get atsNoQuickWins =>
+      remote.text('atsNoQuickWins') ?? _base.atsNoQuickWins;
+
+  @override
+  String get atsUpgradeTitle =>
+      remote.text('atsUpgradeTitle') ?? _base.atsUpgradeTitle;
+
+  @override
+  String get atsUpgradeBody =>
+      remote.text('atsUpgradeBody') ?? _base.atsUpgradeBody;
+
+  @override
+  String get atsKeywordSourceJd =>
+      remote.text('atsKeywordSourceJd') ?? _base.atsKeywordSourceJd;
+
+  @override
+  String get atsKeywordSourceGeneric =>
+      remote.text('atsKeywordSourceGeneric') ?? _base.atsKeywordSourceGeneric;
+
+  @override
+  String get atsBandExcellent =>
+      remote.text('atsBandExcellent') ?? _base.atsBandExcellent;
+
+  @override
+  String get atsBandVeryGood =>
+      remote.text('atsBandVeryGood') ?? _base.atsBandVeryGood;
+
+  @override
+  String get atsBandFair => remote.text('atsBandFair') ?? _base.atsBandFair;
+
+  @override
+  String get atsBandWeak => remote.text('atsBandWeak') ?? _base.atsBandWeak;
+
+  @override
+  String jobsMatchScore(int score) =>
+      remote.format(
+        'jobsMatchScore',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'score': score},
+        ),
+      ) ??
+      _base.jobsMatchScore(score);
+
+  @override
+  String atsBenchmark(String category) =>
+      remote.format(
+        'atsBenchmark',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'category': category},
+        ),
+      ) ??
+      _base.atsBenchmark(category);
+
+  @override
   String get atsInputTitle =>
       remote.text('atsInputTitle') ?? _base.atsInputTitle;
 
@@ -2932,6 +3330,89 @@ class RemoteAppLocalizations extends AppLocalizations {
     'sharedLoading': [],
     'jm4ConfirmFact': [],
     'jm4HonestyHint': [],
+    'jobsFilterAll': [],
+    'jobsPresetMatched': [],
+    'jobsPresetGov': [],
+    'jobsPresetEnterprise': [],
+    'jobsPresetTamheer': [],
+    'jobsFilterRemote': [],
+    'jobsSearchHint': [],
+    'jobsCategoryTech': [],
+    'jobsCategoryFinance': [],
+    'jobsCategoryHealth': [],
+    'jobsCityAll': [],
+    'jobsCityRiyadh': [],
+    'jobsCityJeddah': [],
+    'jobsCityDammam': [],
+    'jobsCityKhobar': [],
+    'jobsCityMecca': [],
+    'jobsCityMedina': [],
+    'jobsPersonalizedTitle': [],
+    'jobsPersonalizedFallback': [],
+    'jobsMatchedActive': [],
+    'jobsMatchToggle': [],
+    'jobsEmptyFeed': [],
+    'jobsLoadFailed': [],
+    'jobsLatestPostings': [],
+    'jobsDetailTitle': [],
+    'jobsVerifiedSourceDetail': [],
+    'jobsTamheerProgram': [],
+    'jobsCompatibilityTitle': [],
+    'jobsSkillsRequired': [],
+    'jobsDescriptionTitle': [],
+    'jobsTailorCv': [],
+    'jobsOpenApplyFailed': [],
+    'jobsApplyOfficialSite': [],
+    'jobsVerifiedSourceCard': [],
+    'jobsTamheerBadge': [],
+    'jobsNewBadge': [],
+    'jobsDetailsLink': [],
+    'jobsVerifiedSourceFeatured': [],
+    'jobsTamheerBadgeFeatured': [],
+    'jobsApplyNow': [],
+    'atsFileTooLarge': ['int'],
+    'atsUnsupportedFileType': [],
+    'atsResumeRequired': [],
+    'atsCancelled': [],
+    'atsAiStillWorkingAnalysis': [],
+    'atsAnalyzeUnexpectedError': [],
+    'atsOpenAnalysisFailed': [],
+    'atsResultsTitle': [],
+    'atsTabScore': [],
+    'atsTabRecommendations': [],
+    'atsGenerateImprovedCv': [],
+    'atsGenerating': [],
+    'atsGenerateUnexpectedError': [],
+    'atsAiStillWorkingGeneration': [],
+    'atsUploadTapHint': [],
+    'atsUploadMaxSize': [],
+    'atsRemoveFile': [],
+    'atsOr': [],
+    'atsNoKeywords': [],
+    'atsShowMoreCount': ['int'],
+    'atsKeywordDialogTitle': ['String'],
+    'atsKeywordDialogBody': ['String'],
+    'atsGotIt': [],
+    'atsCriteriaDetails': [],
+    'atsKeywordsTitle': [],
+    'atsGradeLabel': ['String'],
+    'atsJobMatchSemantic': [],
+    'atsJobMatchPercentage': [],
+    'atsKeywordsFound': ['int'],
+    'atsKeywordsMissing': ['int'],
+    'atsNoStrengths': [],
+    'atsQuickWins': [],
+    'atsNoQuickWins': [],
+    'atsUpgradeTitle': [],
+    'atsUpgradeBody': [],
+    'atsKeywordSourceJd': [],
+    'atsKeywordSourceGeneric': [],
+    'atsBandExcellent': [],
+    'atsBandVeryGood': [],
+    'atsBandFair': [],
+    'atsBandWeak': [],
+    'jobsMatchScore': ['int'],
+    'atsBenchmark': ['String'],
     'atsInputTitle': [],
     'atsInputIntroduction': [],
     'atsInputCvSource': [],
@@ -3520,6 +4001,89 @@ class RemoteAppLocalizations extends AppLocalizations {
         'sharedLoading' => l.sharedLoading,
         'jm4ConfirmFact' => l.jm4ConfirmFact,
         'jm4HonestyHint' => l.jm4HonestyHint,
+        'jobsFilterAll' => l.jobsFilterAll,
+        'jobsPresetMatched' => l.jobsPresetMatched,
+        'jobsPresetGov' => l.jobsPresetGov,
+        'jobsPresetEnterprise' => l.jobsPresetEnterprise,
+        'jobsPresetTamheer' => l.jobsPresetTamheer,
+        'jobsFilterRemote' => l.jobsFilterRemote,
+        'jobsSearchHint' => l.jobsSearchHint,
+        'jobsCategoryTech' => l.jobsCategoryTech,
+        'jobsCategoryFinance' => l.jobsCategoryFinance,
+        'jobsCategoryHealth' => l.jobsCategoryHealth,
+        'jobsCityAll' => l.jobsCityAll,
+        'jobsCityRiyadh' => l.jobsCityRiyadh,
+        'jobsCityJeddah' => l.jobsCityJeddah,
+        'jobsCityDammam' => l.jobsCityDammam,
+        'jobsCityKhobar' => l.jobsCityKhobar,
+        'jobsCityMecca' => l.jobsCityMecca,
+        'jobsCityMedina' => l.jobsCityMedina,
+        'jobsPersonalizedTitle' => l.jobsPersonalizedTitle,
+        'jobsPersonalizedFallback' => l.jobsPersonalizedFallback,
+        'jobsMatchedActive' => l.jobsMatchedActive,
+        'jobsMatchToggle' => l.jobsMatchToggle,
+        'jobsEmptyFeed' => l.jobsEmptyFeed,
+        'jobsLoadFailed' => l.jobsLoadFailed,
+        'jobsLatestPostings' => l.jobsLatestPostings,
+        'jobsDetailTitle' => l.jobsDetailTitle,
+        'jobsVerifiedSourceDetail' => l.jobsVerifiedSourceDetail,
+        'jobsTamheerProgram' => l.jobsTamheerProgram,
+        'jobsCompatibilityTitle' => l.jobsCompatibilityTitle,
+        'jobsSkillsRequired' => l.jobsSkillsRequired,
+        'jobsDescriptionTitle' => l.jobsDescriptionTitle,
+        'jobsTailorCv' => l.jobsTailorCv,
+        'jobsOpenApplyFailed' => l.jobsOpenApplyFailed,
+        'jobsApplyOfficialSite' => l.jobsApplyOfficialSite,
+        'jobsVerifiedSourceCard' => l.jobsVerifiedSourceCard,
+        'jobsTamheerBadge' => l.jobsTamheerBadge,
+        'jobsNewBadge' => l.jobsNewBadge,
+        'jobsDetailsLink' => l.jobsDetailsLink,
+        'jobsVerifiedSourceFeatured' => l.jobsVerifiedSourceFeatured,
+        'jobsTamheerBadgeFeatured' => l.jobsTamheerBadgeFeatured,
+        'jobsApplyNow' => l.jobsApplyNow,
+        'atsFileTooLarge' => l.atsFileTooLarge(a[0] as int),
+        'atsUnsupportedFileType' => l.atsUnsupportedFileType,
+        'atsResumeRequired' => l.atsResumeRequired,
+        'atsCancelled' => l.atsCancelled,
+        'atsAiStillWorkingAnalysis' => l.atsAiStillWorkingAnalysis,
+        'atsAnalyzeUnexpectedError' => l.atsAnalyzeUnexpectedError,
+        'atsOpenAnalysisFailed' => l.atsOpenAnalysisFailed,
+        'atsResultsTitle' => l.atsResultsTitle,
+        'atsTabScore' => l.atsTabScore,
+        'atsTabRecommendations' => l.atsTabRecommendations,
+        'atsGenerateImprovedCv' => l.atsGenerateImprovedCv,
+        'atsGenerating' => l.atsGenerating,
+        'atsGenerateUnexpectedError' => l.atsGenerateUnexpectedError,
+        'atsAiStillWorkingGeneration' => l.atsAiStillWorkingGeneration,
+        'atsUploadTapHint' => l.atsUploadTapHint,
+        'atsUploadMaxSize' => l.atsUploadMaxSize,
+        'atsRemoveFile' => l.atsRemoveFile,
+        'atsOr' => l.atsOr,
+        'atsNoKeywords' => l.atsNoKeywords,
+        'atsShowMoreCount' => l.atsShowMoreCount(a[0] as int),
+        'atsKeywordDialogTitle' => l.atsKeywordDialogTitle(a[0] as String),
+        'atsKeywordDialogBody' => l.atsKeywordDialogBody(a[0] as String),
+        'atsGotIt' => l.atsGotIt,
+        'atsCriteriaDetails' => l.atsCriteriaDetails,
+        'atsKeywordsTitle' => l.atsKeywordsTitle,
+        'atsGradeLabel' => l.atsGradeLabel(a[0] as String),
+        'atsJobMatchSemantic' => l.atsJobMatchSemantic,
+        'atsJobMatchPercentage' => l.atsJobMatchPercentage,
+        'atsKeywordsFound' => l.atsKeywordsFound(a[0] as int),
+        'atsKeywordsMissing' => l.atsKeywordsMissing(a[0] as int),
+        'atsNoStrengths' => l.atsNoStrengths,
+        'atsQuickWins' => l.atsQuickWins,
+        'atsNoQuickWins' => l.atsNoQuickWins,
+        'atsUpgradeTitle' => l.atsUpgradeTitle,
+        'atsUpgradeBody' => l.atsUpgradeBody,
+        'atsKeywordSourceJd' => l.atsKeywordSourceJd,
+        'atsKeywordSourceGeneric' => l.atsKeywordSourceGeneric,
+        'atsBandExcellent' => l.atsBandExcellent,
+        'atsBandVeryGood' => l.atsBandVeryGood,
+        'atsBandFair' => l.atsBandFair,
+        'atsBandWeak' => l.atsBandWeak,
+        'jobsMatchScore' => l.jobsMatchScore(a[0] as int),
+        'atsBenchmark' => l.atsBenchmark(a[0] as String),
         'atsInputTitle' => l.atsInputTitle,
         'atsInputIntroduction' => l.atsInputIntroduction,
         'atsInputCvSource' => l.atsInputCvSource,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/prioritized_fixes.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
@@ -36,14 +37,12 @@ class RecommendationsTab extends StatelessWidget {
           icon: Icons.thumb_up_alt_rounded,
           iconColor: c.tealDark,
           iconBg: c.tealLight,
-          label: english ? 'Strengths' : 'نقاط القوة',
+          label: AppLocalizations.of(context).jobMatchStrengths,
         ),
         const SizedBox(height: 12),
         _ItemList(
           items: strengths,
-          emptyText: english
-              ? 'No strengths are available yet.'
-              : 'لا توجد نقاط قوة متاحة حالياً',
+          emptyText: AppLocalizations.of(context).atsNoStrengths,
           markerBuilder: (context, _) => const _CheckMarker(),
         ),
         const SizedBox(height: 24),
@@ -51,14 +50,12 @@ class RecommendationsTab extends StatelessWidget {
           icon: Icons.bolt_rounded,
           iconColor: c.onWarningContainer,
           iconBg: c.amberLight,
-          label: english ? 'Quick Wins' : 'تحسينات سريعة',
+          label: AppLocalizations.of(context).atsQuickWins,
         ),
         const SizedBox(height: 12),
         _ItemList(
           items: quickWins,
-          emptyText: english
-              ? 'No quick wins are available yet.'
-              : 'لا توجد تحسينات سريعة متاحة حالياً',
+          emptyText: AppLocalizations.of(context).atsNoQuickWins,
           markerBuilder: (context, i) => _NumberMarker(number: i + 1),
         ),
         const SizedBox(height: 28),
@@ -247,7 +244,7 @@ class _UpgradeCta extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  english ? 'Ready to upgrade your CV?' : 'جاهز لترقية سيرتك؟',
+                  AppLocalizations.of(context).atsUpgradeTitle,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -257,9 +254,7 @@ class _UpgradeCta extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  english
-                      ? 'We will generate an improved CV from this analysis.'
-                      : 'سنولّد لك سيرة ذاتية محسّنة تلقائياً بناءً على نتائج هذا التحليل',
+                  AppLocalizations.of(context).atsUpgradeBody,
                   style: TextStyle(
                     fontSize: 12,
                     // primaryInk, not primary: primary is a fill colour and
