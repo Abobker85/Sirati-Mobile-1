@@ -24,19 +24,19 @@ class HistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final c = context.sirati;
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(english ? 'History' : 'السجل'),
+          title: Text(l10n.dashboardHistory),
           automaticallyImplyLeading: Navigator.of(context).canPop(),
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh_rounded),
-              tooltip: english ? 'Refresh' : 'تحديث',
+              tooltip: l10n.dashboardRefresh,
               onPressed: () {
                 ref
                   ..invalidate(analysesHistoryProvider)
@@ -49,8 +49,8 @@ class HistoryScreen extends ConsumerWidget {
             unselectedLabelColor: c.textSecondary,
             indicatorColor: c.primary,
             tabs: [
-              Tab(text: english ? 'Analyses' : 'التحليلات'),
-              Tab(text: english ? 'Generated CVs' : 'السير المنشأة'),
+              Tab(text: l10n.analyses),
+              Tab(text: l10n.dashboardHistoryGeneratedCvsTab),
             ],
           ),
         ),
@@ -91,7 +91,7 @@ class _HistoryTab<T> extends StatelessWidget {
       onRetry: onRetry,
       errorMessage: (error) => error is ApiException
           ? error.displayMessage
-          : (english ? 'Could not load history.' : 'تعذر تحميل السجل.'),
+          : AppLocalizations.of(context).dashboardHistoryLoadFailed,
       loading: const ListScreenSkeleton(
         itemCount: 5,
         padding: EdgeInsets.all(AppSpacing.md),
@@ -156,7 +156,6 @@ class _AnalysesTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final english = AppLocale.isEnglish(context);
     final l10n = AppLocalizations.of(context);
     return _HistoryTab(
       value: ref.watch(analysesHistoryProvider),
@@ -168,10 +167,8 @@ class _AnalysesTab extends ConsumerWidget {
       empty: AppEmptyState(
         icon: Icons.analytics_outlined,
         title: l10n.analysisCount(0),
-        subtitle: english
-            ? 'Upload a CV to get your first ATS score and tips.'
-            : 'ارفع سيرتك لتحصل على أول درجة ATS ونصائح التحسين.',
-        actionLabel: english ? 'Analyze CV' : 'تحليل سيرة',
+        subtitle: l10n.dashboardHistoryAnalysesEmptySubtitle,
+        actionLabel: l10n.dashboardHistoryAnalyzeCv,
         onAction: () => _push(context, const CvAnalysisScreen()),
         scrollable: false,
       ),
@@ -193,7 +190,7 @@ class _GeneratedCvsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     return _HistoryTab(
       value: ref.watch(generatedCvsHistoryProvider),
       onRetry: () => ref.invalidate(generatedCvsHistoryProvider),
@@ -203,11 +200,9 @@ class _GeneratedCvsTab extends ConsumerWidget {
       ),
       empty: AppEmptyState(
         icon: Icons.description_outlined,
-        title: english ? 'No generated CVs yet' : 'لا توجد سير ذاتية منشأة بعد',
-        subtitle: english
-            ? 'Build an ATS-ready CV and it will show up here.'
-            : 'أنشئ سيرة متوافقة مع ATS وستظهر هنا.',
-        actionLabel: english ? 'Create CV' : 'إنشاء سيرة',
+        title: l10n.dashboardHistoryCvsEmptyTitle,
+        subtitle: l10n.dashboardHistoryCvsEmptySubtitle,
+        actionLabel: l10n.dashboardCreateCv,
         onAction: () => _push(context, const CvGeneratorScreen()),
         scrollable: false,
       ),

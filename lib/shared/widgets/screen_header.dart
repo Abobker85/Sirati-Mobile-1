@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -152,11 +153,10 @@ class NotificationBellButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseLabel = english ? 'Notifications' : 'الإشعارات';
+    final l10n = AppLocalizations.of(context);
+    final baseLabel = l10n.sharedNotifications;
     final semanticsLabel = unreadCount > 0
-        ? (english
-            ? 'Notifications, $unreadCount unread'
-            : 'الإشعارات، $unreadCount غير مقروء')
+        ? l10n.sharedNotificationsUnread(unreadCount)
         : baseLabel;
 
     return Tooltip(
@@ -300,12 +300,12 @@ class ProfileAvatar extends StatelessWidget {
 
     if (onTap == null) {
       return Semantics(
-        label: semanticLabel ?? (english ? 'Profile' : 'الملف الشخصي'),
+        label: semanticLabel ?? AppLocalizations.of(context).sharedProfile,
         child: face,
       );
     }
 
-    final actionLabel = semanticLabel ?? (english ? 'Settings' : 'الإعدادات');
+    final actionLabel = semanticLabel ?? AppLocalizations.of(context).settings;
     return Tooltip(
       message: actionLabel,
       child: Semantics(

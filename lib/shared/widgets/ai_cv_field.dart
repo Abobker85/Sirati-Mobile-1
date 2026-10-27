@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/bidi_text.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/ai_field_loading_overlay.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
@@ -61,6 +62,7 @@ class AiCvField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final displayHelper =
         english ? helperText : BidiText.protectLatinTokens(helperText);
 
@@ -71,11 +73,9 @@ class AiCvField extends StatelessWidget {
         AiFieldLoadingOverlay(
           key: Key('ai_overlay_$field'),
           isLoading: isLoading,
-          statusMessages: AiFieldLoadingOverlay.defaultStatusMessages(
-            english: english,
-          ),
-          semanticsLabel:
-              english ? 'Enhancing $field' : 'جارٍ تحسين حقل السيرة الذاتية',
+          statusMessages:
+              AiFieldLoadingOverlay.localizedStatusMessages(context),
+          semanticsLabel: l10n.sharedAiEnhancingField(field),
           child: child,
         ),
         const SizedBox(height: 7),
@@ -107,9 +107,7 @@ class AiCvField extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    english
-                        ? '$count / $minimum characters minimum'
-                        : '$count / $minimum حرفاً كحد أدنى',
+                    l10n.sharedAiCharacterCount(count, minimum),
                     key: Key('character_count_$field'),
                     style: AppTypography.of(context, AppTypography.bodySm,
                         color: count >= minimum
@@ -135,8 +133,8 @@ class AiCvField extends StatelessWidget {
               children: [
                 SubmitButton(
                   key: Key('enhance_$field'),
-                  label: english ? 'Enhance' : 'تحسين',
-                  loadingLabel: english ? 'Enhancing...' : 'جارٍ التحسين...',
+                  label: l10n.sharedAiEnhance,
+                  loadingLabel: l10n.sharedAiEnhancing,
                   isLoading: isLoading,
                   outlined: true,
                   height: AppTouchTarget.min,
@@ -158,9 +156,9 @@ class AiCvField extends StatelessWidget {
                       Expanded(
                         child: Text(
                           key: Key('enhance_hint_$field'),
-                          english
-                              ? 'Write at least ${minimumCharacters ?? defaultMinimumCharacters} characters for AI to enhance'
-                              : 'اكتب ${minimumCharacters ?? defaultMinimumCharacters} حرفاً على الأقل ليحسّنها الذكاء الاصطناعي',
+                          l10n.sharedAiEnhanceMinimumHint(
+                            minimumCharacters ?? defaultMinimumCharacters,
+                          ),
                           style: AppTypography.of(context, AppTypography.bodySm,
                               color: context.sirati.textSecondary),
                         ),
@@ -223,6 +221,7 @@ class _EnhancementResultCard extends StatelessWidget {
     final keywords = _strings('ats_keywords_added');
     final claims = _claims();
     final c = context.sirati;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       key: Key('enhancement_result_$field'),
@@ -241,12 +240,12 @@ class _EnhancementResultCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  english ? 'What Siratie improved' : 'ما الذي حسّنته سيرتي',
+                  l10n.sharedAiWhatImproved,
                   style: AppTypography.of(context, AppTypography.titleSm),
                 ),
               ),
               IconButton(
-                tooltip: english ? 'Dismiss' : 'إخفاء',
+                tooltip: l10n.sharedDismiss,
                 onPressed: onDismiss,
                 icon: const Icon(Icons.close_rounded, size: 18),
               ),
@@ -274,9 +273,7 @@ class _EnhancementResultCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    english
-                        ? 'Complete these facts yourself'
-                        : 'أكمل هذه المعلومات بنفسك',
+                    l10n.sharedAiCompleteFacts,
                     style: AppTypography.of(context, AppTypography.titleSm),
                   ),
                   const SizedBox(height: 6),
@@ -306,9 +303,7 @@ class _EnhancementResultCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    english
-                        ? 'Verify these details in the enhanced text'
-                        : 'تحقق من هذه التفاصيل في النص المحسّن',
+                    l10n.sharedAiVerifyDetails,
                     style: AppTypography.of(context, AppTypography.titleSm),
                   ),
                   const SizedBox(height: 7),

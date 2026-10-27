@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
@@ -49,7 +50,7 @@ class _EducationDetailScreenState extends ConsumerState<EducationDetailScreen> {
     return Scaffold(
       backgroundColor: context.sirati.background,
       appBar: AppBar(
-        title: Text(english ? 'Learning Detail' : 'تفاصيل المحتوى'),
+        title: Text(AppLocalizations.of(context).dashboardEducationDetailTitle),
         actions: const [
           Padding(
             padding: EdgeInsetsDirectional.only(end: 12),
@@ -67,9 +68,8 @@ class _EducationDetailScreenState extends ConsumerState<EducationDetailScreen> {
             fallbackOnEmptyError: widget.fallback,
             errorMessage: (error) => error is ApiException
                 ? error.displayMessage
-                : (english
-                    ? 'Could not load this content.'
-                    : 'تعذر تحميل هذا المحتوى.'),
+                : AppLocalizations.of(context)
+                    .dashboardEducationDetailLoadFailed,
             loading: const _EducationDetailSkeleton(),
             errorBuilder: (error, message) {
               // Prefer list-card fallback when API fails but we navigated with data.
@@ -127,7 +127,9 @@ class _DetailBody extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xl),
         Text(
-          title.isEmpty ? (english ? 'Untitled' : 'بدون عنوان') : title,
+          title.isEmpty
+              ? AppLocalizations.of(context).dashboardUntitled
+              : title,
           textAlign: TextAlign.start,
           style: AppTextStyles.titleLg(context.sirati)
               .copyWith(fontSize: 26, height: 1.35),
@@ -143,9 +145,7 @@ class _DetailBody extends StatelessWidget {
           ),
           child: Text(
             body.isEmpty
-                ? (english
-                    ? 'No content available for this item.'
-                    : 'لا يوجد محتوى لهذا العنصر.')
+                ? AppLocalizations.of(context).dashboardEducationDetailNoContent
                 : body,
             textAlign: TextAlign.start,
             style: AppTextStyles.bodyMd(context.sirati).copyWith(

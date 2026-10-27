@@ -692,5 +692,511 @@
   "homeJobsTitle": "وظائف تناسبك",
   "homeJobsViewAll": "عرض الكل",
   "homeJobsEmpty": "لا توجد وظائف مناسبة الآن. سنعرض لك الجديد هنا.",
-  "@homeHeroScoreTitle": {"placeholders": {"score": {"type": "String"}}}
+  "@homeHeroScoreTitle": {"placeholders": {"score": {"type": "String"}}},
+  "sharedErrorNetworkSubtitle": "تحقق من اتصالك بالإنترنت ثم حاول مرة أخرى.",
+  "@sharedErrorNetworkSubtitle": {
+    "description": "Error panel subtitle when the device is offline."
+  },
+  "sharedErrorTimeoutSubtitle": "استغرق الخادم وقتاً طويلاً للرد. حاول مرة أخرى.",
+  "@sharedErrorTimeoutSubtitle": {
+    "description": "Error panel subtitle when a request timed out."
+  },
+  "sharedErrorTitleNetwork": "يبدو أنك غير متصل",
+  "@sharedErrorTitleNetwork": {
+    "description": "Error panel title for network failures."
+  },
+  "sharedErrorTitleTimeout": "انتهت مهلة الطلب",
+  "@sharedErrorTitleTimeout": {
+    "description": "Error panel title for timeouts."
+  },
+  "sharedErrorTitleAuth": "انتهت الجلسة",
+  "@sharedErrorTitleAuth": {
+    "description": "Error panel title when the session expired."
+  },
+  "sharedErrorTitleNotFound": "غير موجود",
+  "@sharedErrorTitleNotFound": {
+    "description": "Error panel title when the resource was not found."
+  },
+  "sharedErrorTitleServer": "الخادم غير متاح",
+  "@sharedErrorTitleServer": {
+    "description": "Error panel title for server errors."
+  },
+  "sharedErrorTitleRateLimited": "تم الوصول إلى حد الاستخدام",
+  "@sharedErrorTitleRateLimited": {
+    "description": "Error panel title when the usage limit is reached."
+  },
+  "sharedErrorTitleUnknown": "تعذر التحميل",
+  "@sharedErrorTitleUnknown": {
+    "description": "Error panel title for unknown or validation errors."
+  },
+  "sharedCreateNewCv": "إنشاء سيرة جديدة",
+  "@sharedCreateNewCv": {
+    "description": "Tooltip and accessibility label of the round create-CV button."
+  },
+  "sharedOk": "حسناً",
+  "@sharedOk": {
+    "description": "Default confirm button of app dialogs."
+  },
+  "sharedLanguageToggleShort": "EN",
+  "@sharedLanguageToggleShort": {
+    "description": "Short code of the language the toggle switches TO (shown on the language toggle button)."
+  },
+  "sharedPasswordStrengthEmpty": "أدخل كلمة المرور",
+  "@sharedPasswordStrengthEmpty": {
+    "description": "Password strength meter label when the field is empty."
+  },
+  "sharedPasswordStrengthWeak": "ضعيفة",
+  "@sharedPasswordStrengthWeak": {
+    "description": "Password strength meter level."
+  },
+  "sharedPasswordStrengthMedium": "متوسطة",
+  "@sharedPasswordStrengthMedium": {
+    "description": "Password strength meter level."
+  },
+  "sharedPasswordStrengthStrong": "قوية",
+  "@sharedPasswordStrengthStrong": {
+    "description": "Password strength meter level."
+  },
+  "sharedPasswordStrengthSemantics": "قوة كلمة المرور: {label}",
+  "@sharedPasswordStrengthSemantics": {
+    "description": "Screen-reader label of the password strength meter.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "قوية"
+      }
+    }
+  },
+  "sharedOfflineShowingSaved": "غير متصل — عرض بيانات محفوظة",
+  "@sharedOfflineShowingSaved": {
+    "description": "Banner shown when cached data is displayed while offline."
+  },
+  "sharedNoDataAvailable": "لا توجد بيانات.",
+  "@sharedNoDataAvailable": {
+    "description": "Error panel message when a request returned no data."
+  },
+  "sharedSomethingWentWrong": "حدث خطأ ما.",
+  "@sharedSomethingWentWrong": {
+    "description": "Generic fallback error message for a failed load."
+  },
+  "sharedAiImprovingWording": "جارٍ تحسين الصياغة…",
+  "@sharedAiImprovingWording": {
+    "description": "Status line shown over a CV field while AI rewrites it."
+  },
+  "sharedAiWorkingOnField": "الذكاء الاصطناعي يعمل على هذا الحقل",
+  "@sharedAiWorkingOnField": {
+    "description": "Screen-reader label of the AI loading veil over a field."
+  },
+  "sharedAiEnhancingField": "{field, select, other{جارٍ تحسين حقل السيرة الذاتية}}",
+  "@sharedAiEnhancingField": {
+    "description": "Screen-reader label while AI enhances a CV field. {field} is the field id; the Arabic text does not show it.",
+    "placeholders": {
+      "field": {
+        "type": "String",
+        "example": "summary"
+      }
+    }
+  },
+  "sharedAiCharacterCount": "{count} / {minimum} حرفاً كحد أدنى",
+  "@sharedAiCharacterCount": {
+    "description": "Character counter under an AI-enhanceable CV field.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      },
+      "minimum": {
+        "type": "int",
+        "example": "40"
+      }
+    }
+  },
+  "sharedAiEnhance": "تحسين",
+  "@sharedAiEnhance": {
+    "description": "Button that asks AI to enhance a CV field."
+  },
+  "sharedAiEnhancing": "جارٍ التحسين...",
+  "@sharedAiEnhancing": {
+    "description": "Enhance button label while AI is working."
+  },
+  "sharedAiEnhanceMinimumHint": "اكتب {minimum} حرفاً على الأقل ليحسّنها الذكاء الاصطناعي",
+  "@sharedAiEnhanceMinimumHint": {
+    "description": "Hint explaining why the Enhance button is disabled.",
+    "placeholders": {
+      "minimum": {
+        "type": "int",
+        "example": "40"
+      }
+    }
+  },
+  "sharedAiWhatImproved": "ما الذي حسّنته سيرتي",
+  "@sharedAiWhatImproved": {
+    "description": "Title of the AI enhancement result card."
+  },
+  "sharedDismiss": "إخفاء",
+  "@sharedDismiss": {
+    "description": "Tooltip of a close button that dismisses a card."
+  },
+  "sharedAiCompleteFacts": "أكمل هذه المعلومات بنفسك",
+  "@sharedAiCompleteFacts": {
+    "description": "Heading above facts the AI could not fill in."
+  },
+  "sharedAiVerifyDetails": "تحقق من هذه التفاصيل في النص المحسّن",
+  "@sharedAiVerifyDetails": {
+    "description": "Heading above unverified claims in AI-enhanced text."
+  },
+  "sharedJobTitleSelectHint": "اختر مسماك الوظيفي",
+  "@sharedJobTitleSelectHint": {
+    "description": "Hint of the job-title picker field when nothing is selected."
+  },
+  "sharedJobTitleSheetTitle": "المسمى الوظيفي",
+  "@sharedJobTitleSheetTitle": {
+    "description": "Title of the job-title picker sheet."
+  },
+  "sharedClear": "مسح",
+  "@sharedClear": {
+    "description": "Button that clears the current selection."
+  },
+  "sharedJobTitleSearchHint": "ابحث عن المسمى…",
+  "@sharedJobTitleSearchHint": {
+    "description": "Search box hint in the job-title picker sheet."
+  },
+  "sharedJobTitleNoMatches": "لا توجد نتائج",
+  "@sharedJobTitleNoMatches": {
+    "description": "Shown when the job-title search has no results."
+  },
+  "sharedNotifications": "الإشعارات",
+  "@sharedNotifications": {
+    "description": "Tooltip and screen-reader label of the notification bell."
+  },
+  "sharedNotificationsUnread": "الإشعارات، {count} غير مقروء",
+  "@sharedNotificationsUnread": {
+    "description": "Screen-reader label of the notification bell when there are unread items.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "sharedProfile": "الملف الشخصي",
+  "@sharedProfile": {
+    "description": "Screen-reader label of the non-tappable profile avatar."
+  },
+  "sharedCareerReadiness": "جاهزية المسار المهني",
+  "@sharedCareerReadiness": {
+    "description": "Title of the score booster card."
+  },
+  "sharedCareerReadinessPercent": "جاهزية المسار {percent} بالمئة",
+  "@sharedCareerReadinessPercent": {
+    "description": "Screen-reader label of the career readiness progress bar.",
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "65"
+      }
+    }
+  },
+  "sharedAiProgressBarrier": "تقدم الذكاء الاصطناعي",
+  "@sharedAiProgressBarrier": {
+    "description": "Screen-reader label of the AI progress overlay barrier."
+  },
+  "sharedAiStageGenerationQueued": "في قائمة الانتظار",
+  "@sharedAiStageGenerationQueued": {
+    "description": "CV generation progress step 1."
+  },
+  "sharedAiStageGenerationWriting": "كتابة سيرتك الذاتية",
+  "@sharedAiStageGenerationWriting": {
+    "description": "CV generation progress step 2."
+  },
+  "sharedAiStageGenerationSaving": "حفظ سيرتك الذاتية",
+  "@sharedAiStageGenerationSaving": {
+    "description": "CV generation progress step 3."
+  },
+  "sharedAiStageAnalysisReading": "قراءة سيرتك الذاتية",
+  "@sharedAiStageAnalysisReading": {
+    "description": "CV analysis progress step 1."
+  },
+  "sharedAiStageAnalysisScoring": "التقييم وفق معايير ATS",
+  "@sharedAiStageAnalysisScoring": {
+    "description": "CV analysis progress step 2."
+  },
+  "sharedAiStageAnalysisPreparing": "إعداد تقريرك",
+  "@sharedAiStageAnalysisPreparing": {
+    "description": "CV analysis progress step 3."
+  },
+  "sharedAiLongWait": "يستغرق هذا وقتًا أطول من المعتاد — لا يزال العمل جاريًا…",
+  "@sharedAiLongWait": {
+    "description": "AI progress status after a long wait."
+  },
+  "sharedAiDoneGeneration": "سيرتك الذاتية جاهزة",
+  "@sharedAiDoneGeneration": {
+    "description": "AI progress status when CV generation finished."
+  },
+  "sharedAiDoneAnalysis": "تقريرك جاهز",
+  "@sharedAiDoneAnalysis": {
+    "description": "AI progress status when CV analysis finished."
+  },
+  "sharedAiWorking": "الذكاء الاصطناعي يعمل",
+  "@sharedAiWorking": {
+    "description": "Screen-reader label of the AI progress loader."
+  },
+  "sharedAiProcessingRequest": "جارٍ معالجة طلبك. قد يستغرق ذلك بعض الوقت.",
+  "@sharedAiProcessingRequest": {
+    "description": "Reassurance line under the AI progress steps."
+  },
+  "coreGreetingWelcome": "مرحباً",
+  "@coreGreetingWelcome": {
+    "description": "Header greeting when the user has no display name."
+  },
+  "coreGreetingHello": "أهلاً، {name}",
+  "@coreGreetingHello": {
+    "description": "Header greeting with the user display name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "سارة"
+      }
+    }
+  },
+  "dashboardInputMethodFile": "ملف",
+  "@dashboardInputMethodFile": {
+    "description": "History card chip: the analysis was submitted as an uploaded file."
+  },
+  "dashboardInputMethodMixed": "ملف ونص",
+  "@dashboardInputMethodMixed": {
+    "description": "History card chip: the analysis was submitted as a file plus pasted text."
+  },
+  "dashboardInputMethodPaste": "لصق نص",
+  "@dashboardInputMethodPaste": {
+    "description": "History card chip: the analysis was submitted as pasted text."
+  },
+  "dashboardSplashPreparing": "جارٍ تجهيز مساحتك…",
+  "@dashboardSplashPreparing": {
+    "description": "Status line on the boot splash screen."
+  },
+  "dashboardWelcomeSlogan": "عندما تسعى لتطوير مسارك المهني،\nلا بد أن تمر على محطتنا",
+  "@dashboardWelcomeSlogan": {
+    "description": "Brand slogan on the signed-out welcome screen (keeps its line break)."
+  },
+  "dashboardWelcomeValueTitle": "مسارك المهني يبدأ من سيرتك",
+  "@dashboardWelcomeValueTitle": {
+    "description": "Title of the value card on the welcome screen."
+  },
+  "dashboardWelcomePointBuild": "إنشاء سيرة ذاتية متوافقة مع أنظمة الفرز الآلي",
+  "@dashboardWelcomePointBuild": {
+    "description": "Welcome value card bullet 1."
+  },
+  "dashboardWelcomePointAnalyze": "تحليل سيرتك بنظام ATS",
+  "@dashboardWelcomePointAnalyze": {
+    "description": "Welcome value card bullet 2."
+  },
+  "dashboardWelcomePointTailor": "تعديل السيرة الذاتية لتلائم الوصف الوظيفي",
+  "@dashboardWelcomePointTailor": {
+    "description": "Welcome value card bullet 3."
+  },
+  "dashboardWelcomePointLearning": "تعليم وتطوير مهني",
+  "@dashboardWelcomePointLearning": {
+    "description": "Welcome value card bullet 4."
+  },
+  "dashboardWelcomePointJobs": "إعلانات لفرص وظيفية في القطاع الحكومي والقطاع الخاص",
+  "@dashboardWelcomePointJobs": {
+    "description": "Welcome value card bullet 5."
+  },
+  "dashboardWelcomePrivacyPolicy": "سياسة الخصوصية",
+  "@dashboardWelcomePrivacyPolicy": {
+    "description": "Privacy link on the welcome screen."
+  },
+  "dashboardNotFoundTitle": "الصفحة غير موجودة",
+  "@dashboardNotFoundTitle": {
+    "description": "Title of the 404 screen for an unknown route."
+  },
+  "dashboardNotFoundSubtitle": "هذا الرابط غير صالح. يمكنك العودة للرئيسية.",
+  "@dashboardNotFoundSubtitle": {
+    "description": "Subtitle of the 404 screen."
+  },
+  "dashboardNotFoundGoHome": "العودة للرئيسية",
+  "@dashboardNotFoundGoHome": {
+    "description": "Button on the 404 screen that returns to the home tab."
+  },
+  "dashboardPressBackAgainToExit": "اضغط رجوع مرة أخرى للخروج",
+  "@dashboardPressBackAgainToExit": {
+    "description": "Snack bar after the first back press on the home root."
+  },
+  "dashboardHistory": "السجل",
+  "@dashboardHistory": {
+    "description": "Title of the history screen and the home History button."
+  },
+  "dashboardRefresh": "تحديث",
+  "@dashboardRefresh": {
+    "description": "Tooltip of the refresh button on the history screen."
+  },
+  "dashboardHistoryGeneratedCvsTab": "السير المنشأة",
+  "@dashboardHistoryGeneratedCvsTab": {
+    "description": "History screen tab listing generated CVs."
+  },
+  "dashboardHistoryLoadFailed": "تعذر تحميل السجل.",
+  "@dashboardHistoryLoadFailed": {
+    "description": "Error message when the history list fails to load."
+  },
+  "dashboardHistoryAnalysesEmptySubtitle": "ارفع سيرتك لتحصل على أول درجة ATS ونصائح التحسين.",
+  "@dashboardHistoryAnalysesEmptySubtitle": {
+    "description": "Empty analyses history subtitle."
+  },
+  "dashboardHistoryAnalyzeCv": "تحليل سيرة",
+  "@dashboardHistoryAnalyzeCv": {
+    "description": "Empty analyses history action button."
+  },
+  "dashboardHistoryCvsEmptyTitle": "لا توجد سير ذاتية منشأة بعد",
+  "@dashboardHistoryCvsEmptyTitle": {
+    "description": "Empty generated-CVs history title."
+  },
+  "dashboardHistoryCvsEmptySubtitle": "أنشئ سيرة متوافقة مع ATS وستظهر هنا.",
+  "@dashboardHistoryCvsEmptySubtitle": {
+    "description": "Empty generated-CVs history subtitle."
+  },
+  "dashboardCreateCv": "إنشاء سيرة",
+  "@dashboardCreateCv": {
+    "description": "Create-CV action on dashboard empty states and the education CTA."
+  },
+  "dashboardScoreBadgeSemantics": "الدرجة {score}، التقدير {grade}",
+  "@dashboardScoreBadgeSemantics": {
+    "description": "Screen-reader label of the score badge on history cards.",
+    "placeholders": {
+      "score": {
+        "type": "int",
+        "example": "78"
+      },
+      "grade": {
+        "type": "String",
+        "example": "B"
+      }
+    }
+  },
+  "dashboardLoadMoreLoading": "جارٍ التحميل...",
+  "@dashboardLoadMoreLoading": {
+    "description": "Load-more footer while the next page loads."
+  },
+  "dashboardLoadMoreFailed": "تعذّر تحميل المزيد. إعادة المحاولة",
+  "@dashboardLoadMoreFailed": {
+    "description": "Load-more footer after the next page failed; tapping retries."
+  },
+  "dashboardLoadMore": "تحميل المزيد",
+  "@dashboardLoadMore": {
+    "description": "Load-more footer button for history lists."
+  },
+  "dashboardHomeLoadFailed": "تعذر تحميل الرئيسية.",
+  "@dashboardHomeLoadFailed": {
+    "description": "Error message when the home dashboard fails to load."
+  },
+  "dashboardViewAll": "عرض الكل",
+  "@dashboardViewAll": {
+    "description": "Home recent-activity link that opens the My CVs tab."
+  },
+  "dashboardHeaderNotificationsUnread": "الإشعارات، {count} غير مقروءة",
+  "@dashboardHeaderNotificationsUnread": {
+    "description": "Screen-reader label of the home header bell when there are unread notifications.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "dashboardNavHome": "الرئيسية",
+  "@dashboardNavHome": {
+    "description": "Bottom navigation tab: home."
+  },
+  "dashboardNavMyCvs": "سيرتي",
+  "@dashboardNavMyCvs": {
+    "description": "Bottom navigation tab: my CVs."
+  },
+  "dashboardNavEducation": "التعليم",
+  "@dashboardNavEducation": {
+    "description": "Bottom navigation tab: education (coming soon)."
+  },
+  "dashboardNavJobNews": "الوظائف",
+  "@dashboardNavJobNews": {
+    "description": "Bottom navigation tab: job news."
+  },
+  "dashboardEducationInterestThanks": "شكراً! سجّلنا اهتمامك. تابع هذا القسم عند الإطلاق.",
+  "@dashboardEducationInterestThanks": {
+    "description": "Snack bar after registering interest in the upcoming education section."
+  },
+  "dashboardEducationTitle": "التعليم",
+  "@dashboardEducationTitle": {
+    "description": "Header title of the education tab."
+  },
+  "dashboardEducationSubtitle": "تطوير المسار المهني والدورات التدريبية",
+  "@dashboardEducationSubtitle": {
+    "description": "Header subtitle of the education tab."
+  },
+  "dashboardEducationWhatsComing": "ماذا ينتظرك قريباً؟",
+  "@dashboardEducationWhatsComing": {
+    "description": "Section title above upcoming education features."
+  },
+  "dashboardEducationCoursesTitle": "دورات تدريبية متخصصة",
+  "@dashboardEducationCoursesTitle": {
+    "description": "Upcoming education feature card title."
+  },
+  "dashboardEducationCoursesBody": "دورات مكثفة لتطوير المهارات الأكثر طلباً في سوق العمل السعودي.",
+  "@dashboardEducationCoursesBody": {
+    "description": "Upcoming education feature card description."
+  },
+  "dashboardEducationInterviewTitle": "تحضير المقابلات بالذكاء الاصطناعي",
+  "@dashboardEducationInterviewTitle": {
+    "description": "Upcoming education feature card title."
+  },
+  "dashboardEducationInterviewBody": "محاكاة للمقابلات الوظيفية وأسئلة متوقعة ونصائح لتجاوزها بنجاح.",
+  "@dashboardEducationInterviewBody": {
+    "description": "Upcoming education feature card description."
+  },
+  "dashboardEducationAtsGuidesTitle": "أدلة التوافق مع أنظمة ATS",
+  "@dashboardEducationAtsGuidesTitle": {
+    "description": "Upcoming education feature card title."
+  },
+  "dashboardEducationAtsGuidesBody": "إرشادات عملية لتنسيق السيرة الذاتية واختيار الكلمات المفتاحية الأنسب.",
+  "@dashboardEducationAtsGuidesBody": {
+    "description": "Upcoming education feature card description."
+  },
+  "dashboardEducationComingSoonBadge": "✨ قريباً في سيرتي",
+  "@dashboardEducationComingSoonBadge": {
+    "description": "Badge on the education coming-soon hero."
+  },
+  "dashboardEducationHeroTitle": "القسم التعليمي والدورات المهنية",
+  "@dashboardEducationHeroTitle": {
+    "description": "Title of the education coming-soon hero."
+  },
+  "dashboardEducationHeroBody": "نعمل حالياً على تجهيز دورات تفاعلية وأدلة لاجتياز المقابلات الوظيفية وتطوير مسارك المهني.",
+  "@dashboardEducationHeroBody": {
+    "description": "Body of the education coming-soon hero."
+  },
+  "dashboardEducationInterestRegistered": "تم تسجيل اهتمامك",
+  "@dashboardEducationInterestRegistered": {
+    "description": "Disabled button label after the user registered interest."
+  },
+  "dashboardEducationCtaTitle": "جاهز لإنشاء سيرتك الذاتية الآن؟",
+  "@dashboardEducationCtaTitle": {
+    "description": "Title of the create-CV call to action on the education tab."
+  },
+  "dashboardEducationCtaBody": "أنشئ سيرة احترافية متوافقة مع ATS بخطوات بسيطة.",
+  "@dashboardEducationCtaBody": {
+    "description": "Body of the create-CV call to action on the education tab."
+  },
+  "dashboardEducationDetailTitle": "تفاصيل المحتوى",
+  "@dashboardEducationDetailTitle": {
+    "description": "App bar title of an education content detail page."
+  },
+  "dashboardEducationDetailLoadFailed": "تعذر تحميل هذا المحتوى.",
+  "@dashboardEducationDetailLoadFailed": {
+    "description": "Error message when an education item fails to load."
+  },
+  "dashboardUntitled": "بدون عنوان",
+  "@dashboardUntitled": {
+    "description": "Fallback title for an education item without a title."
+  },
+  "dashboardEducationDetailNoContent": "لا يوجد محتوى لهذا العنصر.",
+  "@dashboardEducationDetailNoContent": {
+    "description": "Shown when an education item has no body."
+  }
 }

@@ -11,7 +11,11 @@ void main() {
   // actions reachable, nothing overflowing.
   for (final language in ['ar', 'en']) {
     for (final dark in [false, true]) {
-      for (final size in const [Size(320, 568), Size(390, 844), Size(430, 932)]) {
+      for (final size in const [
+        Size(320, 568),
+        Size(390, 844),
+        Size(430, 932)
+      ]) {
         testWidgets('$language dark=$dark ${size.width}x${size.height}',
             (tester) async {
           AppLocale.languageCode.value = language;
@@ -36,16 +40,16 @@ void main() {
           ));
           await tester.pumpAndSettle();
           final en = language == 'en';
+          final l10n = lookupAppLocalizations(Locale(language));
 
           expect(find.byKey(WelcomeBody.logoKey), findsOneWidget);
-          expect(find.text(WelcomeBody.slogan(english: en)), findsOneWidget);
+          expect(find.text(WelcomeBody.slogan(l10n)), findsOneWidget);
           final card = find.byKey(WelcomeBody.valueCardKey);
           expect(
               find.descendant(
-                  of: card,
-                  matching: find.text(WelcomeBody.valueTitle(english: en))),
+                  of: card, matching: find.text(WelcomeBody.valueTitle(l10n))),
               findsOneWidget);
-          final points = WelcomeBody.valuePoints(english: en);
+          final points = WelcomeBody.valuePoints(l10n);
           expect(points, hasLength(5));
           for (final point in points) {
             expect(find.descendant(of: card, matching: find.text(point)),
@@ -58,7 +62,8 @@ void main() {
 
           // Order matches the agreed design: logo, slogan, card, actions.
           double top(Finder f) => tester.getTopLeft(f).dy;
-          final create = find.text(en ? 'Create New Account' : 'إنشاء حساب جديد');
+          final create =
+              find.text(en ? 'Create New Account' : 'إنشاء حساب جديد');
           final signIn = find.text(en ? 'Sign In' : 'تسجيل الدخول');
           expect(top(find.byKey(WelcomeBody.logoKey)),
               lessThan(top(find.byKey(WelcomeBody.sloganKey))));
@@ -69,7 +74,10 @@ void main() {
           for (final (finder, count) in [
             (create, () => registered),
             (signIn, () => signedIn),
-            (find.text(en ? 'Privacy Policy' : 'سياسة الخصوصية'), () => privacy),
+            (
+              find.text(en ? 'Privacy Policy' : 'سياسة الخصوصية'),
+              () => privacy
+            ),
           ]) {
             await tester.ensureVisible(finder);
             await tester.pumpAndSettle();

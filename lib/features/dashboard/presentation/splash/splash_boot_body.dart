@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -130,10 +130,10 @@ class _SplashBootBodyState extends State<SplashBootBody>
 
   @override
   Widget build(BuildContext context) {
-    final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final reduceMotion = MotionSettings.reduce(context);
     final wordmark = Text(
-      en ? 'Siratie' : 'سيرتي',
+      l10n.appTitle,
       textAlign: TextAlign.center,
       style: TextStyle(
         fontSize: 34,
@@ -143,7 +143,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
       ),
     );
     final status = Text(
-      en ? 'Preparing workspace…' : 'جارٍ تجهيز مساحتك…',
+      l10n.dashboardSplashPreparing,
       textAlign: TextAlign.center,
       style: AppTextStyles.bodySm(context.sirati).copyWith(
         color: context.sirati.textSecondary,
@@ -159,7 +159,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
             const SiratiMark(size: 96, elevated: true),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              en ? 'Siratie' : 'سيرتي',
+              l10n.appTitle,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
@@ -204,7 +204,7 @@ class _SplashBootBodyState extends State<SplashBootBody>
                 child: Opacity(
                   opacity: _brandTextOpacity.value,
                   child: Text(
-                    en ? 'Siratie' : 'سيرتي',
+                    l10n.appTitle,
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,

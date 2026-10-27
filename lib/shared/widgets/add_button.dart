@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -14,8 +14,7 @@ class SiratiAddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
-    final label = english ? 'Create new CV' : 'إنشاء سيرة جديدة';
+    final label = AppLocalizations.of(context).sharedCreateNewCv;
 
     return Tooltip(
       message: label,

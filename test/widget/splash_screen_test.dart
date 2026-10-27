@@ -202,6 +202,9 @@ void main() {
         AppLocale.languageCode.value = 'en';
         await tester.pumpWidget(MaterialApp(
           theme: theme,
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           home: const MediaQuery(
             data: MediaQueryData(disableAnimations: true),
             child: Scaffold(body: SplashBootBody()),

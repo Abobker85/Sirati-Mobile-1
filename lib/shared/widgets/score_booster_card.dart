@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:sirati/core/network/analytics_service.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -163,7 +164,7 @@ class ScoreBoosterCard extends StatelessWidget {
         }
 
         final c = context.sirati;
-        final english = Localizations.localeOf(context).languageCode != 'ar';
+        final l10n = AppLocalizations.of(context);
         final pct = (progress * 100).round();
 
         return Padding(
@@ -201,7 +202,7 @@ class ScoreBoosterCard extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          english ? 'Career readiness' : 'جاهزية المسار المهني',
+                          l10n.sharedCareerReadiness,
                           style:
                               AppTypography.of(context, AppTypography.titleSm),
                         ),
@@ -221,9 +222,7 @@ class ScoreBoosterCard extends StatelessWidget {
                     color: c.primaryInk,
                     height: 6,
                     borderRadius: 999,
-                    semanticLabel: english
-                        ? 'Career readiness $pct percent'
-                        : 'جاهزية المسار $pct بالمئة',
+                    semanticLabel: l10n.sharedCareerReadinessPercent(pct),
                   ),
                   if (tip != null) ...[
                     const SizedBox(height: 10),

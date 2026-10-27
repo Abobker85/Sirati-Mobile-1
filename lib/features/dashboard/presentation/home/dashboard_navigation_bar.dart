@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/navigation/dashboard_tab.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -8,15 +8,11 @@ class _NavItem {
   const _NavItem({
     required this.icon,
     required this.selectedIcon,
-    required this.labelAr,
-    required this.labelEn,
     this.comingSoon = false,
   });
 
   final IconData icon;
   final IconData selectedIcon;
-  final String labelAr;
-  final String labelEn;
   final bool comingSoon;
 }
 
@@ -24,29 +20,28 @@ const _items = {
   DashboardTab.home: _NavItem(
     icon: Icons.home_outlined,
     selectedIcon: Icons.home_rounded,
-    labelAr: 'الرئيسية',
-    labelEn: 'Home',
   ),
   DashboardTab.myCvs: _NavItem(
     icon: Icons.description_outlined,
     selectedIcon: Icons.description_rounded,
-    labelAr: 'سيرتي',
-    labelEn: 'My CVs',
   ),
   DashboardTab.education: _NavItem(
     icon: Icons.school_outlined,
     selectedIcon: Icons.school_rounded,
-    labelAr: 'التعليم',
-    labelEn: 'Education',
     comingSoon: true,
   ),
   DashboardTab.jobNews: _NavItem(
     icon: Icons.work_outline_rounded,
     selectedIcon: Icons.work_rounded,
-    labelAr: 'الوظائف',
-    labelEn: 'Job News',
   ),
 };
+
+String _label(DashboardTab tab, AppLocalizations l10n) => switch (tab) {
+      DashboardTab.home => l10n.dashboardNavHome,
+      DashboardTab.myCvs => l10n.dashboardNavMyCvs,
+      DashboardTab.education => l10n.dashboardNavEducation,
+      DashboardTab.jobNews => l10n.dashboardNavJobNews,
+    };
 
 /// Bottom navigation of the authenticated shell. Ambient Directionality
 /// places Home at the start (right in Arabic, left in English).
@@ -62,7 +57,7 @@ class DashboardNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final colors = context.sirati;
 
     return Material(
@@ -99,7 +94,7 @@ class DashboardNavigationBar extends StatelessWidget {
                       selectedBackgroundColor: colors.primaryLight,
                     ),
                   ),
-                  label: english ? _items[tab]!.labelEn : _items[tab]!.labelAr,
+                  label: _label(tab, l10n),
                 ),
             ],
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
 
@@ -18,6 +19,9 @@ void main() {
     }) {
       return MaterialApp(
         theme: AppTheme.light,
+        locale: Locale(english ? 'en' : 'ar'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: Scaffold(
           body: ScreenHeader(
             english: english,
@@ -46,7 +50,8 @@ void main() {
       expect(find.text('سيرتي الذاتية'), findsOneWidget);
     });
 
-    testWidgets('renders text label when only avatarLabel is passed', (tester) async {
+    testWidgets('renders text label when only avatarLabel is passed',
+        (tester) async {
       await tester.pumpWidget(buildSubject(
         english: true,
         title: 'Dashboard',
@@ -58,7 +63,9 @@ void main() {
       expect(find.byType(Icon), findsWidgets); // Notification bell icon exists
     });
 
-    testWidgets('falls back to initial when neither icon nor avatarLabel is passed', (tester) async {
+    testWidgets(
+        'falls back to initial when neither icon nor avatarLabel is passed',
+        (tester) async {
       await tester.pumpWidget(buildSubject(
         english: false,
         title: 'أهلاً، محمد',
@@ -69,7 +76,8 @@ void main() {
       expect(find.text('م'), findsOneWidget);
     });
 
-    testWidgets('triggers onAvatarTap when avatar circle is tapped', (tester) async {
+    testWidgets('triggers onAvatarTap when avatar circle is tapped',
+        (tester) async {
       var tapped = false;
       await tester.pumpWidget(buildSubject(
         english: true,
@@ -85,7 +93,8 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('triggers onNotifications when bell button is tapped', (tester) async {
+    testWidgets('triggers onNotifications when bell button is tapped',
+        (tester) async {
       var tapped = false;
       await tester.pumpWidget(buildSubject(
         english: true,
@@ -103,7 +112,9 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('renders page-specific icons for each of the 4 main application sections', (tester) async {
+    testWidgets(
+        'renders page-specific icons for each of the 4 main application sections',
+        (tester) async {
       const testCases = [
         (Icons.person_rounded, 'أهلاً، فلان', false),
         (Icons.description_rounded, 'سيرتي الذاتية', false),
@@ -123,7 +134,8 @@ void main() {
         ));
         await tester.pump();
 
-        expect(find.byIcon(icon), findsOneWidget, reason: 'Failed for title: $title');
+        expect(find.byIcon(icon), findsOneWidget,
+            reason: 'Failed for title: $title');
         expect(find.text(title), findsOneWidget);
       }
     });

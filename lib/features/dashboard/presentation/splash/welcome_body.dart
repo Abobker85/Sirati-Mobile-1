@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -25,32 +25,22 @@ class WelcomeBody extends StatelessWidget {
   static const valueCardKey = ValueKey('welcome-value-card');
 
   /// The brand slogan from the agreed identity banner.
-  static String slogan({required bool english}) => english
-      ? 'Every career path\npasses through our station'
-      : 'عندما تسعى لتطوير مسارك المهني،\nلا بد أن تمر على محطتنا';
+  static String slogan(AppLocalizations l10n) => l10n.dashboardWelcomeSlogan;
 
-  static String valueTitle({required bool english}) =>
-      english ? 'Your career starts with your CV' : 'مسارك المهني يبدأ من سيرتك';
+  static String valueTitle(AppLocalizations l10n) =>
+      l10n.dashboardWelcomeValueTitle;
 
-  static List<String> valuePoints({required bool english}) => english
-      ? const [
-          'Build a CV that passes automated screening (ATS)',
-          'Analyze your CV with an ATS check',
-          'Tailor your CV to a job description',
-          'Learning and career development',
-          'Job openings in the government and private sectors',
-        ]
-      : const [
-          'إنشاء سيرة ذاتية متوافقة مع أنظمة الفرز الآلي',
-          'تحليل سيرتك بنظام ATS',
-          'تعديل السيرة الذاتية لتلائم الوصف الوظيفي',
-          'تعليم وتطوير مهني',
-          'إعلانات لفرص وظيفية في القطاع الحكومي والقطاع الخاص',
-        ];
+  static List<String> valuePoints(AppLocalizations l10n) => [
+        l10n.dashboardWelcomePointBuild,
+        l10n.dashboardWelcomePointAnalyze,
+        l10n.dashboardWelcomePointTailor,
+        l10n.dashboardWelcomePointLearning,
+        l10n.dashboardWelcomePointJobs,
+      ];
 
   @override
   Widget build(BuildContext context) {
-    final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final c = context.sirati;
 
     return SafeArea(
@@ -89,7 +79,7 @@ class WelcomeBody extends StatelessWidget {
                     MotionReveal(
                       order: 2,
                       child: Text(
-                        en ? 'Siratie' : 'سيرتي',
+                        l10n.appTitle,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 30,
@@ -102,7 +92,7 @@ class WelcomeBody extends StatelessWidget {
                     MotionReveal(
                       order: 2,
                       child: Text(
-                        slogan(english: en),
+                        slogan(l10n),
                         key: sloganKey,
                         textAlign: TextAlign.center,
                         style: AppTextStyles.bodyMd(c).copyWith(
@@ -116,15 +106,15 @@ class WelcomeBody extends StatelessWidget {
                       order: 3,
                       child: _ValueCard(
                         key: valueCardKey,
-                        title: valueTitle(english: en),
-                        points: valuePoints(english: en),
+                        title: valueTitle(l10n),
+                        points: valuePoints(l10n),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
                     MotionReveal(
                       order: 4,
                       child: SubmitButton(
-                        label: en ? 'Create New Account' : 'إنشاء حساب جديد',
+                        label: l10n.createAccount,
                         onPressed: onRegister,
                       ),
                     ),
@@ -132,7 +122,7 @@ class WelcomeBody extends StatelessWidget {
                     MotionReveal(
                       order: 4,
                       child: SubmitButton(
-                        label: en ? 'Sign In' : 'تسجيل الدخول',
+                        label: l10n.signIn,
                         outlined: true,
                         onPressed: onLogin,
                       ),
@@ -143,7 +133,7 @@ class WelcomeBody extends StatelessWidget {
                       child: TextButton(
                         onPressed: onPrivacy,
                         child: Text(
-                          en ? 'Privacy Policy' : 'سياسة الخصوصية',
+                          l10n.dashboardWelcomePrivacyPolicy,
                           style: AppTextStyles.labelMd(c).copyWith(
                             fontWeight: FontWeight.w700,
                             color: c.textHint,

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/ai_field_loading_overlay.dart';
 
 // Production callers: AiCvField and the CV generator's personal step.
 void main() {
   for (final dark in [false, true]) {
-    testWidgets('AI status surface fills the field, dark=$dark', (tester) async {
+    testWidgets('AI status surface fills the field, dark=$dark',
+        (tester) async {
       final theme = dark ? AppTheme.dark : AppTheme.light;
       final colors = theme.extension<SiratiColors>()!;
       for (final direction in TextDirection.values) {
@@ -18,6 +20,8 @@ void main() {
           await tester.pumpWidget(
             MaterialApp(
               theme: theme,
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
               home: Scaffold(
                 body: MediaQuery(
                   data: const MediaQueryData(
@@ -54,23 +58,28 @@ void main() {
 
           expect(tester.takeException(), isNull);
           final overlay = find.byType(AiFieldLoadingOverlay);
-          final fieldBounds = tester.getRect(find.byKey(const ValueKey('field')));
+          final fieldBounds =
+              tester.getRect(find.byKey(const ValueKey('field')));
           expect(tester.getRect(overlay), fieldBounds);
 
           // Select the painted surface that actually contains the status,
           // so a separate full-size background cannot mask a short veil.
-          final surface = find.ancestor(
-            of: find.text(status),
-            matching: find.byType(ColoredBox),
-          ).first;
+          final surface = find
+              .ancestor(
+                of: find.text(status),
+                matching: find.byType(ColoredBox),
+              )
+              .first;
           expect(tester.getRect(surface), fieldBounds);
           final fill = tester.widget<ColoredBox>(surface).color;
           expect(fill, colors.surface);
           expect(fill.a, 1);
-          final clip = find.ancestor(
-            of: surface,
-            matching: find.byType(ClipRRect),
-          ).first;
+          final clip = find
+              .ancestor(
+                of: surface,
+                matching: find.byType(ClipRRect),
+              )
+              .first;
           expect(tester.getRect(clip), fieldBounds);
 
           final paragraph = tester.renderObject<RenderParagraph>(
@@ -81,16 +90,20 @@ void main() {
           );
           final ink = (paragraph.text as TextSpan).style!.color!;
           expect(AppContrast.ratio(ink, fill), greaterThanOrEqualTo(4.5));
-          final statusBounds = tester.getRect(find.ancestor(
-            of: find.text(status),
-            matching: find.byType(Column),
-          ).first);
+          final statusBounds = tester.getRect(find
+              .ancestor(
+                of: find.text(status),
+                matching: find.byType(Column),
+              )
+              .first);
           if (height == 420) {
             expect(statusBounds.height, lessThan(fieldBounds.height));
           }
           if (statusBounds.height <= fieldBounds.height) {
-            expect(statusBounds.center.dx, closeTo(fieldBounds.center.dx, 1e-6));
-            expect(statusBounds.center.dy, closeTo(fieldBounds.center.dy, 1e-6));
+            expect(
+                statusBounds.center.dx, closeTo(fieldBounds.center.dx, 1e-6));
+            expect(
+                statusBounds.center.dy, closeTo(fieldBounds.center.dy, 1e-6));
           }
         }
       }

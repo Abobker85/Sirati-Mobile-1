@@ -2053,6 +2053,571 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get homeJobsEmpty =>
       remote.text('homeJobsEmpty') ?? _base.homeJobsEmpty;
 
+  @override
+  String get sharedErrorNetworkSubtitle =>
+      remote.text('sharedErrorNetworkSubtitle') ??
+      _base.sharedErrorNetworkSubtitle;
+
+  @override
+  String get sharedErrorTimeoutSubtitle =>
+      remote.text('sharedErrorTimeoutSubtitle') ??
+      _base.sharedErrorTimeoutSubtitle;
+
+  @override
+  String get sharedErrorTitleNetwork =>
+      remote.text('sharedErrorTitleNetwork') ?? _base.sharedErrorTitleNetwork;
+
+  @override
+  String get sharedErrorTitleTimeout =>
+      remote.text('sharedErrorTitleTimeout') ?? _base.sharedErrorTitleTimeout;
+
+  @override
+  String get sharedErrorTitleAuth =>
+      remote.text('sharedErrorTitleAuth') ?? _base.sharedErrorTitleAuth;
+
+  @override
+  String get sharedErrorTitleNotFound =>
+      remote.text('sharedErrorTitleNotFound') ?? _base.sharedErrorTitleNotFound;
+
+  @override
+  String get sharedErrorTitleServer =>
+      remote.text('sharedErrorTitleServer') ?? _base.sharedErrorTitleServer;
+
+  @override
+  String get sharedErrorTitleRateLimited =>
+      remote.text('sharedErrorTitleRateLimited') ??
+      _base.sharedErrorTitleRateLimited;
+
+  @override
+  String get sharedErrorTitleUnknown =>
+      remote.text('sharedErrorTitleUnknown') ?? _base.sharedErrorTitleUnknown;
+
+  @override
+  String get sharedCreateNewCv =>
+      remote.text('sharedCreateNewCv') ?? _base.sharedCreateNewCv;
+
+  @override
+  String get sharedOk => remote.text('sharedOk') ?? _base.sharedOk;
+
+  @override
+  String get sharedLanguageToggleShort =>
+      remote.text('sharedLanguageToggleShort') ??
+      _base.sharedLanguageToggleShort;
+
+  @override
+  String get sharedPasswordStrengthEmpty =>
+      remote.text('sharedPasswordStrengthEmpty') ??
+      _base.sharedPasswordStrengthEmpty;
+
+  @override
+  String get sharedPasswordStrengthWeak =>
+      remote.text('sharedPasswordStrengthWeak') ??
+      _base.sharedPasswordStrengthWeak;
+
+  @override
+  String get sharedPasswordStrengthMedium =>
+      remote.text('sharedPasswordStrengthMedium') ??
+      _base.sharedPasswordStrengthMedium;
+
+  @override
+  String get sharedPasswordStrengthStrong =>
+      remote.text('sharedPasswordStrengthStrong') ??
+      _base.sharedPasswordStrengthStrong;
+
+  @override
+  String sharedPasswordStrengthSemantics(String label) =>
+      remote.format(
+        'sharedPasswordStrengthSemantics',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'label': label},
+        ),
+      ) ??
+      _base.sharedPasswordStrengthSemantics(label);
+
+  @override
+  String get sharedOfflineShowingSaved =>
+      remote.text('sharedOfflineShowingSaved') ??
+      _base.sharedOfflineShowingSaved;
+
+  @override
+  String get sharedNoDataAvailable =>
+      remote.text('sharedNoDataAvailable') ?? _base.sharedNoDataAvailable;
+
+  @override
+  String get sharedSomethingWentWrong =>
+      remote.text('sharedSomethingWentWrong') ?? _base.sharedSomethingWentWrong;
+
+  @override
+  String get sharedAiImprovingWording =>
+      remote.text('sharedAiImprovingWording') ?? _base.sharedAiImprovingWording;
+
+  @override
+  String get sharedAiWorkingOnField =>
+      remote.text('sharedAiWorkingOnField') ?? _base.sharedAiWorkingOnField;
+
+  @override
+  String sharedAiEnhancingField(String field) =>
+      remote.format(
+        'sharedAiEnhancingField',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'field': field},
+        ),
+      ) ??
+      _base.sharedAiEnhancingField(field);
+
+  @override
+  String sharedAiCharacterCount(int count, int minimum) =>
+      remote.format(
+        'sharedAiCharacterCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count, 'minimum': minimum},
+        ),
+      ) ??
+      _base.sharedAiCharacterCount(count, minimum);
+
+  @override
+  String get sharedAiEnhance =>
+      remote.text('sharedAiEnhance') ?? _base.sharedAiEnhance;
+
+  @override
+  String get sharedAiEnhancing =>
+      remote.text('sharedAiEnhancing') ?? _base.sharedAiEnhancing;
+
+  @override
+  String sharedAiEnhanceMinimumHint(int minimum) =>
+      remote.format(
+        'sharedAiEnhanceMinimumHint',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'minimum': minimum},
+        ),
+      ) ??
+      _base.sharedAiEnhanceMinimumHint(minimum);
+
+  @override
+  String get sharedAiWhatImproved =>
+      remote.text('sharedAiWhatImproved') ?? _base.sharedAiWhatImproved;
+
+  @override
+  String get sharedDismiss =>
+      remote.text('sharedDismiss') ?? _base.sharedDismiss;
+
+  @override
+  String get sharedAiCompleteFacts =>
+      remote.text('sharedAiCompleteFacts') ?? _base.sharedAiCompleteFacts;
+
+  @override
+  String get sharedAiVerifyDetails =>
+      remote.text('sharedAiVerifyDetails') ?? _base.sharedAiVerifyDetails;
+
+  @override
+  String get sharedJobTitleSelectHint =>
+      remote.text('sharedJobTitleSelectHint') ?? _base.sharedJobTitleSelectHint;
+
+  @override
+  String get sharedJobTitleSheetTitle =>
+      remote.text('sharedJobTitleSheetTitle') ?? _base.sharedJobTitleSheetTitle;
+
+  @override
+  String get sharedClear => remote.text('sharedClear') ?? _base.sharedClear;
+
+  @override
+  String get sharedJobTitleSearchHint =>
+      remote.text('sharedJobTitleSearchHint') ?? _base.sharedJobTitleSearchHint;
+
+  @override
+  String get sharedJobTitleNoMatches =>
+      remote.text('sharedJobTitleNoMatches') ?? _base.sharedJobTitleNoMatches;
+
+  @override
+  String get sharedNotifications =>
+      remote.text('sharedNotifications') ?? _base.sharedNotifications;
+
+  @override
+  String sharedNotificationsUnread(int count) =>
+      remote.format(
+        'sharedNotificationsUnread',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.sharedNotificationsUnread(count);
+
+  @override
+  String get sharedProfile =>
+      remote.text('sharedProfile') ?? _base.sharedProfile;
+
+  @override
+  String get sharedCareerReadiness =>
+      remote.text('sharedCareerReadiness') ?? _base.sharedCareerReadiness;
+
+  @override
+  String sharedCareerReadinessPercent(int percent) =>
+      remote.format(
+        'sharedCareerReadinessPercent',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'percent': percent},
+        ),
+      ) ??
+      _base.sharedCareerReadinessPercent(percent);
+
+  @override
+  String get sharedAiProgressBarrier =>
+      remote.text('sharedAiProgressBarrier') ?? _base.sharedAiProgressBarrier;
+
+  @override
+  String get sharedAiStageGenerationQueued =>
+      remote.text('sharedAiStageGenerationQueued') ??
+      _base.sharedAiStageGenerationQueued;
+
+  @override
+  String get sharedAiStageGenerationWriting =>
+      remote.text('sharedAiStageGenerationWriting') ??
+      _base.sharedAiStageGenerationWriting;
+
+  @override
+  String get sharedAiStageGenerationSaving =>
+      remote.text('sharedAiStageGenerationSaving') ??
+      _base.sharedAiStageGenerationSaving;
+
+  @override
+  String get sharedAiStageAnalysisReading =>
+      remote.text('sharedAiStageAnalysisReading') ??
+      _base.sharedAiStageAnalysisReading;
+
+  @override
+  String get sharedAiStageAnalysisScoring =>
+      remote.text('sharedAiStageAnalysisScoring') ??
+      _base.sharedAiStageAnalysisScoring;
+
+  @override
+  String get sharedAiStageAnalysisPreparing =>
+      remote.text('sharedAiStageAnalysisPreparing') ??
+      _base.sharedAiStageAnalysisPreparing;
+
+  @override
+  String get sharedAiLongWait =>
+      remote.text('sharedAiLongWait') ?? _base.sharedAiLongWait;
+
+  @override
+  String get sharedAiDoneGeneration =>
+      remote.text('sharedAiDoneGeneration') ?? _base.sharedAiDoneGeneration;
+
+  @override
+  String get sharedAiDoneAnalysis =>
+      remote.text('sharedAiDoneAnalysis') ?? _base.sharedAiDoneAnalysis;
+
+  @override
+  String get sharedAiWorking =>
+      remote.text('sharedAiWorking') ?? _base.sharedAiWorking;
+
+  @override
+  String get sharedAiProcessingRequest =>
+      remote.text('sharedAiProcessingRequest') ??
+      _base.sharedAiProcessingRequest;
+
+  @override
+  String get coreGreetingWelcome =>
+      remote.text('coreGreetingWelcome') ?? _base.coreGreetingWelcome;
+
+  @override
+  String coreGreetingHello(String name) =>
+      remote.format(
+        'coreGreetingHello',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'name': name},
+        ),
+      ) ??
+      _base.coreGreetingHello(name);
+
+  @override
+  String get dashboardInputMethodFile =>
+      remote.text('dashboardInputMethodFile') ?? _base.dashboardInputMethodFile;
+
+  @override
+  String get dashboardInputMethodMixed =>
+      remote.text('dashboardInputMethodMixed') ??
+      _base.dashboardInputMethodMixed;
+
+  @override
+  String get dashboardInputMethodPaste =>
+      remote.text('dashboardInputMethodPaste') ??
+      _base.dashboardInputMethodPaste;
+
+  @override
+  String get dashboardSplashPreparing =>
+      remote.text('dashboardSplashPreparing') ?? _base.dashboardSplashPreparing;
+
+  @override
+  String get dashboardWelcomeSlogan =>
+      remote.text('dashboardWelcomeSlogan') ?? _base.dashboardWelcomeSlogan;
+
+  @override
+  String get dashboardWelcomeValueTitle =>
+      remote.text('dashboardWelcomeValueTitle') ??
+      _base.dashboardWelcomeValueTitle;
+
+  @override
+  String get dashboardWelcomePointBuild =>
+      remote.text('dashboardWelcomePointBuild') ??
+      _base.dashboardWelcomePointBuild;
+
+  @override
+  String get dashboardWelcomePointAnalyze =>
+      remote.text('dashboardWelcomePointAnalyze') ??
+      _base.dashboardWelcomePointAnalyze;
+
+  @override
+  String get dashboardWelcomePointTailor =>
+      remote.text('dashboardWelcomePointTailor') ??
+      _base.dashboardWelcomePointTailor;
+
+  @override
+  String get dashboardWelcomePointLearning =>
+      remote.text('dashboardWelcomePointLearning') ??
+      _base.dashboardWelcomePointLearning;
+
+  @override
+  String get dashboardWelcomePointJobs =>
+      remote.text('dashboardWelcomePointJobs') ??
+      _base.dashboardWelcomePointJobs;
+
+  @override
+  String get dashboardWelcomePrivacyPolicy =>
+      remote.text('dashboardWelcomePrivacyPolicy') ??
+      _base.dashboardWelcomePrivacyPolicy;
+
+  @override
+  String get dashboardNotFoundTitle =>
+      remote.text('dashboardNotFoundTitle') ?? _base.dashboardNotFoundTitle;
+
+  @override
+  String get dashboardNotFoundSubtitle =>
+      remote.text('dashboardNotFoundSubtitle') ??
+      _base.dashboardNotFoundSubtitle;
+
+  @override
+  String get dashboardNotFoundGoHome =>
+      remote.text('dashboardNotFoundGoHome') ?? _base.dashboardNotFoundGoHome;
+
+  @override
+  String get dashboardPressBackAgainToExit =>
+      remote.text('dashboardPressBackAgainToExit') ??
+      _base.dashboardPressBackAgainToExit;
+
+  @override
+  String get dashboardHistory =>
+      remote.text('dashboardHistory') ?? _base.dashboardHistory;
+
+  @override
+  String get dashboardRefresh =>
+      remote.text('dashboardRefresh') ?? _base.dashboardRefresh;
+
+  @override
+  String get dashboardHistoryGeneratedCvsTab =>
+      remote.text('dashboardHistoryGeneratedCvsTab') ??
+      _base.dashboardHistoryGeneratedCvsTab;
+
+  @override
+  String get dashboardHistoryLoadFailed =>
+      remote.text('dashboardHistoryLoadFailed') ??
+      _base.dashboardHistoryLoadFailed;
+
+  @override
+  String get dashboardHistoryAnalysesEmptySubtitle =>
+      remote.text('dashboardHistoryAnalysesEmptySubtitle') ??
+      _base.dashboardHistoryAnalysesEmptySubtitle;
+
+  @override
+  String get dashboardHistoryAnalyzeCv =>
+      remote.text('dashboardHistoryAnalyzeCv') ??
+      _base.dashboardHistoryAnalyzeCv;
+
+  @override
+  String get dashboardHistoryCvsEmptyTitle =>
+      remote.text('dashboardHistoryCvsEmptyTitle') ??
+      _base.dashboardHistoryCvsEmptyTitle;
+
+  @override
+  String get dashboardHistoryCvsEmptySubtitle =>
+      remote.text('dashboardHistoryCvsEmptySubtitle') ??
+      _base.dashboardHistoryCvsEmptySubtitle;
+
+  @override
+  String get dashboardCreateCv =>
+      remote.text('dashboardCreateCv') ?? _base.dashboardCreateCv;
+
+  @override
+  String dashboardScoreBadgeSemantics(int score, String grade) =>
+      remote.format(
+        'dashboardScoreBadgeSemantics',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'score': score, 'grade': grade},
+        ),
+      ) ??
+      _base.dashboardScoreBadgeSemantics(score, grade);
+
+  @override
+  String get dashboardLoadMoreLoading =>
+      remote.text('dashboardLoadMoreLoading') ?? _base.dashboardLoadMoreLoading;
+
+  @override
+  String get dashboardLoadMoreFailed =>
+      remote.text('dashboardLoadMoreFailed') ?? _base.dashboardLoadMoreFailed;
+
+  @override
+  String get dashboardLoadMore =>
+      remote.text('dashboardLoadMore') ?? _base.dashboardLoadMore;
+
+  @override
+  String get dashboardHomeLoadFailed =>
+      remote.text('dashboardHomeLoadFailed') ?? _base.dashboardHomeLoadFailed;
+
+  @override
+  String get dashboardViewAll =>
+      remote.text('dashboardViewAll') ?? _base.dashboardViewAll;
+
+  @override
+  String dashboardHeaderNotificationsUnread(int count) =>
+      remote.format(
+        'dashboardHeaderNotificationsUnread',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.dashboardHeaderNotificationsUnread(count);
+
+  @override
+  String get dashboardNavHome =>
+      remote.text('dashboardNavHome') ?? _base.dashboardNavHome;
+
+  @override
+  String get dashboardNavMyCvs =>
+      remote.text('dashboardNavMyCvs') ?? _base.dashboardNavMyCvs;
+
+  @override
+  String get dashboardNavEducation =>
+      remote.text('dashboardNavEducation') ?? _base.dashboardNavEducation;
+
+  @override
+  String get dashboardNavJobNews =>
+      remote.text('dashboardNavJobNews') ?? _base.dashboardNavJobNews;
+
+  @override
+  String get dashboardEducationInterestThanks =>
+      remote.text('dashboardEducationInterestThanks') ??
+      _base.dashboardEducationInterestThanks;
+
+  @override
+  String get dashboardEducationTitle =>
+      remote.text('dashboardEducationTitle') ?? _base.dashboardEducationTitle;
+
+  @override
+  String get dashboardEducationSubtitle =>
+      remote.text('dashboardEducationSubtitle') ??
+      _base.dashboardEducationSubtitle;
+
+  @override
+  String get dashboardEducationWhatsComing =>
+      remote.text('dashboardEducationWhatsComing') ??
+      _base.dashboardEducationWhatsComing;
+
+  @override
+  String get dashboardEducationCoursesTitle =>
+      remote.text('dashboardEducationCoursesTitle') ??
+      _base.dashboardEducationCoursesTitle;
+
+  @override
+  String get dashboardEducationCoursesBody =>
+      remote.text('dashboardEducationCoursesBody') ??
+      _base.dashboardEducationCoursesBody;
+
+  @override
+  String get dashboardEducationInterviewTitle =>
+      remote.text('dashboardEducationInterviewTitle') ??
+      _base.dashboardEducationInterviewTitle;
+
+  @override
+  String get dashboardEducationInterviewBody =>
+      remote.text('dashboardEducationInterviewBody') ??
+      _base.dashboardEducationInterviewBody;
+
+  @override
+  String get dashboardEducationAtsGuidesTitle =>
+      remote.text('dashboardEducationAtsGuidesTitle') ??
+      _base.dashboardEducationAtsGuidesTitle;
+
+  @override
+  String get dashboardEducationAtsGuidesBody =>
+      remote.text('dashboardEducationAtsGuidesBody') ??
+      _base.dashboardEducationAtsGuidesBody;
+
+  @override
+  String get dashboardEducationComingSoonBadge =>
+      remote.text('dashboardEducationComingSoonBadge') ??
+      _base.dashboardEducationComingSoonBadge;
+
+  @override
+  String get dashboardEducationHeroTitle =>
+      remote.text('dashboardEducationHeroTitle') ??
+      _base.dashboardEducationHeroTitle;
+
+  @override
+  String get dashboardEducationHeroBody =>
+      remote.text('dashboardEducationHeroBody') ??
+      _base.dashboardEducationHeroBody;
+
+  @override
+  String get dashboardEducationInterestRegistered =>
+      remote.text('dashboardEducationInterestRegistered') ??
+      _base.dashboardEducationInterestRegistered;
+
+  @override
+  String get dashboardEducationCtaTitle =>
+      remote.text('dashboardEducationCtaTitle') ??
+      _base.dashboardEducationCtaTitle;
+
+  @override
+  String get dashboardEducationCtaBody =>
+      remote.text('dashboardEducationCtaBody') ??
+      _base.dashboardEducationCtaBody;
+
+  @override
+  String get dashboardEducationDetailTitle =>
+      remote.text('dashboardEducationDetailTitle') ??
+      _base.dashboardEducationDetailTitle;
+
+  @override
+  String get dashboardEducationDetailLoadFailed =>
+      remote.text('dashboardEducationDetailLoadFailed') ??
+      _base.dashboardEducationDetailLoadFailed;
+
+  @override
+  String get dashboardUntitled =>
+      remote.text('dashboardUntitled') ?? _base.dashboardUntitled;
+
+  @override
+  String get dashboardEducationDetailNoContent =>
+      remote.text('dashboardEducationDetailNoContent') ??
+      _base.dashboardEducationDetailNoContent;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -2521,6 +3086,117 @@ class RemoteAppLocalizations extends AppLocalizations {
     'homeJobsTitle': [],
     'homeJobsViewAll': [],
     'homeJobsEmpty': [],
+    'sharedErrorNetworkSubtitle': [],
+    'sharedErrorTimeoutSubtitle': [],
+    'sharedErrorTitleNetwork': [],
+    'sharedErrorTitleTimeout': [],
+    'sharedErrorTitleAuth': [],
+    'sharedErrorTitleNotFound': [],
+    'sharedErrorTitleServer': [],
+    'sharedErrorTitleRateLimited': [],
+    'sharedErrorTitleUnknown': [],
+    'sharedCreateNewCv': [],
+    'sharedOk': [],
+    'sharedLanguageToggleShort': [],
+    'sharedPasswordStrengthEmpty': [],
+    'sharedPasswordStrengthWeak': [],
+    'sharedPasswordStrengthMedium': [],
+    'sharedPasswordStrengthStrong': [],
+    'sharedPasswordStrengthSemantics': ['String'],
+    'sharedOfflineShowingSaved': [],
+    'sharedNoDataAvailable': [],
+    'sharedSomethingWentWrong': [],
+    'sharedAiImprovingWording': [],
+    'sharedAiWorkingOnField': [],
+    'sharedAiEnhancingField': ['String'],
+    'sharedAiCharacterCount': ['int', 'int'],
+    'sharedAiEnhance': [],
+    'sharedAiEnhancing': [],
+    'sharedAiEnhanceMinimumHint': ['int'],
+    'sharedAiWhatImproved': [],
+    'sharedDismiss': [],
+    'sharedAiCompleteFacts': [],
+    'sharedAiVerifyDetails': [],
+    'sharedJobTitleSelectHint': [],
+    'sharedJobTitleSheetTitle': [],
+    'sharedClear': [],
+    'sharedJobTitleSearchHint': [],
+    'sharedJobTitleNoMatches': [],
+    'sharedNotifications': [],
+    'sharedNotificationsUnread': ['int'],
+    'sharedProfile': [],
+    'sharedCareerReadiness': [],
+    'sharedCareerReadinessPercent': ['int'],
+    'sharedAiProgressBarrier': [],
+    'sharedAiStageGenerationQueued': [],
+    'sharedAiStageGenerationWriting': [],
+    'sharedAiStageGenerationSaving': [],
+    'sharedAiStageAnalysisReading': [],
+    'sharedAiStageAnalysisScoring': [],
+    'sharedAiStageAnalysisPreparing': [],
+    'sharedAiLongWait': [],
+    'sharedAiDoneGeneration': [],
+    'sharedAiDoneAnalysis': [],
+    'sharedAiWorking': [],
+    'sharedAiProcessingRequest': [],
+    'coreGreetingWelcome': [],
+    'coreGreetingHello': ['String'],
+    'dashboardInputMethodFile': [],
+    'dashboardInputMethodMixed': [],
+    'dashboardInputMethodPaste': [],
+    'dashboardSplashPreparing': [],
+    'dashboardWelcomeSlogan': [],
+    'dashboardWelcomeValueTitle': [],
+    'dashboardWelcomePointBuild': [],
+    'dashboardWelcomePointAnalyze': [],
+    'dashboardWelcomePointTailor': [],
+    'dashboardWelcomePointLearning': [],
+    'dashboardWelcomePointJobs': [],
+    'dashboardWelcomePrivacyPolicy': [],
+    'dashboardNotFoundTitle': [],
+    'dashboardNotFoundSubtitle': [],
+    'dashboardNotFoundGoHome': [],
+    'dashboardPressBackAgainToExit': [],
+    'dashboardHistory': [],
+    'dashboardRefresh': [],
+    'dashboardHistoryGeneratedCvsTab': [],
+    'dashboardHistoryLoadFailed': [],
+    'dashboardHistoryAnalysesEmptySubtitle': [],
+    'dashboardHistoryAnalyzeCv': [],
+    'dashboardHistoryCvsEmptyTitle': [],
+    'dashboardHistoryCvsEmptySubtitle': [],
+    'dashboardCreateCv': [],
+    'dashboardScoreBadgeSemantics': ['int', 'String'],
+    'dashboardLoadMoreLoading': [],
+    'dashboardLoadMoreFailed': [],
+    'dashboardLoadMore': [],
+    'dashboardHomeLoadFailed': [],
+    'dashboardViewAll': [],
+    'dashboardHeaderNotificationsUnread': ['int'],
+    'dashboardNavHome': [],
+    'dashboardNavMyCvs': [],
+    'dashboardNavEducation': [],
+    'dashboardNavJobNews': [],
+    'dashboardEducationInterestThanks': [],
+    'dashboardEducationTitle': [],
+    'dashboardEducationSubtitle': [],
+    'dashboardEducationWhatsComing': [],
+    'dashboardEducationCoursesTitle': [],
+    'dashboardEducationCoursesBody': [],
+    'dashboardEducationInterviewTitle': [],
+    'dashboardEducationInterviewBody': [],
+    'dashboardEducationAtsGuidesTitle': [],
+    'dashboardEducationAtsGuidesBody': [],
+    'dashboardEducationComingSoonBadge': [],
+    'dashboardEducationHeroTitle': [],
+    'dashboardEducationHeroBody': [],
+    'dashboardEducationInterestRegistered': [],
+    'dashboardEducationCtaTitle': [],
+    'dashboardEducationCtaBody': [],
+    'dashboardEducationDetailTitle': [],
+    'dashboardEducationDetailLoadFailed': [],
+    'dashboardUntitled': [],
+    'dashboardEducationDetailNoContent': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -3005,6 +3681,132 @@ class RemoteAppLocalizations extends AppLocalizations {
         'homeJobsTitle' => l.homeJobsTitle,
         'homeJobsViewAll' => l.homeJobsViewAll,
         'homeJobsEmpty' => l.homeJobsEmpty,
+        'sharedErrorNetworkSubtitle' => l.sharedErrorNetworkSubtitle,
+        'sharedErrorTimeoutSubtitle' => l.sharedErrorTimeoutSubtitle,
+        'sharedErrorTitleNetwork' => l.sharedErrorTitleNetwork,
+        'sharedErrorTitleTimeout' => l.sharedErrorTitleTimeout,
+        'sharedErrorTitleAuth' => l.sharedErrorTitleAuth,
+        'sharedErrorTitleNotFound' => l.sharedErrorTitleNotFound,
+        'sharedErrorTitleServer' => l.sharedErrorTitleServer,
+        'sharedErrorTitleRateLimited' => l.sharedErrorTitleRateLimited,
+        'sharedErrorTitleUnknown' => l.sharedErrorTitleUnknown,
+        'sharedCreateNewCv' => l.sharedCreateNewCv,
+        'sharedOk' => l.sharedOk,
+        'sharedLanguageToggleShort' => l.sharedLanguageToggleShort,
+        'sharedPasswordStrengthEmpty' => l.sharedPasswordStrengthEmpty,
+        'sharedPasswordStrengthWeak' => l.sharedPasswordStrengthWeak,
+        'sharedPasswordStrengthMedium' => l.sharedPasswordStrengthMedium,
+        'sharedPasswordStrengthStrong' => l.sharedPasswordStrengthStrong,
+        'sharedPasswordStrengthSemantics' =>
+          l.sharedPasswordStrengthSemantics(a[0] as String),
+        'sharedOfflineShowingSaved' => l.sharedOfflineShowingSaved,
+        'sharedNoDataAvailable' => l.sharedNoDataAvailable,
+        'sharedSomethingWentWrong' => l.sharedSomethingWentWrong,
+        'sharedAiImprovingWording' => l.sharedAiImprovingWording,
+        'sharedAiWorkingOnField' => l.sharedAiWorkingOnField,
+        'sharedAiEnhancingField' => l.sharedAiEnhancingField(a[0] as String),
+        'sharedAiCharacterCount' =>
+          l.sharedAiCharacterCount(a[0] as int, a[1] as int),
+        'sharedAiEnhance' => l.sharedAiEnhance,
+        'sharedAiEnhancing' => l.sharedAiEnhancing,
+        'sharedAiEnhanceMinimumHint' =>
+          l.sharedAiEnhanceMinimumHint(a[0] as int),
+        'sharedAiWhatImproved' => l.sharedAiWhatImproved,
+        'sharedDismiss' => l.sharedDismiss,
+        'sharedAiCompleteFacts' => l.sharedAiCompleteFacts,
+        'sharedAiVerifyDetails' => l.sharedAiVerifyDetails,
+        'sharedJobTitleSelectHint' => l.sharedJobTitleSelectHint,
+        'sharedJobTitleSheetTitle' => l.sharedJobTitleSheetTitle,
+        'sharedClear' => l.sharedClear,
+        'sharedJobTitleSearchHint' => l.sharedJobTitleSearchHint,
+        'sharedJobTitleNoMatches' => l.sharedJobTitleNoMatches,
+        'sharedNotifications' => l.sharedNotifications,
+        'sharedNotificationsUnread' => l.sharedNotificationsUnread(a[0] as int),
+        'sharedProfile' => l.sharedProfile,
+        'sharedCareerReadiness' => l.sharedCareerReadiness,
+        'sharedCareerReadinessPercent' =>
+          l.sharedCareerReadinessPercent(a[0] as int),
+        'sharedAiProgressBarrier' => l.sharedAiProgressBarrier,
+        'sharedAiStageGenerationQueued' => l.sharedAiStageGenerationQueued,
+        'sharedAiStageGenerationWriting' => l.sharedAiStageGenerationWriting,
+        'sharedAiStageGenerationSaving' => l.sharedAiStageGenerationSaving,
+        'sharedAiStageAnalysisReading' => l.sharedAiStageAnalysisReading,
+        'sharedAiStageAnalysisScoring' => l.sharedAiStageAnalysisScoring,
+        'sharedAiStageAnalysisPreparing' => l.sharedAiStageAnalysisPreparing,
+        'sharedAiLongWait' => l.sharedAiLongWait,
+        'sharedAiDoneGeneration' => l.sharedAiDoneGeneration,
+        'sharedAiDoneAnalysis' => l.sharedAiDoneAnalysis,
+        'sharedAiWorking' => l.sharedAiWorking,
+        'sharedAiProcessingRequest' => l.sharedAiProcessingRequest,
+        'coreGreetingWelcome' => l.coreGreetingWelcome,
+        'coreGreetingHello' => l.coreGreetingHello(a[0] as String),
+        'dashboardInputMethodFile' => l.dashboardInputMethodFile,
+        'dashboardInputMethodMixed' => l.dashboardInputMethodMixed,
+        'dashboardInputMethodPaste' => l.dashboardInputMethodPaste,
+        'dashboardSplashPreparing' => l.dashboardSplashPreparing,
+        'dashboardWelcomeSlogan' => l.dashboardWelcomeSlogan,
+        'dashboardWelcomeValueTitle' => l.dashboardWelcomeValueTitle,
+        'dashboardWelcomePointBuild' => l.dashboardWelcomePointBuild,
+        'dashboardWelcomePointAnalyze' => l.dashboardWelcomePointAnalyze,
+        'dashboardWelcomePointTailor' => l.dashboardWelcomePointTailor,
+        'dashboardWelcomePointLearning' => l.dashboardWelcomePointLearning,
+        'dashboardWelcomePointJobs' => l.dashboardWelcomePointJobs,
+        'dashboardWelcomePrivacyPolicy' => l.dashboardWelcomePrivacyPolicy,
+        'dashboardNotFoundTitle' => l.dashboardNotFoundTitle,
+        'dashboardNotFoundSubtitle' => l.dashboardNotFoundSubtitle,
+        'dashboardNotFoundGoHome' => l.dashboardNotFoundGoHome,
+        'dashboardPressBackAgainToExit' => l.dashboardPressBackAgainToExit,
+        'dashboardHistory' => l.dashboardHistory,
+        'dashboardRefresh' => l.dashboardRefresh,
+        'dashboardHistoryGeneratedCvsTab' => l.dashboardHistoryGeneratedCvsTab,
+        'dashboardHistoryLoadFailed' => l.dashboardHistoryLoadFailed,
+        'dashboardHistoryAnalysesEmptySubtitle' =>
+          l.dashboardHistoryAnalysesEmptySubtitle,
+        'dashboardHistoryAnalyzeCv' => l.dashboardHistoryAnalyzeCv,
+        'dashboardHistoryCvsEmptyTitle' => l.dashboardHistoryCvsEmptyTitle,
+        'dashboardHistoryCvsEmptySubtitle' =>
+          l.dashboardHistoryCvsEmptySubtitle,
+        'dashboardCreateCv' => l.dashboardCreateCv,
+        'dashboardScoreBadgeSemantics' =>
+          l.dashboardScoreBadgeSemantics(a[0] as int, a[1] as String),
+        'dashboardLoadMoreLoading' => l.dashboardLoadMoreLoading,
+        'dashboardLoadMoreFailed' => l.dashboardLoadMoreFailed,
+        'dashboardLoadMore' => l.dashboardLoadMore,
+        'dashboardHomeLoadFailed' => l.dashboardHomeLoadFailed,
+        'dashboardViewAll' => l.dashboardViewAll,
+        'dashboardHeaderNotificationsUnread' =>
+          l.dashboardHeaderNotificationsUnread(a[0] as int),
+        'dashboardNavHome' => l.dashboardNavHome,
+        'dashboardNavMyCvs' => l.dashboardNavMyCvs,
+        'dashboardNavEducation' => l.dashboardNavEducation,
+        'dashboardNavJobNews' => l.dashboardNavJobNews,
+        'dashboardEducationInterestThanks' =>
+          l.dashboardEducationInterestThanks,
+        'dashboardEducationTitle' => l.dashboardEducationTitle,
+        'dashboardEducationSubtitle' => l.dashboardEducationSubtitle,
+        'dashboardEducationWhatsComing' => l.dashboardEducationWhatsComing,
+        'dashboardEducationCoursesTitle' => l.dashboardEducationCoursesTitle,
+        'dashboardEducationCoursesBody' => l.dashboardEducationCoursesBody,
+        'dashboardEducationInterviewTitle' =>
+          l.dashboardEducationInterviewTitle,
+        'dashboardEducationInterviewBody' => l.dashboardEducationInterviewBody,
+        'dashboardEducationAtsGuidesTitle' =>
+          l.dashboardEducationAtsGuidesTitle,
+        'dashboardEducationAtsGuidesBody' => l.dashboardEducationAtsGuidesBody,
+        'dashboardEducationComingSoonBadge' =>
+          l.dashboardEducationComingSoonBadge,
+        'dashboardEducationHeroTitle' => l.dashboardEducationHeroTitle,
+        'dashboardEducationHeroBody' => l.dashboardEducationHeroBody,
+        'dashboardEducationInterestRegistered' =>
+          l.dashboardEducationInterestRegistered,
+        'dashboardEducationCtaTitle' => l.dashboardEducationCtaTitle,
+        'dashboardEducationCtaBody' => l.dashboardEducationCtaBody,
+        'dashboardEducationDetailTitle' => l.dashboardEducationDetailTitle,
+        'dashboardEducationDetailLoadFailed' =>
+          l.dashboardEducationDetailLoadFailed,
+        'dashboardUntitled' => l.dashboardUntitled,
+        'dashboardEducationDetailNoContent' =>
+          l.dashboardEducationDetailNoContent,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

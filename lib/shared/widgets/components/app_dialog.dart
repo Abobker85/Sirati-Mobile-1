@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components/app_button.dart';
 
@@ -34,6 +35,8 @@ Future<T?> showAppDialog<T>({
             ),
           AppButton(
             label: confirmLabel ??
+                Localizations.of<AppLocalizations>(context, AppLocalizations)
+                    ?.sharedOk ??
                 (Directionality.of(context) == TextDirection.rtl
                     ? 'حسناً'
                     : 'OK'),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -40,7 +41,10 @@ class DashboardHomeHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: AlignmentDirectional.centerStart,
           end: AlignmentDirectional.centerEnd,
-          colors: [context.sirati.brandSurfaceDeep, context.sirati.brandSurface],
+          colors: [
+            context.sirati.brandSurfaceDeep,
+            context.sirati.brandSurface
+          ],
         ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(radius)),
       );
@@ -48,7 +52,7 @@ class DashboardHomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final ink = c.onBrandSurface;
 
     return DecoratedBox(
@@ -66,7 +70,7 @@ class DashboardHomeHeader extends StatelessWidget {
             children: [
               Semantics(
                 button: true,
-                label: english ? 'Settings' : 'الإعدادات',
+                label: l10n.settings,
                 child: InkResponse(
                   key: avatarKey,
                   onTap: onAvatarTap,
@@ -115,9 +119,9 @@ class DashboardHomeHeader extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Semantics(
                 button: true,
-                label: english
-                    ? 'Notifications${unreadCount > 0 ? ', $unreadCount unread' : ''}'
-                    : 'الإشعارات${unreadCount > 0 ? '، $unreadCount غير مقروءة' : ''}',
+                label: unreadCount > 0
+                    ? l10n.dashboardHeaderNotificationsUnread(unreadCount)
+                    : l10n.sharedNotifications,
                 excludeSemantics: true,
                 child: Material(
                   color: ink.withValues(alpha: .16),

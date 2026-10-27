@@ -17,9 +17,12 @@ import 'package:sirati/shared/widgets/password_strength_meter.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
 void main() {
-  Widget wrap(Widget child) {
+  Widget wrap(Widget child, {Locale locale = const Locale('en')}) {
     return MaterialApp(
       theme: AppTheme.light,
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: Scaffold(body: child),
     );
   }
@@ -96,6 +99,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(wrap(
       const PasswordStrengthMeter(password: 'Abcdef12!', english: false),
+      locale: const Locale('ar'),
     ));
 
     expect(find.text('قوية'), findsOneWidget);
