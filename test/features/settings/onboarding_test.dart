@@ -1,6 +1,11 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/core/l10n/remote_l10n_models.dart';
+import 'package:sirati/core/l10n/remote_l10n_repository.dart';
+import 'package:sirati/core/l10n/remote_localizations_delegate.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/settings/presentation/onboarding_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -162,4 +167,64 @@ void main() {
       }
     });
   }
+
+  group('copy comes from the label catalog', () {
+    final random = Random(9157);
+    // Arbitrary admin text: mixed scripts, digits, spaces and apostrophes,
+    // but no ICU braces, so each value is a valid plain message.
+    String arbitrary(String tag) {
+      const pool = ['a', 'Z', ' ', "'", '7', 'سارة', 'é', '-', '.'];
+      final body = List.generate(
+        1 + random.nextInt(10),
+        (_) => pool[random.nextInt(pool.length)],
+      ).join();
+      return '$tag:$body';
+    }
+
+    for (final lang in ['en', 'ar']) {
+      testWidgets('$lang: remote overrides replace the bundled onboarding copy',
+          (tester) async {
+        final semantics = tester.ensureSemantics();
+        final overrides = {
+          'settingsOnboardingSkip': arbitrary('skip'),
+          'welcomeToSirati': arbitrary('title'),
+          'settingsOnboardingWelcomeBody': arbitrary('body'),
+          'next': arbitrary('next'),
+          'settingsOnboardingPageOf': '${arbitrary('dot')} {count}/{page}',
+        };
+        final state = RemoteL10nState(
+          bundles: {
+            lang:
+                RemoteStringBundle(code: lang, version: 1, strings: overrides),
+          },
+        );
+        AppLocale.languageCode.value = lang;
+        await tester.pumpWidget(MaterialApp(
+          theme: AppTheme.lightFor(arabic: lang == 'ar'),
+          locale: Locale(lang),
+          supportedLocales: appSupportedLocales(state),
+          localizationsDelegates: appLocalizationsDelegates(state),
+          home: Scaffold(body: OnboardingScreen(onFinished: () {})),
+        ));
+        await tester.pumpAndSettle();
+
+        final bundled = lookupAppLocalizations(Locale(lang));
+        for (final key in [
+          'settingsOnboardingSkip',
+          'welcomeToSirati',
+          'settingsOnboardingWelcomeBody',
+          'next',
+        ]) {
+          expect(find.text(overrides[key]!), findsOneWidget, reason: key);
+        }
+        expect(find.text(bundled.settingsOnboardingSkip), findsNothing);
+        expect(find.text(bundled.next), findsNothing);
+        final dot = overrides['settingsOnboardingPageOf']!
+            .replaceAll('{count}', '3')
+            .replaceAll('{page}', '1');
+        expect(find.bySemanticsLabel(dot), findsOneWidget);
+        semantics.dispose();
+      });
+    }
+  });
 }

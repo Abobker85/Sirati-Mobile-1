@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/storage/preference_store.dart';
-import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -40,34 +40,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return '${index + 1} / $count';
   }
 
-  List<_OnboardingPage> _pages(bool en) => [
+  List<_OnboardingPage> _pages(AppLocalizations l10n) => [
         _OnboardingPage(
           icon: Icons.description_outlined,
           accent: context.sirati.primaryInk,
           accentSoft: context.sirati.primaryLight,
-          title: en ? 'Welcome to Siratie' : 'مرحباً بك في سيرتي',
-          body: en
-              ? 'Analyze your CV for ATS score, or build a professional resume with AI — in Arabic or English.'
-              : 'حلل سيرتك الذاتية واحصل على درجة ATS، أو أنشئ سيرة ذاتية احترافية بالذكاء الاصطناعي — بالعربية أو الإنجليزية.',
+          title: l10n.welcomeToSirati,
+          body: l10n.settingsOnboardingWelcomeBody,
         ),
         _OnboardingPage(
           icon: Icons.speed_rounded,
           accent: context.sirati.primaryDark,
           accentSoft: context.sirati.tealLight,
           useBrandMark: true,
-          title: en ? 'Instant ATS analysis' : 'تحليل ATS فوري',
-          body: en
-              ? 'Get a clear score, missing keywords, and strengths and gaps — so you know what to improve before you apply.'
-              : 'احصل على درجة واضحة، والكلمات المفتاحية الناقصة، ونقاط القوة والضعف — لتعرف ماذا تحسّن قبل التقديم.',
+          title: l10n.settingsOnboardingAtsTitle,
+          body: l10n.settingsOnboardingAtsBody,
         ),
         _OnboardingPage(
           icon: Icons.auto_awesome_rounded,
           accent: context.sirati.onWarningContainer,
           accentSoft: context.sirati.warningLight,
-          title: en ? 'AI CV in minutes' : 'سيرة بالذكاء في دقائق',
-          body: en
-              ? 'Enter your details and generate a polished, downloadable CV with templates built for hiring systems.'
-              : 'أدخل بياناتك وأنشئ سيرة ذاتية أنيقة قابلة للتنزيل بقوالب مهيأة لأنظمة التوظيف.',
+          title: l10n.settingsOnboardingAiTitle,
+          body: l10n.settingsOnboardingAiBody,
         ),
       ];
 
@@ -133,8 +127,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final en = AppLocale.isEnglish(context);
-    final pages = _pages(en);
+    final l10n = AppLocalizations.of(context);
+    final pages = _pages(l10n);
     final last = _index >= _pageCount - 1;
 
     // No Scaffold here — host [SplashScreen] already provides one.
@@ -175,7 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             Icons.arrow_back_rounded,
                             color: context.sirati.textSecondary,
                           ),
-                          tooltip: en ? 'Previous' : 'السابق',
+                          tooltip: l10n.settingsOnboardingPrevious,
                         ),
                       ),
                     const Spacer(),
@@ -197,7 +191,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           tapTargetSize: MaterialTapTargetSize.padded,
                         ),
                         child: Text(
-                          en ? 'Skip' : 'تخطي',
+                          l10n.settingsOnboardingSkip,
                           style: AppTextStyles.labelMd(context.sirati).copyWith(
                             fontWeight: FontWeight.w700,
                             color: context.sirati.textSecondary,
@@ -250,9 +244,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     SubmitButton(
-                      label: last
-                          ? (en ? 'Get started' : 'ابدأ الآن')
-                          : (en ? 'Next' : 'التالي'),
+                      label: last ? l10n.getStarted : l10n.next,
                       icon: last ? null : Icons.arrow_forward_rounded,
                       onPressed: _finishing ? null : _next,
                       isLoading: _finishing && last,
@@ -481,12 +473,12 @@ class _PageDots extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reduce = MotionSettings.reduce(context);
-    final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (i) {
         final active = i == index;
-        final label = en ? 'Page ${i + 1} of $count' : 'الصفحة ${i + 1} من $count';
+        final label = l10n.settingsOnboardingPageOf(i + 1, count);
         final dot = AnimatedContainer(
           duration: reduce ? Duration.zero : MotionDurations.medium,
           curve: MotionCurves.state,

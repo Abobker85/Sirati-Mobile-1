@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_router.dart';
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/latin_digits.dart';
 import 'package:sirati/core/utils/root_navigation.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -79,7 +79,7 @@ class _EmailVerificationScreenState
     // One request at a time: auto-submit, keyboard Done, the button and the
     // snackbar Retry can all fire.
     if (_isLoading) return;
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
       unawaited(HapticFeedback.selectionClick());
@@ -95,7 +95,7 @@ class _EmailVerificationScreenState
       unawaited(HapticFeedback.lightImpact());
       AppSnackBar.success(
         context,
-        english ? 'Email verified successfully.' : 'تم تأكيد البريد بنجاح.',
+        l10n.authVerifySuccess,
       );
       AppRouter.openAfterAuth(context);
     } on ApiException catch (exception) {
@@ -103,7 +103,7 @@ class _EmailVerificationScreenState
         AppSnackBar.fromException(
           context,
           exception,
-          retryLabel: english ? 'Retry' : 'إعادة',
+          retryLabel: l10n.authRetry,
           onRetry: () => unawaited(_verify()),
         );
       }
@@ -111,9 +111,7 @@ class _EmailVerificationScreenState
       if (mounted) {
         AppSnackBar.error(
           context,
-          english
-              ? 'An unexpected error occurred while verifying.'
-              : 'حدث خطأ غير متوقع أثناء التحقق.',
+          l10n.authVerifyUnexpectedError,
         );
       }
     } finally {
@@ -123,7 +121,7 @@ class _EmailVerificationScreenState
 
   Future<void> _resend() async {
     if (_resendCooldown > 0 || _isResending) return;
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     setState(() => _isResending = true);
     try {
       final message =
@@ -139,9 +137,7 @@ class _EmailVerificationScreenState
       if (mounted) {
         AppSnackBar.error(
           context,
-          english
-              ? 'Could not resend the code. Try again later.'
-              : 'تعذر إعادة إرسال الرمز. حاول لاحقاً.',
+          l10n.authVerifyResendFailed,
         );
       }
     } finally {
@@ -159,18 +155,14 @@ class _EmailVerificationScreenState
       if (error is LocalSessionCleanupException && error.tokenCleared) {
         AppSnackBar.error(
           context,
-          AppLocale.isEnglish(context)
-              ? 'Could not fully sign out on this device.'
-              : 'تعذر إكمال تسجيل الخروج على هذا الجهاز.',
+          AppLocalizations.of(context).logOutPartial,
         );
       } else {
         // Keep a session whose token could not be removed on this screen.
         _leaving = false;
         AppSnackBar.error(
           context,
-          AppLocale.isEnglish(context)
-              ? "Couldn't sign out on this device. Please try again."
-              : 'تعذّر تسجيل الخروج على هذا الجهاز. حاول مرة أخرى.',
+          AppLocalizations.of(context).logOutFailed,
         );
         return;
       }
@@ -181,7 +173,7 @@ class _EmailVerificationScreenState
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final email = widget.email;
 
     return PopScope(
@@ -201,9 +193,7 @@ class _EmailVerificationScreenState
                     children: [
                       IconButton(
                         onPressed: () => unawaited(_leave()),
-                        tooltip: english
-                            ? 'Back to sign in'
-                            : 'العودة لتسجيل الدخول',
+                        tooltip: l10n.authVerifyBackToSignIn,
                         icon: DirectionalIcon(
                           Icons.arrow_back_ios_new_rounded,
                           color: context.sirati.textPrimary,
@@ -240,9 +230,7 @@ class _EmailVerificationScreenState
                           ),
                           const SizedBox(height: 20),
                           Text(
-                            english
-                                ? 'Verify your email'
-                                : 'أكد بريدك الإلكتروني',
+                            l10n.authVerifyTitle,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 22,
@@ -252,9 +240,7 @@ class _EmailVerificationScreenState
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            english
-                                ? 'We sent a 6-digit code to'
-                                : 'أرسلنا رمزاً من 6 أرقام إلى',
+                            l10n.authVerifyCodeSentTo,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
@@ -275,7 +261,7 @@ class _EmailVerificationScreenState
                           ),
                           const SizedBox(height: 28),
                           Text(
-                            english ? 'Verification code' : 'رمز التحقق',
+                            l10n.authVerificationCodeLabel,
                             textAlign: TextAlign.start,
                             style: TextStyle(
                               fontSize: 14,
@@ -310,18 +296,15 @@ class _EmailVerificationScreenState
                             validator: (value) {
                               final code = value?.trim() ?? '';
                               if (code.length != 6) {
-                                return english
-                                    ? 'Enter the 6-digit code'
-                                    : 'أدخل الرمز المكون من 6 أرقام';
+                                return l10n.authCodeRequired;
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           SubmitButton(
-                            label: english ? 'Verify email' : 'تأكيد البريد',
-                            loadingLabel:
-                                english ? 'Verifying...' : 'جارٍ التحقق...',
+                            label: l10n.authVerifyButton,
+                            loadingLabel: l10n.authVerifying,
                             isLoading: _isLoading,
                             icon: Icons.verified_outlined,
                             onPressed: () => unawaited(_verify()),
@@ -340,24 +323,16 @@ class _EmailVerificationScreenState
                                   : () => unawaited(_resend()),
                               child: Text(
                                 _isResending
-                                    ? (english
-                                        ? 'Sending...'
-                                        : 'جارٍ الإرسال...')
+                                    ? l10n.authSending
                                     : _resendCooldown > 0
-                                        ? (english
-                                            ? 'Resend code in $_resendCooldown s'
-                                            : 'إعادة الإرسال بعد $_resendCooldown ث')
-                                        : (english
-                                            ? 'Resend code'
-                                            : 'إعادة إرسال الرمز'),
+                                        ? l10n.authResendCodeIn(_resendCooldown)
+                                        : l10n.authResendCode,
                               ),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            english
-                                ? 'Check spam if you do not see the email.'
-                                : 'تحقق من البريد المزعج إن لم تجد الرسالة.',
+                            l10n.authVerifyCheckSpam,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12.5,

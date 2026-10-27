@@ -30,7 +30,10 @@ class _Auth extends AuthApiService {
   Future<AuthUser> uploadAvatar(List<int> pngBytes) async {
     uploads.add(pngBytes);
     user = const AuthUser(
-        id: 1, name: 'Salem', email: 's@x.io', avatarUrl: 'https://x.test/a.png');
+        id: 1,
+        name: 'Salem',
+        email: 's@x.io',
+        avatarUrl: 'https://x.test/a.png');
     SessionCache.instance.setUser(user);
     return user;
   }
@@ -62,18 +65,29 @@ Future<Uint8List> _png(int width, int height) async {
 Future<void> _engineWork(WidgetTester tester) async {
   for (var i = 0; i < 20; i++) {
     await tester.pump(const Duration(milliseconds: 50));
-    await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 30)));
+    await tester
+        .runAsync(() => Future<void>.delayed(const Duration(milliseconds: 30)));
   }
   await tester.pumpAndSettle();
 }
 
-void main() {  group('avatarSourceRect', () {
+void main() {
+  group('avatarSourceRect', () {
     // Whatever the image shape, zoom and pan, the crop is a square inside
     // the image showing exactly what the round window shows.
-    for (final (w, h) in [(1000.0, 600.0), (600.0, 1000.0), (512.0, 512.0), (3000.0, 4000.0)]) {
+    for (final (w, h) in [
+      (1000.0, 600.0),
+      (600.0, 1000.0),
+      (512.0, 512.0),
+      (3000.0, 4000.0)
+    ]) {
       for (final zoom in [1.0, 1.7, 5.0]) {
-        for (final (dx, dy) in [(0.0, 0.0), (-80.0, -40.0), (500.0, 500.0), (-9999.0, -9999.0)]) {
+        for (final (dx, dy) in [
+          (0.0, 0.0),
+          (-80.0, -40.0),
+          (500.0, 500.0),
+          (-9999.0, -9999.0)
+        ]) {
           test('${w}x$h zoom=$zoom pan=($dx,$dy)', () {
             const viewport = 320.0;
             final base = viewport / (w < h ? w : h);
@@ -103,12 +117,14 @@ void main() {  group('avatarSourceRect', () {
     final source = await tester.runAsync(() => _png(800, 400));
     Uint8List? result;
     await tester.pumpWidget(MaterialApp(
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: Builder(
         builder: (context) => TextButton(
           onPressed: () async {
             result = await Navigator.of(context).push<Uint8List>(
               MaterialPageRoute(
-                builder: (_) => AvatarCropScreen(bytes: source!, english: true),
+                builder: (_) => AvatarCropScreen(bytes: source!),
               ),
             );
           },
@@ -129,15 +145,16 @@ void main() {  group('avatarSourceRect', () {
     expect(decoded!.width, avatarOutputSize);
     expect(decoded.height, avatarOutputSize);
     // Centred on a wide red|blue image: both halves show, red on the left.
-    final pixels = await tester.runAsync(
-        () => decoded.toByteData(format: ui.ImageByteFormat.rawRgba));
+    final pixels = await tester
+        .runAsync(() => decoded.toByteData(format: ui.ImageByteFormat.rawRgba));
     int red(int x) => pixels!.getUint8((256 * avatarOutputSize + x) * 4);
     expect(red(20), greaterThan(200));
     expect(red(avatarOutputSize - 20), lessThan(50));
   });
 
   for (final language in ['ar', 'en']) {
-    testWidgets('$language: gallery → crop → upload, then remove', (tester) async {
+    testWidgets('$language: gallery → crop → upload, then remove',
+        (tester) async {
       AppLocale.languageCode.value = language;
       SessionCache.instance.clear();
       tester.view.physicalSize = const Size(1080, 2400);
@@ -177,11 +194,14 @@ void main() {  group('avatarSourceRect', () {
       expect(picked, [ImageSource.gallery]);
       expect(auth.uploads, hasLength(1));
       final uploaded = await tester.runAsync(() async {
-        final codec = await ui.instantiateImageCodec(Uint8List.fromList(auth.uploads.single));
+        final codec = await ui
+            .instantiateImageCodec(Uint8List.fromList(auth.uploads.single));
         return (await codec.getNextFrame()).image;
       });
-      expect((uploaded!.width, uploaded.height), (avatarOutputSize, avatarOutputSize));
-      expect(SessionCache.instance.user.value?.avatarUrl, 'https://x.test/a.png');
+      expect((uploaded!.width, uploaded.height),
+          (avatarOutputSize, avatarOutputSize));
+      expect(
+          SessionCache.instance.user.value?.avatarUrl, 'https://x.test/a.png');
 
       await tester.tap(find.byKey(const ValueKey('profile-photo-button')));
       await tester.pumpAndSettle();
@@ -193,7 +213,8 @@ void main() {  group('avatarSourceRect', () {
     });
   }
 
-  testWidgets('cancelling the picker or the crop uploads nothing', (tester) async {
+  testWidgets('cancelling the picker or the crop uploads nothing',
+      (tester) async {
     AppLocale.languageCode.value = 'en';
     final auth = _Auth();
     var pick = 0;
@@ -202,7 +223,8 @@ void main() {  group('avatarSourceRect', () {
       overrides: [
         authApiServiceProvider.overrideWithValue(auth),
         jobTitlesProvider.overrideWith((ref) async => const <JobTitle>[]),
-        profilePhotoPickerProvider.overrideWithValue((_) async => pick++ == 0 ? null : source),
+        profilePhotoPickerProvider
+            .overrideWithValue((_) async => pick++ == 0 ? null : source),
       ],
       child: MaterialApp(
         theme: AppTheme.lightFor(arabic: false),

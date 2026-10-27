@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/latin_digits.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -72,7 +73,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     // One request at a time: keyboard Done, the button, Resend and the
     // snackbar Retry can all fire while one is running.
     if (_isLoading || _isResending) return;
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _submitted = true;
     });
@@ -86,9 +87,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         !_emailController.text.contains('@')) {
       AppSnackBar.error(
         context,
-        english
-            ? 'Please enter a valid email'
-            : 'أدخل بريداً إلكترونياً صحيحاً',
+        l10n.authForgotEmailInvalidNotice,
       );
       return;
     }
@@ -118,7 +117,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         AppSnackBar.fromException(
           context,
           exception,
-          retryLabel: english ? 'Retry' : 'إعادة',
+          retryLabel: l10n.authRetry,
           onRetry: () => _sendCode(isResend: isResend),
         );
       }
@@ -126,9 +125,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       if (mounted) {
         AppSnackBar.error(
           context,
-          english
-              ? 'Could not send the code. Try again later.'
-              : 'تعذر إرسال الرمز. حاول لاحقاً.',
+          l10n.authForgotSendFailed,
         );
       }
     } finally {
@@ -143,7 +140,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   Future<void> _resetPassword() async {
     if (_isLoading) return;
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
       unawaited(HapticFeedback.selectionClick());
@@ -167,7 +164,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         AppSnackBar.fromException(
           context,
           exception,
-          retryLabel: english ? 'Retry' : 'إعادة',
+          retryLabel: l10n.authRetry,
           onRetry: _resetPassword,
         );
       }
@@ -175,9 +172,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       if (mounted) {
         AppSnackBar.error(
           context,
-          english
-              ? 'Could not reset the password. Try again.'
-              : 'تعذر تعيين كلمة المرور. حاول مرة أخرى.',
+          l10n.authForgotResetFailed,
         );
       }
     } finally {
@@ -188,10 +183,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(english ? 'Reset Password' : 'استعادة كلمة المرور'),
+        title: Text(l10n.authForgotTitle),
         actions: const [
           Padding(
             padding: EdgeInsetsDirectional.only(end: 12),
@@ -207,19 +203,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             children: [
               Text(
                 _codeSent
-                    ? (english
-                        ? 'Enter the 6-digit code we sent and choose a new password.'
-                        : 'أدخل الرمز المكون من 6 أرقام الذي أرسلناه واختر كلمة مرور جديدة.')
-                    : (english
-                        ? 'Enter your email and we will send a 6-digit reset code.'
-                        : 'أدخل بريدك الإلكتروني وسنرسل لك رمزاً من 6 أرقام لاستعادة كلمة المرور.'),
+                    ? l10n.authForgotCodeIntro
+                    : l10n.authForgotEmailIntro,
                 textAlign: TextAlign.start,
                 style: AppTextStyles.titleMd(context.sirati)
                     .copyWith(fontSize: 17, height: 1.55),
               ),
               const SizedBox(height: AppSpacing.xl),
               Text(
-                english ? 'Email Address' : 'البريد الإلكتروني',
+                l10n.authEmailAddressLabel,
                 textAlign: TextAlign.start,
                 style: AppTextStyles.labelMd(context.sirati)
                     .copyWith(fontWeight: FontWeight.w700),
@@ -245,14 +237,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   if (_codeSent) return null;
                   final email = value?.trim() ?? '';
                   if (email.isEmpty) {
-                    return english
-                        ? 'Please enter your email'
-                        : 'يرجى إدخال البريد الإلكتروني';
+                    return l10n.authEmailRequired;
                   }
                   if (!email.contains('@')) {
-                    return english
-                        ? 'Enter a valid email address'
-                        : 'أدخل بريداً إلكترونياً صحيحاً';
+                    return l10n.authForgotEmailInvalid;
                   }
                   return null;
                 },
@@ -260,8 +248,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               if (!_codeSent) ...[
                 const SizedBox(height: AppSpacing.md),
                 SubmitButton(
-                  label: english ? 'Send code' : 'إرسال الرمز',
-                  loadingLabel: english ? 'Sending...' : 'جارٍ الإرسال...',
+                  label: l10n.authForgotSendCode,
+                  loadingLabel: l10n.authSending,
                   isLoading: _isLoading,
                   icon: Icons.send_outlined,
                   onPressed: _sendCode,
@@ -269,7 +257,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ] else ...[
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  english ? 'Verification code' : 'رمز التحقق',
+                  l10n.authVerificationCodeLabel,
                   textAlign: TextAlign.start,
                   style: AppTextStyles.labelMd(context.sirati)
                       .copyWith(fontWeight: FontWeight.w700),
@@ -295,16 +283,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   validator: (value) {
                     final code = value?.trim() ?? '';
                     if (code.length != 6) {
-                      return english
-                          ? 'Enter the 6-digit code'
-                          : 'أدخل الرمز المكون من 6 أرقام';
+                      return l10n.authCodeRequired;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  english ? 'New password' : 'كلمة المرور الجديدة',
+                  l10n.authNewPasswordLabel,
                   textAlign: TextAlign.start,
                   style: AppTextStyles.labelMd(context.sirati)
                       .copyWith(fontWeight: FontWeight.w700),
@@ -323,8 +309,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     tooltip: _obscurePassword
-                        ? (english ? 'Show password' : 'إظهار كلمة المرور')
-                        : (english ? 'Hide password' : 'إخفاء كلمة المرور'),
+                        ? l10n.showPassword
+                        : l10n.hidePassword,
                     icon: Icon(_obscurePassword
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined),
@@ -337,14 +323,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return english
-                          ? 'Please enter a new password'
-                          : 'يرجى إدخال كلمة مرور جديدة';
+                      return l10n.authForgotNewPasswordRequired;
                     }
                     if (value.length < 8) {
-                      return english
-                          ? 'Password must be at least 8 characters'
-                          : 'يجب أن تكون كلمة المرور 8 أحرف على الأقل';
+                      return l10n.authPasswordTooShort(8);
                     }
                     return null;
                   },
@@ -356,7 +338,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  english ? 'Confirm password' : 'تأكيد كلمة المرور',
+                  l10n.authForgotConfirmPasswordLabel,
                   textAlign: TextAlign.start,
                   style: AppTextStyles.labelMd(context.sirati)
                       .copyWith(fontWeight: FontWeight.w700),
@@ -376,9 +358,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   hintText: '••••••••',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    tooltip: _obscureConfirm
-                        ? (english ? 'Show password' : 'إظهار كلمة المرور')
-                        : (english ? 'Hide password' : 'إخفاء كلمة المرور'),
+                    tooltip:
+                        _obscureConfirm ? l10n.showPassword : l10n.hidePassword,
                     icon: Icon(_obscureConfirm
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined),
@@ -387,22 +368,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return english
-                          ? 'Please confirm your password'
-                          : 'يرجى تأكيد كلمة المرور';
+                      return l10n.authForgotConfirmPasswordRequired;
                     }
                     if (value != _passwordController.text) {
-                      return english
-                          ? 'Passwords do not match'
-                          : 'كلمتا المرور غير متطابقتين';
+                      return l10n.authPasswordsDoNotMatch;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: AppSpacing.md),
                 SubmitButton(
-                  label: english ? 'Reset password' : 'تعيين كلمة المرور',
-                  loadingLabel: english ? 'Saving...' : 'جارٍ الحفظ...',
+                  label: l10n.authForgotResetButton,
+                  loadingLabel: l10n.authSaving,
                   isLoading: _isLoading,
                   icon: Icons.check_circle_outline,
                   onPressed: _resetPassword,
@@ -420,12 +397,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         : () => _sendCode(isResend: true),
                     child: Text(
                       _isResending
-                          ? (english ? 'Sending...' : 'جارٍ الإرسال...')
+                          ? l10n.authSending
                           : _resendCooldown > 0
-                              ? (english
-                                  ? 'Resend code in $_resendCooldown s'
-                                  : 'إعادة الإرسال بعد $_resendCooldown ث')
-                              : (english ? 'Resend code' : 'إعادة إرسال الرمز'),
+                              ? l10n.authResendCodeIn(_resendCooldown)
+                              : l10n.authResendCode,
                     ),
                   ),
                 ),
@@ -442,7 +417,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           });
                         },
                   child: Text(
-                    english ? 'Use a different email' : 'استخدام بريد آخر',
+                    l10n.authForgotUseDifferentEmail,
                   ),
                 ),
               ],

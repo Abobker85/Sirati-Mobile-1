@@ -74,7 +74,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _register() async {
     if (ref.read(registerControllerProvider)) return;
-    final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _submitted = true;
       _showFormBanner = false;
@@ -91,9 +91,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (!_agreedToTerms) {
         AppSnackBar.warning(
           context,
-          en
-              ? 'Please agree to the Terms & Conditions'
-              : 'يرجى الموافقة على الشروط والأحكام',
+          l10n.authAgreeTermsRequired,
         );
       }
       return;
@@ -122,15 +120,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         AppSnackBar.fromException(
           context,
           error,
-          retryLabel: en ? 'Retry' : 'إعادة',
+          retryLabel: l10n.authRetry,
           onRetry: _register,
         );
       case RegisterFailedUnexpectedly():
         AppSnackBar.error(
           context,
-          en
-              ? 'An unexpected error occurred while creating the account.'
-              : 'حدث خطأ غير متوقع أثناء إنشاء الحساب.',
+          l10n.authRegisterUnexpectedError,
         );
       case RegisterIgnored():
         break;
@@ -161,8 +157,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   String? Function(String?) _validator(
     FieldError? Function(String?) rule, {
-    required String requiredEn,
-    required String requiredAr,
+    required String requiredText,
     int? max,
   }) {
     return (value) {
@@ -170,9 +165,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (error == null) return null;
       return fieldErrorText(
         error,
-        english: AppLocale.isEnglish(context),
-        requiredEn: requiredEn,
-        requiredAr: requiredAr,
+        l10n: AppLocalizations.of(context),
+        requiredText: requiredText,
         max: max,
       );
     };
@@ -181,9 +175,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final isLoading = ref.watch(registerControllerProvider);
     final jobTitles = ref.watch(jobTitlesProvider);
-    final looksGood = en ? 'Looks good' : 'يبدو جيداً';
+    final looksGood = l10n.authLooksGood;
     void next(String _) => FocusScope.of(context).nextFocus();
 
     final otherError = _submitted
@@ -192,8 +187,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             isOther: _isOther,
           )
         : null;
-    const otherRequiredEn = 'Please enter your job title';
-    const otherRequiredAr = 'يرجى كتابة المسمى الوظيفي عند اختيار أخرى.';
+    final otherRequired = l10n.authJobTitleOtherRequired;
 
     return Scaffold(
       backgroundColor: context.sirati.background,
@@ -223,16 +217,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  RegisterHero(english: en),
+                  const RegisterHero(),
                   const SizedBox(height: 22),
                   if (_showFormBanner)
                     AppFormErrorBanner(
-                      message: en
-                          ? 'Please fix the highlighted fields to continue.'
-                          : 'يرجى تصحيح الحقول المحددة للمتابعة.',
+                      message: l10n.authFixHighlightedFields,
                       onDismiss: () => setState(() => _showFormBanner = false),
                     ),
-                  FieldLabel(text: en ? 'Full Name' : 'الاسم الكامل'),
+                  FieldLabel(text: l10n.authFullNameLabel),
                   AppTextFormField(
                     controller: _nameController,
                     showSuccessWhenValid: true,
@@ -242,17 +234,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
                     onFieldSubmitted: next,
-                    hintText: en ? 'Enter your full name' : 'اكتب اسمك الكامل',
+                    hintText: l10n.authFullNameHint,
                     prefixIcon: const Icon(Icons.person_outline_rounded),
                     validator: _validator(
                       RegistrationRules.name,
-                      requiredEn: 'Please enter your full name',
-                      requiredAr: 'يرجى إدخال اسمك الكامل',
+                      requiredText: l10n.authNameRequired,
                       max: RegistrationRules.nameMax,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  FieldLabel(text: en ? 'Email Address' : 'البريد الإلكتروني'),
+                  FieldLabel(text: l10n.authEmailAddressLabel),
                   AppTextFormField(
                     controller: _emailController,
                     showSuccessWhenValid: true,
@@ -267,13 +258,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     prefixIcon: const Icon(Icons.mail_outline_rounded),
                     validator: _validator(
                       RegistrationRules.email,
-                      requiredEn: 'Please enter your email',
-                      requiredAr: 'يرجى إدخال البريد الإلكتروني',
+                      requiredText: l10n.authEmailRequired,
                       max: RegistrationRules.emailMax,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  FieldLabel(text: en ? 'Phone Number' : 'رقم الجوال'),
+                  FieldLabel(text: l10n.authPhoneLabel),
                   AppTextFormField(
                     controller: _phoneController,
                     showSuccessWhenValid: true,
@@ -288,13 +278,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     prefixIcon: const Icon(Icons.phone_iphone_outlined),
                     validator: _validator(
                       RegistrationRules.phone,
-                      requiredEn: 'Please enter your phone number',
-                      requiredAr: 'يرجى إدخال رقم الجوال',
+                      requiredText: l10n.authPhoneRequired,
                       max: RegistrationRules.phoneMax,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  FieldLabel(text: en ? 'City/Country' : 'المدينة/الدولة'),
+                  FieldLabel(text: l10n.authLocationLabel),
                   AppTextFormField(
                     controller: _locationController,
                     showSuccessWhenValid: true,
@@ -303,20 +292,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     textAlign: TextAlign.start,
                     textInputAction: TextInputAction.next,
                     onFieldSubmitted: next,
-                    hintText: en ? 'Riyadh, Saudi Arabia' : 'الرياض، السعودية',
+                    hintText: l10n.authLocationHint,
                     prefixIcon: const Icon(Icons.place_outlined),
                     validator: _validator(
                       RegistrationRules.location,
-                      requiredEn: 'Please enter your city or country',
-                      requiredAr: 'يرجى إدخال المدينة أو الدولة',
+                      requiredText: l10n.authLocationRequired,
                       max: RegistrationRules.locationMax,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   FieldLabel(
-                    text: en
-                        ? 'Job title (optional)'
-                        : 'المسمى الوظيفي (اختياري)',
+                    text: l10n.authJobTitleOptionalLabel,
                   ),
                   JobTitlePickerField(
                     titles: jobTitles.value ?? const [],
@@ -328,9 +314,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ? null
                         : fieldErrorText(
                             otherError,
-                            english: en,
-                            requiredEn: otherRequiredEn,
-                            requiredAr: otherRequiredAr,
+                            l10n: l10n,
+                            requiredText: otherRequired,
                             max: RegistrationRules.jobTitleOtherMax,
                           ),
                     onChanged: (title) => setState(() {
@@ -343,7 +328,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   if (_isOther) ...[
                     const SizedBox(height: AppSpacing.md),
                     FieldLabel(
-                      text: en ? 'Your job title' : 'المسمى الوظيفي الخاص بك',
+                      text: l10n.authJobTitleOtherLabel,
                     ),
                     AppTextFormField(
                       controller: _jobTitleOtherController,
@@ -354,23 +339,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       textInputAction: TextInputAction.next,
                       onFieldSubmitted: next,
                       maxLength: RegistrationRules.jobTitleOtherMax,
-                      hintText: en
-                          ? 'e.g. Logistics Consultant'
-                          : 'مثال: مستشار لوجستي',
+                      hintText: l10n.authJobTitleOtherHint,
                       prefixIcon: const Icon(Icons.edit_outlined),
                       validator: _validator(
                         (v) => RegistrationRules.jobTitleOther(
                           v,
                           isOther: _isOther,
                         ),
-                        requiredEn: otherRequiredEn,
-                        requiredAr: otherRequiredAr,
+                        requiredText: otherRequired,
                         max: RegistrationRules.jobTitleOtherMax,
                       ),
                     ),
                   ],
                   const SizedBox(height: AppSpacing.md),
-                  FieldLabel(text: en ? 'Password' : 'كلمة المرور'),
+                  FieldLabel(text: l10n.authPasswordLabel),
                   AppTextFormField(
                     controller: _passwordController,
                     showSuccessWhenValid: true,
@@ -384,8 +366,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
                       tooltip: _obscurePassword
-                          ? AppLocalizations.of(context).showPassword
-                          : AppLocalizations.of(context).hidePassword,
+                          ? l10n.showPassword
+                          : l10n.hidePassword,
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_outlined
@@ -398,8 +380,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     onChanged: (_) => setState(() {}),
                     validator: _validator(
                       RegistrationRules.password,
-                      requiredEn: 'Please enter your password',
-                      requiredAr: 'يرجى إدخال كلمة المرور',
+                      requiredText: l10n.authPasswordRequired,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
@@ -409,29 +390,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   const SizedBox(height: 14),
                   TermsAgreement(
-                    english: en,
                     agreed: _agreedToTerms,
                     onChanged: (value) =>
                         setState(() => _agreedToTerms = value),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   SubmitButton(
-                    label: en ? 'Create Account' : 'إنشاء الحساب',
-                    loadingLabel:
-                        en ? 'Creating account...' : 'جارٍ إنشاء الحساب...',
+                    label: l10n.authCreateAccountButton,
+                    loadingLabel: l10n.authCreatingAccount,
                     isLoading: isLoading,
                     icon: Icons.arrow_forward_rounded,
                     onPressed: () => unawaited(_register()),
                   ),
                   const SizedBox(height: 6),
-                  SignInPrompt(english: en, onTap: _goToLogin),
+                  SignInPrompt(onTap: _goToLogin),
                   const SizedBox(height: 8),
                   TextButton(
                     // Preview mode: Home becomes the root route so Back
                     // doesn't return to the auth screens.
                     onPressed: () => AppRouter.openAfterAuth(context),
                     child: Text(
-                      en ? 'Continue without account' : 'المتابعة بدون حساب',
+                      l10n.authContinueWithoutAccount,
                       style: TextStyle(
                         fontSize: 12.5,
                         color: context.sirati.textHint,
