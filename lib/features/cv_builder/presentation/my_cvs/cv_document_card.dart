@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/domain/cv_list.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -60,7 +61,7 @@ class CvDocumentCard extends StatelessWidget {
                     children: [
                       Text(
                         item.title.isEmpty
-                            ? (english ? 'Untitled CV' : 'سيرة بلا عنوان')
+                            ? AppLocalizations.of(context).cvUntitled
                             : LocaleFormat.mixedTitle(
                                 LocaleFormat.fixSampleTitle(item.title),
                                 english: english,
@@ -106,7 +107,7 @@ class CvDocumentCard extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: editable ? onEdit : null,
                     icon: const Icon(Icons.edit_outlined, size: 16),
-                    label: Text(english ? 'Edit' : 'تعديل'),
+                    label: Text(AppLocalizations.of(context).cvCardEdit),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colors.primaryLight,
                       // primaryInk / primaryLight is the gated chip pair.
@@ -130,7 +131,7 @@ class CvDocumentCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 _CircleActionButton(
                   icon: Icons.download_rounded,
-                  label: english ? 'Download' : 'تنزيل',
+                  label: AppLocalizations.of(context).cvCardDownload,
                   iconColor:
                       item.canDownload ? colors.primaryInk : colors.textHint,
                   borderColor:
@@ -140,7 +141,7 @@ class CvDocumentCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 _CircleActionButton(
                   icon: Icons.delete_outline_rounded,
-                  label: english ? 'Delete' : 'حذف',
+                  label: AppLocalizations.of(context).deleteItem,
                   iconColor: colors.red,
                   borderColor: colors.red.withValues(alpha: .18),
                   fillColor: colors.redLight,
@@ -231,7 +232,8 @@ class _CircleActionButton extends StatelessWidget {
           height: 48,
           child: Material(
             color: fillColor ?? context.sirati.surface,
-            shape: CircleBorder(side: BorderSide(color: borderColor, width: 1.5)),
+            shape:
+                CircleBorder(side: BorderSide(color: borderColor, width: 1.5)),
             clipBehavior: Clip.antiAlias,
             child: InkResponse(
               onTap: onTap,
@@ -279,7 +281,7 @@ class CreateCvCard extends StatelessWidget {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  english ? 'Create New CV' : 'إنشاء سيرة جديدة',
+                  AppLocalizations.of(context).cvCreateNew,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

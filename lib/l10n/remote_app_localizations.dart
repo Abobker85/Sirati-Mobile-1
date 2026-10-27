@@ -2053,6 +2053,607 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get homeJobsEmpty =>
       remote.text('homeJobsEmpty') ?? _base.homeJobsEmpty;
 
+  @override
+  String get cvDraftAvailable =>
+      remote.text('cvDraftAvailable') ?? _base.cvDraftAvailable;
+
+  @override
+  String get cvDraftContinueTitle =>
+      remote.text('cvDraftContinueTitle') ?? _base.cvDraftContinueTitle;
+
+  @override
+  String get cvDraftStartFresh =>
+      remote.text('cvDraftStartFresh') ?? _base.cvDraftStartFresh;
+
+  @override
+  String get cvDraftRestore =>
+      remote.text('cvDraftRestore') ?? _base.cvDraftRestore;
+
+  @override
+  String get cvDiscardChangesTitle =>
+      remote.text('cvDiscardChangesTitle') ?? _base.cvDiscardChangesTitle;
+
+  @override
+  String get cvDiscardChangesBody =>
+      remote.text('cvDiscardChangesBody') ?? _base.cvDiscardChangesBody;
+
+  @override
+  String get cvDiscard => remote.text('cvDiscard') ?? _base.cvDiscard;
+
+  @override
+  String get cvSaveProgressTitle =>
+      remote.text('cvSaveProgressTitle') ?? _base.cvSaveProgressTitle;
+
+  @override
+  String get cvSaveProgressBody =>
+      remote.text('cvSaveProgressBody') ?? _base.cvSaveProgressBody;
+
+  @override
+  String get cvSaveDraft => remote.text('cvSaveDraft') ?? _base.cvSaveDraft;
+
+  @override
+  String get cvEntryRequired =>
+      remote.text('cvEntryRequired') ?? _base.cvEntryRequired;
+
+  @override
+  String get cvEntryChooseStart =>
+      remote.text('cvEntryChooseStart') ?? _base.cvEntryChooseStart;
+
+  @override
+  String get cvEntryChooseEnd =>
+      remote.text('cvEntryChooseEnd') ?? _base.cvEntryChooseEnd;
+
+  @override
+  String get cvEntryEndBeforeStart =>
+      remote.text('cvEntryEndBeforeStart') ?? _base.cvEntryEndBeforeStart;
+
+  @override
+  String get cvEntryFrom => remote.text('cvEntryFrom') ?? _base.cvEntryFrom;
+
+  @override
+  String get cvEntryTo => remote.text('cvEntryTo') ?? _base.cvEntryTo;
+
+  @override
+  String get cvEntryJobTitle =>
+      remote.text('cvEntryJobTitle') ?? _base.cvEntryJobTitle;
+
+  @override
+  String get cvEntryJobTitleHint =>
+      remote.text('cvEntryJobTitleHint') ?? _base.cvEntryJobTitleHint;
+
+  @override
+  String get cvEntryCompany =>
+      remote.text('cvEntryCompany') ?? _base.cvEntryCompany;
+
+  @override
+  String get cvEntryCity => remote.text('cvEntryCity') ?? _base.cvEntryCity;
+
+  @override
+  String get cvEntryWorkCurrent =>
+      remote.text('cvEntryWorkCurrent') ?? _base.cvEntryWorkCurrent;
+
+  @override
+  String get cvEntryDuties =>
+      remote.text('cvEntryDuties') ?? _base.cvEntryDuties;
+
+  @override
+  String get cvEntryDutiesHint =>
+      remote.text('cvEntryDutiesHint') ?? _base.cvEntryDutiesHint;
+
+  @override
+  String get cvEntryDegree =>
+      remote.text('cvEntryDegree') ?? _base.cvEntryDegree;
+
+  @override
+  String get cvEntryDegreeHint =>
+      remote.text('cvEntryDegreeHint') ?? _base.cvEntryDegreeHint;
+
+  @override
+  String get cvEntryInstitution =>
+      remote.text('cvEntryInstitution') ?? _base.cvEntryInstitution;
+
+  @override
+  String get cvEntryStudyCurrent =>
+      remote.text('cvEntryStudyCurrent') ?? _base.cvEntryStudyCurrent;
+
+  @override
+  String get cvEntryEducationDetails =>
+      remote.text('cvEntryEducationDetails') ?? _base.cvEntryEducationDetails;
+
+  @override
+  String get cvEntryCertName =>
+      remote.text('cvEntryCertName') ?? _base.cvEntryCertName;
+
+  @override
+  String get cvEntryCertIssuer =>
+      remote.text('cvEntryCertIssuer') ?? _base.cvEntryCertIssuer;
+
+  @override
+  String get cvEntryCertDate =>
+      remote.text('cvEntryCertDate') ?? _base.cvEntryCertDate;
+
+  @override
+  String get cvEntriesCompleteHighlighted =>
+      remote.text('cvEntriesCompleteHighlighted') ??
+      _base.cvEntriesCompleteHighlighted;
+
+  @override
+  String get cvEntriesAddOne =>
+      remote.text('cvEntriesAddOne') ?? _base.cvEntriesAddOne;
+
+  @override
+  String get cvEntriesMoreDetail =>
+      remote.text('cvEntriesMoreDetail') ?? _base.cvEntriesMoreDetail;
+
+  @override
+  String get cvEntryRemove =>
+      remote.text('cvEntryRemove') ?? _base.cvEntryRemove;
+
+  @override
+  String get cvMonthChoose =>
+      remote.text('cvMonthChoose') ?? _base.cvMonthChoose;
+
+  @override
+  String get cvMonthYearTitle =>
+      remote.text('cvMonthYearTitle') ?? _base.cvMonthYearTitle;
+
+  @override
+  String get cvMonthYearDone =>
+      remote.text('cvMonthYearDone') ?? _base.cvMonthYearDone;
+
+  @override
+  String get cvWizardUpdate =>
+      remote.text('cvWizardUpdate') ?? _base.cvWizardUpdate;
+
+  @override
+  String get cvWizardGenerate =>
+      remote.text('cvWizardGenerate') ?? _base.cvWizardGenerate;
+
+  @override
+  String get cvWizardGenerating =>
+      remote.text('cvWizardGenerating') ?? _base.cvWizardGenerating;
+
+  @override
+  String get cvWizardStepPersonal =>
+      remote.text('cvWizardStepPersonal') ?? _base.cvWizardStepPersonal;
+
+  @override
+  String get cvWizardStepSkills =>
+      remote.text('cvWizardStepSkills') ?? _base.cvWizardStepSkills;
+
+  @override
+  String get cvWizardStepExperience =>
+      remote.text('cvWizardStepExperience') ?? _base.cvWizardStepExperience;
+
+  @override
+  String get cvWizardStepEducation =>
+      remote.text('cvWizardStepEducation') ?? _base.cvWizardStepEducation;
+
+  @override
+  String cvWizardStepOf(int step, int total) =>
+      remote.format(
+        'cvWizardStepOf',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'step': step, 'total': total},
+        ),
+      ) ??
+      _base.cvWizardStepOf(step, total);
+
+  @override
+  String get cvWizardReviewFields =>
+      remote.text('cvWizardReviewFields') ?? _base.cvWizardReviewFields;
+
+  @override
+  String get cvEducationStepTitle =>
+      remote.text('cvEducationStepTitle') ?? _base.cvEducationStepTitle;
+
+  @override
+  String get cvEducationLabel =>
+      remote.text('cvEducationLabel') ?? _base.cvEducationLabel;
+
+  @override
+  String get cvEducationAdd =>
+      remote.text('cvEducationAdd') ?? _base.cvEducationAdd;
+
+  @override
+  String get cvCertificationsLabel =>
+      remote.text('cvCertificationsLabel') ?? _base.cvCertificationsLabel;
+
+  @override
+  String get cvCertificationsAdd =>
+      remote.text('cvCertificationsAdd') ?? _base.cvCertificationsAdd;
+
+  @override
+  String get cvExperienceStepTitle =>
+      remote.text('cvExperienceStepTitle') ?? _base.cvExperienceStepTitle;
+
+  @override
+  String get cvExperienceLabel =>
+      remote.text('cvExperienceLabel') ?? _base.cvExperienceLabel;
+
+  @override
+  String get cvExperienceHelper =>
+      remote.text('cvExperienceHelper') ?? _base.cvExperienceHelper;
+
+  @override
+  String get cvExperienceXyzBuilder =>
+      remote.text('cvExperienceXyzBuilder') ?? _base.cvExperienceXyzBuilder;
+
+  @override
+  String get cvExperienceAdd =>
+      remote.text('cvExperienceAdd') ?? _base.cvExperienceAdd;
+
+  @override
+  String get cvPersonalStepTitle =>
+      remote.text('cvPersonalStepTitle') ?? _base.cvPersonalStepTitle;
+
+  @override
+  String get cvPersonalFullName =>
+      remote.text('cvPersonalFullName') ?? _base.cvPersonalFullName;
+
+  @override
+  String get cvPersonalFullNameHint =>
+      remote.text('cvPersonalFullNameHint') ?? _base.cvPersonalFullNameHint;
+
+  @override
+  String get cvPersonalFullNameRequired =>
+      remote.text('cvPersonalFullNameRequired') ??
+      _base.cvPersonalFullNameRequired;
+
+  @override
+  String get cvPersonalEmailRequired =>
+      remote.text('cvPersonalEmailRequired') ?? _base.cvPersonalEmailRequired;
+
+  @override
+  String get cvPersonalEmailInvalid =>
+      remote.text('cvPersonalEmailInvalid') ?? _base.cvPersonalEmailInvalid;
+
+  @override
+  String get cvPersonalPhone =>
+      remote.text('cvPersonalPhone') ?? _base.cvPersonalPhone;
+
+  @override
+  String get cvPersonalPhoneRequired =>
+      remote.text('cvPersonalPhoneRequired') ?? _base.cvPersonalPhoneRequired;
+
+  @override
+  String get cvPersonalLinkedin =>
+      remote.text('cvPersonalLinkedin') ?? _base.cvPersonalLinkedin;
+
+  @override
+  String get cvPersonalTargetJob =>
+      remote.text('cvPersonalTargetJob') ?? _base.cvPersonalTargetJob;
+
+  @override
+  String get cvPersonalTargetJobHint =>
+      remote.text('cvPersonalTargetJobHint') ?? _base.cvPersonalTargetJobHint;
+
+  @override
+  String get cvPersonalTargetJobRequired =>
+      remote.text('cvPersonalTargetJobRequired') ??
+      _base.cvPersonalTargetJobRequired;
+
+  @override
+  String get cvPersonalJobDescription =>
+      remote.text('cvPersonalJobDescription') ?? _base.cvPersonalJobDescription;
+
+  @override
+  String get cvPersonalCvLanguage =>
+      remote.text('cvPersonalCvLanguage') ?? _base.cvPersonalCvLanguage;
+
+  @override
+  String get cvPersonalEnhancingJobDescription =>
+      remote.text('cvPersonalEnhancingJobDescription') ??
+      _base.cvPersonalEnhancingJobDescription;
+
+  @override
+  String get cvPersonalJobDescriptionHint =>
+      remote.text('cvPersonalJobDescriptionHint') ??
+      _base.cvPersonalJobDescriptionHint;
+
+  @override
+  String get cvEnhance => remote.text('cvEnhance') ?? _base.cvEnhance;
+
+  @override
+  String get cvEnhancing => remote.text('cvEnhancing') ?? _base.cvEnhancing;
+
+  @override
+  String get cvPersonalWriteMore =>
+      remote.text('cvPersonalWriteMore') ?? _base.cvPersonalWriteMore;
+
+  @override
+  String get cvSkillsStepTitle =>
+      remote.text('cvSkillsStepTitle') ?? _base.cvSkillsStepTitle;
+
+  @override
+  String get cvSkillsCore => remote.text('cvSkillsCore') ?? _base.cvSkillsCore;
+
+  @override
+  String get cvSkillsHelper =>
+      remote.text('cvSkillsHelper') ?? _base.cvSkillsHelper;
+
+  @override
+  String get cvSkillsRequired =>
+      remote.text('cvSkillsRequired') ?? _base.cvSkillsRequired;
+
+  @override
+  String get cvSummaryLabel =>
+      remote.text('cvSummaryLabel') ?? _base.cvSummaryLabel;
+
+  @override
+  String get cvSummaryHelper =>
+      remote.text('cvSummaryHelper') ?? _base.cvSummaryHelper;
+
+  @override
+  String get cvSummaryHint =>
+      remote.text('cvSummaryHint') ?? _base.cvSummaryHint;
+
+  @override
+  String get cvDraftSaved => remote.text('cvDraftSaved') ?? _base.cvDraftSaved;
+
+  @override
+  String get cvAchievementDuplicate =>
+      remote.text('cvAchievementDuplicate') ?? _base.cvAchievementDuplicate;
+
+  @override
+  String get cvAchievementAdded =>
+      remote.text('cvAchievementAdded') ?? _base.cvAchievementAdded;
+
+  @override
+  String get cvGenerationCancelled =>
+      remote.text('cvGenerationCancelled') ?? _base.cvGenerationCancelled;
+
+  @override
+  String get cvRetryShort => remote.text('cvRetryShort') ?? _base.cvRetryShort;
+
+  @override
+  String get cvGenerationUnexpectedError =>
+      remote.text('cvGenerationUnexpectedError') ??
+      _base.cvGenerationUnexpectedError;
+
+  @override
+  String get cvGenerationStillRunning =>
+      remote.text('cvGenerationStillRunning') ?? _base.cvGenerationStillRunning;
+
+  @override
+  String get cvEnterTargetJobFirst =>
+      remote.text('cvEnterTargetJobFirst') ?? _base.cvEnterTargetJobFirst;
+
+  @override
+  String get cvEnhanceFieldFailed =>
+      remote.text('cvEnhanceFieldFailed') ?? _base.cvEnhanceFieldFailed;
+
+  @override
+  String get cvFieldEnhanced =>
+      remote.text('cvFieldEnhanced') ?? _base.cvFieldEnhanced;
+
+  @override
+  String get cvUndo => remote.text('cvUndo') ?? _base.cvUndo;
+
+  @override
+  String get cvJobDescriptionTooShort =>
+      remote.text('cvJobDescriptionTooShort') ?? _base.cvJobDescriptionTooShort;
+
+  @override
+  String get cvEnhanceJobDescriptionFailed =>
+      remote.text('cvEnhanceJobDescriptionFailed') ??
+      _base.cvEnhanceJobDescriptionFailed;
+
+  @override
+  String get cvJobDescriptionEnhanced =>
+      remote.text('cvJobDescriptionEnhanced') ?? _base.cvJobDescriptionEnhanced;
+
+  @override
+  String get cvGeneratorEditTitle =>
+      remote.text('cvGeneratorEditTitle') ?? _base.cvGeneratorEditTitle;
+
+  @override
+  String get cvGeneratorCreateTitle =>
+      remote.text('cvGeneratorCreateTitle') ?? _base.cvGeneratorCreateTitle;
+
+  @override
+  String get cvOpenFailed => remote.text('cvOpenFailed') ?? _base.cvOpenFailed;
+
+  @override
+  String get cvNotReadyToSend =>
+      remote.text('cvNotReadyToSend') ?? _base.cvNotReadyToSend;
+
+  @override
+  String get cvOpeningPdf => remote.text('cvOpeningPdf') ?? _base.cvOpeningPdf;
+
+  @override
+  String get cvPdfLinkUnavailable =>
+      remote.text('cvPdfLinkUnavailable') ?? _base.cvPdfLinkUnavailable;
+
+  @override
+  String get cvPdfLinkOpenFailed =>
+      remote.text('cvPdfLinkOpenFailed') ?? _base.cvPdfLinkOpenFailed;
+
+  @override
+  String get cvTemplatesLoadFailed =>
+      remote.text('cvTemplatesLoadFailed') ?? _base.cvTemplatesLoadFailed;
+
+  @override
+  String get cvDeleteTitle =>
+      remote.text('cvDeleteTitle') ?? _base.cvDeleteTitle;
+
+  @override
+  String get cvDeleteBody => remote.text('cvDeleteBody') ?? _base.cvDeleteBody;
+
+  @override
+  String get cvDeleteFailed =>
+      remote.text('cvDeleteFailed') ?? _base.cvDeleteFailed;
+
+  @override
+  String get cvPdfLinkNotFound =>
+      remote.text('cvPdfLinkNotFound') ?? _base.cvPdfLinkNotFound;
+
+  @override
+  String get cvPdfOpenFailed =>
+      remote.text('cvPdfOpenFailed') ?? _base.cvPdfOpenFailed;
+
+  @override
+  String get cvListLoadFailed =>
+      remote.text('cvListLoadFailed') ?? _base.cvListLoadFailed;
+
+  @override
+  String get cvListEmptyTitle =>
+      remote.text('cvListEmptyTitle') ?? _base.cvListEmptyTitle;
+
+  @override
+  String get cvListEmptyBody =>
+      remote.text('cvListEmptyBody') ?? _base.cvListEmptyBody;
+
+  @override
+  String get cvCreateNew => remote.text('cvCreateNew') ?? _base.cvCreateNew;
+
+  @override
+  String get cvUntitled => remote.text('cvUntitled') ?? _base.cvUntitled;
+
+  @override
+  String get cvCardEdit => remote.text('cvCardEdit') ?? _base.cvCardEdit;
+
+  @override
+  String get cvCardDownload =>
+      remote.text('cvCardDownload') ?? _base.cvCardDownload;
+
+  @override
+  String get cvTemplatePickerTitle =>
+      remote.text('cvTemplatePickerTitle') ?? _base.cvTemplatePickerTitle;
+
+  @override
+  String get cvTemplateDefault =>
+      remote.text('cvTemplateDefault') ?? _base.cvTemplateDefault;
+
+  @override
+  String get cvXyzFormula => remote.text('cvXyzFormula') ?? _base.cvXyzFormula;
+
+  @override
+  String get cvXyzPresetsTitle =>
+      remote.text('cvXyzPresetsTitle') ?? _base.cvXyzPresetsTitle;
+
+  @override
+  String get cvXyzPresetTech =>
+      remote.text('cvXyzPresetTech') ?? _base.cvXyzPresetTech;
+
+  @override
+  String get cvXyzPresetSales =>
+      remote.text('cvXyzPresetSales') ?? _base.cvXyzPresetSales;
+
+  @override
+  String get cvXyzPresetProject =>
+      remote.text('cvXyzPresetProject') ?? _base.cvXyzPresetProject;
+
+  @override
+  String get cvXyzActionLabel =>
+      remote.text('cvXyzActionLabel') ?? _base.cvXyzActionLabel;
+
+  @override
+  String get cvXyzActionHint =>
+      remote.text('cvXyzActionHint') ?? _base.cvXyzActionHint;
+
+  @override
+  String get cvXyzMetricLabel =>
+      remote.text('cvXyzMetricLabel') ?? _base.cvXyzMetricLabel;
+
+  @override
+  String get cvXyzMetricHint =>
+      remote.text('cvXyzMetricHint') ?? _base.cvXyzMetricHint;
+
+  @override
+  String get cvXyzMethodLabel =>
+      remote.text('cvXyzMethodLabel') ?? _base.cvXyzMethodLabel;
+
+  @override
+  String get cvXyzMethodHint =>
+      remote.text('cvXyzMethodHint') ?? _base.cvXyzMethodHint;
+
+  @override
+  String get cvXyzPreviewTitle =>
+      remote.text('cvXyzPreviewTitle') ?? _base.cvXyzPreviewTitle;
+
+  @override
+  String get cvXyzInsert => remote.text('cvXyzInsert') ?? _base.cvXyzInsert;
+
+  @override
+  String cvSkillsSelectedCount(int count) =>
+      remote.format(
+        'cvSkillsSelectedCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.cvSkillsSelectedCount(count);
+
+  @override
+  String get cvSkillsClearAll =>
+      remote.text('cvSkillsClearAll') ?? _base.cvSkillsClearAll;
+
+  @override
+  String get cvSkillsEmpty =>
+      remote.text('cvSkillsEmpty') ?? _base.cvSkillsEmpty;
+
+  @override
+  String get cvSkillsInputHint =>
+      remote.text('cvSkillsInputHint') ?? _base.cvSkillsInputHint;
+
+  @override
+  String get cvSkillsSuggested =>
+      remote.text('cvSkillsSuggested') ?? _base.cvSkillsSuggested;
+
+  @override
+  String get cvExportOptionsTitle =>
+      remote.text('cvExportOptionsTitle') ?? _base.cvExportOptionsTitle;
+
+  @override
+  String get cvExportLanguage =>
+      remote.text('cvExportLanguage') ?? _base.cvExportLanguage;
+
+  @override
+  String get cvExportSelectedTemplate =>
+      remote.text('cvExportSelectedTemplate') ?? _base.cvExportSelectedTemplate;
+
+  @override
+  String get cvExportFileName =>
+      remote.text('cvExportFileName') ?? _base.cvExportFileName;
+
+  @override
+  String get cvExportLatinFilename =>
+      remote.text('cvExportLatinFilename') ?? _base.cvExportLatinFilename;
+
+  @override
+  String get cvExportPremiumWatermark =>
+      remote.text('cvExportPremiumWatermark') ?? _base.cvExportPremiumWatermark;
+
+  @override
+  String get cvExportSubscriptionRequired =>
+      remote.text('cvExportSubscriptionRequired') ??
+      _base.cvExportSubscriptionRequired;
+
+  @override
+  String get cvExportUpgrade =>
+      remote.text('cvExportUpgrade') ?? _base.cvExportUpgrade;
+
+  @override
+  String get cvExportPreparing =>
+      remote.text('cvExportPreparing') ?? _base.cvExportPreparing;
+
+  @override
+  String get cvExportDownload =>
+      remote.text('cvExportDownload') ?? _base.cvExportDownload;
+
+  @override
+  String get cvExportSuccess =>
+      remote.text('cvExportSuccess') ?? _base.cvExportSuccess;
+
+  @override
+  String get cvExportSharePdf =>
+      remote.text('cvExportSharePdf') ?? _base.cvExportSharePdf;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -2521,6 +3122,155 @@ class RemoteAppLocalizations extends AppLocalizations {
     'homeJobsTitle': [],
     'homeJobsViewAll': [],
     'homeJobsEmpty': [],
+    'cvDraftAvailable': [],
+    'cvDraftContinueTitle': [],
+    'cvDraftStartFresh': [],
+    'cvDraftRestore': [],
+    'cvDiscardChangesTitle': [],
+    'cvDiscardChangesBody': [],
+    'cvDiscard': [],
+    'cvSaveProgressTitle': [],
+    'cvSaveProgressBody': [],
+    'cvSaveDraft': [],
+    'cvEntryRequired': [],
+    'cvEntryChooseStart': [],
+    'cvEntryChooseEnd': [],
+    'cvEntryEndBeforeStart': [],
+    'cvEntryFrom': [],
+    'cvEntryTo': [],
+    'cvEntryJobTitle': [],
+    'cvEntryJobTitleHint': [],
+    'cvEntryCompany': [],
+    'cvEntryCity': [],
+    'cvEntryWorkCurrent': [],
+    'cvEntryDuties': [],
+    'cvEntryDutiesHint': [],
+    'cvEntryDegree': [],
+    'cvEntryDegreeHint': [],
+    'cvEntryInstitution': [],
+    'cvEntryStudyCurrent': [],
+    'cvEntryEducationDetails': [],
+    'cvEntryCertName': [],
+    'cvEntryCertIssuer': [],
+    'cvEntryCertDate': [],
+    'cvEntriesCompleteHighlighted': [],
+    'cvEntriesAddOne': [],
+    'cvEntriesMoreDetail': [],
+    'cvEntryRemove': [],
+    'cvMonthChoose': [],
+    'cvMonthYearTitle': [],
+    'cvMonthYearDone': [],
+    'cvWizardUpdate': [],
+    'cvWizardGenerate': [],
+    'cvWizardGenerating': [],
+    'cvWizardStepPersonal': [],
+    'cvWizardStepSkills': [],
+    'cvWizardStepExperience': [],
+    'cvWizardStepEducation': [],
+    'cvWizardStepOf': ['int', 'int'],
+    'cvWizardReviewFields': [],
+    'cvEducationStepTitle': [],
+    'cvEducationLabel': [],
+    'cvEducationAdd': [],
+    'cvCertificationsLabel': [],
+    'cvCertificationsAdd': [],
+    'cvExperienceStepTitle': [],
+    'cvExperienceLabel': [],
+    'cvExperienceHelper': [],
+    'cvExperienceXyzBuilder': [],
+    'cvExperienceAdd': [],
+    'cvPersonalStepTitle': [],
+    'cvPersonalFullName': [],
+    'cvPersonalFullNameHint': [],
+    'cvPersonalFullNameRequired': [],
+    'cvPersonalEmailRequired': [],
+    'cvPersonalEmailInvalid': [],
+    'cvPersonalPhone': [],
+    'cvPersonalPhoneRequired': [],
+    'cvPersonalLinkedin': [],
+    'cvPersonalTargetJob': [],
+    'cvPersonalTargetJobHint': [],
+    'cvPersonalTargetJobRequired': [],
+    'cvPersonalJobDescription': [],
+    'cvPersonalCvLanguage': [],
+    'cvPersonalEnhancingJobDescription': [],
+    'cvPersonalJobDescriptionHint': [],
+    'cvEnhance': [],
+    'cvEnhancing': [],
+    'cvPersonalWriteMore': [],
+    'cvSkillsStepTitle': [],
+    'cvSkillsCore': [],
+    'cvSkillsHelper': [],
+    'cvSkillsRequired': [],
+    'cvSummaryLabel': [],
+    'cvSummaryHelper': [],
+    'cvSummaryHint': [],
+    'cvDraftSaved': [],
+    'cvAchievementDuplicate': [],
+    'cvAchievementAdded': [],
+    'cvGenerationCancelled': [],
+    'cvRetryShort': [],
+    'cvGenerationUnexpectedError': [],
+    'cvGenerationStillRunning': [],
+    'cvEnterTargetJobFirst': [],
+    'cvEnhanceFieldFailed': [],
+    'cvFieldEnhanced': [],
+    'cvUndo': [],
+    'cvJobDescriptionTooShort': [],
+    'cvEnhanceJobDescriptionFailed': [],
+    'cvJobDescriptionEnhanced': [],
+    'cvGeneratorEditTitle': [],
+    'cvGeneratorCreateTitle': [],
+    'cvOpenFailed': [],
+    'cvNotReadyToSend': [],
+    'cvOpeningPdf': [],
+    'cvPdfLinkUnavailable': [],
+    'cvPdfLinkOpenFailed': [],
+    'cvTemplatesLoadFailed': [],
+    'cvDeleteTitle': [],
+    'cvDeleteBody': [],
+    'cvDeleteFailed': [],
+    'cvPdfLinkNotFound': [],
+    'cvPdfOpenFailed': [],
+    'cvListLoadFailed': [],
+    'cvListEmptyTitle': [],
+    'cvListEmptyBody': [],
+    'cvCreateNew': [],
+    'cvUntitled': [],
+    'cvCardEdit': [],
+    'cvCardDownload': [],
+    'cvTemplatePickerTitle': [],
+    'cvTemplateDefault': [],
+    'cvXyzFormula': [],
+    'cvXyzPresetsTitle': [],
+    'cvXyzPresetTech': [],
+    'cvXyzPresetSales': [],
+    'cvXyzPresetProject': [],
+    'cvXyzActionLabel': [],
+    'cvXyzActionHint': [],
+    'cvXyzMetricLabel': [],
+    'cvXyzMetricHint': [],
+    'cvXyzMethodLabel': [],
+    'cvXyzMethodHint': [],
+    'cvXyzPreviewTitle': [],
+    'cvXyzInsert': [],
+    'cvSkillsSelectedCount': ['int'],
+    'cvSkillsClearAll': [],
+    'cvSkillsEmpty': [],
+    'cvSkillsInputHint': [],
+    'cvSkillsSuggested': [],
+    'cvExportOptionsTitle': [],
+    'cvExportLanguage': [],
+    'cvExportSelectedTemplate': [],
+    'cvExportFileName': [],
+    'cvExportLatinFilename': [],
+    'cvExportPremiumWatermark': [],
+    'cvExportSubscriptionRequired': [],
+    'cvExportUpgrade': [],
+    'cvExportPreparing': [],
+    'cvExportDownload': [],
+    'cvExportSuccess': [],
+    'cvExportSharePdf': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -3005,6 +3755,156 @@ class RemoteAppLocalizations extends AppLocalizations {
         'homeJobsTitle' => l.homeJobsTitle,
         'homeJobsViewAll' => l.homeJobsViewAll,
         'homeJobsEmpty' => l.homeJobsEmpty,
+        'cvDraftAvailable' => l.cvDraftAvailable,
+        'cvDraftContinueTitle' => l.cvDraftContinueTitle,
+        'cvDraftStartFresh' => l.cvDraftStartFresh,
+        'cvDraftRestore' => l.cvDraftRestore,
+        'cvDiscardChangesTitle' => l.cvDiscardChangesTitle,
+        'cvDiscardChangesBody' => l.cvDiscardChangesBody,
+        'cvDiscard' => l.cvDiscard,
+        'cvSaveProgressTitle' => l.cvSaveProgressTitle,
+        'cvSaveProgressBody' => l.cvSaveProgressBody,
+        'cvSaveDraft' => l.cvSaveDraft,
+        'cvEntryRequired' => l.cvEntryRequired,
+        'cvEntryChooseStart' => l.cvEntryChooseStart,
+        'cvEntryChooseEnd' => l.cvEntryChooseEnd,
+        'cvEntryEndBeforeStart' => l.cvEntryEndBeforeStart,
+        'cvEntryFrom' => l.cvEntryFrom,
+        'cvEntryTo' => l.cvEntryTo,
+        'cvEntryJobTitle' => l.cvEntryJobTitle,
+        'cvEntryJobTitleHint' => l.cvEntryJobTitleHint,
+        'cvEntryCompany' => l.cvEntryCompany,
+        'cvEntryCity' => l.cvEntryCity,
+        'cvEntryWorkCurrent' => l.cvEntryWorkCurrent,
+        'cvEntryDuties' => l.cvEntryDuties,
+        'cvEntryDutiesHint' => l.cvEntryDutiesHint,
+        'cvEntryDegree' => l.cvEntryDegree,
+        'cvEntryDegreeHint' => l.cvEntryDegreeHint,
+        'cvEntryInstitution' => l.cvEntryInstitution,
+        'cvEntryStudyCurrent' => l.cvEntryStudyCurrent,
+        'cvEntryEducationDetails' => l.cvEntryEducationDetails,
+        'cvEntryCertName' => l.cvEntryCertName,
+        'cvEntryCertIssuer' => l.cvEntryCertIssuer,
+        'cvEntryCertDate' => l.cvEntryCertDate,
+        'cvEntriesCompleteHighlighted' => l.cvEntriesCompleteHighlighted,
+        'cvEntriesAddOne' => l.cvEntriesAddOne,
+        'cvEntriesMoreDetail' => l.cvEntriesMoreDetail,
+        'cvEntryRemove' => l.cvEntryRemove,
+        'cvMonthChoose' => l.cvMonthChoose,
+        'cvMonthYearTitle' => l.cvMonthYearTitle,
+        'cvMonthYearDone' => l.cvMonthYearDone,
+        'cvWizardUpdate' => l.cvWizardUpdate,
+        'cvWizardGenerate' => l.cvWizardGenerate,
+        'cvWizardGenerating' => l.cvWizardGenerating,
+        'cvWizardStepPersonal' => l.cvWizardStepPersonal,
+        'cvWizardStepSkills' => l.cvWizardStepSkills,
+        'cvWizardStepExperience' => l.cvWizardStepExperience,
+        'cvWizardStepEducation' => l.cvWizardStepEducation,
+        'cvWizardStepOf' => l.cvWizardStepOf(a[0] as int, a[1] as int),
+        'cvWizardReviewFields' => l.cvWizardReviewFields,
+        'cvEducationStepTitle' => l.cvEducationStepTitle,
+        'cvEducationLabel' => l.cvEducationLabel,
+        'cvEducationAdd' => l.cvEducationAdd,
+        'cvCertificationsLabel' => l.cvCertificationsLabel,
+        'cvCertificationsAdd' => l.cvCertificationsAdd,
+        'cvExperienceStepTitle' => l.cvExperienceStepTitle,
+        'cvExperienceLabel' => l.cvExperienceLabel,
+        'cvExperienceHelper' => l.cvExperienceHelper,
+        'cvExperienceXyzBuilder' => l.cvExperienceXyzBuilder,
+        'cvExperienceAdd' => l.cvExperienceAdd,
+        'cvPersonalStepTitle' => l.cvPersonalStepTitle,
+        'cvPersonalFullName' => l.cvPersonalFullName,
+        'cvPersonalFullNameHint' => l.cvPersonalFullNameHint,
+        'cvPersonalFullNameRequired' => l.cvPersonalFullNameRequired,
+        'cvPersonalEmailRequired' => l.cvPersonalEmailRequired,
+        'cvPersonalEmailInvalid' => l.cvPersonalEmailInvalid,
+        'cvPersonalPhone' => l.cvPersonalPhone,
+        'cvPersonalPhoneRequired' => l.cvPersonalPhoneRequired,
+        'cvPersonalLinkedin' => l.cvPersonalLinkedin,
+        'cvPersonalTargetJob' => l.cvPersonalTargetJob,
+        'cvPersonalTargetJobHint' => l.cvPersonalTargetJobHint,
+        'cvPersonalTargetJobRequired' => l.cvPersonalTargetJobRequired,
+        'cvPersonalJobDescription' => l.cvPersonalJobDescription,
+        'cvPersonalCvLanguage' => l.cvPersonalCvLanguage,
+        'cvPersonalEnhancingJobDescription' =>
+          l.cvPersonalEnhancingJobDescription,
+        'cvPersonalJobDescriptionHint' => l.cvPersonalJobDescriptionHint,
+        'cvEnhance' => l.cvEnhance,
+        'cvEnhancing' => l.cvEnhancing,
+        'cvPersonalWriteMore' => l.cvPersonalWriteMore,
+        'cvSkillsStepTitle' => l.cvSkillsStepTitle,
+        'cvSkillsCore' => l.cvSkillsCore,
+        'cvSkillsHelper' => l.cvSkillsHelper,
+        'cvSkillsRequired' => l.cvSkillsRequired,
+        'cvSummaryLabel' => l.cvSummaryLabel,
+        'cvSummaryHelper' => l.cvSummaryHelper,
+        'cvSummaryHint' => l.cvSummaryHint,
+        'cvDraftSaved' => l.cvDraftSaved,
+        'cvAchievementDuplicate' => l.cvAchievementDuplicate,
+        'cvAchievementAdded' => l.cvAchievementAdded,
+        'cvGenerationCancelled' => l.cvGenerationCancelled,
+        'cvRetryShort' => l.cvRetryShort,
+        'cvGenerationUnexpectedError' => l.cvGenerationUnexpectedError,
+        'cvGenerationStillRunning' => l.cvGenerationStillRunning,
+        'cvEnterTargetJobFirst' => l.cvEnterTargetJobFirst,
+        'cvEnhanceFieldFailed' => l.cvEnhanceFieldFailed,
+        'cvFieldEnhanced' => l.cvFieldEnhanced,
+        'cvUndo' => l.cvUndo,
+        'cvJobDescriptionTooShort' => l.cvJobDescriptionTooShort,
+        'cvEnhanceJobDescriptionFailed' => l.cvEnhanceJobDescriptionFailed,
+        'cvJobDescriptionEnhanced' => l.cvJobDescriptionEnhanced,
+        'cvGeneratorEditTitle' => l.cvGeneratorEditTitle,
+        'cvGeneratorCreateTitle' => l.cvGeneratorCreateTitle,
+        'cvOpenFailed' => l.cvOpenFailed,
+        'cvNotReadyToSend' => l.cvNotReadyToSend,
+        'cvOpeningPdf' => l.cvOpeningPdf,
+        'cvPdfLinkUnavailable' => l.cvPdfLinkUnavailable,
+        'cvPdfLinkOpenFailed' => l.cvPdfLinkOpenFailed,
+        'cvTemplatesLoadFailed' => l.cvTemplatesLoadFailed,
+        'cvDeleteTitle' => l.cvDeleteTitle,
+        'cvDeleteBody' => l.cvDeleteBody,
+        'cvDeleteFailed' => l.cvDeleteFailed,
+        'cvPdfLinkNotFound' => l.cvPdfLinkNotFound,
+        'cvPdfOpenFailed' => l.cvPdfOpenFailed,
+        'cvListLoadFailed' => l.cvListLoadFailed,
+        'cvListEmptyTitle' => l.cvListEmptyTitle,
+        'cvListEmptyBody' => l.cvListEmptyBody,
+        'cvCreateNew' => l.cvCreateNew,
+        'cvUntitled' => l.cvUntitled,
+        'cvCardEdit' => l.cvCardEdit,
+        'cvCardDownload' => l.cvCardDownload,
+        'cvTemplatePickerTitle' => l.cvTemplatePickerTitle,
+        'cvTemplateDefault' => l.cvTemplateDefault,
+        'cvXyzFormula' => l.cvXyzFormula,
+        'cvXyzPresetsTitle' => l.cvXyzPresetsTitle,
+        'cvXyzPresetTech' => l.cvXyzPresetTech,
+        'cvXyzPresetSales' => l.cvXyzPresetSales,
+        'cvXyzPresetProject' => l.cvXyzPresetProject,
+        'cvXyzActionLabel' => l.cvXyzActionLabel,
+        'cvXyzActionHint' => l.cvXyzActionHint,
+        'cvXyzMetricLabel' => l.cvXyzMetricLabel,
+        'cvXyzMetricHint' => l.cvXyzMetricHint,
+        'cvXyzMethodLabel' => l.cvXyzMethodLabel,
+        'cvXyzMethodHint' => l.cvXyzMethodHint,
+        'cvXyzPreviewTitle' => l.cvXyzPreviewTitle,
+        'cvXyzInsert' => l.cvXyzInsert,
+        'cvSkillsSelectedCount' => l.cvSkillsSelectedCount(a[0] as int),
+        'cvSkillsClearAll' => l.cvSkillsClearAll,
+        'cvSkillsEmpty' => l.cvSkillsEmpty,
+        'cvSkillsInputHint' => l.cvSkillsInputHint,
+        'cvSkillsSuggested' => l.cvSkillsSuggested,
+        'cvExportOptionsTitle' => l.cvExportOptionsTitle,
+        'cvExportLanguage' => l.cvExportLanguage,
+        'cvExportSelectedTemplate' => l.cvExportSelectedTemplate,
+        'cvExportFileName' => l.cvExportFileName,
+        'cvExportLatinFilename' => l.cvExportLatinFilename,
+        'cvExportPremiumWatermark' => l.cvExportPremiumWatermark,
+        'cvExportSubscriptionRequired' => l.cvExportSubscriptionRequired,
+        'cvExportUpgrade' => l.cvExportUpgrade,
+        'cvExportPreparing' => l.cvExportPreparing,
+        'cvExportDownload' => l.cvExportDownload,
+        'cvExportSuccess' => l.cvExportSuccess,
+        'cvExportSharePdf' => l.cvExportSharePdf,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

@@ -4,6 +4,7 @@ import 'package:sirati/features/cv_builder/domain/cv_form_data.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator/entry_cards.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator/entry_list_field.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_widgets.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ai_cv_field.dart';
 
@@ -32,20 +33,18 @@ class ExperienceStep extends StatelessWidget {
 
     return WizardStepForm(
       props: props,
-      title: english ? 'Work Experience' : 'الخبرات العملية',
+      title: AppLocalizations.of(context).cvExperienceStepTitle,
       icon: Icons.work_rounded,
       children: [
         FieldGroup(
-          label: english ? 'Experience *' : 'الخبرة العملية *',
+          label: AppLocalizations.of(context).cvExperienceLabel,
           child: AiCvField(
             field: 'experience',
             controller: props.fields.experience,
             english: english,
             isLoading: enhancing,
             minimumCharacters: CvFormData.minExperienceChars,
-            helperText: english
-                ? 'Add each job separately, newest first.'
-                : 'أضف كل وظيفة على حدة، الأحدث أولاً.',
+            helperText: AppLocalizations.of(context).cvExperienceHelper,
             result: props.fieldResults['experience'],
             onEnhance: () => props.onEnhance('experience'),
             onDismissResult: () => props.onDismissResult('experience'),
@@ -68,9 +67,7 @@ class ExperienceStep extends StatelessWidget {
                     onPressed: enhancing ? null : onOpenAchievementBuilder,
                     icon: const Icon(Icons.auto_awesome_rounded, size: 18),
                     label: Text(
-                      english
-                          ? 'XYZ Achievement Builder'
-                          : 'صانع الإنجازات المقاسة (معادلة XYZ)',
+                      AppLocalizations.of(context).cvExperienceXyzBuilder,
                       style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 13),
                     ),
@@ -82,12 +79,13 @@ class ExperienceStep extends StatelessWidget {
                   english: english,
                   autovalidateMode: props.autovalidateMode,
                   parse: parseExperience,
-                  serialize: (entries) => serializeExperience(entries, language),
+                  serialize: (entries) =>
+                      serializeExperience(entries, language),
                   problems: experienceProblems,
                   blank: const ExperienceEntry(),
                   isBlank: (e) => e.isBlank,
                   minimumCharacters: CvFormData.minExperienceChars,
-                  addLabel: english ? 'Add another job' : 'إضافة خبرة أخرى',
+                  addLabel: AppLocalizations.of(context).cvExperienceAdd,
                   cardBuilder: (context, entry, onChanged, problems) =>
                       experienceCard(context, entry, onChanged, problems,
                           english: english),
