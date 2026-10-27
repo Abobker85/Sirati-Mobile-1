@@ -2053,6 +2053,696 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get homeJobsEmpty =>
       remote.text('homeJobsEmpty') ?? _base.homeJobsEmpty;
 
+  @override
+  String get settingsOnboardingWelcomeBody =>
+      remote.text('settingsOnboardingWelcomeBody') ??
+      _base.settingsOnboardingWelcomeBody;
+
+  @override
+  String get settingsOnboardingAtsTitle =>
+      remote.text('settingsOnboardingAtsTitle') ??
+      _base.settingsOnboardingAtsTitle;
+
+  @override
+  String get settingsOnboardingAtsBody =>
+      remote.text('settingsOnboardingAtsBody') ??
+      _base.settingsOnboardingAtsBody;
+
+  @override
+  String get settingsOnboardingAiTitle =>
+      remote.text('settingsOnboardingAiTitle') ??
+      _base.settingsOnboardingAiTitle;
+
+  @override
+  String get settingsOnboardingAiBody =>
+      remote.text('settingsOnboardingAiBody') ?? _base.settingsOnboardingAiBody;
+
+  @override
+  String get settingsOnboardingPrevious =>
+      remote.text('settingsOnboardingPrevious') ??
+      _base.settingsOnboardingPrevious;
+
+  @override
+  String get settingsOnboardingSkip =>
+      remote.text('settingsOnboardingSkip') ?? _base.settingsOnboardingSkip;
+
+  @override
+  String settingsOnboardingPageOf(int page, int count) =>
+      remote.format(
+        'settingsOnboardingPageOf',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'page': page, 'count': count},
+        ),
+      ) ??
+      _base.settingsOnboardingPageOf(page, count);
+
+  @override
+  String authFieldTooLong(int max) =>
+      remote.format(
+        'authFieldTooLong',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'max': max},
+        ),
+      ) ??
+      _base.authFieldTooLong(max);
+
+  @override
+  String authPasswordTooShort(int min) =>
+      remote.format(
+        'authPasswordTooShort',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'min': min},
+        ),
+      ) ??
+      _base.authPasswordTooShort(min);
+
+  @override
+  String get authEmailInvalid =>
+      remote.text('authEmailInvalid') ?? _base.authEmailInvalid;
+
+  @override
+  String get authPhoneInvalid =>
+      remote.text('authPhoneInvalid') ?? _base.authPhoneInvalid;
+
+  @override
+  String get authRegisterHeroTitle =>
+      remote.text('authRegisterHeroTitle') ?? _base.authRegisterHeroTitle;
+
+  @override
+  String get authRegisterHeroSubtitle =>
+      remote.text('authRegisterHeroSubtitle') ?? _base.authRegisterHeroSubtitle;
+
+  @override
+  String get authTermsAgreePrefix =>
+      remote.text('authTermsAgreePrefix') ?? _base.authTermsAgreePrefix;
+
+  @override
+  String get authTermsLink =>
+      remote.text('authTermsLink') ?? _base.authTermsLink;
+
+  @override
+  String get authHaveAccount =>
+      remote.text('authHaveAccount') ?? _base.authHaveAccount;
+
+  @override
+  String get authAgreeTermsRequired =>
+      remote.text('authAgreeTermsRequired') ?? _base.authAgreeTermsRequired;
+
+  @override
+  String get authRetry => remote.text('authRetry') ?? _base.authRetry;
+
+  @override
+  String get authRegisterUnexpectedError =>
+      remote.text('authRegisterUnexpectedError') ??
+      _base.authRegisterUnexpectedError;
+
+  @override
+  String get authLooksGood =>
+      remote.text('authLooksGood') ?? _base.authLooksGood;
+
+  @override
+  String get authJobTitleOtherRequired =>
+      remote.text('authJobTitleOtherRequired') ??
+      _base.authJobTitleOtherRequired;
+
+  @override
+  String get authFixHighlightedFields =>
+      remote.text('authFixHighlightedFields') ?? _base.authFixHighlightedFields;
+
+  @override
+  String get authFullNameLabel =>
+      remote.text('authFullNameLabel') ?? _base.authFullNameLabel;
+
+  @override
+  String get authFullNameHint =>
+      remote.text('authFullNameHint') ?? _base.authFullNameHint;
+
+  @override
+  String get authNameRequired =>
+      remote.text('authNameRequired') ?? _base.authNameRequired;
+
+  @override
+  String get authEmailAddressLabel =>
+      remote.text('authEmailAddressLabel') ?? _base.authEmailAddressLabel;
+
+  @override
+  String get authEmailRequired =>
+      remote.text('authEmailRequired') ?? _base.authEmailRequired;
+
+  @override
+  String get authPhoneLabel =>
+      remote.text('authPhoneLabel') ?? _base.authPhoneLabel;
+
+  @override
+  String get authPhoneRequired =>
+      remote.text('authPhoneRequired') ?? _base.authPhoneRequired;
+
+  @override
+  String get authLocationLabel =>
+      remote.text('authLocationLabel') ?? _base.authLocationLabel;
+
+  @override
+  String get authLocationHint =>
+      remote.text('authLocationHint') ?? _base.authLocationHint;
+
+  @override
+  String get authLocationRequired =>
+      remote.text('authLocationRequired') ?? _base.authLocationRequired;
+
+  @override
+  String get authJobTitleOptionalLabel =>
+      remote.text('authJobTitleOptionalLabel') ??
+      _base.authJobTitleOptionalLabel;
+
+  @override
+  String get authJobTitleOtherLabel =>
+      remote.text('authJobTitleOtherLabel') ?? _base.authJobTitleOtherLabel;
+
+  @override
+  String get authJobTitleOtherHint =>
+      remote.text('authJobTitleOtherHint') ?? _base.authJobTitleOtherHint;
+
+  @override
+  String get authPasswordLabel =>
+      remote.text('authPasswordLabel') ?? _base.authPasswordLabel;
+
+  @override
+  String get authPasswordRequired =>
+      remote.text('authPasswordRequired') ?? _base.authPasswordRequired;
+
+  @override
+  String get authCreateAccountButton =>
+      remote.text('authCreateAccountButton') ?? _base.authCreateAccountButton;
+
+  @override
+  String get authCreatingAccount =>
+      remote.text('authCreatingAccount') ?? _base.authCreatingAccount;
+
+  @override
+  String get authContinueWithoutAccount =>
+      remote.text('authContinueWithoutAccount') ??
+      _base.authContinueWithoutAccount;
+
+  @override
+  String get authSessionExpired =>
+      remote.text('authSessionExpired') ?? _base.authSessionExpired;
+
+  @override
+  String get authLoginUnexpectedError =>
+      remote.text('authLoginUnexpectedError') ?? _base.authLoginUnexpectedError;
+
+  @override
+  String authSocialSignInSoon(String provider) =>
+      remote.format(
+        'authSocialSignInSoon',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'provider': provider},
+        ),
+      ) ??
+      _base.authSocialSignInSoon(provider);
+
+  @override
+  String get authLoginSubtitle =>
+      remote.text('authLoginSubtitle') ?? _base.authLoginSubtitle;
+
+  @override
+  String get authForgotPasswordLink =>
+      remote.text('authForgotPasswordLink') ?? _base.authForgotPasswordLink;
+
+  @override
+  String get authSignInButton =>
+      remote.text('authSignInButton') ?? _base.authSignInButton;
+
+  @override
+  String get authSigningIn =>
+      remote.text('authSigningIn') ?? _base.authSigningIn;
+
+  @override
+  String get authOrContinueWith =>
+      remote.text('authOrContinueWith') ?? _base.authOrContinueWith;
+
+  @override
+  String get authNoAccount =>
+      remote.text('authNoAccount') ?? _base.authNoAccount;
+
+  @override
+  String get authCreateAccountLink =>
+      remote.text('authCreateAccountLink') ?? _base.authCreateAccountLink;
+
+  @override
+  String get authForgotEmailInvalidNotice =>
+      remote.text('authForgotEmailInvalidNotice') ??
+      _base.authForgotEmailInvalidNotice;
+
+  @override
+  String get authForgotSendFailed =>
+      remote.text('authForgotSendFailed') ?? _base.authForgotSendFailed;
+
+  @override
+  String get authForgotResetFailed =>
+      remote.text('authForgotResetFailed') ?? _base.authForgotResetFailed;
+
+  @override
+  String get authForgotTitle =>
+      remote.text('authForgotTitle') ?? _base.authForgotTitle;
+
+  @override
+  String get authForgotCodeIntro =>
+      remote.text('authForgotCodeIntro') ?? _base.authForgotCodeIntro;
+
+  @override
+  String get authForgotEmailIntro =>
+      remote.text('authForgotEmailIntro') ?? _base.authForgotEmailIntro;
+
+  @override
+  String get authForgotEmailInvalid =>
+      remote.text('authForgotEmailInvalid') ?? _base.authForgotEmailInvalid;
+
+  @override
+  String get authForgotSendCode =>
+      remote.text('authForgotSendCode') ?? _base.authForgotSendCode;
+
+  @override
+  String get authSending => remote.text('authSending') ?? _base.authSending;
+
+  @override
+  String get authVerificationCodeLabel =>
+      remote.text('authVerificationCodeLabel') ??
+      _base.authVerificationCodeLabel;
+
+  @override
+  String get authCodeRequired =>
+      remote.text('authCodeRequired') ?? _base.authCodeRequired;
+
+  @override
+  String get authNewPasswordLabel =>
+      remote.text('authNewPasswordLabel') ?? _base.authNewPasswordLabel;
+
+  @override
+  String get authForgotNewPasswordRequired =>
+      remote.text('authForgotNewPasswordRequired') ??
+      _base.authForgotNewPasswordRequired;
+
+  @override
+  String get authForgotConfirmPasswordLabel =>
+      remote.text('authForgotConfirmPasswordLabel') ??
+      _base.authForgotConfirmPasswordLabel;
+
+  @override
+  String get authForgotConfirmPasswordRequired =>
+      remote.text('authForgotConfirmPasswordRequired') ??
+      _base.authForgotConfirmPasswordRequired;
+
+  @override
+  String get authPasswordsDoNotMatch =>
+      remote.text('authPasswordsDoNotMatch') ?? _base.authPasswordsDoNotMatch;
+
+  @override
+  String get authForgotResetButton =>
+      remote.text('authForgotResetButton') ?? _base.authForgotResetButton;
+
+  @override
+  String get authSaving => remote.text('authSaving') ?? _base.authSaving;
+
+  @override
+  String authResendCodeIn(int seconds) =>
+      remote.format(
+        'authResendCodeIn',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'seconds': seconds},
+        ),
+      ) ??
+      _base.authResendCodeIn(seconds);
+
+  @override
+  String get authResendCode =>
+      remote.text('authResendCode') ?? _base.authResendCode;
+
+  @override
+  String get authForgotUseDifferentEmail =>
+      remote.text('authForgotUseDifferentEmail') ??
+      _base.authForgotUseDifferentEmail;
+
+  @override
+  String get authVerifySuccess =>
+      remote.text('authVerifySuccess') ?? _base.authVerifySuccess;
+
+  @override
+  String get authVerifyUnexpectedError =>
+      remote.text('authVerifyUnexpectedError') ??
+      _base.authVerifyUnexpectedError;
+
+  @override
+  String get authVerifyResendFailed =>
+      remote.text('authVerifyResendFailed') ?? _base.authVerifyResendFailed;
+
+  @override
+  String get authVerifyBackToSignIn =>
+      remote.text('authVerifyBackToSignIn') ?? _base.authVerifyBackToSignIn;
+
+  @override
+  String get authVerifyTitle =>
+      remote.text('authVerifyTitle') ?? _base.authVerifyTitle;
+
+  @override
+  String get authVerifyCodeSentTo =>
+      remote.text('authVerifyCodeSentTo') ?? _base.authVerifyCodeSentTo;
+
+  @override
+  String get authVerifyButton =>
+      remote.text('authVerifyButton') ?? _base.authVerifyButton;
+
+  @override
+  String get authVerifying =>
+      remote.text('authVerifying') ?? _base.authVerifying;
+
+  @override
+  String get authVerifyCheckSpam =>
+      remote.text('authVerifyCheckSpam') ?? _base.authVerifyCheckSpam;
+
+  @override
+  String get settingsPrivacyTitle =>
+      remote.text('settingsPrivacyTitle') ?? _base.settingsPrivacyTitle;
+
+  @override
+  String get settingsPrivacyCollectTitle =>
+      remote.text('settingsPrivacyCollectTitle') ??
+      _base.settingsPrivacyCollectTitle;
+
+  @override
+  String get settingsPrivacyCollectBody =>
+      remote.text('settingsPrivacyCollectBody') ??
+      _base.settingsPrivacyCollectBody;
+
+  @override
+  String get settingsPrivacyUseTitle =>
+      remote.text('settingsPrivacyUseTitle') ?? _base.settingsPrivacyUseTitle;
+
+  @override
+  String get settingsPrivacyUseBody =>
+      remote.text('settingsPrivacyUseBody') ?? _base.settingsPrivacyUseBody;
+
+  @override
+  String get settingsPrivacyProcessorsTitle =>
+      remote.text('settingsPrivacyProcessorsTitle') ??
+      _base.settingsPrivacyProcessorsTitle;
+
+  @override
+  String get settingsPrivacyProcessorsBody =>
+      remote.text('settingsPrivacyProcessorsBody') ??
+      _base.settingsPrivacyProcessorsBody;
+
+  @override
+  String get settingsPrivacyRetentionTitle =>
+      remote.text('settingsPrivacyRetentionTitle') ??
+      _base.settingsPrivacyRetentionTitle;
+
+  @override
+  String get settingsPrivacyRetentionBody =>
+      remote.text('settingsPrivacyRetentionBody') ??
+      _base.settingsPrivacyRetentionBody;
+
+  @override
+  String get settingsPrivacyContactTitle =>
+      remote.text('settingsPrivacyContactTitle') ??
+      _base.settingsPrivacyContactTitle;
+
+  @override
+  String settingsPrivacyContactBody(String email) =>
+      remote.format(
+        'settingsPrivacyContactBody',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'email': email},
+        ),
+      ) ??
+      _base.settingsPrivacyContactBody(email);
+
+  @override
+  String get settingsNotificationsUpdateFailed =>
+      remote.text('settingsNotificationsUpdateFailed') ??
+      _base.settingsNotificationsUpdateFailed;
+
+  @override
+  String get settingsNotificationsTitle =>
+      remote.text('settingsNotificationsTitle') ??
+      _base.settingsNotificationsTitle;
+
+  @override
+  String get settingsNotificationsReadAll =>
+      remote.text('settingsNotificationsReadAll') ??
+      _base.settingsNotificationsReadAll;
+
+  @override
+  String get settingsNotificationsLoadFailed =>
+      remote.text('settingsNotificationsLoadFailed') ??
+      _base.settingsNotificationsLoadFailed;
+
+  @override
+  String get settingsNotificationsEmptyTitle =>
+      remote.text('settingsNotificationsEmptyTitle') ??
+      _base.settingsNotificationsEmptyTitle;
+
+  @override
+  String get settingsNotificationsEmptyBody =>
+      remote.text('settingsNotificationsEmptyBody') ??
+      _base.settingsNotificationsEmptyBody;
+
+  @override
+  String get settingsNotificationsUnread =>
+      remote.text('settingsNotificationsUnread') ??
+      _base.settingsNotificationsUnread;
+
+  @override
+  String get settingsCleanupFailed =>
+      remote.text('settingsCleanupFailed') ?? _base.settingsCleanupFailed;
+
+  @override
+  String get settingsCleanupMessage =>
+      remote.text('settingsCleanupMessage') ?? _base.settingsCleanupMessage;
+
+  @override
+  String get settingsCleanupRetry =>
+      remote.text('settingsCleanupRetry') ?? _base.settingsCleanupRetry;
+
+  @override
+  String get settingsCleanupClearing =>
+      remote.text('settingsCleanupClearing') ?? _base.settingsCleanupClearing;
+
+  @override
+  String get settingsPasswordChanged =>
+      remote.text('settingsPasswordChanged') ?? _base.settingsPasswordChanged;
+
+  @override
+  String get settingsCurrentPasswordIncorrect =>
+      remote.text('settingsCurrentPasswordIncorrect') ??
+      _base.settingsCurrentPasswordIncorrect;
+
+  @override
+  String get settingsPasswordChangeFailed =>
+      remote.text('settingsPasswordChangeFailed') ??
+      _base.settingsPasswordChangeFailed;
+
+  @override
+  String get settingsCurrentPasswordLabel =>
+      remote.text('settingsCurrentPasswordLabel') ??
+      _base.settingsCurrentPasswordLabel;
+
+  @override
+  String get settingsCurrentPasswordRequired =>
+      remote.text('settingsCurrentPasswordRequired') ??
+      _base.settingsCurrentPasswordRequired;
+
+  @override
+  String get settingsNewPasswordRequired =>
+      remote.text('settingsNewPasswordRequired') ??
+      _base.settingsNewPasswordRequired;
+
+  @override
+  String get settingsNewPasswordSameAsCurrent =>
+      remote.text('settingsNewPasswordSameAsCurrent') ??
+      _base.settingsNewPasswordSameAsCurrent;
+
+  @override
+  String get settingsConfirmNewPasswordLabel =>
+      remote.text('settingsConfirmNewPasswordLabel') ??
+      _base.settingsConfirmNewPasswordLabel;
+
+  @override
+  String get settingsConfirmNewPasswordRequired =>
+      remote.text('settingsConfirmNewPasswordRequired') ??
+      _base.settingsConfirmNewPasswordRequired;
+
+  @override
+  String get settingsUpdatePassword =>
+      remote.text('settingsUpdatePassword') ?? _base.settingsUpdatePassword;
+
+  @override
+  String get settingsUpdatingPassword =>
+      remote.text('settingsUpdatingPassword') ?? _base.settingsUpdatingPassword;
+
+  @override
+  String get settingsDeleteConfirmTitle =>
+      remote.text('settingsDeleteConfirmTitle') ??
+      _base.settingsDeleteConfirmTitle;
+
+  @override
+  String get settingsDeleteConfirmBody =>
+      remote.text('settingsDeleteConfirmBody') ??
+      _base.settingsDeleteConfirmBody;
+
+  @override
+  String get settingsDeleteForever =>
+      remote.text('settingsDeleteForever') ?? _base.settingsDeleteForever;
+
+  @override
+  String get settingsAccountDeleted =>
+      remote.text('settingsAccountDeleted') ?? _base.settingsAccountDeleted;
+
+  @override
+  String get settingsDeletePasswordIncorrect =>
+      remote.text('settingsDeletePasswordIncorrect') ??
+      _base.settingsDeletePasswordIncorrect;
+
+  @override
+  String get settingsDeleteFailed =>
+      remote.text('settingsDeleteFailed') ?? _base.settingsDeleteFailed;
+
+  @override
+  String get settingsDeleteWarning =>
+      remote.text('settingsDeleteWarning') ?? _base.settingsDeleteWarning;
+
+  @override
+  String get settingsDeleteConfirmWithPassword =>
+      remote.text('settingsDeleteConfirmWithPassword') ??
+      _base.settingsDeleteConfirmWithPassword;
+
+  @override
+  String get settingsDeletePasswordRequired =>
+      remote.text('settingsDeletePasswordRequired') ??
+      _base.settingsDeletePasswordRequired;
+
+  @override
+  String get settingsDeleteMyAccount =>
+      remote.text('settingsDeleteMyAccount') ?? _base.settingsDeleteMyAccount;
+
+  @override
+  String get settingsDeleting =>
+      remote.text('settingsDeleting') ?? _base.settingsDeleting;
+
+  @override
+  String get settingsAvatarCropTitle =>
+      remote.text('settingsAvatarCropTitle') ?? _base.settingsAvatarCropTitle;
+
+  @override
+  String get settingsAvatarOpenFailed =>
+      remote.text('settingsAvatarOpenFailed') ?? _base.settingsAvatarOpenFailed;
+
+  @override
+  String get settingsAvatarUsePhoto =>
+      remote.text('settingsAvatarUsePhoto') ?? _base.settingsAvatarUsePhoto;
+
+  @override
+  String get settingsPhotoGallery =>
+      remote.text('settingsPhotoGallery') ?? _base.settingsPhotoGallery;
+
+  @override
+  String get settingsPhotoCamera =>
+      remote.text('settingsPhotoCamera') ?? _base.settingsPhotoCamera;
+
+  @override
+  String get settingsPhotoRemove =>
+      remote.text('settingsPhotoRemove') ?? _base.settingsPhotoRemove;
+
+  @override
+  String get settingsPhotoRemoved =>
+      remote.text('settingsPhotoRemoved') ?? _base.settingsPhotoRemoved;
+
+  @override
+  String get settingsPhotoUpdated =>
+      remote.text('settingsPhotoUpdated') ?? _base.settingsPhotoUpdated;
+
+  @override
+  String get settingsPhotoUpdateFailed =>
+      remote.text('settingsPhotoUpdateFailed') ??
+      _base.settingsPhotoUpdateFailed;
+
+  @override
+  String get settingsPhotoChange =>
+      remote.text('settingsPhotoChange') ?? _base.settingsPhotoChange;
+
+  @override
+  String get settingsPhotoHint =>
+      remote.text('settingsPhotoHint') ?? _base.settingsPhotoHint;
+
+  @override
+  String get settingsProfileUpdated =>
+      remote.text('settingsProfileUpdated') ?? _base.settingsProfileUpdated;
+
+  @override
+  String get settingsProfileUpdateFailed =>
+      remote.text('settingsProfileUpdateFailed') ??
+      _base.settingsProfileUpdateFailed;
+
+  @override
+  String get settingsProfileLoadFailed =>
+      remote.text('settingsProfileLoadFailed') ??
+      _base.settingsProfileLoadFailed;
+
+  @override
+  String get settingsProfileFullNameLabel =>
+      remote.text('settingsProfileFullNameLabel') ??
+      _base.settingsProfileFullNameLabel;
+
+  @override
+  String get settingsProfileNameHint =>
+      remote.text('settingsProfileNameHint') ?? _base.settingsProfileNameHint;
+
+  @override
+  String get settingsProfileNameRequired =>
+      remote.text('settingsProfileNameRequired') ??
+      _base.settingsProfileNameRequired;
+
+  @override
+  String get settingsProfileJobTitleLabel =>
+      remote.text('settingsProfileJobTitleLabel') ??
+      _base.settingsProfileJobTitleLabel;
+
+  @override
+  String get settingsProfileJobTitlesLoadFailed =>
+      remote.text('settingsProfileJobTitlesLoadFailed') ??
+      _base.settingsProfileJobTitlesLoadFailed;
+
+  @override
+  String get settingsProfileEmailReadOnly =>
+      remote.text('settingsProfileEmailReadOnly') ??
+      _base.settingsProfileEmailReadOnly;
+
+  @override
+  String get settingsProfilePhoneLabel =>
+      remote.text('settingsProfilePhoneLabel') ??
+      _base.settingsProfilePhoneLabel;
+
+  @override
+  String get settingsProfileSaveChanges =>
+      remote.text('settingsProfileSaveChanges') ??
+      _base.settingsProfileSaveChanges;
+
+  @override
+  String get settingsProfileTitle =>
+      remote.text('settingsProfileTitle') ?? _base.settingsProfileTitle;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -2521,6 +3211,154 @@ class RemoteAppLocalizations extends AppLocalizations {
     'homeJobsTitle': [],
     'homeJobsViewAll': [],
     'homeJobsEmpty': [],
+    'settingsOnboardingWelcomeBody': [],
+    'settingsOnboardingAtsTitle': [],
+    'settingsOnboardingAtsBody': [],
+    'settingsOnboardingAiTitle': [],
+    'settingsOnboardingAiBody': [],
+    'settingsOnboardingPrevious': [],
+    'settingsOnboardingSkip': [],
+    'settingsOnboardingPageOf': ['int', 'int'],
+    'authFieldTooLong': ['int'],
+    'authPasswordTooShort': ['int'],
+    'authEmailInvalid': [],
+    'authPhoneInvalid': [],
+    'authRegisterHeroTitle': [],
+    'authRegisterHeroSubtitle': [],
+    'authTermsAgreePrefix': [],
+    'authTermsLink': [],
+    'authHaveAccount': [],
+    'authAgreeTermsRequired': [],
+    'authRetry': [],
+    'authRegisterUnexpectedError': [],
+    'authLooksGood': [],
+    'authJobTitleOtherRequired': [],
+    'authFixHighlightedFields': [],
+    'authFullNameLabel': [],
+    'authFullNameHint': [],
+    'authNameRequired': [],
+    'authEmailAddressLabel': [],
+    'authEmailRequired': [],
+    'authPhoneLabel': [],
+    'authPhoneRequired': [],
+    'authLocationLabel': [],
+    'authLocationHint': [],
+    'authLocationRequired': [],
+    'authJobTitleOptionalLabel': [],
+    'authJobTitleOtherLabel': [],
+    'authJobTitleOtherHint': [],
+    'authPasswordLabel': [],
+    'authPasswordRequired': [],
+    'authCreateAccountButton': [],
+    'authCreatingAccount': [],
+    'authContinueWithoutAccount': [],
+    'authSessionExpired': [],
+    'authLoginUnexpectedError': [],
+    'authSocialSignInSoon': ['String'],
+    'authLoginSubtitle': [],
+    'authForgotPasswordLink': [],
+    'authSignInButton': [],
+    'authSigningIn': [],
+    'authOrContinueWith': [],
+    'authNoAccount': [],
+    'authCreateAccountLink': [],
+    'authForgotEmailInvalidNotice': [],
+    'authForgotSendFailed': [],
+    'authForgotResetFailed': [],
+    'authForgotTitle': [],
+    'authForgotCodeIntro': [],
+    'authForgotEmailIntro': [],
+    'authForgotEmailInvalid': [],
+    'authForgotSendCode': [],
+    'authSending': [],
+    'authVerificationCodeLabel': [],
+    'authCodeRequired': [],
+    'authNewPasswordLabel': [],
+    'authForgotNewPasswordRequired': [],
+    'authForgotConfirmPasswordLabel': [],
+    'authForgotConfirmPasswordRequired': [],
+    'authPasswordsDoNotMatch': [],
+    'authForgotResetButton': [],
+    'authSaving': [],
+    'authResendCodeIn': ['int'],
+    'authResendCode': [],
+    'authForgotUseDifferentEmail': [],
+    'authVerifySuccess': [],
+    'authVerifyUnexpectedError': [],
+    'authVerifyResendFailed': [],
+    'authVerifyBackToSignIn': [],
+    'authVerifyTitle': [],
+    'authVerifyCodeSentTo': [],
+    'authVerifyButton': [],
+    'authVerifying': [],
+    'authVerifyCheckSpam': [],
+    'settingsPrivacyTitle': [],
+    'settingsPrivacyCollectTitle': [],
+    'settingsPrivacyCollectBody': [],
+    'settingsPrivacyUseTitle': [],
+    'settingsPrivacyUseBody': [],
+    'settingsPrivacyProcessorsTitle': [],
+    'settingsPrivacyProcessorsBody': [],
+    'settingsPrivacyRetentionTitle': [],
+    'settingsPrivacyRetentionBody': [],
+    'settingsPrivacyContactTitle': [],
+    'settingsPrivacyContactBody': ['String'],
+    'settingsNotificationsUpdateFailed': [],
+    'settingsNotificationsTitle': [],
+    'settingsNotificationsReadAll': [],
+    'settingsNotificationsLoadFailed': [],
+    'settingsNotificationsEmptyTitle': [],
+    'settingsNotificationsEmptyBody': [],
+    'settingsNotificationsUnread': [],
+    'settingsCleanupFailed': [],
+    'settingsCleanupMessage': [],
+    'settingsCleanupRetry': [],
+    'settingsCleanupClearing': [],
+    'settingsPasswordChanged': [],
+    'settingsCurrentPasswordIncorrect': [],
+    'settingsPasswordChangeFailed': [],
+    'settingsCurrentPasswordLabel': [],
+    'settingsCurrentPasswordRequired': [],
+    'settingsNewPasswordRequired': [],
+    'settingsNewPasswordSameAsCurrent': [],
+    'settingsConfirmNewPasswordLabel': [],
+    'settingsConfirmNewPasswordRequired': [],
+    'settingsUpdatePassword': [],
+    'settingsUpdatingPassword': [],
+    'settingsDeleteConfirmTitle': [],
+    'settingsDeleteConfirmBody': [],
+    'settingsDeleteForever': [],
+    'settingsAccountDeleted': [],
+    'settingsDeletePasswordIncorrect': [],
+    'settingsDeleteFailed': [],
+    'settingsDeleteWarning': [],
+    'settingsDeleteConfirmWithPassword': [],
+    'settingsDeletePasswordRequired': [],
+    'settingsDeleteMyAccount': [],
+    'settingsDeleting': [],
+    'settingsAvatarCropTitle': [],
+    'settingsAvatarOpenFailed': [],
+    'settingsAvatarUsePhoto': [],
+    'settingsPhotoGallery': [],
+    'settingsPhotoCamera': [],
+    'settingsPhotoRemove': [],
+    'settingsPhotoRemoved': [],
+    'settingsPhotoUpdated': [],
+    'settingsPhotoUpdateFailed': [],
+    'settingsPhotoChange': [],
+    'settingsPhotoHint': [],
+    'settingsProfileUpdated': [],
+    'settingsProfileUpdateFailed': [],
+    'settingsProfileLoadFailed': [],
+    'settingsProfileFullNameLabel': [],
+    'settingsProfileNameHint': [],
+    'settingsProfileNameRequired': [],
+    'settingsProfileJobTitleLabel': [],
+    'settingsProfileJobTitlesLoadFailed': [],
+    'settingsProfileEmailReadOnly': [],
+    'settingsProfilePhoneLabel': [],
+    'settingsProfileSaveChanges': [],
+    'settingsProfileTitle': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -3005,6 +3843,163 @@ class RemoteAppLocalizations extends AppLocalizations {
         'homeJobsTitle' => l.homeJobsTitle,
         'homeJobsViewAll' => l.homeJobsViewAll,
         'homeJobsEmpty' => l.homeJobsEmpty,
+        'settingsOnboardingWelcomeBody' => l.settingsOnboardingWelcomeBody,
+        'settingsOnboardingAtsTitle' => l.settingsOnboardingAtsTitle,
+        'settingsOnboardingAtsBody' => l.settingsOnboardingAtsBody,
+        'settingsOnboardingAiTitle' => l.settingsOnboardingAiTitle,
+        'settingsOnboardingAiBody' => l.settingsOnboardingAiBody,
+        'settingsOnboardingPrevious' => l.settingsOnboardingPrevious,
+        'settingsOnboardingSkip' => l.settingsOnboardingSkip,
+        'settingsOnboardingPageOf' =>
+          l.settingsOnboardingPageOf(a[0] as int, a[1] as int),
+        'authFieldTooLong' => l.authFieldTooLong(a[0] as int),
+        'authPasswordTooShort' => l.authPasswordTooShort(a[0] as int),
+        'authEmailInvalid' => l.authEmailInvalid,
+        'authPhoneInvalid' => l.authPhoneInvalid,
+        'authRegisterHeroTitle' => l.authRegisterHeroTitle,
+        'authRegisterHeroSubtitle' => l.authRegisterHeroSubtitle,
+        'authTermsAgreePrefix' => l.authTermsAgreePrefix,
+        'authTermsLink' => l.authTermsLink,
+        'authHaveAccount' => l.authHaveAccount,
+        'authAgreeTermsRequired' => l.authAgreeTermsRequired,
+        'authRetry' => l.authRetry,
+        'authRegisterUnexpectedError' => l.authRegisterUnexpectedError,
+        'authLooksGood' => l.authLooksGood,
+        'authJobTitleOtherRequired' => l.authJobTitleOtherRequired,
+        'authFixHighlightedFields' => l.authFixHighlightedFields,
+        'authFullNameLabel' => l.authFullNameLabel,
+        'authFullNameHint' => l.authFullNameHint,
+        'authNameRequired' => l.authNameRequired,
+        'authEmailAddressLabel' => l.authEmailAddressLabel,
+        'authEmailRequired' => l.authEmailRequired,
+        'authPhoneLabel' => l.authPhoneLabel,
+        'authPhoneRequired' => l.authPhoneRequired,
+        'authLocationLabel' => l.authLocationLabel,
+        'authLocationHint' => l.authLocationHint,
+        'authLocationRequired' => l.authLocationRequired,
+        'authJobTitleOptionalLabel' => l.authJobTitleOptionalLabel,
+        'authJobTitleOtherLabel' => l.authJobTitleOtherLabel,
+        'authJobTitleOtherHint' => l.authJobTitleOtherHint,
+        'authPasswordLabel' => l.authPasswordLabel,
+        'authPasswordRequired' => l.authPasswordRequired,
+        'authCreateAccountButton' => l.authCreateAccountButton,
+        'authCreatingAccount' => l.authCreatingAccount,
+        'authContinueWithoutAccount' => l.authContinueWithoutAccount,
+        'authSessionExpired' => l.authSessionExpired,
+        'authLoginUnexpectedError' => l.authLoginUnexpectedError,
+        'authSocialSignInSoon' => l.authSocialSignInSoon(a[0] as String),
+        'authLoginSubtitle' => l.authLoginSubtitle,
+        'authForgotPasswordLink' => l.authForgotPasswordLink,
+        'authSignInButton' => l.authSignInButton,
+        'authSigningIn' => l.authSigningIn,
+        'authOrContinueWith' => l.authOrContinueWith,
+        'authNoAccount' => l.authNoAccount,
+        'authCreateAccountLink' => l.authCreateAccountLink,
+        'authForgotEmailInvalidNotice' => l.authForgotEmailInvalidNotice,
+        'authForgotSendFailed' => l.authForgotSendFailed,
+        'authForgotResetFailed' => l.authForgotResetFailed,
+        'authForgotTitle' => l.authForgotTitle,
+        'authForgotCodeIntro' => l.authForgotCodeIntro,
+        'authForgotEmailIntro' => l.authForgotEmailIntro,
+        'authForgotEmailInvalid' => l.authForgotEmailInvalid,
+        'authForgotSendCode' => l.authForgotSendCode,
+        'authSending' => l.authSending,
+        'authVerificationCodeLabel' => l.authVerificationCodeLabel,
+        'authCodeRequired' => l.authCodeRequired,
+        'authNewPasswordLabel' => l.authNewPasswordLabel,
+        'authForgotNewPasswordRequired' => l.authForgotNewPasswordRequired,
+        'authForgotConfirmPasswordLabel' => l.authForgotConfirmPasswordLabel,
+        'authForgotConfirmPasswordRequired' =>
+          l.authForgotConfirmPasswordRequired,
+        'authPasswordsDoNotMatch' => l.authPasswordsDoNotMatch,
+        'authForgotResetButton' => l.authForgotResetButton,
+        'authSaving' => l.authSaving,
+        'authResendCodeIn' => l.authResendCodeIn(a[0] as int),
+        'authResendCode' => l.authResendCode,
+        'authForgotUseDifferentEmail' => l.authForgotUseDifferentEmail,
+        'authVerifySuccess' => l.authVerifySuccess,
+        'authVerifyUnexpectedError' => l.authVerifyUnexpectedError,
+        'authVerifyResendFailed' => l.authVerifyResendFailed,
+        'authVerifyBackToSignIn' => l.authVerifyBackToSignIn,
+        'authVerifyTitle' => l.authVerifyTitle,
+        'authVerifyCodeSentTo' => l.authVerifyCodeSentTo,
+        'authVerifyButton' => l.authVerifyButton,
+        'authVerifying' => l.authVerifying,
+        'authVerifyCheckSpam' => l.authVerifyCheckSpam,
+        'settingsPrivacyTitle' => l.settingsPrivacyTitle,
+        'settingsPrivacyCollectTitle' => l.settingsPrivacyCollectTitle,
+        'settingsPrivacyCollectBody' => l.settingsPrivacyCollectBody,
+        'settingsPrivacyUseTitle' => l.settingsPrivacyUseTitle,
+        'settingsPrivacyUseBody' => l.settingsPrivacyUseBody,
+        'settingsPrivacyProcessorsTitle' => l.settingsPrivacyProcessorsTitle,
+        'settingsPrivacyProcessorsBody' => l.settingsPrivacyProcessorsBody,
+        'settingsPrivacyRetentionTitle' => l.settingsPrivacyRetentionTitle,
+        'settingsPrivacyRetentionBody' => l.settingsPrivacyRetentionBody,
+        'settingsPrivacyContactTitle' => l.settingsPrivacyContactTitle,
+        'settingsPrivacyContactBody' =>
+          l.settingsPrivacyContactBody(a[0] as String),
+        'settingsNotificationsUpdateFailed' =>
+          l.settingsNotificationsUpdateFailed,
+        'settingsNotificationsTitle' => l.settingsNotificationsTitle,
+        'settingsNotificationsReadAll' => l.settingsNotificationsReadAll,
+        'settingsNotificationsLoadFailed' => l.settingsNotificationsLoadFailed,
+        'settingsNotificationsEmptyTitle' => l.settingsNotificationsEmptyTitle,
+        'settingsNotificationsEmptyBody' => l.settingsNotificationsEmptyBody,
+        'settingsNotificationsUnread' => l.settingsNotificationsUnread,
+        'settingsCleanupFailed' => l.settingsCleanupFailed,
+        'settingsCleanupMessage' => l.settingsCleanupMessage,
+        'settingsCleanupRetry' => l.settingsCleanupRetry,
+        'settingsCleanupClearing' => l.settingsCleanupClearing,
+        'settingsPasswordChanged' => l.settingsPasswordChanged,
+        'settingsCurrentPasswordIncorrect' =>
+          l.settingsCurrentPasswordIncorrect,
+        'settingsPasswordChangeFailed' => l.settingsPasswordChangeFailed,
+        'settingsCurrentPasswordLabel' => l.settingsCurrentPasswordLabel,
+        'settingsCurrentPasswordRequired' => l.settingsCurrentPasswordRequired,
+        'settingsNewPasswordRequired' => l.settingsNewPasswordRequired,
+        'settingsNewPasswordSameAsCurrent' =>
+          l.settingsNewPasswordSameAsCurrent,
+        'settingsConfirmNewPasswordLabel' => l.settingsConfirmNewPasswordLabel,
+        'settingsConfirmNewPasswordRequired' =>
+          l.settingsConfirmNewPasswordRequired,
+        'settingsUpdatePassword' => l.settingsUpdatePassword,
+        'settingsUpdatingPassword' => l.settingsUpdatingPassword,
+        'settingsDeleteConfirmTitle' => l.settingsDeleteConfirmTitle,
+        'settingsDeleteConfirmBody' => l.settingsDeleteConfirmBody,
+        'settingsDeleteForever' => l.settingsDeleteForever,
+        'settingsAccountDeleted' => l.settingsAccountDeleted,
+        'settingsDeletePasswordIncorrect' => l.settingsDeletePasswordIncorrect,
+        'settingsDeleteFailed' => l.settingsDeleteFailed,
+        'settingsDeleteWarning' => l.settingsDeleteWarning,
+        'settingsDeleteConfirmWithPassword' =>
+          l.settingsDeleteConfirmWithPassword,
+        'settingsDeletePasswordRequired' => l.settingsDeletePasswordRequired,
+        'settingsDeleteMyAccount' => l.settingsDeleteMyAccount,
+        'settingsDeleting' => l.settingsDeleting,
+        'settingsAvatarCropTitle' => l.settingsAvatarCropTitle,
+        'settingsAvatarOpenFailed' => l.settingsAvatarOpenFailed,
+        'settingsAvatarUsePhoto' => l.settingsAvatarUsePhoto,
+        'settingsPhotoGallery' => l.settingsPhotoGallery,
+        'settingsPhotoCamera' => l.settingsPhotoCamera,
+        'settingsPhotoRemove' => l.settingsPhotoRemove,
+        'settingsPhotoRemoved' => l.settingsPhotoRemoved,
+        'settingsPhotoUpdated' => l.settingsPhotoUpdated,
+        'settingsPhotoUpdateFailed' => l.settingsPhotoUpdateFailed,
+        'settingsPhotoChange' => l.settingsPhotoChange,
+        'settingsPhotoHint' => l.settingsPhotoHint,
+        'settingsProfileUpdated' => l.settingsProfileUpdated,
+        'settingsProfileUpdateFailed' => l.settingsProfileUpdateFailed,
+        'settingsProfileLoadFailed' => l.settingsProfileLoadFailed,
+        'settingsProfileFullNameLabel' => l.settingsProfileFullNameLabel,
+        'settingsProfileNameHint' => l.settingsProfileNameHint,
+        'settingsProfileNameRequired' => l.settingsProfileNameRequired,
+        'settingsProfileJobTitleLabel' => l.settingsProfileJobTitleLabel,
+        'settingsProfileJobTitlesLoadFailed' =>
+          l.settingsProfileJobTitlesLoadFailed,
+        'settingsProfileEmailReadOnly' => l.settingsProfileEmailReadOnly,
+        'settingsProfilePhoneLabel' => l.settingsProfilePhoneLabel,
+        'settingsProfileSaveChanges' => l.settingsProfileSaveChanges,
+        'settingsProfileTitle' => l.settingsProfileTitle,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

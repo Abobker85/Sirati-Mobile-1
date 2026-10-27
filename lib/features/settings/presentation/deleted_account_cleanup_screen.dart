@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:sirati/core/routing/app_routes.dart';
-import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
@@ -35,12 +35,9 @@ class _DeletedAccountCleanupScreenState
       ));
     } catch (_) {
       if (!mounted) return;
-      final en = AppLocale.isEnglish(context);
       AppSnackBar.error(
         context,
-        en
-            ? 'Some data could not be cleared. Please try again.'
-            : 'تعذر مسح بعض البيانات. يرجى المحاولة مرة أخرى.',
+        AppLocalizations.of(context).settingsCleanupFailed,
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -49,7 +46,7 @@ class _DeletedAccountCleanupScreenState
 
   @override
   Widget build(BuildContext context) {
-    final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: context.sirati.background,
       body: SafeArea(
@@ -66,16 +63,14 @@ class _DeletedAccountCleanupScreenState
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  en
-                      ? 'Your account was deleted, but some data could not be cleared from this device.'
-                      : 'تم حذف حسابك، لكن تعذر مسح بعض البيانات من هذا الجهاز.',
+                  l10n.settingsCleanupMessage,
                   textAlign: TextAlign.center,
                   style: AppTextStyles.bodySm(context.sirati),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 SubmitButton(
-                  label: en ? 'Retry cleanup' : 'إعادة محاولة المسح',
-                  loadingLabel: en ? 'Clearing...' : 'جارٍ المسح...',
+                  label: l10n.settingsCleanupRetry,
+                  loadingLabel: l10n.settingsCleanupClearing,
                   isLoading: _loading,
                   onPressed: () => unawaited(_retry()),
                 ),

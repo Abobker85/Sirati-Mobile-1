@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -39,7 +40,9 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     // One flow at a time: keyboard Done + button must not stack two
     // confirmation dialogs or two delete requests.
     if (_loading || _confirming) return;
+    // Arabic keeps the server's own wording for a wrong password.
     final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
       unawaited(HapticFeedback.selectionClick());
@@ -50,21 +53,17 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     final second = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(en ? 'Are you sure?' : 'هل أنت متأكد؟'),
-        content: Text(
-          en
-              ? 'This cannot be undone. All your CVs and analyses will be permanently deleted.'
-              : 'لا يمكن التراجع. سيتم حذف جميع السير والتحليلات نهائياً.',
-        ),
+        title: Text(l10n.settingsDeleteConfirmTitle),
+        content: Text(l10n.settingsDeleteConfirmBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(en ? 'Cancel' : 'إلغاء'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: context.sirati.error),
-            child: Text(en ? 'Delete forever' : 'حذف نهائي'),
+            child: Text(l10n.settingsDeleteForever),
           ),
         ],
       ),
@@ -79,7 +78,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       if (!mounted) return;
       AppSnackBar.success(
         context,
-        en ? 'Account deleted.' : 'تم حذف الحساب.',
+        l10n.settingsAccountDeleted,
       );
       unawaited(
           Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
@@ -102,7 +101,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       if (pwd != null && pwd.isNotEmpty) {
         AppSnackBar.error(
           context,
-          en ? 'Password is incorrect.' : pwd.first,
+          en ? l10n.settingsDeletePasswordIncorrect : pwd.first,
         );
       } else {
         AppSnackBar.fromException(context, e);
@@ -111,7 +110,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       if (mounted) {
         AppSnackBar.error(
           context,
-          en ? 'Could not delete account.' : 'تعذر حذف الحساب.',
+          l10n.settingsDeleteFailed,
         );
       }
     } finally {
@@ -121,12 +120,12 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: context.sirati.background,
       appBar: AppBar(
-        title: Text(en ? 'Delete account' : 'حذف الحساب'),
+        title: Text(l10n.deleteAccount),
       ),
       body: Form(
         key: _formKey,
@@ -143,9 +142,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                     color: context.sirati.error.withValues(alpha: .25)),
               ),
               child: Text(
-                en
-                    ? 'Deleting your account permanently removes your profile, CVs, analyses, and notification history. This action cannot be undone.'
-                    : 'حذف الحساب يزيل نهائياً ملفك والسير والتحليلات وسجل الإشعارات. لا يمكن التراجع عن هذا الإجراء.',
+                l10n.settingsDeleteWarning,
                 textAlign: TextAlign.start,
                 style: AppTextStyles.bodySm(context.sirati).copyWith(
                   // Gated pair: onErrorContainer on errorLight.
@@ -157,7 +154,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              en ? 'Confirm with password' : 'أكد بكلمة المرور',
+              l10n.settingsDeleteConfirmWithPassword,
               textAlign: TextAlign.start,
               style: AppTextStyles.titleSm(context.sirati)
                   .copyWith(color: context.sirati.textSecondary),
@@ -180,13 +177,13 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 onToggle: () => setState(() => _obscure = !_obscure),
               ),
               validator: (v) => (v == null || v.isEmpty)
-                  ? (en ? 'Password is required' : 'كلمة المرور مطلوبة')
+                  ? l10n.settingsDeletePasswordRequired
                   : null,
             ),
             const SizedBox(height: AppSpacing.xl),
             SubmitButton(
-              label: en ? 'Delete my account' : 'احذف حسابي',
-              loadingLabel: en ? 'Deleting...' : 'جارٍ الحذف...',
+              label: l10n.settingsDeleteMyAccount,
+              loadingLabel: l10n.settingsDeleting,
               isLoading: _loading,
               icon: Icons.delete_forever_rounded,
               onPressed: () => unawaited(_delete()),

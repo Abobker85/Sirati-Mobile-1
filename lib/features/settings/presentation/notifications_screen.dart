@@ -7,6 +7,7 @@ import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/settings/application/settings_controllers.dart';
 import 'package:sirati/features/settings/domain/notification_item.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/navigation/notification_target.dart';
 import 'package:sirati/shared/services/notification_service.dart';
 import 'package:sirati/shared/services/session_cache.dart';
@@ -28,14 +29,11 @@ class NotificationsScreen extends ConsumerWidget {
     } catch (_) {}
   }
 
-  void _reportFailure(BuildContext context, {bool? english}) {
+  void _reportFailure(BuildContext context, {String? message}) {
     if (!context.mounted) return;
-    final isEn = english ?? AppLocale.isEnglish(context);
     AppSnackBar.error(
       context,
-      isEn
-          ? 'Could not update notifications. Check your connection.'
-          : 'تعذر تحديث الإشعارات. تحقق من الاتصال.',
+      message ?? AppLocalizations.of(context).settingsNotificationsUpdateFailed,
     );
   }
 
@@ -49,7 +47,8 @@ class NotificationsScreen extends ConsumerWidget {
     if (item.opensSomething && handler != null) {
       final messenger = ScaffoldMessenger.of(context);
       final messengerContext = Navigator.of(context).context;
-      final english = AppLocale.isEnglish(context);
+      final failureMessage =
+          AppLocalizations.of(context).settingsNotificationsUpdateFailed;
       final startGen = SessionCache.instance.generation;
       final startUser = SessionCache.instance.user.value;
       // Same router as a tapped push. Screen targets may switch a Home tab,
@@ -61,7 +60,7 @@ class NotificationsScreen extends ConsumerWidget {
           SessionCache.instance.user.value == startUser &&
           messenger.mounted &&
           messengerContext.mounted) {
-        _reportFailure(messengerContext, english: english);
+        _reportFailure(messengerContext, message: failureMessage);
       }
       return;
     }
@@ -78,12 +77,13 @@ class NotificationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final inbox = ref.watch(notificationsInboxProvider);
     final hasUnread = inbox.value?.any((i) => !i.isRead) ?? false;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(english ? 'Notifications' : 'الإشعارات'),
+        title: Text(l10n.settingsNotificationsTitle),
         actions: [
           TextButton(
             onPressed: hasUnread
@@ -97,7 +97,7 @@ class NotificationsScreen extends ConsumerWidget {
             style: TextButton.styleFrom(
               minimumSize: const Size(48, 48),
             ),
-            child: Text(english ? 'Read all' : 'قراءة الكل'),
+            child: Text(l10n.settingsNotificationsReadAll),
           ),
         ],
       ),
@@ -108,9 +108,7 @@ class NotificationsScreen extends ConsumerWidget {
         fallbackOnEmptyError: const [],
         errorMessage: (error) => error is ApiException
             ? error.displayMessage
-            : (english
-                ? 'Could not load notifications.'
-                : 'تعذر تحميل الإشعارات.'),
+            : l10n.settingsNotificationsLoadFailed,
         loading: const ListScreenSkeleton(
           itemCount: 5,
           padding: EdgeInsets.fromLTRB(AppSpacing.lg, 18, AppSpacing.lg, 32),
@@ -120,10 +118,8 @@ class NotificationsScreen extends ConsumerWidget {
           onRefresh: () => _refresh(ref),
           child: AppEmptyState(
             icon: Icons.notifications_none_rounded,
-            title: english ? 'No notifications yet' : 'لا توجد إشعارات حالياً',
-            subtitle: english
-                ? 'Updates about jobs and CV activity will show up here.'
-                : 'ستظهر هنا التحديثات حول الوظائف ونشاط سيرتك.',
+            title: l10n.settingsNotificationsEmptyTitle,
+            subtitle: l10n.settingsNotificationsEmptyBody,
             scrollable: true,
           ),
         ),
@@ -206,7 +202,8 @@ class NotificationCard extends StatelessWidget {
                       ),
                       if (!item.isRead)
                         Semantics(
-                          label: english ? 'Unread' : 'غير مقروء',
+                          label: AppLocalizations.of(context)
+                              .settingsNotificationsUnread,
                           child: Container(
                             width: 8,
                             height: 8,

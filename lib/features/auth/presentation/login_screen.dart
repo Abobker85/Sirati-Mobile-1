@@ -4,13 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/routing/app_router.dart';
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/root_navigation.dart';
 import 'package:sirati/features/auth/application/login_controller.dart';
 import 'package:sirati/features/auth/domain/social_sign_in.dart';
 import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
 import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
 import 'package:sirati/features/auth/presentation/register_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
@@ -50,12 +50,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (widget.sessionExpiredNotice) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        final english = AppLocale.isEnglish(context);
         AppSnackBar.info(
           context,
-          english
-              ? 'Session expired, please log in again.'
-              : 'انتهت الجلسة، سجّل الدخول مجدداً.',
+          AppLocalizations.of(context).authSessionExpired,
         );
       });
     }
@@ -70,7 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _login() async {
     if (ref.read(loginControllerProvider)) return;
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _submitted = true;
       _showFormBanner = false;
@@ -102,15 +99,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         AppSnackBar.fromException(
           context,
           error,
-          retryLabel: english ? 'Retry' : 'إعادة',
+          retryLabel: l10n.authRetry,
           onRetry: () => unawaited(_login()),
         );
       case LoginFailedUnexpectedly():
         AppSnackBar.error(
           context,
-          english
-              ? 'An unexpected error occurred while signing in.'
-              : 'حدث خطأ غير متوقع أثناء تسجيل الدخول.',
+          l10n.authLoginUnexpectedError,
         );
       case LoginIgnored():
         break;
@@ -118,22 +113,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _loginWithGoogle() async {
-    final english = AppLocale.isEnglish(context);
     AppSnackBar.info(
       context,
-      english
-          ? 'Google sign-in will be available in an upcoming update.'
-          : 'تسجيل الدخول عبر Google سيتوفر قريباً في التحديث القادم.',
+      AppLocalizations.of(context).authSocialSignInSoon('Google'),
     );
   }
 
   Future<void> _loginWithApple() async {
-    final english = AppLocale.isEnglish(context);
     AppSnackBar.info(
       context,
-      english
-          ? 'Apple sign-in will be available in an upcoming update.'
-          : 'تسجيل الدخول عبر Apple سيتوفر قريباً في التحديث القادم.',
+      AppLocalizations.of(context).authSocialSignInSoon('Apple'),
     );
   }
 
@@ -150,7 +139,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final isLoading = ref.watch(loginControllerProvider);
     return Scaffold(
       backgroundColor: context.sirati.background,
@@ -188,7 +177,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               children: [
                                 if (Navigator.of(context).canPop())
                                   IconButton(
-                                    onPressed: () => Navigator.maybePop(context),
+                                    onPressed: () =>
+                                        Navigator.maybePop(context),
                                     tooltip: MaterialLocalizations.of(context)
                                         .backButtonTooltip,
                                     icon: DirectionalIcon(
@@ -211,9 +201,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                             SizedBox(height: sectionGap),
                             Text(
-                              english
-                                  ? 'Welcome to Siratie'
-                                  : 'مرحباً بك في سيرتي',
+                              l10n.welcomeToSirati,
                               textAlign: TextAlign.center,
                               style: AppTypography.of(
                                 context,
@@ -225,9 +213,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                             const SizedBox(height: AppSpacing.xs),
                             Text(
-                              english
-                                  ? 'Sign in to continue'
-                                  : 'سجّل دخولك للمتابعة',
+                              l10n.authLoginSubtitle,
                               textAlign: TextAlign.center,
                               style: AppTypography.of(
                                 context,
@@ -241,181 +227,164 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     SizedBox(height: sectionGap),
                     AutofillGroup(
-                  child: Form(
-                    key: _formKey,
-                    autovalidateMode: _submitted
-                        ? AutovalidateMode.onUserInteraction
-                        : AutovalidateMode.disabled,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (_showFormBanner)
-                          AppFormErrorBanner(
-                            message: english
-                                ? 'Please fix the highlighted fields to continue.'
-                                : 'يرجى تصحيح الحقول المحددة للمتابعة.',
-                            onDismiss: () =>
-                                setState(() => _showFormBanner = false),
-                          ),
-                        _AuthLabel(
-                            text: english ? 'Email' : 'البريد الإلكتروني'),
-                        const SizedBox(height: 6),
-                        AppTextFormField(
-                          controller: _emailController,
-                          showSuccessWhenValid: true,
-                          successMessage: english ? 'Looks good' : 'يبدو جيداً',
-                          autovalidateMode: _submitted
-                              ? AutovalidateMode.onUserInteraction
-                              : AutovalidateMode.disabled,
-                          keyboardType: TextInputType.emailAddress,
-                          autofillHints: const [AutofillHints.email],
-                          textDirection: TextDirection.ltr,
-                          textAlign: TextAlign.start,
-                          textInputAction: TextInputAction.next,
-                          onFieldSubmitted: (_) =>
-                              FocusScope.of(context).nextFocus(),
-                          hintText: 'name@example.com',
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return english
-                                  ? 'Please enter your email'
-                                  : 'يرجى إدخال البريد الإلكتروني';
-                            }
-                            if (!v.contains('@')) {
-                              return english
-                                  ? 'Email address is invalid'
-                                  : 'البريد الإلكتروني غير صحيح';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        _AuthLabel(text: english ? 'Password' : 'كلمة المرور'),
-                        const SizedBox(height: 6),
-                        AppTextFormField(
-                          controller: _passwordController,
-                          showSuccessWhenValid: true,
-                          autovalidateMode: _submitted
-                              ? AutovalidateMode.onUserInteraction
-                              : AutovalidateMode.disabled,
-                          obscureText: _obscurePassword,
-                          autofillHints: const [AutofillHints.password],
-                          textDirection: TextDirection.ltr,
-                          textAlign: TextAlign.start,
-                          textInputAction: TextInputAction.send,
-                          onFieldSubmitted: (_) => unawaited(_login()),
-                          hintText: '••••••••',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            tooltip: _obscurePassword
-                                ? (english
-                                    ? 'Show password'
-                                    : 'إظهار كلمة المرور')
-                                : (english
-                                    ? 'Hide password'
-                                    : 'إخفاء كلمة المرور'),
-                            icon: Icon(_obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined),
-                            onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword),
-                          ),
-                          // Presence only: the server has no length rule for
-                          // sign-in, and a client one can lock out accounts.
-                          validator: (v) => loginPasswordError(v) == null
-                              ? null
-                              : (english
-                                  ? 'Please enter your password'
-                                  : 'يرجى إدخال كلمة المرور'),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: TextButton(
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                  builder: (_) => const ForgotPasswordScreen()),
+                      child: Form(
+                        key: _formKey,
+                        autovalidateMode: _submitted
+                            ? AutovalidateMode.onUserInteraction
+                            : AutovalidateMode.disabled,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (_showFormBanner)
+                              AppFormErrorBanner(
+                                message: l10n.authFixHighlightedFields,
+                                onDismiss: () =>
+                                    setState(() => _showFormBanner = false),
+                              ),
+                            _AuthLabel(text: l10n.emailLabel),
+                            const SizedBox(height: 6),
+                            AppTextFormField(
+                              controller: _emailController,
+                              showSuccessWhenValid: true,
+                              successMessage: l10n.authLooksGood,
+                              autovalidateMode: _submitted
+                                  ? AutovalidateMode.onUserInteraction
+                                  : AutovalidateMode.disabled,
+                              keyboardType: TextInputType.emailAddress,
+                              autofillHints: const [AutofillHints.email],
+                              textDirection: TextDirection.ltr,
+                              textAlign: TextAlign.start,
+                              textInputAction: TextInputAction.next,
+                              onFieldSubmitted: (_) =>
+                                  FocusScope.of(context).nextFocus(),
+                              hintText: 'name@example.com',
+                              prefixIcon: const Icon(Icons.email_outlined),
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return l10n.authEmailRequired;
+                                }
+                                if (!v.contains('@')) {
+                                  return l10n.authEmailInvalid;
+                                }
+                                return null;
+                              },
                             ),
-                            child: Text(english
-                                ? 'Forgot password?'
-                                : 'نسيت كلمة المرور؟'),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        SubmitButton(
-                          label: english ? 'Sign in' : 'تسجيل الدخول',
-                          loadingLabel: english
-                              ? 'Signing in...'
-                              : 'جارٍ تسجيل الدخول...',
-                          isLoading: isLoading,
-                          onPressed: () => unawaited(_login()),
-                        ),
-                        if (socialSignInEnabled) ...[
-                          const SizedBox(height: AppSpacing.xl),
-                          Row(
-                            children: [
-                              Expanded(
-                                  child: Divider(color: context.sirati.border)),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 14),
-                                child: Text(
-                                  english ? 'Or continue with' : 'أو تابع بـ',
+                            const SizedBox(height: AppSpacing.md),
+                            _AuthLabel(text: l10n.authPasswordLabel),
+                            const SizedBox(height: 6),
+                            AppTextFormField(
+                              controller: _passwordController,
+                              showSuccessWhenValid: true,
+                              autovalidateMode: _submitted
+                                  ? AutovalidateMode.onUserInteraction
+                                  : AutovalidateMode.disabled,
+                              obscureText: _obscurePassword,
+                              autofillHints: const [AutofillHints.password],
+                              textDirection: TextDirection.ltr,
+                              textAlign: TextAlign.start,
+                              textInputAction: TextInputAction.send,
+                              onFieldSubmitted: (_) => unawaited(_login()),
+                              hintText: '••••••••',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                tooltip: _obscurePassword
+                                    ? l10n.showPassword
+                                    : l10n.hidePassword,
+                                icon: Icon(_obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined),
+                                onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword),
+                              ),
+                              // Presence only: the server has no length rule for
+                              // sign-in, and a client one can lock out accounts.
+                              validator: (v) => loginPasswordError(v) == null
+                                  ? null
+                                  : l10n.authPasswordRequired,
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: TextButton(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const ForgotPasswordScreen()),
+                                ),
+                                child: Text(l10n.authForgotPasswordLink),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            SubmitButton(
+                              label: l10n.authSignInButton,
+                              loadingLabel: l10n.authSigningIn,
+                              isLoading: isLoading,
+                              onPressed: () => unawaited(_login()),
+                            ),
+                            if (socialSignInEnabled) ...[
+                              const SizedBox(height: AppSpacing.xl),
+                              Row(
+                                children: [
+                                  Expanded(
+                                      child: Divider(
+                                          color: context.sirati.border)),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14),
+                                    child: Text(
+                                      l10n.authOrContinueWith,
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          color: context.sirati.textSecondary),
+                                    ),
+                                  ),
+                                  Expanded(
+                                      child: Divider(
+                                          color: context.sirati.border)),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _SocialButton(
+                                      icon: Icons.g_mobiledata_rounded,
+                                      label: 'Google',
+                                      onTap: _loginWithGoogle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _SocialButton(
+                                      icon: Icons.apple,
+                                      label: 'Apple',
+                                      onTap: _loginWithApple,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 28),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  l10n.authNoAccount,
                                   style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 14,
                                       color: context.sirati.textSecondary),
                                 ),
-                              ),
-                              Expanded(
-                                  child: Divider(color: context.sirati.border)),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _SocialButton(
-                                  icon: Icons.g_mobiledata_rounded,
-                                  label: 'Google',
-                                  onTap: _loginWithGoogle,
+                                TextButton(
+                                  onPressed: _goToRegister,
+                                  child: Text(l10n.authCreateAccountLink),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _SocialButton(
-                                  icon: Icons.apple,
-                                  label: 'Apple',
-                                  onTap: _loginWithApple,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                        const SizedBox(height: 28),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              english
-                                  ? "Don't have an account?"
-                                  : 'ليس لديك حساب؟',
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  color: context.sirati.textSecondary),
-                            ),
-                            TextButton(
-                              onPressed: _goToRegister,
-                              child: Text(
-                                  english ? 'Create account' : 'أنشئ حساباً'),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
                   ],
                 ),
               ),

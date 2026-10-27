@@ -1,28 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/features/auth/domain/registration_rules.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 /// Localised message for a rejected registration field.
 String fieldErrorText(
   FieldError error, {
-  required bool english,
-  required String requiredEn,
-  required String requiredAr,
+  required AppLocalizations l10n,
+  required String requiredText,
   int? max,
 }) =>
     switch (error) {
-      FieldError.required => english ? requiredEn : requiredAr,
-      FieldError.tooLong => english
-          ? 'Must be at most $max characters'
-          : 'يجب ألا يتجاوز $max حرفاً',
-      FieldError.tooShort => english
-          ? 'Password must be at least ${RegistrationRules.passwordMin} characters'
-          : 'يجب أن تكون كلمة المرور ${RegistrationRules.passwordMin} أحرف على الأقل',
-      FieldError.invalidEmail =>
-        english ? 'Email address is invalid' : 'البريد الإلكتروني غير صحيح',
-      FieldError.invalidPhone =>
-        english ? 'Enter a valid phone number' : 'أدخل رقم جوال صحيح',
+      FieldError.required => requiredText,
+      FieldError.tooLong => l10n.authFieldTooLong(max ?? 0),
+      FieldError.tooShort =>
+        l10n.authPasswordTooShort(RegistrationRules.passwordMin),
+      FieldError.invalidEmail => l10n.authEmailInvalid,
+      FieldError.invalidPhone => l10n.authPhoneInvalid,
     };
 
 class FieldLabel extends StatelessWidget {
@@ -47,18 +42,17 @@ class FieldLabel extends StatelessWidget {
 }
 
 class RegisterHero extends StatelessWidget {
-  const RegisterHero({super.key, required this.english});
-
-  final bool english;
+  const RegisterHero({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         const SiratiMark(size: 52),
         const SizedBox(height: 10),
         Text(
-          english ? 'Join Us Today' : 'انضم إلينا اليوم',
+          l10n.authRegisterHeroTitle,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 20,
@@ -68,9 +62,7 @@ class RegisterHero extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          english
-              ? 'Start your career journey and build a professional CV'
-              : 'ابدأ رحلتك المهنية وابنِ سيرة ذاتية احترافية',
+          l10n.authRegisterHeroSubtitle,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13,
@@ -87,18 +79,17 @@ class RegisterHero extends StatelessWidget {
 class TermsAgreement extends StatelessWidget {
   const TermsAgreement({
     super.key,
-    required this.english,
     required this.agreed,
     required this.onChanged,
   });
 
-  final bool english;
   final bool agreed;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.sirati;
+    final l10n = AppLocalizations.of(context);
     return PressScale(
       child: Material(
         type: MaterialType.transparency,
@@ -128,11 +119,9 @@ class TermsAgreement extends StatelessWidget {
                         color: colors.textSecondary,
                       ),
                       children: [
-                        TextSpan(text: english ? 'I agree to ' : 'أوافق على '),
+                        TextSpan(text: l10n.authTermsAgreePrefix),
                         TextSpan(
-                          text: english
-                              ? 'Terms & Conditions'
-                              : 'الشروط والأحكام',
+                          text: l10n.authTermsLink,
                           style: TextStyle(
                             color: colors.primaryInk,
                             fontWeight: FontWeight.w700,
@@ -153,20 +142,20 @@ class TermsAgreement extends StatelessWidget {
 
 /// "Already have an account? Sign In" with a 48dp tap target on the link.
 class SignInPrompt extends StatelessWidget {
-  const SignInPrompt({super.key, required this.english, required this.onTap});
+  const SignInPrompt({super.key, required this.onTap});
 
-  final bool english;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.sirati;
+    final l10n = AppLocalizations.of(context);
     return Wrap(
       alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
-          english ? 'Already have an account?' : 'لديك حساب بالفعل؟',
+          l10n.authHaveAccount,
           style: TextStyle(fontSize: 13, color: colors.textSecondary),
         ),
         TextButton(
@@ -178,7 +167,7 @@ class SignInPrompt extends StatelessWidget {
             textStyle:
                 const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
           ),
-          child: Text(english ? 'Sign In' : 'تسجيل الدخول'),
+          child: Text(l10n.signIn),
         ),
       ],
     );

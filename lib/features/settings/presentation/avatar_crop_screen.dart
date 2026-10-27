@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Side of the uploaded photo, in pixels.
@@ -31,10 +32,9 @@ Rect avatarSourceRect({
 /// of what the window shows (Salem review, issue 5). Pops with the PNG bytes,
 /// or null when cancelled or the image cannot be read.
 class AvatarCropScreen extends StatefulWidget {
-  const AvatarCropScreen({super.key, required this.bytes, required this.english});
+  const AvatarCropScreen({super.key, required this.bytes});
 
   final Uint8List bytes;
-  final bool english;
 
   static const doneKey = ValueKey('avatar-crop-done');
 
@@ -101,8 +101,8 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
       transform: _transform.value,
     );
     final recorder = ui.PictureRecorder();
-    const out = Rect.fromLTWH(
-        0, 0, avatarOutputSize + 0.0, avatarOutputSize + 0.0);
+    const out =
+        Rect.fromLTWH(0, 0, avatarOutputSize + 0.0, avatarOutputSize + 0.0);
     Canvas(recorder, out).drawImageRect(
       image,
       source,
@@ -120,22 +120,20 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final english = widget.english;
+    final l10n = AppLocalizations.of(context);
     final c = context.sirati;
     final image = _image;
 
     return Scaffold(
       backgroundColor: c.background,
       appBar: AppBar(
-        title: Text(english ? 'Move and scale' : 'حرّك الصورة وكبّرها'),
+        title: Text(l10n.settingsAvatarCropTitle),
       ),
       body: SafeArea(
         child: _failed
             ? Center(
                 child: Text(
-                  english
-                      ? 'This image could not be opened.'
-                      : 'تعذر فتح هذه الصورة.',
+                  l10n.settingsAvatarOpenFailed,
                   style: TextStyle(color: c.textPrimary),
                 ),
               )
@@ -200,13 +198,14 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                               children: [
                                 Expanded(
                                   child: OutlinedButton(
-                                    onPressed: () => Navigator.of(context).pop(),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
                                     style: OutlinedButton.styleFrom(
                                       minimumSize: const Size.fromHeight(48),
                                       foregroundColor: c.textPrimary,
                                       side: BorderSide(color: c.borderStrong),
                                     ),
-                                    child: Text(english ? 'Cancel' : 'إلغاء'),
+                                    child: Text(l10n.cancel),
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.sm),
@@ -219,7 +218,7 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                                       backgroundColor: c.primary,
                                       foregroundColor: c.onPrimary,
                                     ),
-                                    child: Text(english ? 'Use photo' : 'استخدم الصورة'),
+                                    child: Text(l10n.settingsAvatarUsePhoto),
                                   ),
                                 ),
                               ],
