@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/features/cv_builder/presentation/widgets/skill_chips_selector.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
-Widget _wrap(Widget child) {
+Widget _wrap(Widget child, {bool english = true}) {
   return MaterialApp(
     theme: AppTheme.light,
+    locale: Locale(english ? 'en' : 'ar'),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(
       body: SingleChildScrollView(child: child),
     ),
@@ -150,11 +154,13 @@ void main() {
         {bool english = true}) async {
       final controller = TextEditingController();
       addTearDown(controller.dispose);
-      await tester.pumpWidget(_wrap(SkillChipsSelector(
-        controller: controller,
-        targetJobTitle: title,
-        english: english,
-      )));
+      await tester.pumpWidget(_wrap(
+          english: english,
+          SkillChipsSelector(
+            controller: controller,
+            targetJobTitle: title,
+            english: english,
+          )));
       await tester.pumpAndSettle();
       return tester
           .widgetList<ActionChip>(find.byType(ActionChip))

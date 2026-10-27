@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -46,7 +47,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   Future<void> _submit() async {
     // One request at a time (keyboard Done + button).
     if (_loading) return;
+    // Arabic keeps the server's own wording when it sends one.
     final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _submitted = true;
       _showBanner = false;
@@ -69,9 +72,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       unawaited(HapticFeedback.lightImpact());
       AppSnackBar.success(
         context,
-        english
-            ? 'Password changed successfully.'
-            : (message.isNotEmpty ? message : 'تم تغيير كلمة المرور بنجاح.'),
+        english || message.isEmpty ? l10n.settingsPasswordChanged : message,
       );
       Navigator.of(context).pop();
     } on ApiException catch (e) {
@@ -79,8 +80,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       final fieldErrors = e.errors['current_password'];
       if (fieldErrors != null && fieldErrors.isNotEmpty) {
         setState(() {
-          _currentFieldError =
-              english ? 'Current password is incorrect.' : fieldErrors.first;
+          _currentFieldError = english
+              ? l10n.settingsCurrentPasswordIncorrect
+              : fieldErrors.first;
           _showBanner = true;
         });
         _formKey.currentState?.validate();
@@ -91,9 +93,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       if (!mounted) return;
       AppSnackBar.error(
         context,
-        english
-            ? 'Could not change password. Try again.'
-            : 'تعذر تغيير كلمة المرور. حاول مجدداً.',
+        l10n.settingsPasswordChangeFailed,
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -103,6 +103,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final auto = _submitted
         ? AutovalidateMode.onUserInteraction
         : AutovalidateMode.disabled;
@@ -110,7 +111,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     return Scaffold(
       backgroundColor: context.sirati.background,
       appBar: AppBar(
-        title: Text(en ? 'Change password' : 'تغيير كلمة المرور'),
+        title: Text(l10n.changePassword),
       ),
       body: Form(
         key: _formKey,
@@ -120,12 +121,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           children: [
             if (_showBanner)
               AppFormErrorBanner(
-                message: en
-                    ? 'Please fix the highlighted fields to continue.'
-                    : 'يرجى تصحيح الحقول المحددة للمتابعة.',
+                message: l10n.authFixHighlightedFields,
                 onDismiss: () => setState(() => _showBanner = false),
               ),
-            _Label(en ? 'Current password' : 'كلمة المرور الحالية'),
+            _Label(l10n.settingsCurrentPasswordLabel),
             const SizedBox(height: 6),
             AppTextFormField(
               controller: _currentCtrl,
@@ -145,9 +144,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               validator: (v) {
                 if (_currentFieldError != null) return _currentFieldError;
                 if (v == null || v.isEmpty) {
-                  return en
-                      ? 'Enter your current password'
-                      : 'أدخل كلمة المرور الحالية';
+                  return l10n.settingsCurrentPasswordRequired;
                 }
                 return null;
               },
@@ -158,7 +155,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               },
             ),
             const SizedBox(height: AppSpacing.md),
-            _Label(en ? 'New password' : 'كلمة المرور الجديدة'),
+            _Label(l10n.authNewPasswordLabel),
             const SizedBox(height: 6),
             AppTextFormField(
               controller: _newCtrl,
@@ -181,17 +178,13 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               },
               validator: (v) {
                 if (v == null || v.isEmpty) {
-                  return en ? 'Enter a new password' : 'أدخل كلمة مرور جديدة';
+                  return l10n.settingsNewPasswordRequired;
                 }
                 if (v.length < 8) {
-                  return en
-                      ? 'Password must be at least 8 characters'
-                      : 'يجب أن تكون كلمة المرور 8 أحرف على الأقل';
+                  return l10n.authPasswordTooShort(8);
                 }
                 if (v == _currentCtrl.text) {
-                  return en
-                      ? 'New password must differ from current'
-                      : 'يجب أن تختلف عن كلمة المرور الحالية';
+                  return l10n.settingsNewPasswordSameAsCurrent;
                 }
                 return null;
               },
@@ -199,7 +192,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             const SizedBox(height: AppSpacing.xs),
             PasswordStrengthMeter(password: _newCtrl.text, english: en),
             const SizedBox(height: AppSpacing.md),
-            _Label(en ? 'Confirm new password' : 'تأكيد كلمة المرور الجديدة'),
+            _Label(l10n.settingsConfirmNewPasswordLabel),
             const SizedBox(height: 6),
             AppTextFormField(
               key: _confirmKey,
@@ -219,22 +212,18 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
               validator: (v) {
                 if (v == null || v.isEmpty) {
-                  return en
-                      ? 'Confirm your new password'
-                      : 'أكد كلمة المرور الجديدة';
+                  return l10n.settingsConfirmNewPasswordRequired;
                 }
                 if (v != _newCtrl.text) {
-                  return en
-                      ? 'Passwords do not match'
-                      : 'كلمتا المرور غير متطابقتين';
+                  return l10n.authPasswordsDoNotMatch;
                 }
                 return null;
               },
             ),
             const SizedBox(height: AppSpacing.xl),
             SubmitButton(
-              label: en ? 'Update password' : 'تحديث كلمة المرور',
-              loadingLabel: en ? 'Updating...' : 'جارٍ التحديث...',
+              label: l10n.settingsUpdatePassword,
+              loadingLabel: l10n.settingsUpdatingPassword,
               isLoading: _loading,
               icon: Icons.check_rounded,
               onPressed: () => unawaited(_submit()),

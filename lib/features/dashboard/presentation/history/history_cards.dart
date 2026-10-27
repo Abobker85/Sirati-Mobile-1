@@ -4,6 +4,7 @@ import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/domain/score_band.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_band_style.dart';
 import 'package:sirati/features/dashboard/domain/history_page.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -26,9 +27,10 @@ class ScoreBadge extends StatelessWidget {
     final band = ScoreBand.of(score);
     final english = AppLocale.isEnglish(context);
     return Semantics(
-      label: english
-          ? 'Score $score, grade $grade'
-          : 'الدرجة $score، التقدير $grade',
+      label: AppLocalizations.of(context).dashboardScoreBadgeSemantics(
+        score,
+        grade,
+      ),
       excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -41,12 +43,14 @@ class ScoreBadge extends StatelessWidget {
           children: [
             Text(
               AppFormat.digits('$score', english: english),
-              style: AppTypography.of(context, AppTypography.titleLg, color: band.onContainer(c)),
+              style: AppTypography.of(context, AppTypography.titleLg,
+                  color: band.onContainer(c)),
             ),
             if (grade.trim().isNotEmpty && grade != '-')
               Text(
                 grade,
-                style: AppTypography.of(context, AppTypography.labelLg, color: band.onContainer(c)),
+                style: AppTypography.of(context, AppTypography.labelLg,
+                    color: band.onContainer(c)),
               ),
           ],
         ),
@@ -71,7 +75,8 @@ class _MetaChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: AppTypography.of(context, AppTypography.bodySm, color: c.primaryInk),
+        style: AppTypography.of(context, AppTypography.bodySm,
+            color: c.primaryInk),
       ),
     );
   }
@@ -176,11 +181,15 @@ class AnalysisHistoryCard extends StatelessWidget {
             runSpacing: 4,
             children: [
               _MetaChip(
-                label: inputMethodLabel(analysis.inputMethod, english: english),
+                label: inputMethodLabel(
+                  analysis.inputMethod,
+                  AppLocalizations.of(context),
+                ),
               ),
               Text(
                 _dateLabel(analysis.createdAt, english: english),
-                style: AppTypography.of(context, AppTypography.bodySm, color: c.textSecondary),
+                style: AppTypography.of(context, AppTypography.bodySm,
+                    color: c.textSecondary),
               ),
             ],
           ),
@@ -221,7 +230,8 @@ class GeneratedCvHistoryCard extends StatelessWidget {
               child: ExcludeSemantics(
                 child: Text(
                   name.isEmpty ? 'س' : BidiText.avatarInitial(name),
-                  style: AppTypography.of(context, AppTypography.titleLg, color: c.primaryInk),
+                  style: AppTypography.of(context, AppTypography.titleLg,
+                      color: c.primaryInk),
                 ),
               ),
             ),
@@ -244,7 +254,8 @@ class GeneratedCvHistoryCard extends StatelessWidget {
                   textAlign: TextAlign.start,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.of(context, AppTypography.bodySm, color: c.textSecondary),
+                  style: AppTypography.of(context, AppTypography.bodySm,
+                      color: c.textSecondary),
                 ),
                 const SizedBox(height: 4),
                 Wrap(
@@ -252,10 +263,13 @@ class GeneratedCvHistoryCard extends StatelessWidget {
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
+                    // Endonyms of the CV's content language, shown as-is in
+                    // every UI language (not catalog copy).
                     _MetaChip(label: cv.language == 'ar' ? 'عربي' : 'English'),
                     Text(
                       _dateLabel(cv.createdAt, english: english),
-                      style: AppTypography.of(context, AppTypography.bodySm, color: c.textSecondary),
+                      style: AppTypography.of(context, AppTypography.bodySm,
+                          color: c.textSecondary),
                     ),
                   ],
                 ),
@@ -285,14 +299,12 @@ class LoadMoreFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final label = loading
-        ? (english ? 'Loading…' : 'جارٍ التحميل...')
+        ? l10n.dashboardLoadMoreLoading
         : failed
-            ? (english
-                ? 'Couldn\'t load more. Retry'
-                : 'تعذّر تحميل المزيد. إعادة المحاولة')
-            : (english ? 'Load more' : 'تحميل المزيد');
+            ? l10n.dashboardLoadMoreFailed
+            : l10n.dashboardLoadMore;
     return TextButton(
       onPressed: loading ? null : onPressed,
       style: TextButton.styleFrom(

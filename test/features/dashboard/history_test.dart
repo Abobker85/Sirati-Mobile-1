@@ -102,9 +102,21 @@ void main() {
     });
 
     test('input method labels are localised and total', () {
+      final en = lookupAppLocalizations(const Locale('en'));
+      final ar = lookupAppLocalizations(const Locale('ar'));
       for (final m in ['upload', 'mixed', 'paste', null, 'other']) {
-        expect(inputMethodLabel(m, english: true), isNot(matches(r'[؀-ۿ]')));
-        expect(inputMethodLabel(m, english: false), matches(r'[؀-ۿ]'));
+        expect(inputMethodLabel(m, en), isNot(matches(r'[؀-ۿ]')));
+        expect(inputMethodLabel(m, ar), matches(r'[؀-ۿ]'));
+        expect(inputMethodLabel(m, en), isNotEmpty);
+      }
+      // Distinct methods never collapse onto one label.
+      for (final l in [en, ar]) {
+        expect(
+          {
+            for (final m in ['upload', 'mixed', 'paste']) inputMethodLabel(m, l)
+          },
+          hasLength(3),
+        );
       }
     });
   });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Centered empty-state panel with optional primary action.
@@ -145,14 +146,14 @@ class AppErrorState extends StatelessWidget {
     // so unwired call sites show a neutral error glyph instead of wifi.
     final type = errorType ?? exception?.type ?? ApiErrorType.unknown;
     final icon = _iconFor(type);
-    final defaultTitle = _titleFor(type, english);
+    final l10n = AppLocalizations.of(context);
+    final defaultTitle = _titleFor(type, l10n);
 
     return AppEmptyState(
       icon: icon,
       title: title ?? defaultTitle,
-      subtitle: _clientSubtitleFor(type, english) ?? message,
-      actionLabel:
-          onRetry == null ? null : (english ? 'Retry' : 'إعادة المحاولة'),
+      subtitle: _clientSubtitleFor(type, l10n) ?? message,
+      actionLabel: onRetry == null ? null : l10n.retry,
       onAction: onRetry,
       actionIcon: Icons.refresh_rounded,
       iconBackground: context.sirati.errorLight,
@@ -165,16 +166,12 @@ class AppErrorState extends StatelessWidget {
   /// Connection and timeout failures are raised by the client itself, so their
   /// raw message is a fixed (Arabic) developer-facing string; show localized
   /// user copy instead. Server-provided messages for other types pass through.
-  static String? _clientSubtitleFor(ApiErrorType type, bool english) {
+  static String? _clientSubtitleFor(ApiErrorType type, AppLocalizations l10n) {
     switch (type) {
       case ApiErrorType.network:
-        return english
-            ? 'Check your internet connection and try again.'
-            : 'تحقق من اتصالك بالإنترنت ثم حاول مرة أخرى.';
+        return l10n.sharedErrorNetworkSubtitle;
       case ApiErrorType.timeout:
-        return english
-            ? 'The server took too long to respond. Please try again.'
-            : 'استغرق الخادم وقتاً طويلاً للرد. حاول مرة أخرى.';
+        return l10n.sharedErrorTimeoutSubtitle;
       default:
         return null;
     }
@@ -200,23 +197,23 @@ class AppErrorState extends StatelessWidget {
     }
   }
 
-  static String _titleFor(ApiErrorType type, bool english) {
+  static String _titleFor(ApiErrorType type, AppLocalizations l10n) {
     switch (type) {
       case ApiErrorType.network:
-        return english ? 'You appear to be offline' : 'يبدو أنك غير متصل';
+        return l10n.sharedErrorTitleNetwork;
       case ApiErrorType.timeout:
-        return english ? 'The request timed out' : 'انتهت مهلة الطلب';
+        return l10n.sharedErrorTitleTimeout;
       case ApiErrorType.auth:
-        return english ? 'Session expired' : 'انتهت الجلسة';
+        return l10n.sharedErrorTitleAuth;
       case ApiErrorType.notFound:
-        return english ? 'Not found' : 'غير موجود';
+        return l10n.sharedErrorTitleNotFound;
       case ApiErrorType.server:
-        return english ? 'Server is unavailable' : 'الخادم غير متاح';
+        return l10n.sharedErrorTitleServer;
       case ApiErrorType.rateLimited:
-        return english ? 'Usage limit reached' : 'تم الوصول إلى حد الاستخدام';
+        return l10n.sharedErrorTitleRateLimited;
       case ApiErrorType.validation:
       case ApiErrorType.unknown:
-        return english ? 'Could not load' : 'تعذر التحميل';
+        return l10n.sharedErrorTitleUnknown;
     }
   }
 }

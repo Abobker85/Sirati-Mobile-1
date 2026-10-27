@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/features/jobs/domain/job_news_feed.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_format.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_title_display.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -81,7 +82,8 @@ class JobNewsCard extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 item.sourceBadge ??
-                                    (english ? 'Verified' : 'موثقة'),
+                                    AppLocalizations.of(context)
+                                        .jobsVerifiedSourceCard,
                                 softWrap: true,
                                 style: TextStyle(
                                   fontSize: 13,
@@ -102,7 +104,7 @@ class JobNewsCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          english ? 'Tamheer' : 'تمهير 🇸🇦',
+                          AppLocalizations.of(context).jobsTamheerBadge,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -133,7 +135,8 @@ class JobNewsCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                '${item.matchScore}% ${english ? 'Match' : 'تطابق'}',
+                                AppLocalizations.of(context)
+                                    .jobsMatchScore(item.matchScore!),
                                 softWrap: true,
                                 style: TextStyle(
                                   fontSize: 13,
@@ -156,7 +159,7 @@ class JobNewsCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          english ? 'New' : 'جديد',
+                          AppLocalizations.of(context).jobsNewBadge,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -278,7 +281,8 @@ class JobNewsCard extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 4,
                   children: [
-                    if (item.salaryRange != null && item.salaryRange!.isNotEmpty)
+                    if (item.salaryRange != null &&
+                        item.salaryRange!.isNotEmpty)
                       Text(
                         item.salaryRange!,
                         softWrap: true,
@@ -292,7 +296,7 @@ class JobNewsCard extends StatelessWidget {
                           color: context.sirati.textSecondary),
                     ),
                     Text(
-                      english ? 'Details →' : 'التفاصيل ←',
+                      AppLocalizations.of(context).jobsDetailsLink,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,

@@ -1,3 +1,5 @@
+import 'package:sirati/l10n/generated/app_localizations.dart';
+
 /// One paginated history list (analyses or generated CVs) as shown so far.
 class HistoryPage<T> {
   const HistoryPage({
@@ -49,10 +51,11 @@ class HistoryPage<T> {
   }
 }
 
-/// Localised label for how an analysis was submitted.
-String inputMethodLabel(String? method, {required bool english}) =>
+/// Localised label for how an analysis was submitted. [method] is the API
+/// code (`upload` / `mixed` / `paste`) and is never translated itself.
+String inputMethodLabel(String? method, AppLocalizations l10n) =>
     switch (method) {
-      'upload' => english ? 'File' : 'ملف',
-      'mixed' => english ? 'File + text' : 'ملف ونص',
-      _ => english ? 'Pasted text' : 'لصق نص',
+      'upload' => l10n.dashboardInputMethodFile,
+      'mixed' => l10n.dashboardInputMethodMixed,
+      _ => l10n.dashboardInputMethodPaste,
     };

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -56,17 +57,17 @@ class PasswordStrengthMeter extends StatelessWidget {
       PasswordStrength.medium => context.sirati.onWarningContainer,
       _ => color,
     };
+    final l10n = AppLocalizations.of(context);
     final label = switch (level) {
-      PasswordStrength.empty =>
-        english ? 'Enter a password' : 'أدخل كلمة المرور',
-      PasswordStrength.weak => english ? 'Weak' : 'ضعيفة',
-      PasswordStrength.medium => english ? 'Medium' : 'متوسطة',
-      PasswordStrength.strong => english ? 'Strong' : 'قوية',
+      PasswordStrength.empty => l10n.sharedPasswordStrengthEmpty,
+      PasswordStrength.weak => l10n.sharedPasswordStrengthWeak,
+      PasswordStrength.medium => l10n.sharedPasswordStrengthMedium,
+      PasswordStrength.strong => l10n.sharedPasswordStrengthStrong,
     };
 
     return Semantics(
       liveRegion: true,
-      label: english ? 'Password strength: $label' : 'قوة كلمة المرور: $label',
+      label: l10n.sharedPasswordStrengthSemantics(label),
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -50,9 +51,7 @@ class _CvAnalysisLoaderScreenState
               english: english,
               message: snapshot.error is ApiException
                   ? (snapshot.error as ApiException).displayMessage
-                  : (english
-                      ? 'Could not open this analysis.'
-                      : 'تعذر فتح هذا التحليل.'),
+                  : AppLocalizations.of(context).atsOpenAnalysisFailed,
               onRetry: () {
                 setState(() {
                   _future = ref

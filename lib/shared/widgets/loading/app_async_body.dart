@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -48,7 +49,7 @@ class AppAsyncBody<T> extends StatelessWidget {
 
     if (snapshot.hasError && !snapshot.hasData) {
       final error = snapshot.error!;
-      final message = _resolveError(error);
+      final message = _resolveError(error, AppLocalizations.of(context));
       if (errorBuilder != null) {
         return MotionStateSwitcher(
           stateKey: 'custom-error',
@@ -71,7 +72,7 @@ class AppAsyncBody<T> extends StatelessWidget {
       return MotionStateSwitcher(
         stateKey: 'no-data',
         child: AppErrorState(
-          message: english ? 'No data available.' : 'لا توجد بيانات.',
+          message: AppLocalizations.of(context).sharedNoDataAvailable,
           english: english,
           onRetry: onRetry,
           errorType: ApiErrorType.unknown,
@@ -86,9 +87,9 @@ class AppAsyncBody<T> extends StatelessWidget {
     return MotionStateSwitcher(stateKey: 'data', child: builder(data));
   }
 
-  String _resolveError(Object error) {
+  String _resolveError(Object error, AppLocalizations l10n) {
     if (errorMessage != null) return errorMessage!(error);
     if (error is ApiException) return error.displayMessage;
-    return english ? 'Something went wrong.' : 'حدث خطأ ما.';
+    return l10n.sharedSomethingWentWrong;
   }
 }

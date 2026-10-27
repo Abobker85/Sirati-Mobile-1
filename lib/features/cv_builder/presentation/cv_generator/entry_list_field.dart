@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/features/cv_builder/domain/cv_entries.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 
@@ -139,23 +140,17 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
   }
 
   String? _validate(List<T>? _) {
-    final english = widget.english;
+    final l10n = AppLocalizations.of(context);
     final filled = _values.where((e) => !widget.isBlank(e)).toList();
     if (filled.any((e) => widget.problems(e).isNotEmpty)) {
-      return english
-          ? 'Complete the highlighted fields.'
-          : 'أكمل الحقول المحددة.';
+      return l10n.cvEntriesCompleteHighlighted;
     }
     if (filled.length < widget.minimumCount) {
-      return english
-          ? 'Add at least one entry.'
-          : 'أضف إدخالاً واحداً على الأقل.';
+      return l10n.cvEntriesAddOne;
     }
     final minimum = widget.minimumCharacters;
     if (minimum != null && widget.serialize(_values).length < minimum) {
-      return english
-          ? 'Add a little more detail: what you did and what it achieved.'
-          : 'أضف تفاصيل أكثر: ماذا أنجزت وما النتيجة.';
+      return l10n.cvEntriesMoreDetail;
     }
     return null;
   }
@@ -266,7 +261,7 @@ class _EntryCard extends StatelessWidget {
                 if (onRemove != null)
                   IconButton(
                     key: ValueKey('entry-remove-$index'),
-                    tooltip: english ? 'Remove' : 'حذف',
+                    tooltip: AppLocalizations.of(context).cvEntryRemove,
                     onPressed: onRemove,
                     icon: Icon(Icons.delete_outline_rounded, color: c.error),
                   ),
@@ -377,7 +372,7 @@ class MonthYearButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.sirati;
     final text = value == null
-        ? (english ? 'Choose' : 'اختر')
+        ? AppLocalizations.of(context).cvMonthChoose
         : monthYearLabel(value!, english: english);
     return Padding(
       padding: const EdgeInsets.only(top: 10),
@@ -450,7 +445,7 @@ Future<YearMonth?> showMonthYearPicker(
       builder: (context, setDialogState) {
         final c = context.sirati;
         return AlertDialog(
-          title: Text(english ? 'Month and year' : 'الشهر والسنة'),
+          title: Text(AppLocalizations.of(context).cvMonthYearTitle),
           content: SizedBox(
             width: 320,
             child: Column(
@@ -487,13 +482,13 @@ Future<YearMonth?> showMonthYearPicker(
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(english ? 'Cancel' : 'إلغاء'),
+              child: Text(AppLocalizations.of(context).cancel),
             ),
             FilledButton(
               key: const ValueKey('month-year-done'),
               onPressed: () =>
                   Navigator.of(context).pop(YearMonth(year, month)),
-              child: Text(english ? 'Done' : 'تم'),
+              child: Text(AppLocalizations.of(context).cvMonthYearDone),
             ),
           ],
         );

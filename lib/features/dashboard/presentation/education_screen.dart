@@ -18,22 +18,21 @@ class EducationScreen extends ConsumerWidget {
   const EducationScreen({super.key});
 
   Future<void> _onNotifyMe(BuildContext context, WidgetRef ref) async {
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     await ref.read(educationInterestProvider.notifier).register();
     if (!context.mounted) return;
     // Honest copy: there is no launch-notification pipeline behind this yet,
     // so it must not promise one.
     AppSnackBar.success(
       context,
-      english
-          ? "Thanks! We've noted your interest. Keep an eye on this tab for the launch."
-          : 'شكراً! سجّلنا اهتمامك. تابع هذا القسم عند الإطلاق.',
+      l10n.dashboardEducationInterestThanks,
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final notified = ref.watch(educationInterestProvider).value ?? false;
 
     return SafeArea(
@@ -63,10 +62,8 @@ class EducationScreen extends ConsumerWidget {
                 children: [
                   ScreenHeader(
                     english: english,
-                    title: english ? 'Education' : 'التعليم',
-                    subtitle: english
-                        ? 'Career development & professional courses'
-                        : 'تطوير المسار المهني والدورات التدريبية',
+                    title: l10n.dashboardEducationTitle,
+                    subtitle: l10n.dashboardEducationSubtitle,
                     icon: Icons.school_rounded,
                     unreadCount: SessionCache.instance.unreadCount,
                     onNotifications: () => Navigator.of(context).push(
@@ -84,7 +81,6 @@ class EducationScreen extends ConsumerWidget {
                   MotionReveal(
                     order: 0,
                     child: _ComingSoonHero(
-                      english: english,
                       notified: notified,
                       onNotify: () => unawaited(_onNotifyMe(context, ref)),
                     ),
@@ -93,7 +89,7 @@ class EducationScreen extends ConsumerWidget {
                   MotionReveal(
                     order: 1,
                     child: Text(
-                      english ? 'What is coming?' : 'ماذا ينتظرك قريباً؟',
+                      l10n.dashboardEducationWhatsComing,
                       textAlign: TextAlign.start,
                       style: AppTextStyles.titleMd(context.sirati),
                     ),
@@ -111,12 +107,8 @@ class EducationScreen extends ConsumerWidget {
                       icon: Icons.auto_stories_rounded,
                       iconColor: context.sirati.info,
                       iconBg: context.sirati.infoLight,
-                      title: english
-                          ? 'Specialized Career Courses'
-                          : 'دورات تدريبية متخصصة',
-                      description: english
-                          ? 'Intensive courses designed for high-demand skills in the Saudi market.'
-                          : 'دورات مكثفة لتطوير المهارات الأكثر طلباً في سوق العمل السعودي.',
+                      title: l10n.dashboardEducationCoursesTitle,
+                      description: l10n.dashboardEducationCoursesBody,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -126,12 +118,8 @@ class EducationScreen extends ConsumerWidget {
                       icon: Icons.record_voice_over_rounded,
                       iconColor: context.sirati.primaryInk,
                       iconBg: context.sirati.primaryLight,
-                      title: english
-                          ? 'AI Interview Preparation'
-                          : 'تحضير المقابلات بالذكاء الاصطناعي',
-                      description: english
-                          ? 'Simulate job interviews with expected questions and instant feedback.'
-                          : 'محاكاة للمقابلات الوظيفية وأسئلة متوقعة ونصائح لتجاوزها بنجاح.',
+                      title: l10n.dashboardEducationInterviewTitle,
+                      description: l10n.dashboardEducationInterviewBody,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -141,18 +129,14 @@ class EducationScreen extends ConsumerWidget {
                       icon: Icons.verified_rounded,
                       iconColor: context.sirati.tertiary,
                       iconBg: context.sirati.tertiaryLight,
-                      title: english
-                          ? 'ATS Optimization Guides'
-                          : 'أدلة التوافق مع أنظمة ATS',
-                      description: english
-                          ? 'Practical guidelines on formatting, keywords, and recruiter requirements.'
-                          : 'إرشادات عملية لتنسيق السيرة الذاتية واختيار الكلمات المفتاحية الأنسب.',
+                      title: l10n.dashboardEducationAtsGuidesTitle,
+                      description: l10n.dashboardEducationAtsGuidesBody,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  MotionReveal(
+                  const MotionReveal(
                     order: 5,
-                    child: _CvCtaCard(english: english),
+                    child: _CvCtaCard(),
                   ),
                 ],
               ),
@@ -165,18 +149,17 @@ class EducationScreen extends ConsumerWidget {
 }
 
 class _ComingSoonHero extends StatelessWidget {
-  final bool english;
   final bool notified;
   final VoidCallback onNotify;
 
   const _ComingSoonHero({
-    required this.english,
     required this.notified,
     required this.onNotify,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -225,7 +208,7 @@ class _ComingSoonHero extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              english ? '✨ COMING SOON' : '✨ قريباً في سيرتي',
+              l10n.dashboardEducationComingSoonBadge,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -236,17 +219,13 @@ class _ComingSoonHero extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            english
-                ? 'Educational Hub & Courses'
-                : 'القسم التعليمي والدورات المهنية',
+            l10n.dashboardEducationHeroTitle,
             textAlign: TextAlign.center,
             style: AppTextStyles.titleLg(context.sirati),
           ),
           const SizedBox(height: 8),
           Text(
-            english
-                ? 'We are building interactive courses, interview guides, and certifications to accelerate your career.'
-                : 'نعمل حالياً على تجهيز دورات تفاعلية وأدلة لاجتياز المقابلات الوظيفية وتطوير مسارك المهني.',
+            l10n.dashboardEducationHeroBody,
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMd(context.sirati).copyWith(
               color: context.sirati.textSecondary,
@@ -279,7 +258,7 @@ class _ComingSoonHero extends StatelessWidget {
               ),
               label: Text(
                 notified
-                    ? (english ? 'Interest Registered' : 'تم تسجيل اهتمامك')
+                    ? l10n.dashboardEducationInterestRegistered
                     : AppLocalizations.of(context).registerInterest,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
@@ -357,12 +336,11 @@ class _UpcomingFeatureCard extends StatelessWidget {
 }
 
 class _CvCtaCard extends StatelessWidget {
-  final bool english;
-
-  const _CvCtaCard({required this.english});
+  const _CvCtaCard();
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -384,17 +362,13 @@ class _CvCtaCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  english
-                      ? 'Ready to build your CV now?'
-                      : 'جاهز لإنشاء سيرتك الذاتية الآن؟',
+                  l10n.dashboardEducationCtaTitle,
                   textAlign: TextAlign.start,
                   style: AppTextStyles.titleSm(context.sirati),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  english
-                      ? 'Create an ATS-optimized CV in simple steps.'
-                      : 'أنشئ سيرة احترافية متوافقة مع ATS بخطوات بسيطة.',
+                  l10n.dashboardEducationCtaBody,
                   textAlign: TextAlign.start,
                   style: AppTextStyles.bodySm(context.sirati).copyWith(
                     color: context.sirati.textSecondary,
@@ -418,7 +392,7 @@ class _CvCtaCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: Text(english ? 'Create CV' : 'إنشاء سيرة'),
+              child: Text(l10n.dashboardCreateCv),
             ),
           ),
         ],

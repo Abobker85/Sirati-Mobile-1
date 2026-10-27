@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_header.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 Future<void> _pump(
@@ -15,6 +16,9 @@ Future<void> _pump(
   addTearDown(tester.view.reset);
   await tester.pumpWidget(MaterialApp(
     theme: AppTheme.lightFor(arabic: !english),
+    locale: Locale(english ? 'en' : 'ar'),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
     home: Directionality(
       textDirection: english ? TextDirection.ltr : TextDirection.rtl,
       child: MediaQuery(
@@ -40,7 +44,9 @@ void main() {
         testWidgets(
             'labels centred under dots (${english ? 'en' : 'ar'}, $width, x$textScale)',
             (tester) async {
-          final titles = wizardStepTitles(english: english);
+          final titles = wizardStepTitles(
+            lookupAppLocalizations(Locale(english ? 'en' : 'ar')),
+          );
           for (var step = 0; step < titles.length; step++) {
             await _pump(tester,
                 step: step,

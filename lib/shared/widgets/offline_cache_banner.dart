@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:sirati/core/network/analytics_service.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Subtle notice when list/dashboard content was served from disk (offline).
@@ -40,9 +41,7 @@ class _OfflineCacheBannerState extends State<OfflineCacheBanner> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              widget.english
-                  ? 'Offline — showing saved data'
-                  : 'غير متصل — عرض بيانات محفوظة',
+              AppLocalizations.of(context).sharedOfflineShowingSaved,
               style: AppTypography.of(context, AppTypography.bodySm,
                   color: c.textHint),
             ),

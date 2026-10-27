@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:sirati/core/network/api_config.dart';
-import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 
@@ -10,11 +10,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(english ? 'Privacy Policy' : 'سياسة الخصوصية'),
+        title: Text(l10n.settingsPrivacyTitle),
         actions: const [
           Padding(
             padding: EdgeInsetsDirectional.only(end: 12),
@@ -26,38 +26,24 @@ class PrivacyPolicyScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         children: [
           _Section(
-            title: english ? 'What We Collect' : 'ما البيانات التي نجمعها؟',
-            body: english
-                ? 'We collect account details (name, email, optional phone and location), the CV content you enter or upload, analysis results, subscription entitlement metadata, and a device push-notification token (FCM) so Siratie can analyze, improve, save, and notify you about your CVs.'
-                : 'نجمع بيانات الحساب (الاسم، البريد، والجوال والموقع اختياريًا)، ومحتوى السيرة الذي تدخله أو ترفعه، ونتائج التحليل، وبيانات صلاحية الاشتراك، ورمز إشعارات الجهاز (FCM) لنتمكن من تحليل سيرتك وتحسينها وحفظها وإرسال الإشعارات.',
+            title: l10n.settingsPrivacyCollectTitle,
+            body: l10n.settingsPrivacyCollectBody,
           ),
           _Section(
-            title: english ? 'How We Use It' : 'كيف نستخدم البيانات؟',
-            body: english
-                ? 'Your data is used to calculate ATS scores, generate improved CVs, show your history, personalize the dashboard, and deliver optional push notifications. We never sell your data or use it for third-party advertising tracking.'
-                : 'نستخدم بياناتك لحساب درجة ATS، وإنشاء سير محسنة، وعرض السجل، وتخصيص لوحة التحكم، وإرسال إشعارات اختيارية. لا نبيع بياناتك الشخصية ولا نستخدمها لتتبع الإعلانات.',
+            title: l10n.settingsPrivacyUseTitle,
+            body: l10n.settingsPrivacyUseBody,
           ),
           _Section(
-            title: english
-                ? 'Third-Party Sub-Processors'
-                : 'معالجو البيانات من الأطراف الثالثة',
-            body: english
-                ? 'To deliver secure AI generation and platform features, we use trusted sub-processors:\n• OpenAI & DeepInfra: AI resume analysis and enhancement.\n• RevenueCat: In-app purchase verification and subscription management.\n• Firebase (Google): Push notification delivery.\n• Sentry: Crash reporting and error diagnostics with PII scrubbing.'
-                : 'لتقديم خدمات الذكاء الاصطناعي وإدارة المنصة، نتعامل مع مزودي خدمات موثوقين:\n• OpenAI و DeepInfra: معالجة نصوص السيرة وتحليلها بالذكاء الاصطناعي.\n• RevenueCat: إدارة وتأكيد صلاحيات الاشتراكات داخل التطبيق.\n• Firebase (Google): إرسال إشعارات الهاتف.\n• Sentry: تتبع الأعطال التقنية مع حجب وحذف أي بيانات شخصية أو نصوص للسير.',
+            title: l10n.settingsPrivacyProcessorsTitle,
+            body: l10n.settingsPrivacyProcessorsBody,
           ),
           _Section(
-            title: english
-                ? 'Data Retention & Deletion'
-                : 'الاحتفاظ بالبيانات وحذفها',
-            body: english
-                ? 'Your data is retained while your account is active. You can delete individual generated CVs from My CVs. You can permanently delete your entire account and all associated data at any time from Settings → Delete account. Transient guest web analyses are automatically pruned within 24 hours.'
-                : 'نحتفظ ببياناتك طوال فترة نشاط حسابك. يمكنك حذف السير الفردية من شاشة سيرتي. ويمكنك حذف حسابك بالكامل وجميع بياناتك نهائياً في أي وقت من الإعدادات ← حذف الحساب. كما تُحذف التحليلات المؤقتة لزوار الويب تلقائياً خلال 24 ساعة.',
+            title: l10n.settingsPrivacyRetentionTitle,
+            body: l10n.settingsPrivacyRetentionBody,
           ),
           _Section(
-            title: english ? 'Contact & Support' : 'التواصل والدعم',
-            body: english
-                ? 'For any privacy inquiries or to exercise your rights under the Saudi Personal Data Protection Law (PDPL), contact us at: ${ApiConfig.supportEmail}'
-                : 'لأي استفسارات تتعلق بالخصوصية أو ممارسة حقوقك بموجب نظام حماية البيانات الشخصية (PDPL)، يمكنك التواصل معنا عبر: ${ApiConfig.supportEmail}',
+            title: l10n.settingsPrivacyContactTitle,
+            body: l10n.settingsPrivacyContactBody(ApiConfig.supportEmail),
           ),
         ],
       ),

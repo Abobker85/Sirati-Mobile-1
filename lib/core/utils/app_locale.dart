@@ -7,6 +7,7 @@ import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/storage/preference_store.dart';
 import 'package:sirati/core/utils/bidi_text.dart';
 import 'package:sirati/core/utils/locale_format.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 
 export 'package:sirati/core/utils/bidi_text.dart';
 export 'package:sirati/core/utils/locale_format.dart';
@@ -194,8 +195,19 @@ class AppLocale {
       AlignmentDirectional.centerEnd;
 
   /// BiDi-safe greeting for header titles.
+  ///
+  /// Empty [name] → neutral greeting with no invented identity. In RTL a
+  /// Latin name stays a single LTR run.
   static String greeting(String name, BuildContext context) {
-    return BidiText.greeting(name, english: isEnglish(context));
+    final l10n = AppLocalizations.of(context);
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return l10n.coreGreetingWelcome;
+    if (direction(context) != TextDirection.rtl) {
+      return l10n.coreGreetingHello(trimmed);
+    }
+    final display =
+        BidiText.looksLatin(trimmed) ? BidiText.isolateLtr(trimmed) : trimmed;
+    return '${l10n.coreGreetingHello(display)}${BidiText.rlm}';
   }
 
   /// BiDi-safe mixed body for AR locale.

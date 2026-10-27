@@ -68,7 +68,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     } catch (error) {
       _reportError(
         error,
-        _english ? 'Could not open this CV.' : 'تعذر فتح هذه السيرة.',
+        AppLocalizations.of(context).cvOpenFailed,
       );
     }
   }
@@ -77,24 +77,23 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     final id = item.id;
     if (id == null) return;
     final english = _english;
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(english ? 'Delete CV?' : 'حذف السيرة؟'),
-        content: Text(english
-            ? 'This action cannot be undone.'
-            : 'لا يمكن التراجع عن هذا الإجراء.'),
+        title: Text(AppLocalizations.of(context).cvDeleteTitle),
+        content: Text(AppLocalizations.of(context).cvDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(english ? 'Cancel' : 'إلغاء'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
               foregroundColor: context.sirati.error,
             ),
-            child: Text(english ? 'Delete' : 'حذف'),
+            child: Text(AppLocalizations.of(context).deleteItem),
           ),
         ],
       ),
@@ -105,7 +104,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     } catch (error) {
       _reportError(
         error,
-        english ? 'Could not delete this CV.' : 'تعذر حذف السيرة.',
+        l10n.cvDeleteFailed,
       );
     }
   }
@@ -119,9 +118,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
       AppSnackBar.warning(
         context,
         export.message(english: english) ??
-            (english
-                ? 'This CV is not ready to send to an employer yet.'
-                : 'هذه السيرة غير جاهزة للإرسال إلى جهة التوظيف بعد.'),
+            AppLocalizations.of(context).cvNotReadyToSend,
       );
       return;
     }
@@ -138,14 +135,14 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
 
     AppSnackBar.info(
       context,
-      english ? 'Opening PDF download...' : 'جارٍ فتح رابط تنزيل الـ PDF...',
+      AppLocalizations.of(context).cvOpeningPdf,
     );
     final url = await resolveCvDownloadUrl(api, item, templateSlug: slug);
     if (!mounted) return;
     if (url.isEmpty) {
       AppSnackBar.error(
         context,
-        english ? 'Could not find PDF link.' : 'تعذر العثور على رابط الـ PDF.',
+        AppLocalizations.of(context).cvPdfLinkNotFound,
       );
       return;
     }
@@ -153,12 +150,13 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     if (mounted && !launched) {
       AppSnackBar.error(
         context,
-        english ? 'Could not open PDF.' : 'تعذر فتح ملف PDF.',
+        AppLocalizations.of(context).cvPdfOpenFailed,
       );
     }
   }
 
   Future<_TemplateChoice> _chooseTemplate(bool english) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final templates = await ref
           .read(cvApiServiceProvider)
@@ -176,9 +174,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     } catch (error) {
       _reportError(
         error,
-        english
-            ? 'Could not load CV designs. Default design will be used.'
-            : 'تعذر تحميل التصاميم. سيتم استخدام التصميم الافتراضي.',
+        l10n.cvTemplatesLoadFailed,
       );
       return const _Chosen(null);
     }
@@ -223,9 +219,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
             fallbackOnEmptyError: CvList.empty(english: english),
             errorMessage: (error) => error is ApiException
                 ? error.displayMessage
-                : (english
-                    ? 'Could not load your CVs.'
-                    : 'تعذر تحميل السير الذاتية.'),
+                : AppLocalizations.of(context).cvListLoadFailed,
             loading: shell(
               CvListSkeleton(horizontalPadding: horizontalPadding),
             ),
@@ -297,11 +291,9 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
         if (items.isEmpty) {
           return AppEmptyState(
             icon: Icons.description_outlined,
-            title: english ? 'No CVs yet' : 'لا توجد سير ذاتية بعد',
-            subtitle: english
-                ? 'Create your first ATS-ready CV in a few steps.'
-                : 'أنشئ أول سيرة ذاتية متوافقة مع ATS بخطوات بسيطة.',
-            actionLabel: english ? 'Create New CV' : 'إنشاء سيرة جديدة',
+            title: AppLocalizations.of(context).cvListEmptyTitle,
+            subtitle: AppLocalizations.of(context).cvListEmptyBody,
+            actionLabel: AppLocalizations.of(context).cvCreateNew,
             onAction: _openGenerator,
             scrollable: false,
           );

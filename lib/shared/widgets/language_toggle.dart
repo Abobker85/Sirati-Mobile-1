@@ -32,7 +32,7 @@ class LanguageToggle extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
-                    english ? 'AR' : 'EN',
+                    l10n.sharedLanguageToggleShort,
                     style: AppTypography.of(
                       context,
                       AppTypography.bodySm,

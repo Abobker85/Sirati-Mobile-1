@@ -116,19 +116,20 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
   }
 
   AnalysisDraft get _draft => AnalysisDraft(
-    jobTitle: _jobTitleController.text,
-    jobDescription: _jobDescriptionController.text,
-    resumeText: _source == AnalysisCvSource.saved
-        ? _savedResumeText
-        : _source == AnalysisCvSource.paste
-        ? _resumeTextController.text
-        : '',
-    fileName: _source == AnalysisCvSource.upload ? _uploadedFile?.name : null,
-    fileSize: _source == AnalysisCvSource.upload ? _uploadedFile?.size : null,
-  );
+        jobTitle: _jobTitleController.text,
+        jobDescription: _jobDescriptionController.text,
+        resumeText: _source == AnalysisCvSource.saved
+            ? _savedResumeText
+            : _source == AnalysisCvSource.paste
+                ? _resumeTextController.text
+                : '',
+        fileName:
+            _source == AnalysisCvSource.upload ? _uploadedFile?.name : null,
+        fileSize:
+            _source == AnalysisCvSource.upload ? _uploadedFile?.size : null,
+      );
 
   Future<void> _pickFile() async {
-    final english = AppLocale.isEnglish(context);
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: AnalysisLimits.allowedExtensions,
@@ -141,16 +142,13 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       case UploadRejection.tooLarge:
         AppSnackBar.error(
           context,
-          english
-              ? 'File must be ${AnalysisLimits.maxUploadBytes ~/ (1024 * 1024)} MB or smaller.'
-              : 'يجب أن يكون حجم الملف ${AnalysisLimits.maxUploadBytes ~/ (1024 * 1024)} ميغابايت أو أقل.',
+          AppLocalizations.of(context)
+              .atsFileTooLarge(AnalysisLimits.maxUploadBytes ~/ (1024 * 1024)),
         );
       case UploadRejection.unsupportedType:
         AppSnackBar.error(
           context,
-          english
-              ? 'Only PDF or TXT files are supported.'
-              : 'يُدعم فقط ملف PDF أو TXT.',
+          AppLocalizations.of(context).atsUnsupportedFileType,
         );
       case null:
         setState(() => _uploadedFile = file);
@@ -181,9 +179,7 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
     if (!draft.hasResume) {
       AppSnackBar.error(
         context,
-        english
-            ? 'Paste resume text or upload a PDF/TXT file to start.'
-            : 'الصق نص السيرة أو ارفع ملف PDF/TXT للبدء.',
+        AppLocalizations.of(context).atsResumeRequired,
       );
       return;
     }
@@ -202,7 +198,7 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
         if (_aiRequestGen == requestId) _aiRequestGen++;
         if (!mounted) return;
         setState(() => _isLoading = false);
-        AppSnackBar.info(context, english ? 'Cancelled' : 'تم الإلغاء');
+        AppSnackBar.info(context, AppLocalizations.of(context).atsCancelled);
       },
     );
     bool stale() =>
@@ -249,15 +245,13 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       if (poll.timedOut) {
         AppSnackBar.warning(
           context,
-          english
-              ? 'AI is still working. Your ATS score is ready, and you can retry the AI suggestions later.'
-              : 'لا يزال الذكاء الاصطناعي يعمل. نتيجتك الأساسية جاهزة، ويمكنك إعادة محاولة التوصيات لاحقاً.',
+          AppLocalizations.of(context).atsAiStillWorkingAnalysis,
         );
       } else if (aiFailed) {
         AppSnackBar.error(
           context,
           AiErrorMessage.suggestionsFailed(analysis.aiError, english: english),
-          actionLabel: english ? 'Retry' : 'إعادة المحاولة',
+          actionLabel: AppLocalizations.of(context).retry,
           onAction: () => unawaited(_submit()),
         );
       }
@@ -295,9 +289,7 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       if (mounted) {
         AppSnackBar.error(
           context,
-          english
-              ? 'An unexpected error occurred while analyzing the CV.'
-              : 'حدث خطأ غير متوقع أثناء تحليل السيرة.',
+          AppLocalizations.of(context).atsAnalyzeUnexpectedError,
         );
       }
     } finally {
@@ -345,9 +337,8 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
     // An explicit CV must never silently fall back to a different record.
     _selectedCvId ??=
         widget.initialCvId ?? (rows.isEmpty ? null : rows.first.id);
-    final selectedId = rows.any((cv) => cv.id == _selectedCvId)
-        ? _selectedCvId
-        : null;
+    final selectedId =
+        rows.any((cv) => cv.id == _selectedCvId) ? _selectedCvId : null;
     final detail = _source == AnalysisCvSource.saved &&
             selectedId != null &&
             _selectedInitialMarkdown == null
@@ -359,29 +350,30 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       borderSide: BorderSide(color: c.textSecondary),
     );
     InputDecoration decoration(String hint) => InputDecoration(
-      hintText: hint,
-      filled: true,
-      fillColor: c.surface,
-      enabledBorder: fieldBorder,
-      focusedBorder: fieldBorder.copyWith(
-        borderSide: BorderSide(color: c.primaryInk, width: 2),
-      ),
-      hintStyle: TextStyle(color: c.textSecondary),
-    );
-    Widget section(String title, Widget child) => AppCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(fontWeight: FontWeight.w700, color: c.textPrimary),
+          hintText: hint,
+          filled: true,
+          fillColor: c.surface,
+          enabledBorder: fieldBorder,
+          focusedBorder: fieldBorder.copyWith(
+            borderSide: BorderSide(color: c.primaryInk, width: 2),
           ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
+          hintStyle: TextStyle(color: c.textSecondary),
+        );
+    Widget section(String title, Widget child) => AppCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                    fontWeight: FontWeight.w700, color: c.textPrimary),
+              ),
+              const SizedBox(height: 12),
+              child,
+            ],
+          ),
+        );
     void retry() {
       widget.onRetrySaved?.call();
       ref.invalidate(analysisSavedCvsProvider(english));
@@ -463,12 +455,16 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
                                 onPressed: _isLoading
                                     ? null
                                     : () => setState(() => _source = source),
-                                child: Text(switch (source) {
-                                  AnalysisCvSource.saved => l.atsInputSavedCv,
-                                  AnalysisCvSource.upload =>
-                                    l.atsInputUploadFile,
-                                  AnalysisCvSource.paste => l.atsInputPasteText,
-                                }, textAlign: TextAlign.center),
+                                child: Text(
+                                    switch (source) {
+                                      AnalysisCvSource.saved =>
+                                        l.atsInputSavedCv,
+                                      AnalysisCvSource.upload =>
+                                        l.atsInputUploadFile,
+                                      AnalysisCvSource.paste =>
+                                        l.atsInputPasteText,
+                                    },
+                                    textAlign: TextAlign.center),
                               ),
                             ),
                         ];
@@ -569,8 +565,8 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
                   validator: (v) => switch (AnalysisRules.jobTitle(v)) {
                     AnalysisFieldError.required => l.atsInputJobTitleRequired,
                     AnalysisFieldError.tooLong => l.atsInputJobTitleTooLong(
-                      AnalysisLimits.jobTitleMax,
-                    ),
+                        AnalysisLimits.jobTitleMax,
+                      ),
                     null => null,
                   },
                 ),
@@ -606,7 +602,6 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
                 ),
               ),
               const SizedBox(height: 20),
-
               const SizedBox(height: 12),
               Text(
                 l.atsInputPrivacy,

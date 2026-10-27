@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/bidi_text.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
@@ -74,8 +75,7 @@ class JobTitlePickerField extends StatelessWidget {
             decoration: InputDecoration(
               filled: true,
               fillColor: context.sirati.surface,
-              hintText:
-                  english ? 'Select your job title' : 'اختر مسماك الوظيفي',
+              hintText: AppLocalizations.of(context).sharedJobTitleSelectHint,
               prefixIcon: const Icon(Icons.work_outline_rounded),
               suffixIcon: loading
                   ? const Padding(
@@ -172,7 +172,7 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final en = widget.english;
+    final l10n = AppLocalizations.of(context);
     final filtered = _filtered;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
 
@@ -198,7 +198,7 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                   children: [
                     Expanded(
                       child: Text(
-                        en ? 'Job title' : 'المسمى الوظيفي',
+                        l10n.sharedJobTitleSheetTitle,
                         textAlign: TextAlign.start,
                         style: AppTextStyles.titleMd(
                           context.sirati,
@@ -209,7 +209,7 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                       TextButton(
                         onPressed: () =>
                             Navigator.pop(context, const _ClearJobTitle()),
-                        child: Text(en ? 'Clear' : 'مسح'),
+                        child: Text(l10n.sharedClear),
                       ),
                   ],
                 ),
@@ -220,7 +220,7 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                   controller: _query,
                   onChanged: (_) => setState(() {}),
                   textAlign: TextAlign.start,
-                  hintText: en ? 'Search titles…' : 'ابحث عن المسمى…',
+                  hintText: l10n.sharedJobTitleSearchHint,
                   prefixIcon: const Icon(Icons.search_rounded),
                 ),
               ),
@@ -229,7 +229,7 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                 child: filtered.isEmpty
                     ? Center(
                         child: Text(
-                          en ? 'No matching titles' : 'لا توجد نتائج',
+                          l10n.sharedJobTitleNoMatches,
                           style: TextStyle(color: context.sirati.textSecondary),
                         ),
                       )
@@ -240,12 +240,13 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                         itemBuilder: (context, index) {
                           final title = filtered[index];
                           final selected = widget.selected?.id == title.id;
-                          final subtitle = title.subtitle(english: en);
+                          final subtitle =
+                              title.subtitle(english: widget.english);
                           return ListTile(
                             selected: selected,
                             selectedColor: context.sirati.primaryInk,
                             title: Text(
-                              title.label(english: en),
+                              title.label(english: widget.english),
                               textAlign: TextAlign.start,
                               style: AppTypography.of(
                                   context, AppTypography.bodyLg,

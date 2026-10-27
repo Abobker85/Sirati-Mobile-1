@@ -71,6 +71,7 @@ void main() {
         MaterialApp(
           locale: const Locale('en', 'US'),
           supportedLocales: const [Locale('en', 'US'), Locale('ar', 'SA')],
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           theme: AppTheme.light,
           onGenerateRoute: (settings) {
             generated = AppRouter.onGenerateRoute(settings);
@@ -153,6 +154,5 @@ void main() {
 
 class _NoPlansRepository extends SubscriptionPlansRepository {
   @override
-  Future<SubscriptionOffer> load() async =>
-      const SubscriptionOffer(plans: []);
+  Future<SubscriptionOffer> load() async => const SubscriptionOffer(plans: []);
 }

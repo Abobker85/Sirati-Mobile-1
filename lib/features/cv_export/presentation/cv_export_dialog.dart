@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/features/cv_export/controllers/pdf_export_controller.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -75,8 +76,16 @@ class _CvExportDialogState extends State<CvExportDialog> {
     if (mounted) setState(() {});
   }
 
+  // The dialog speaks the export language, not the app language.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Localizations.override(
+        context: context,
+        locale: Locale(_controller.state.exportLanguage),
+        child: Builder(builder: _buildContent),
+      );
+
+  Widget _buildContent(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final state = _controller.state;
     final isArabic = state.exportLanguage == 'ar';
     final theme = Theme.of(context);
@@ -105,9 +114,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    isArabic
-                        ? 'خيارات التصدير والمشاركة'
-                        : 'Export & Share Options',
+                    l10n.cvExportOptionsTitle,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: c.textPrimary,
@@ -123,7 +130,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
 
               // Export language selection (SIRATI-48)
               Text(
-                isArabic ? 'لغة التصدير:' : 'Export Language:',
+                l10n.cvExportLanguage,
                 style:
                     const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               ),
@@ -143,7 +150,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
 
               // Template selection with Free / Premium badge (SIRATI-49)
               Text(
-                isArabic ? 'القالب المختار:' : 'Selected Template:',
+                l10n.cvExportSelectedTemplate,
                 style:
                     const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               ),
@@ -185,7 +192,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isArabic ? 'اسم الملف المصدر:' : 'Export File Name:',
+                      l10n.cvExportFileName,
                       style: TextStyle(fontSize: 11, color: c.textSecondary),
                     ),
                     const SizedBox(height: 4),
@@ -208,9 +215,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                                 _controller.setLatinFallback(val == true),
                           ),
                           Text(
-                            isArabic
-                                ? 'استخدام أحرف لاتينية لاسم الملف'
-                                : 'Use Latin filename',
+                            l10n.cvExportLatinFilename,
                             style: const TextStyle(fontSize: 12),
                           ),
                         ],
@@ -237,9 +242,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          isArabic
-                              ? 'هذا قالب مميز. ستظهر علامة مائية للمعاينة حتى تقوم بالترقية.'
-                              : 'This is a premium template. Previews will display a watermark until upgraded.',
+                          l10n.cvExportPremiumWatermark,
                           style: TextStyle(
                               fontSize: 11, color: c.onWarningContainer),
                         ),
@@ -268,9 +271,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              isArabic
-                                  ? 'تصدير هذا القالب متاح للمشتركين فقط'
-                                  : 'Exporting this template requires a subscription',
+                              l10n.cvExportSubscriptionRequired,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
@@ -287,9 +288,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                           foregroundColor: c.onError,
                         ),
                         onPressed: widget.onUpgradeRequested,
-                        child: Text(isArabic
-                            ? 'الترقية الآن إلى باقة المحترفين'
-                            : 'Upgrade to Pro'),
+                        child: Text(l10n.cvExportUpgrade),
                       ),
                     ],
                   ),
@@ -305,9 +304,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                         value: state.progress > 0 ? state.progress : null),
                     const SizedBox(height: 8),
                     Text(
-                      isArabic
-                          ? 'جاري تجهيز وتصدير ملف PDF...'
-                          : 'Preparing and exporting PDF...',
+                      l10n.cvExportPreparing,
                       style: TextStyle(fontSize: 11, color: c.textSecondary),
                       textAlign: TextAlign.center,
                     ),
@@ -322,7 +319,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.download),
-                      label: Text(isArabic ? 'تحميل' : 'Download'),
+                      label: Text(l10n.cvExportDownload),
                       onPressed: state.status == ExportStatus.downloading
                           ? null
                           : () async {
@@ -331,9 +328,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      isArabic
-                                          ? 'تم تصدير ملف PDF بنجاح'
-                                          : 'PDF exported successfully',
+                                      l10n.cvExportSuccess,
                                     ),
                                   ),
                                 );
@@ -349,7 +344,7 @@ class _CvExportDialogState extends State<CvExportDialog> {
                         foregroundColor: c.onPrimary,
                       ),
                       icon: const Icon(Icons.share),
-                      label: Text(isArabic ? 'مشاركة (PDF)' : 'Share PDF'),
+                      label: Text(l10n.cvExportSharePdf),
                       onPressed: state.status == ExportStatus.downloading
                           ? null
                           : () => _controller.sharePdf(),

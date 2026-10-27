@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/branded_loader.dart';
@@ -127,7 +128,7 @@ class AiProgressOverlay {
         context: context,
         useRootNavigator: true,
         barrierDismissible: false,
-        barrierLabel: english ? 'AI progress' : 'تقدم الذكاء الاصطناعي',
+        barrierLabel: AppLocalizations.of(context).sharedAiProgressBarrier,
         barrierColor: Theme.of(
           context,
         ).colorScheme.scrim.withValues(alpha: 0.55),
@@ -145,7 +146,6 @@ class AiProgressOverlay {
           }
           return _AiProgressOverlayBody(
             kind: kind,
-            english: english,
             phase: handle._phase,
             finished: handle._finished,
             onCancel: () {
@@ -187,59 +187,44 @@ class AiProgressOverlay {
   }
 
   /// Step labels, one per [AiProgressPhase].
-  static List<String> stageMessages(AiProgressKind kind, bool english) {
+  static List<String> stageMessages(
+      AiProgressKind kind, AppLocalizations l10n) {
     switch (kind) {
       case AiProgressKind.generation:
-        return english
-            ? const [
-                'Queued — waiting for a worker',
-                'Writing your CV',
-                'Saving your CV',
-              ]
-            : const [
-                'في قائمة الانتظار',
-                'كتابة سيرتك الذاتية',
-                'حفظ سيرتك الذاتية',
-              ];
+        return [
+          l10n.sharedAiStageGenerationQueued,
+          l10n.sharedAiStageGenerationWriting,
+          l10n.sharedAiStageGenerationSaving,
+        ];
       case AiProgressKind.analysis:
-        return english
-            ? const [
-                'Reading your CV',
-                'Scoring against ATS criteria',
-                'Preparing your report',
-              ]
-            : const [
-                'قراءة سيرتك الذاتية',
-                'التقييم وفق معايير ATS',
-                'إعداد تقريرك',
-              ];
+        return [
+          l10n.sharedAiStageAnalysisReading,
+          l10n.sharedAiStageAnalysisScoring,
+          l10n.sharedAiStageAnalysisPreparing,
+        ];
     }
   }
 
-  static String longWaitMessage(bool english) => english
-      ? 'This is taking longer than usual — still working…'
-      : 'يستغرق هذا وقتًا أطول من المعتاد — لا يزال العمل جاريًا…';
+  static String longWaitMessage(AppLocalizations l10n) => l10n.sharedAiLongWait;
 
-  static String doneMessage(AiProgressKind kind, bool english) {
+  static String doneMessage(AiProgressKind kind, AppLocalizations l10n) {
     switch (kind) {
       case AiProgressKind.generation:
-        return english ? 'Your CV is ready' : 'سيرتك الذاتية جاهزة';
+        return l10n.sharedAiDoneGeneration;
       case AiProgressKind.analysis:
-        return english ? 'Your report is ready' : 'تقريرك جاهز';
+        return l10n.sharedAiDoneAnalysis;
     }
   }
 }
 
 class _AiProgressOverlayBody extends StatefulWidget {
   final AiProgressKind kind;
-  final bool english;
   final ValueListenable<AiProgressPhase> phase;
   final ValueListenable<bool> finished;
   final VoidCallback onCancel;
 
   const _AiProgressOverlayBody({
     required this.kind,
-    required this.english,
     required this.phase,
     required this.finished,
     required this.onCancel,
@@ -252,8 +237,6 @@ class _AiProgressOverlayBody extends StatefulWidget {
 class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
   static const _longWaitAfter = Duration(seconds: 30);
 
-  late final List<String> _steps;
-
   bool _longWait = false;
 
   final List<Timer> _timers = [];
@@ -261,8 +244,6 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
   @override
   void initState() {
     super.initState();
-    _steps = AiProgressOverlay.stageMessages(widget.kind, widget.english);
-
     _timers.add(
       Timer(_longWaitAfter, () {
         if (!mounted) return;
@@ -283,7 +264,8 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    final en = widget.english;
+    final l10n = AppLocalizations.of(context);
+    final steps = AiProgressOverlay.stageMessages(widget.kind, l10n);
     final reduce = MotionSettings.reduce(context);
 
     // System back always cancels and dismisses the overlay immediately.
@@ -313,12 +295,13 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
                           valueListenable: widget.phase,
                           builder: (context, phase, __) {
                             final step =
-                                (finished ? _steps.length - 1 : phase.index)
-                                    .clamp(0, _steps.length - 1);
+                                (finished ? steps.length - 1 : phase.index)
+                                    .clamp(0, steps.length - 1);
 
                             return _card(
                               c: c,
-                              en: en,
+                              l10n: l10n,
+                              steps: steps,
                               reduce: reduce,
                               step: step,
                               finished: finished,
@@ -339,16 +322,17 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
 
   Widget _card({
     required SiratiColors c,
-    required bool en,
+    required AppLocalizations l10n,
+    required List<String> steps,
     required bool reduce,
     required int step,
     required bool finished,
   }) {
     final status = finished
-        ? AiProgressOverlay.doneMessage(widget.kind, en)
+        ? AiProgressOverlay.doneMessage(widget.kind, l10n)
         : _longWait
-            ? AiProgressOverlay.longWaitMessage(en)
-            : '${_steps[step]}…';
+            ? AiProgressOverlay.longWaitMessage(l10n)
+            : '${steps[step]}…';
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -365,8 +349,8 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
             Semantics(
               liveRegion: true,
               label: finished
-                  ? AiProgressOverlay.doneMessage(widget.kind, en)
-                  : (en ? 'AI is working' : 'الذكاء الاصطناعي يعمل'),
+                  ? AiProgressOverlay.doneMessage(widget.kind, l10n)
+                  : l10n.sharedAiWorking,
               child: SizedBox(
                 height: 96,
                 child: Center(
@@ -395,10 +379,10 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
               color: c.primaryInk,
             ),
             const SizedBox(height: AppSpacing.md),
-            for (var i = 0; i < _steps.length; i++) ...[
+            for (var i = 0; i < steps.length; i++) ...[
               if (i > 0) const SizedBox(height: AppSpacing.xs),
               _StepRow(
-                label: _steps[i],
+                label: steps[i],
                 // The last step only ticks once the caller reports completion,
                 // so the checklist never claims to be done before it is.
                 done: finished || i < step,
@@ -407,9 +391,7 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
             ],
             const SizedBox(height: AppSpacing.sm),
             Text(
-              en
-                  ? 'Processing your request. This can take a little while.'
-                  : 'جارٍ معالجة طلبك. قد يستغرق ذلك بعض الوقت.',
+              l10n.sharedAiProcessingRequest,
               textAlign: TextAlign.center,
               style: AppTypography.of(
                 context,
@@ -429,7 +411,7 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
                           minimumSize: const Size(88, AppTouchTarget.min),
                         ),
                         child: Text(
-                          en ? 'Cancel' : 'إلغاء',
+                          l10n.cancel,
                           style: AppTypography.of(
                             context,
                             AppTypography.labelLg,

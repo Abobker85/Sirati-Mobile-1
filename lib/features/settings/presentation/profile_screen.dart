@@ -9,6 +9,7 @@ import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/settings/application/settings_controllers.dart';
 import 'package:sirati/features/settings/domain/profile_update.dart';
 import 'package:sirati/features/settings/presentation/avatar_crop_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
@@ -87,7 +88,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   /// Gallery, camera or remove; then crop and upload (Salem review, issue 5).
   Future<void> _changePhoto({required bool hasPhoto}) async {
     if (_photoBusy) return;
-    final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final choice = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -98,13 +99,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ListTile(
               key: const ValueKey('profile-photo-gallery'),
               leading: const Icon(Icons.photo_library_outlined),
-              title: Text(en ? 'Choose from gallery' : 'اختر من المعرض'),
+              title: Text(l10n.settingsPhotoGallery),
               onTap: () => Navigator.of(context).pop('gallery'),
             ),
             ListTile(
               key: const ValueKey('profile-photo-camera'),
               leading: const Icon(Icons.photo_camera_outlined),
-              title: Text(en ? 'Take a photo' : 'التقط صورة'),
+              title: Text(l10n.settingsPhotoCamera),
               onTap: () => Navigator.of(context).pop('camera'),
             ),
             if (hasPhoto)
@@ -113,7 +114,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 leading: Icon(Icons.delete_outline_rounded,
                     color: context.sirati.error),
                 title: Text(
-                  en ? 'Remove photo' : 'إزالة الصورة',
+                  l10n.settingsPhotoRemove,
                   style: TextStyle(color: context.sirati.error),
                 ),
                 onTap: () => Navigator.of(context).pop('remove'),
@@ -136,7 +137,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (bytes == null || !mounted) return;
         final cropped = await Navigator.of(context).push<Uint8List>(
           MaterialPageRoute(
-            builder: (_) => AvatarCropScreen(bytes: bytes, english: en),
+            builder: (_) => AvatarCropScreen(bytes: bytes),
           ),
         );
         if (cropped == null || !mounted) return;
@@ -148,8 +149,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         AppSnackBar.success(
           context,
           choice == 'remove'
-              ? (en ? 'Photo removed.' : 'تمت إزالة الصورة.')
-              : (en ? 'Photo updated.' : 'تم تحديث الصورة.'),
+              ? l10n.settingsPhotoRemoved
+              : l10n.settingsPhotoUpdated,
         );
       }
     } on ApiException catch (error) {
@@ -158,7 +159,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (mounted) {
         AppSnackBar.error(
           context,
-          en ? 'Could not update the photo.' : 'تعذر تحديث الصورة.',
+          l10n.settingsPhotoUpdateFailed,
         );
       }
     } finally {
@@ -166,8 +167,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Widget _photo(AuthUser? user, bool en) {
+  Widget _photo(AuthUser? user) {
     final c = context.sirati;
+    final l10n = AppLocalizations.of(context);
     return ValueListenableBuilder<AuthUser?>(
       valueListenable: SessionCache.instance.user,
       builder: (context, cached, _) {
@@ -177,7 +179,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
             Semantics(
               button: true,
-              label: en ? 'Change profile photo' : 'تغيير صورة الملف',
+              label: l10n.settingsPhotoChange,
               child: InkResponse(
                 key: photoKey,
                 onTap: () => unawaited(_changePhoto(hasPhoto: hasPhoto)),
@@ -212,9 +214,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              en
-                  ? 'Shown on your profile and at the top of your CV.'
-                  : 'تظهر في ملفك وأعلى سيرتك الذاتية.',
+              l10n.settingsPhotoHint,
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySm(c).copyWith(color: c.textSecondary),
             ),
@@ -233,7 +233,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _save(List<JobTitle> titles) async {
     if (ref.read(profileSaveProvider)) return;
-    final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
     if (!_formKey.currentState!.validate()) {
       unawaited(HapticFeedback.selectionClick());
@@ -251,20 +251,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 otherText: isOther ? _otherCtrl.text : null,
               );
 
-    final outcome = await ref
-        .read(profileSaveProvider.notifier)
-        .save(ProfileUpdate(
-          name: _nameCtrl.text,
-          jobTitle: jobTitle,
-          location: _locationEdited ? _locationCtrl.text : null,
-        ));
+    final outcome =
+        await ref.read(profileSaveProvider.notifier).save(ProfileUpdate(
+              name: _nameCtrl.text,
+              jobTitle: jobTitle,
+              location: _locationEdited ? _locationCtrl.text : null,
+            ));
     if (!mounted) return;
     switch (outcome) {
       case ProfileSaved():
         unawaited(HapticFeedback.lightImpact());
         AppSnackBar.success(
           context,
-          en ? 'Profile updated.' : 'تم تحديث الملف الشخصي.',
+          l10n.settingsProfileUpdated,
         );
         Navigator.of(context).pop();
       case ProfileRejected(:final error):
@@ -272,7 +271,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       case ProfileSaveFailed():
         AppSnackBar.error(
           context,
-          en ? 'Could not update profile.' : 'تعذر تحديث الملف الشخصي.',
+          l10n.settingsProfileUpdateFailed,
         );
       case ProfileSaveIgnored():
         break;
@@ -281,21 +280,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   String? _errorText(
     ProfileFieldError? error, {
-    required bool en,
-    required String requiredEn,
-    required String requiredAr,
+    required String requiredText,
     required int max,
   }) =>
       switch (error) {
         null => null,
-        ProfileFieldError.required => en ? requiredEn : requiredAr,
+        ProfileFieldError.required => requiredText,
         ProfileFieldError.tooLong =>
-          en ? 'Must be at most $max characters' : 'يجب ألا يتجاوز $max حرفاً',
+          AppLocalizations.of(context).authFieldTooLong(max),
       };
 
   @override
   Widget build(BuildContext context) {
     final en = AppLocale.isEnglish(context);
+    final l10n = AppLocalizations.of(context);
     final userAsync = ref.watch(settingsUserProvider);
     final titlesAsync = ref.watch(jobTitlesProvider);
     final saving = ref.watch(profileSaveProvider);
@@ -321,7 +319,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         english: en,
         message: error is ApiException
             ? error.displayMessage
-            : (en ? 'Could not load profile.' : 'تعذر تحميل الملف الشخصي.'),
+            : l10n.settingsProfileLoadFailed,
         onRetry: () => ref.invalidate(settingsUserProvider),
         exception: error is ApiException ? error : null,
       );
@@ -364,13 +362,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
           children: [
-            _photo(user, en),
+            _photo(user),
             const SizedBox(height: AppSpacing.lg),
-            label(en ? 'Full name' : 'الاسم الكامل'),
+            label(l10n.settingsProfileFullNameLabel),
             AppTextFormField(
               controller: _nameCtrl,
               showSuccessWhenValid: true,
-              successMessage: en ? 'Looks good' : 'يبدو جيداً',
+              successMessage: l10n.authLooksGood,
               autovalidateMode: autovalidate,
               autofillHints: const [AutofillHints.name],
               textAlign: TextAlign.start,
@@ -379,17 +377,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onChanged: (_) => _nameEdited = true,
               onFieldSubmitted: (_) => unawaited(_save(titles)),
               prefixIcon: const Icon(Icons.person_outline_rounded),
-              hintText: en ? 'Your name' : 'اسمك',
+              hintText: l10n.settingsProfileNameHint,
               validator: (v) => _errorText(
                 ProfileRules.name(v),
-                en: en,
-                requiredEn: 'Name is required',
-                requiredAr: 'الاسم مطلوب',
+                requiredText: l10n.settingsProfileNameRequired,
                 max: ProfileRules.nameMax,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            label(en ? 'Job title' : 'المسمى الوظيفي'),
+            label(l10n.settingsProfileJobTitleLabel),
             JobTitlePickerField(
               titles: titles,
               value: selected,
@@ -408,9 +404,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      en
-                          ? "Couldn't load job titles"
-                          : 'تعذر تحميل المسميات الوظيفية',
+                      l10n.settingsProfileJobTitlesLoadFailed,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -424,36 +418,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       minimumSize: const Size(48, 48),
                       foregroundColor: context.sirati.primaryInk,
                     ),
-                    child: Text(en ? 'Retry' : 'إعادة المحاولة'),
+                    child: Text(l10n.retry),
                   ),
                 ],
               ),
             ],
             if (isOther) ...[
               const SizedBox(height: AppSpacing.md),
-              label(en ? 'Your job title' : 'المسمى الوظيفي الخاص بك'),
+              label(l10n.authJobTitleOtherLabel),
               AppTextFormField(
                 controller: _otherCtrl,
                 showSuccessWhenValid: true,
-                successMessage: en ? 'Looks good' : 'يبدو جيداً',
+                successMessage: l10n.authLooksGood,
                 autovalidateMode: autovalidate,
                 textAlign: TextAlign.start,
                 maxLength: ProfileRules.jobTitleOtherMax,
                 onChanged: (_) => _jobTitleEdited = true,
-                hintText:
-                    en ? 'e.g. Logistics Consultant' : 'مثال: مستشار لوجستي',
+                hintText: l10n.authJobTitleOtherHint,
                 prefixIcon: const Icon(Icons.edit_outlined),
                 validator: (v) => _errorText(
                   ProfileRules.jobTitleOther(v, isOther: isOther),
-                  en: en,
-                  requiredEn: 'Please enter your job title',
-                  requiredAr: 'يرجى كتابة المسمى الوظيفي عند اختيار أخرى.',
+                  requiredText: l10n.authJobTitleOtherRequired,
                   max: ProfileRules.jobTitleOtherMax,
                 ),
               ),
             ],
             const SizedBox(height: AppSpacing.md),
-            label(en ? 'Email' : 'البريد الإلكتروني'),
+            label(l10n.emailLabel),
             readOnlyField(
               'email',
               _emailCtrl,
@@ -462,21 +453,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              en
-                  ? 'Email cannot be changed here.'
-                  : 'لا يمكن تغيير البريد من هنا.',
+              l10n.settingsProfileEmailReadOnly,
               textAlign: TextAlign.start,
               style: AppTextStyles.bodySm(context.sirati)
                   .copyWith(color: context.sirati.textHint),
             ),
             if ((user?.phone ?? '').isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
-              label(en ? 'Phone' : 'الجوال'),
+              label(l10n.settingsProfilePhoneLabel),
               readOnlyField('phone', _phoneCtrl, Icons.phone_iphone_outlined,
                   ltr: true),
             ],
             const SizedBox(height: AppSpacing.md),
-            label(en ? 'City/Country' : 'المدينة/الدولة'),
+            label(l10n.authLocationLabel),
             AppTextFormField(
               key: const ValueKey('profile-location'),
               controller: _locationCtrl,
@@ -487,19 +476,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onChanged: (_) => _locationEdited = true,
               onFieldSubmitted: (_) => unawaited(_save(titles)),
               prefixIcon: const Icon(Icons.place_outlined),
-              hintText: en ? 'Riyadh, Saudi Arabia' : 'الرياض، السعودية',
+              hintText: l10n.authLocationHint,
               validator: (v) => _errorText(
                 ProfileRules.location(v),
-                en: en,
-                requiredEn: '',
-                requiredAr: '',
+                requiredText: '',
                 max: ProfileRules.locationMax,
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
             SubmitButton(
-              label: en ? 'Save changes' : 'حفظ التغييرات',
-              loadingLabel: en ? 'Saving...' : 'جارٍ الحفظ...',
+              label: l10n.settingsProfileSaveChanges,
+              loadingLabel: l10n.authSaving,
               isLoading: saving,
               icon: Icons.check_rounded,
               onPressed: () => unawaited(_save(titles)),
@@ -511,7 +498,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: context.sirati.background,
-      appBar: AppBar(title: Text(en ? 'Profile' : 'الملف الشخصي')),
+      appBar: AppBar(title: Text(l10n.settingsProfileTitle)),
       body: body,
     );
   }

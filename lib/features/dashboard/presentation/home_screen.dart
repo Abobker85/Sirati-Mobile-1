@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/core/network/analytics_service.dart';
-import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
@@ -17,6 +16,7 @@ import 'package:sirati/features/dashboard/presentation/home/dashboard_navigation
 import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/navigation/dashboard_tab.dart';
 import 'package:sirati/shared/navigation/notification_target.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
@@ -108,9 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _lastBackAtRoot = now;
     AppSnackBar.info(
       context,
-      AppLocale.isEnglish(context)
-          ? 'Press back again to exit'
-          : 'اضغط رجوع مرة أخرى للخروج',
+      AppLocalizations.of(context).dashboardPressBackAgainToExit,
     );
   }
 

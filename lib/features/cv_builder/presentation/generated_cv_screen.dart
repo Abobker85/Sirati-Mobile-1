@@ -41,11 +41,12 @@ bool isCvReadyToSend(GeneratedCv cv) =>
     (!AiStatus.isPending(cv.aiStatus) && cv.aiStatus != AiStatus.failed);
 
 /// What the user has to do before the CV can be sent.
-String cvNotReadyMessage(GeneratedCv cv, {required bool english}) =>
-    cv.export?.message(english: english) ??
-    (english
-        ? 'This CV is not ready to send to an employer yet.'
-        : 'هذه السيرة غير جاهزة للإرسال إلى جهة التوظيف بعد.');
+String cvNotReadyMessage(
+  GeneratedCv cv,
+  AppLocalizations l10n, {
+  required bool english,
+}) =>
+    cv.export?.message(english: english) ?? l10n.cvNotReadyToSend;
 
 class GeneratedCvScreen extends ConsumerStatefulWidget {
   const GeneratedCvScreen({super.key, required this.generatedCv});
@@ -97,7 +98,10 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
     if (_isDownloading) return;
     final english = AppLocale.isEnglish(context);
     if (!isCvReadyToSend(_cv)) {
-      AppSnackBar.warning(context, cvNotReadyMessage(_cv, english: english));
+      AppSnackBar.warning(
+          context,
+          cvNotReadyMessage(_cv, AppLocalizations.of(context),
+              english: english));
       return;
     }
     final api = ref.read(cvApiServiceProvider);
@@ -111,7 +115,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
       }
       AppSnackBar.info(
         context,
-        english ? 'Opening PDF download...' : 'جارٍ فتح رابط تنزيل الـ PDF...',
+        AppLocalizations.of(context).cvOpeningPdf,
       );
       final url = await resolveCvPdfUrl(
         api,
@@ -125,9 +129,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
       if (url.isEmpty) {
         AppSnackBar.warning(
           context,
-          english
-              ? 'PDF link is not available yet.'
-              : 'رابط PDF غير متاح حالياً.',
+          AppLocalizations.of(context).cvPdfLinkUnavailable,
         );
         return;
       }
@@ -135,7 +137,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
       if (!launched && mounted) {
         AppSnackBar.warning(
           context,
-          english ? 'Could not open the PDF link.' : 'تعذر فتح رابط PDF.',
+          AppLocalizations.of(context).cvPdfLinkOpenFailed,
         );
       }
     } finally {
@@ -163,9 +165,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
       if (mounted) {
         AppSnackBar.warning(
           context,
-          english
-              ? 'Could not load CV designs. Default design will be used.'
-              : 'تعذر تحميل التصاميم. سيتم استخدام التصميم الافتراضي.',
+          AppLocalizations.of(context).cvTemplatesLoadFailed,
         );
       }
       return (template: null);
@@ -201,7 +201,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
           const LanguageToggle(),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: english ? 'Edit CV' : 'تعديل السيرة',
+            tooltip: AppLocalizations.of(context).cvGeneratorEditTitle,
             onPressed: () => unawaited(_edit()),
           ),
         ],
@@ -229,7 +229,8 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
               CvStatusBanner.warning(
                 key: GeneratedCvScreen.notReadyKey,
                 margin: EdgeInsets.zero,
-                message: cvNotReadyMessage(_cv, english: english),
+                message: cvNotReadyMessage(_cv, AppLocalizations.of(context),
+                    english: english),
               ),
               const SizedBox(height: AppSpacing.md),
             ],

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -39,7 +40,12 @@ class AiFieldLoadingOverlay extends StatelessWidget {
     this.messageInterval = const Duration(milliseconds: 2500),
   });
 
-  /// Default English / Arabic micro-copy for CV AI work.
+  /// Default micro-copy for CV AI work from the label catalog.
+  static List<String> localizedStatusMessages(BuildContext context) =>
+      [AppLocalizations.of(context).sharedAiImprovingWording];
+
+  /// Bundled English / Arabic micro-copy for callers without the catalog.
+  /// Prefer [localizedStatusMessages].
   static List<String> defaultStatusMessages({required bool english}) {
     if (english) {
       return const ['Improving wording…'];
@@ -51,15 +57,12 @@ class AiFieldLoadingOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!isLoading) return child;
 
-    final english = Localizations.localeOf(context).languageCode != 'ar';
     final messages = statusMessages ??
         (statusStream == null
-            ? defaultStatusMessages(english: english)
+            ? localizedStatusMessages(context)
             : const <String>[]);
-    final label = semanticsLabel ??
-        (english
-            ? 'AI is working on this field'
-            : 'الذكاء الاصطناعي يعمل على هذا الحقل');
+    final label =
+        semanticsLabel ?? AppLocalizations.of(context).sharedAiWorkingOnField;
 
     return Semantics(
       container: true,

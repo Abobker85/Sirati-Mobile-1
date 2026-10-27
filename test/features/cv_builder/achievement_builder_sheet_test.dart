@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/features/cv_builder/presentation/widgets/achievement_builder_sheet.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
-Widget _wrap(Widget child) {
+Widget _wrap(Widget child, {bool english = true}) {
   return MaterialApp(
     theme: AppTheme.light,
+    locale: Locale(english ? 'en' : 'ar'),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(body: child),
   );
 }
@@ -77,6 +81,7 @@ void main() {
     String? insertedBullet;
 
     await tester.pumpWidget(_wrap(
+      english: false,
       Builder(
         builder: (context) => ElevatedButton(
           onPressed: () => AchievementBuilderSheet.show(
@@ -173,13 +178,15 @@ void main() {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(_wrap(Builder(
-      builder: (context) => ElevatedButton(
-        onPressed: () => AchievementBuilderSheet.show(
-            context: context, english: false, onInsert: (_) {}),
-        child: const Text('Open Sheet'),
-      ),
-    )));
+    await tester.pumpWidget(_wrap(
+        english: false,
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () => AchievementBuilderSheet.show(
+                context: context, english: false, onInsert: (_) {}),
+            child: const Text('Open Sheet'),
+          ),
+        )));
     await tester.tap(find.text('Open Sheet'));
     await tester.pumpAndSettle();
 

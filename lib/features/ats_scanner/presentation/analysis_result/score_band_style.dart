@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/features/ats_scanner/domain/score_band.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Maps pure score bands to palette colours and copy.
@@ -27,17 +28,11 @@ extension ScoreBandStyle on ScoreBand {
         ScoreBand.weak => c.onErrorContainer,
       };
 
-  String description({required bool english}) => switch (this) {
-        ScoreBand.excellent => english
-            ? 'Excellent - your CV is strong and ready'
-            : 'ممتاز - سيرتك قوية ومؤهلة',
-        ScoreBand.veryGood => english
-            ? 'Very good - a few improvements will help'
-            : 'جيد جداً - مع بعض التحسينات',
-        ScoreBand.fair =>
-          english ? 'Fair - review and polish needed' : 'مقبول - يحتاج مراجعة',
-        ScoreBand.weak =>
-          english ? 'Weak - needs restructuring' : 'ضعيف - يحتاج إعادة هيكلة',
+  String description(AppLocalizations l) => switch (this) {
+        ScoreBand.excellent => l.atsBandExcellent,
+        ScoreBand.veryGood => l.atsBandVeryGood,
+        ScoreBand.fair => l.atsBandFair,
+        ScoreBand.weak => l.atsBandWeak,
       };
 }
 

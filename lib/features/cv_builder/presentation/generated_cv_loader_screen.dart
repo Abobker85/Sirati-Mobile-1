@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -47,9 +48,7 @@ class _GeneratedCvLoaderScreenState
               english: english,
               message: snapshot.error is ApiException
                   ? (snapshot.error as ApiException).displayMessage
-                  : (english
-                      ? 'Could not open this CV.'
-                      : 'تعذر فتح هذه السيرة.'),
+                  : AppLocalizations.of(context).cvOpenFailed,
               onRetry: () {
                 setState(() {
                   _future = ref

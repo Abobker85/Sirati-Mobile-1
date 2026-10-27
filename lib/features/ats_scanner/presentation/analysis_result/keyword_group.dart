@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Wrap of keyword chips, capped at [initialVisibleCount] with a
@@ -28,7 +29,7 @@ class _KeywordGroupState extends State<KeywordGroup> {
   Widget build(BuildContext context) {
     if (widget.keywords.isEmpty) {
       return Text(
-        widget.english ? 'No keywords yet.' : 'لا توجد كلمات مفتاحية حالياً',
+        AppLocalizations.of(context).atsNoKeywords,
         style: TextStyle(fontSize: 12, color: context.sirati.textSecondary),
       );
     }
@@ -50,7 +51,7 @@ class _KeywordGroupState extends State<KeywordGroup> {
             found: widget.found,
             onTap: widget.found
                 ? null
-                : () => _showKeywordAdvice(context, keyword, widget.english),
+                : () => _showKeywordAdvice(context, keyword),
           ),
         if (overflowCount > 0)
           _KeywordOverflowButton(
@@ -133,8 +134,8 @@ class _KeywordOverflowButton extends StatelessWidget {
       onPressed: onPressed,
       child: Text(
         expanded
-            ? (english ? 'Show less' : 'عرض أقل')
-            : (english ? '+$remainingCount more' : '+$remainingCount أخرى'),
+            ? AppLocalizations.of(context).cvHubShowLess
+            : AppLocalizations.of(context).atsShowMoreCount(remainingCount),
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
@@ -145,7 +146,7 @@ class _KeywordOverflowButton extends StatelessWidget {
   }
 }
 
-void _showKeywordAdvice(BuildContext context, String keyword, bool english) {
+void _showKeywordAdvice(BuildContext context, String keyword) {
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
@@ -179,9 +180,8 @@ void _showKeywordAdvice(BuildContext context, String keyword, bool english) {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      english
-                          ? 'ATS Keyword: $keyword'
-                          : 'كلمة مفتاحية: $keyword',
+                      AppLocalizations.of(context)
+                          .atsKeywordDialogTitle(keyword),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -193,9 +193,7 @@ void _showKeywordAdvice(BuildContext context, String keyword, bool english) {
               ),
               const SizedBox(height: 14),
               Text(
-                english
-                    ? 'Applicant Tracking Systems (ATS) scan for "$keyword" in your work experience and skills. Adding it in context with measurable results will increase your resume ranking.'
-                    : 'تبحث أنظمة فرز السير الذاتية (ATS) عن كلمة "$keyword" في قسم الخبرات والمهارات. إضافتها ضمن سياق إنجازاتك المقاسة يرفع نسبة تطابق سيرتك بشكل ملحوظ.',
+                AppLocalizations.of(context).atsKeywordDialogBody(keyword),
                 style: TextStyle(
                   fontSize: 13.5,
                   height: 1.55,
@@ -207,7 +205,7 @@ void _showKeywordAdvice(BuildContext context, String keyword, bool english) {
                 alignment: AlignmentDirectional.centerEnd,
                 child: TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text(english ? 'Got it' : 'فهمت ذلك'),
+                  child: Text(AppLocalizations.of(context).atsGotIt),
                 ),
               ),
             ],

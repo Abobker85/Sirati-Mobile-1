@@ -49,17 +49,17 @@ class DashboardHomeTab extends ConsumerWidget {
           final maxContentWidth = constraints.maxWidth >= 1100
               ? 920.0
               : constraints.maxWidth >= 780
-              ? 760.0
-              : constraints.maxWidth;
+                  ? 760.0
+                  : constraints.maxWidth;
           final horizontalPadding = AppSpacing.pageGutter(constraints.maxWidth);
 
           Widget shell(Widget child) => Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxContentWidth),
-              child: child,
-            ),
-          );
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxContentWidth),
+                  child: child,
+                ),
+              );
 
           return AppAsyncBody<DashboardSummary>(
             snapshot: summary.toSnapshot(),
@@ -67,9 +67,7 @@ class DashboardHomeTab extends ConsumerWidget {
             onRetry: () => ref.invalidate(dashboardProvider(english)),
             errorMessage: (error) => error is ApiException
                 ? error.displayMessage
-                : (english
-                      ? 'Could not load dashboard.'
-                      : 'تعذر تحميل الرئيسية.'),
+                : AppLocalizations.of(context).dashboardHomeLoadFailed,
             loading: SafeArea(
               bottom: false,
               child: shell(
@@ -178,10 +176,9 @@ class _DashboardList extends ConsumerWidget {
               subtitle: summary.status.isNotEmpty
                   ? summary.status
                   : hasCv
-                  ? l.homeHeaderSubtitleReturning
-                  : l.homeHeaderSubtitleNew,
-              unreadCount:
-                  summary.unreadNotifications ??
+                      ? l.homeHeaderSubtitleReturning
+                      : l.homeHeaderSubtitleNew,
+              unreadCount: summary.unreadNotifications ??
                   SessionCache.instance.unreadCount,
               onNotifications: () async {
                 await Navigator.of(context).push(
@@ -279,13 +276,13 @@ class _DashboardList extends ConsumerWidget {
                 TextButton.icon(
                   onPressed: () => _push(context, const HistoryScreen()),
                   icon: const Icon(Icons.history_rounded, size: 16),
-                  label: Text(english ? 'History' : 'السجل'),
+                  label: Text(AppLocalizations.of(context).dashboardHistory),
                   style: textButtonStyle,
                 ),
                 TextButton(
                   onPressed: () => onNavigate(DashboardTab.myCvs),
                   style: textButtonStyle,
-                  child: Text(english ? 'View All' : 'عرض الكل'),
+                  child: Text(AppLocalizations.of(context).dashboardViewAll),
                 ),
               ],
             ),

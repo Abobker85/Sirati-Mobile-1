@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
 
@@ -23,6 +24,9 @@ void main() {
                 await tester.pumpWidget(
                   MaterialApp(
                     theme: theme,
+                    supportedLocales: AppLocalizations.supportedLocales,
+                    localizationsDelegates:
+                        AppLocalizations.localizationsDelegates,
                     home: MediaQuery(
                       data: MediaQueryData(
                         textScaler: TextScaler.linear(scale),
@@ -84,7 +88,8 @@ void main() {
                       (widget) =>
                           widget is Container &&
                           widget.decoration is BoxDecoration &&
-                          (widget.decoration! as BoxDecoration).gradient != null,
+                          (widget.decoration! as BoxDecoration).gradient !=
+                              null,
                     ),
                   ),
                 );
