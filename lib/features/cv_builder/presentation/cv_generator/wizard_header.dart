@@ -129,15 +129,13 @@ class _Connector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!visible) return const SizedBox(height: 2);
+
     final c = context.sirati;
 
     return Container(
       height: 2,
-      color: !visible
-          ? Colors.transparent
-          : done
-              ? c.primaryContainer
-              : c.surfaceHigh,
+      color: done ? c.primaryContainer : c.surfaceHigh,
     );
   }
 }
