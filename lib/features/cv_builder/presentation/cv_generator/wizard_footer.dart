@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -52,7 +53,7 @@ class WizardFooter extends StatelessWidget {
                       Icons.arrow_back_rounded,
                       size: 18,
                     ),
-                    label: Text(english ? 'Back' : 'السابق'),
+                    label: Text(AppLocalizations.of(context).back),
                   ),
                 ),
               ),
@@ -63,10 +64,10 @@ class WizardFooter extends StatelessWidget {
               child: SubmitButton(
                 label: isLast
                     ? (isEditMode
-                        ? (english ? 'Update CV' : 'تحديث السيرة')
-                        : (english ? 'Generate CV' : 'توليد السيرة'))
-                    : (english ? 'Next' : 'التالي'),
-                loadingLabel: english ? 'Generating...' : 'جارٍ التوليد...',
+                        ? AppLocalizations.of(context).cvWizardUpdate
+                        : AppLocalizations.of(context).cvWizardGenerate)
+                    : AppLocalizations.of(context).next,
+                loadingLabel: AppLocalizations.of(context).cvWizardGenerating,
                 isLoading: isLoading,
                 icon: isLast ? Icons.auto_awesome : Icons.arrow_forward_rounded,
                 onPressed: onPrimary,

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 /// Step titles in wizard order.
-List<String> wizardStepTitles({required bool english}) => english
-    ? const ['Personal', 'Skills', 'Experience', 'Education']
-    : const ['الشخصية', 'المهارات', 'الخبرات', 'التعليم'];
+List<String> wizardStepTitles(AppLocalizations l10n) => [
+      l10n.cvWizardStepPersonal,
+      l10n.cvWizardStepSkills,
+      l10n.cvWizardStepExperience,
+      l10n.cvWizardStepEducation,
+    ];
 
 const wizardStepIcons = [
   Icons.person_rounded,
@@ -31,7 +35,8 @@ class WizardHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    final steps = wizardStepTitles(english: english);
+    final l10n = AppLocalizations.of(context);
+    final steps = wizardStepTitles(l10n);
     final progress = (step + 1) / steps.length;
 
     return Container(
@@ -44,9 +49,7 @@ class WizardHeader extends StatelessWidget {
             children: [
               Expanded(
                   child: Text(
-                english
-                    ? 'Step ${step + 1} of ${steps.length}'
-                    : 'خطوة ${step + 1} من ${steps.length}',
+                l10n.cvWizardStepOf(step + 1, steps.length),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,

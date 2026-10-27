@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_widgets.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ai_cv_field.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
@@ -27,32 +28,33 @@ class PersonalStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final english = props.english;
+    final l10n = AppLocalizations.of(context);
     final f = props.fields;
     void next(String _) => FocusScope.of(context).nextFocus();
 
     return WizardStepForm(
       props: props,
-      title: english ? 'Personal Information' : 'المعلومات الشخصية',
+      title: l10n.cvPersonalStepTitle,
       icon: Icons.person_rounded,
       children: [
         FieldGroup(
-          label: english ? 'Full Name *' : 'الاسم الكامل *',
+          label: l10n.cvPersonalFullName,
           child: AppTextFormField(
             controller: f.name,
             textAlign: TextAlign.start,
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
             onFieldSubmitted: next,
-            hintText: english ? 'Salem Sayer' : 'سالم سيار',
+            hintText: l10n.cvPersonalFullNameHint,
             prefixIcon: const Icon(Icons.person_outline),
             validator: (value) => (value?.trim().isEmpty ?? true)
-                ? (english ? 'Full name is required.' : 'الاسم الكامل مطلوب.')
+                ? l10n.cvPersonalFullNameRequired
                 : null,
           ),
         ),
         const SizedBox(height: 14),
         FieldGroup(
-          label: english ? 'Email' : 'البريد الإلكتروني',
+          label: l10n.emailLabel,
           child: AppTextFormField(
             controller: f.email,
             keyboardType: TextInputType.emailAddress,
@@ -65,14 +67,10 @@ class PersonalStep extends StatelessWidget {
             validator: (value) {
               final email = value?.trim() ?? '';
               if (email.isEmpty) {
-                return english
-                    ? 'Email is required so an employer can reply.'
-                    : 'البريد الإلكتروني مطلوب حتى يتمكن صاحب العمل من الرد.';
+                return l10n.cvPersonalEmailRequired;
               }
               if (!email.contains('@')) {
-                return english
-                    ? 'Enter a valid email address.'
-                    : 'أدخل بريداً إلكترونياً صحيحاً.';
+                return l10n.cvPersonalEmailInvalid;
               }
               return null;
             },
@@ -80,7 +78,7 @@ class PersonalStep extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         FieldGroup(
-          label: english ? 'Phone' : 'رقم الهاتف',
+          label: l10n.cvPersonalPhone,
           child: AppTextFormField(
             controller: f.phone,
             keyboardType: TextInputType.phone,
@@ -91,15 +89,13 @@ class PersonalStep extends StatelessWidget {
             hintText: '+966 5X XXX XXXX',
             prefixIcon: const Icon(Icons.phone_outlined),
             validator: (value) => (value?.trim().isEmpty ?? true)
-                ? (english
-                    ? 'Phone is required so an employer can reply.'
-                    : 'رقم الهاتف مطلوب حتى يتمكن صاحب العمل من الرد.')
+                ? l10n.cvPersonalPhoneRequired
                 : null,
           ),
         ),
         const SizedBox(height: 14),
         FieldGroup(
-          label: english ? 'LinkedIn URL' : 'رابط LinkedIn',
+          label: l10n.cvPersonalLinkedin,
           child: AppTextFormField(
             controller: f.linkedin,
             keyboardType: TextInputType.url,
@@ -113,27 +109,22 @@ class PersonalStep extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         FieldGroup(
-          label: english ? 'Target Job Title *' : 'المسمى الوظيفي المستهدف *',
+          label: l10n.cvPersonalTargetJob,
           child: AppTextFormField(
             controller: f.jobTitle,
             textAlign: TextAlign.start,
             textInputAction: TextInputAction.next,
             onFieldSubmitted: next,
-            hintText:
-                english ? 'Laravel Backend Developer' : 'مطوّر Laravel Backend',
+            hintText: l10n.cvPersonalTargetJobHint,
             prefixIcon: const Icon(Icons.work_outline_rounded),
             validator: (value) => (value?.trim().isEmpty ?? true)
-                ? (english
-                    ? 'Target job title is required.'
-                    : 'المسمى الوظيفي المستهدف مطلوب.')
+                ? l10n.cvPersonalTargetJobRequired
                 : null,
           ),
         ),
         const SizedBox(height: 14),
         FieldGroup(
-          label: english
-              ? 'Job Description (optional)'
-              : 'الوصف الوظيفي (اختياري)',
+          label: l10n.cvPersonalJobDescription,
           child: _JobDescriptionField(
             controller: f.jobDescription,
             english: english,
@@ -143,7 +134,7 @@ class PersonalStep extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 18),
-        FieldLabel(english ? 'CV Language' : 'لغة السيرة الذاتية'),
+        FieldLabel(l10n.cvPersonalCvLanguage),
         const SizedBox(height: 8),
         _LanguagePicker(value: language, onChanged: onLanguageChanged),
       ],
@@ -168,6 +159,7 @@ class _JobDescriptionField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -175,9 +167,7 @@ class _JobDescriptionField extends StatelessWidget {
           isLoading: isEnhancing,
           statusMessages:
               AiFieldLoadingOverlay.defaultStatusMessages(english: english),
-          semanticsLabel: english
-              ? 'Enhancing job description'
-              : 'جارٍ تحسين الوصف الوظيفي',
+          semanticsLabel: l10n.cvPersonalEnhancingJobDescription,
           child: AppTextFormField(
             controller: controller,
             textAlign: TextAlign.start,
@@ -185,9 +175,7 @@ class _JobDescriptionField extends StatelessWidget {
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => onDone(),
             enabled: !isEnhancing,
-            hintText: english
-                ? 'Paste the job description or let Siratie complete it from the role...'
-                : 'الصق الوصف الوظيفي أو دع سيرتي يكمله من المسمى...',
+            hintText: l10n.cvPersonalJobDescriptionHint,
             prefixIcon: const Icon(Icons.assignment_outlined),
           ),
         ),
@@ -204,8 +192,8 @@ class _JobDescriptionField extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SubmitButton(
-                  label: english ? 'Enhance' : 'تحسين',
-                  loadingLabel: english ? 'Enhancing...' : 'جارٍ التحسين...',
+                  label: l10n.cvEnhance,
+                  loadingLabel: l10n.cvEnhancing,
                   isLoading: isEnhancing,
                   outlined: true,
                   height: 48,
@@ -224,9 +212,7 @@ class _JobDescriptionField extends StatelessWidget {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          english
-                              ? 'Write more than a line for accurate AI enhancement'
-                              : 'اكتب أكثر من سطر لتوجيه الذكاء الاصطناعي بدقة',
+                          l10n.cvPersonalWriteMore,
                           style: TextStyle(
                             color: context.sirati.textHint,
                             fontSize: 11,

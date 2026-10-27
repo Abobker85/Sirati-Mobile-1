@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/features/cv_builder/domain/cv_list.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 import '../../support/contrast_probe.dart';
@@ -23,6 +24,9 @@ void main() {
         });
         await tester.pumpWidget(MaterialApp(
           theme: theme,
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ListView(
               children: [

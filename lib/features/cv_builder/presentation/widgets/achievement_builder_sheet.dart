@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:sirati/core/utils/bidi_text.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 
@@ -197,6 +198,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
   Widget build(BuildContext context) {
     final c = context.sirati;
     final english = widget.english;
+    final l10n = AppLocalizations.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final actionVerbs = english ? achievementVerbsEn : achievementVerbsAr;
     final canInsert =
@@ -261,9 +263,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          english
-                              ? 'XYZ Achievement Builder'
-                              : 'صانع الإنجازات المقاسة (معادلة XYZ)',
+                          l10n.cvExperienceXyzBuilder,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -272,9 +272,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          english
-                              ? 'Accomplished [X] as measured by [Y] by doing [Z]'
-                              : 'أنجزت [س] مقاساً بـ [ص] عبر [ع] — صيغة الـ ATS القياسية',
+                          l10n.cvXyzFormula,
                           style: TextStyle(
                             fontSize: 12,
                             color: c.textSecondary,
@@ -295,9 +293,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
 
               // ── Quick Presets Carousel ────────────────────────────────────
               Text(
-                english
-                    ? 'Quick Inspiration Presets:'
-                    : 'نماذج إلهام سريعة بنقرة واحدة:',
+                l10n.cvXyzPresetsTitle,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -310,9 +306,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                 child: Row(
                   children: [
                     _PresetChip(
-                      label: english
-                          ? 'Tech / Performance'
-                          : 'تحسين الأداء التقني',
+                      label: l10n.cvXyzPresetTech,
                       onTap: () => _applyPreset(
                         action: english
                             ? 'Optimized database queries and API response times'
@@ -325,9 +319,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                     ),
                     const SizedBox(width: 8),
                     _PresetChip(
-                      label: english
-                          ? 'Sales / Revenue'
-                          : 'زيادة المبيعات والأرباح',
+                      label: l10n.cvXyzPresetSales,
                       onTap: () => _applyPreset(
                         action: english
                             ? 'Increased quarterly sales pipeline and client deals'
@@ -340,9 +332,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                     ),
                     const SizedBox(width: 8),
                     _PresetChip(
-                      label: english
-                          ? 'Project / Leadership'
-                          : 'إدارة وتسليم المشاريع',
+                      label: l10n.cvXyzPresetProject,
                       onTap: () => _applyPreset(
                         action: english
                             ? 'Led cross-functional team to deliver 4 major releases'
@@ -362,9 +352,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
 
               // ── Field 1: Action (X) ──────────────────────────────────────
               Text(
-                english
-                    ? '1. What did you accomplish? (Action - X) *'
-                    : '1. ماذا أنجزت أو طوّرت؟ (الإجراء - س) *',
+                l10n.cvXyzActionLabel,
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -375,9 +363,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
               AppTextFormField(
                 controller: _actionCtrl,
                 textInputAction: TextInputAction.next,
-                hintText: english
-                    ? 'e.g. Developed REST APIs and payment gateway'
-                    : 'مثال: طوّرت واجهات برمجة التطبيقات وبوابة الدفع',
+                hintText: l10n.cvXyzActionHint,
               ),
               const SizedBox(height: 6),
               Wrap(
@@ -402,9 +388,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
 
               // ── Field 2: Metric / Number (Y) ──────────────────────────────
               Text(
-                english
-                    ? '2. What was the measurable result? (Metric - Y)'
-                    : '2. ما النتيجة أو المقياس الرقمي؟ (المقياس - ص)',
+                l10n.cvXyzMetricLabel,
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -415,9 +399,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
               AppTextFormField(
                 controller: _metricCtrl,
                 textInputAction: TextInputAction.next,
-                hintText: english
-                    ? 'e.g. by 35% or saving 15 hours weekly'
-                    : 'مثال: بنسبة 35% أو توفير 15 ساعة أسبوعياً',
+                hintText: l10n.cvXyzMetricHint,
               ),
               const SizedBox(height: 6),
               Wrap(
@@ -442,9 +424,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
 
               // ── Field 3: Method / Tools (Z) ──────────────────────────────
               Text(
-                english
-                    ? '3. How did you achieve it? (Method / Tools - Z)'
-                    : '3. كيف حققته وما الأدوات المستخدمة؟ (الأسلوب - ع)',
+                l10n.cvXyzMethodLabel,
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -455,9 +435,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
               AppTextFormField(
                 controller: _methodCtrl,
                 textInputAction: TextInputAction.done,
-                hintText: english
-                    ? 'e.g. using Laravel, Docker, and Redis caching'
-                    : 'مثال: باستخدام Laravel و Docker وتقنيات التخزين المؤقت Redis',
+                hintText: l10n.cvXyzMethodHint,
               ),
               const SizedBox(height: 16),
 
@@ -480,9 +458,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                               size: 16, color: c.primaryDark),
                           const SizedBox(width: 6),
                           Text(
-                            english
-                                ? 'Live Achievement Preview:'
-                                : 'معاينة الصياغة النهائية:',
+                            l10n.cvXyzPreviewTitle,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -519,7 +495,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                         side: BorderSide(color: c.border),
                       ),
                       onPressed: () => Navigator.of(context).pop(),
-                      child: Text(english ? 'Cancel' : 'إلغاء'),
+                      child: Text(l10n.cancel),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -534,7 +510,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                       onPressed: canInsert ? _insert : null,
                       icon: const Icon(Icons.add_task_rounded, size: 18),
                       label: Text(
-                        english ? 'Insert into Experience' : 'إدراج في الخبرة',
+                        l10n.cvXyzInsert,
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),

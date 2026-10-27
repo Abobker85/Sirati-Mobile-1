@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/template_preview.dart';
@@ -26,7 +27,7 @@ class CvTemplatePicker extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                english ? 'Choose CV design' : 'اختر تصميم السيرة',
+                AppLocalizations.of(context).cvTemplatePickerTitle,
                 textAlign: TextAlign.start,
                 style: TextStyle(
                   fontSize: 18,
@@ -56,7 +57,7 @@ class CvTemplatePicker extends StatelessWidget {
               ),
               subtitle: Text(
                 template.isDefault
-                    ? (english ? 'Default template' : 'القالب الافتراضي')
+                    ? AppLocalizations.of(context).cvTemplateDefault
                     : template.slug,
                 textAlign: TextAlign.start,
               ),

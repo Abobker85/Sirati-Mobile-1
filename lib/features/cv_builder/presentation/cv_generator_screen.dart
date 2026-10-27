@@ -23,6 +23,7 @@ import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_head
 import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_widgets.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/widgets/achievement_builder_sheet.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/models/job_title.dart';
@@ -76,7 +77,6 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
   int _stepDirection = 1;
   String _language = 'ar';
   List<JobTitle> _jobTitles = const [];
-
 
   /// True after any user edit since the last save/generate/restore.
   bool _isDirty = false;
@@ -177,7 +177,6 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     return _draftStore.save(_fields.read(language: _language), step: _step);
   }
 
-
   void _setLanguage(String code) {
     if (_language == code) return;
     setState(() => _language = code);
@@ -261,10 +260,9 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       if (mounted) Navigator.of(context).pop();
       return;
     }
-    final english = AppLocale.isEnglish(context);
 
     if (_isEditMode) {
-      final discard = await confirmDiscardEdits(context, english: english);
+      final discard = await confirmDiscardEdits(context);
       if (discard && mounted) {
         unawaited(
           AnalyticsService.logWizardAbandoned(step: _step, dirty: _isDirty),
@@ -274,7 +272,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       return;
     }
 
-    final action = await askSaveDraft(context, english: english);
+    final action = await askSaveDraft(context);
     if (!mounted) return;
     switch (action) {
       case WizardExitAction.cancel:
@@ -292,7 +290,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         if (!mounted) return;
         _isDirty = false;
         unawaited(AnalyticsService.logDraftSaved());
-        AppSnackBar.info(context, english ? 'Draft saved' : 'تم حفظ المسودة');
+        AppSnackBar.info(context, AppLocalizations.of(context).cvDraftSaved);
         Navigator.of(context).pop();
     }
   }
@@ -307,9 +305,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           if (mounted) {
             AppSnackBar.info(
               context,
-              english
-                  ? 'This achievement is already in your experience.'
-                  : 'هذا الإنجاز موجود مسبقاً في خبراتك.',
+              AppLocalizations.of(context).cvAchievementDuplicate,
             );
           }
           return;
@@ -319,9 +315,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         if (mounted) {
           AppSnackBar.success(
             context,
-            english
-                ? 'Achievement added to experience.'
-                : 'تمت إضافة الإنجاز إلى الخبرات بنجاح.',
+            AppLocalizations.of(context).cvAchievementAdded,
           );
         }
       },
@@ -342,7 +336,8 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       onCancelled: () {
         generation.cancel();
         if (mounted) {
-          AppSnackBar.info(context, english ? 'Cancelled' : 'تم الإلغاء');
+          AppSnackBar.info(
+              context, AppLocalizations.of(context).cvGenerationCancelled);
         }
       },
     );
@@ -370,15 +365,13 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           AppSnackBar.fromException(
             context,
             error,
-            retryLabel: english ? 'Retry' : 'إعادة',
+            retryLabel: AppLocalizations.of(context).cvRetryShort,
             onRetry: _submit,
           );
         } else {
           AppSnackBar.error(
             context,
-            english
-                ? 'An unexpected error occurred while generating the CV.'
-                : 'حدث خطأ غير متوقع أثناء توليد السيرة.',
+            AppLocalizations.of(context).cvGenerationUnexpectedError,
           );
         }
 
@@ -411,9 +404,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         if (timedOut) {
           AppSnackBar.warning(
             context,
-            english
-                ? 'AI is still working in the background. We will notify you when it finishes — this draft is not ready to send to an employer.'
-                : 'لا يزال الذكاء الاصطناعي يعمل في الخلفية. سنُعلمك عند الانتهاء — هذه المسودة غير جاهزة للإرسال إلى جهة التوظيف.',
+            AppLocalizations.of(context).cvGenerationStillRunning,
           );
           return;
         }
@@ -421,7 +412,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           AppSnackBar.error(
             context,
             AiErrorMessage.generationFailed(cv.aiError, english: english),
-            actionLabel: english ? 'Retry' : 'إعادة المحاولة',
+            actionLabel: AppLocalizations.of(context).retry,
             onAction: _submit,
           );
         }
@@ -459,9 +450,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     if (jobTitle.isEmpty) {
       AppSnackBar.warning(
         context,
-        english
-            ? 'Enter the target job title first.'
-            : 'أدخل المسمى الوظيفي المستهدف أولاً.',
+        AppLocalizations.of(context).cvEnterTargetJobFirst,
       );
       return;
     }
@@ -483,9 +472,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           error,
           english: english,
           onRetry: () => _enhanceField(field),
-          fallback: english
-              ? 'Could not enhance this field. Try again.'
-              : 'تعذر تحسين هذا الحقل. حاول مرة أخرى.',
+          fallback: AppLocalizations.of(context).cvEnhanceFieldFailed,
         );
       case CvEnhanced(:final text, :final details):
         _setTextSilently(controller, text);
@@ -493,11 +480,9 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         setState(() => _fieldResults[field] = details);
         AppSnackBar.show(
           context,
-          message: english
-              ? 'Field enhanced. Review the missing facts before continuing.'
-              : 'تم تحسين الحقل. راجع المعلومات الناقصة قبل المتابعة.',
+          message: AppLocalizations.of(context).cvFieldEnhanced,
           variant: AppSnackBarVariant.success,
-          actionLabel: english ? 'Undo' : 'تراجع',
+          actionLabel: AppLocalizations.of(context).cvUndo,
           onAction: () {
             if (!mounted) return;
             _setTextSilently(controller, draft);
@@ -515,18 +500,14 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     if (targetJobTitle.isEmpty) {
       AppSnackBar.warning(
         context,
-        english
-            ? 'Enter the target job title first.'
-            : 'أدخل المسمى الوظيفي المستهدف أولاً.',
+        AppLocalizations.of(context).cvEnterTargetJobFirst,
       );
       return;
     }
     if (!AiCvField.isSufficientForEnhancement(_fields.jobDescription.text)) {
       AppSnackBar.warning(
         context,
-        english
-            ? 'Enter more than a line of job description for accurate AI enhancement.'
-            : 'اكتب أكثر من سطر في الوصف الوظيفي لتوجيه الذكاء الاصطناعي بدقة.',
+        AppLocalizations.of(context).cvJobDescriptionTooShort,
       );
       return;
     }
@@ -549,16 +530,14 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           error,
           english: english,
           onRetry: _enhanceJobDescription,
-          fallback: english
-              ? 'Could not enhance the job description. Try again.'
-              : 'تعذر تحسين الوصف الوظيفي. حاول مرة أخرى.',
+          fallback: AppLocalizations.of(context).cvEnhanceJobDescriptionFailed,
         );
       case CvEnhanced(:final text):
         // A real edit: goes through dirty tracking and autosave.
         _fields.jobDescription.text = text;
         AppSnackBar.success(
           context,
-          english ? 'Job description enhanced.' : 'تم تحسين الوصف الوظيفي.',
+          AppLocalizations.of(context).cvJobDescriptionEnhanced,
         );
     }
   }
@@ -573,7 +552,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       AppSnackBar.fromException(
         context,
         error,
-        retryLabel: english ? 'Retry' : 'إعادة',
+        retryLabel: AppLocalizations.of(context).cvRetryShort,
         onRetry: onRetry,
       );
     } else {
@@ -636,8 +615,8 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(_isEditMode
-              ? (english ? 'Edit CV' : 'تعديل السيرة')
-              : (english ? 'Create CV' : 'إنشاء سيرة ذاتية')),
+              ? AppLocalizations.of(context).cvGeneratorEditTitle
+              : AppLocalizations.of(context).cvGeneratorCreateTitle),
           actions: const [
             Padding(
               padding: EdgeInsetsDirectional.only(end: 12),

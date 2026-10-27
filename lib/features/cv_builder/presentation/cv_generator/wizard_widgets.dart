@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator/cv_form_controllers.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 
@@ -72,9 +73,7 @@ class WizardStepForm extends StatelessWidget {
           const SizedBox(height: 18),
           if (props.showErrorBanner)
             AppFormErrorBanner(
-              message: props.english
-                  ? 'Please review the highlighted fields before continuing.'
-                  : 'يرجى مراجعة الحقول المميزة قبل المتابعة.',
+              message: AppLocalizations.of(context).cvWizardReviewFields,
               onDismiss: props.onDismissErrorBanner,
             ),
           ...children,

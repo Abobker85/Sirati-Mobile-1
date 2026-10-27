@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/locale_format.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// "Continue where you left off?" offer shown in create mode when a local
@@ -21,10 +22,11 @@ class DraftRestoreBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
+    final l10n = AppLocalizations.of(context);
     final at = savedAt;
     final relative = at != null
         ? LocaleFormat.relativeSavedAt(at, english: english)
-        : (english ? 'Draft available' : 'مسودة متاحة');
+        : l10n.cvDraftAvailable;
 
     return Material(
       color: c.infoLight,
@@ -48,9 +50,7 @@ class DraftRestoreBanner extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        english
-                            ? 'Continue where you left off?'
-                            : 'المتابعة من حيث توقفت؟',
+                        l10n.cvDraftContinueTitle,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -82,7 +82,7 @@ class DraftRestoreBanner extends StatelessWidget {
                       side: BorderSide(color: c.border),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    child: Text(english ? 'Start fresh' : 'البدء من جديد'),
+                    child: Text(l10n.cvDraftStartFresh),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -92,7 +92,7 @@ class DraftRestoreBanner extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    child: Text(english ? 'Restore' : 'استعادة'),
+                    child: Text(l10n.cvDraftRestore),
                   ),
                 ),
               ],

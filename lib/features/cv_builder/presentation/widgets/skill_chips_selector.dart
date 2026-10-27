@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:sirati/core/utils/bidi_text.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
@@ -438,9 +439,8 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    english
-                        ? 'Selected Skills (${_skills.length})'
-                        : 'المهارات المحددة (${_skills.length})',
+                    AppLocalizations.of(context)
+                        .cvSkillsSelectedCount(_skills.length),
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
@@ -462,7 +462,7 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                         });
                       },
                       child: Text(
-                        english ? 'Clear all' : 'مسح الكل',
+                        AppLocalizations.of(context).cvSkillsClearAll,
                         style: const TextStyle(
                             fontSize: 11.5, fontWeight: FontWeight.w600),
                       ),
@@ -474,9 +474,7 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Text(
-                    english
-                        ? 'No skills added yet. Tap from suggestions below or type a skill.'
-                        : 'لم تضف مهارات بعد. اختر من المقترحات أدناه أو اكتب مهاراتك.',
+                    AppLocalizations.of(context).cvSkillsEmpty,
                     style: TextStyle(
                       fontSize: 12,
                       color: c.textHint,
@@ -554,9 +552,8 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                         onSubmitted: (_) => _submitCustomSkill(),
                         style: TextStyle(fontSize: 13, color: c.textPrimary),
                         decoration: InputDecoration(
-                          hintText: english
-                              ? 'Type a skill and press + ...'
-                              : 'اكتب مهارة واضغط + ...',
+                          hintText:
+                              AppLocalizations.of(context).cvSkillsInputHint,
                           hintStyle: TextStyle(fontSize: 12, color: c.textHint),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
@@ -593,7 +590,7 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                       onPressed: widget.enabled ? _submitCustomSkill : null,
                       icon: const Icon(Icons.add_rounded, size: 18),
                       label: Text(
-                        english ? 'Add' : 'إضافة',
+                        AppLocalizations.of(context).addItem,
                         style: const TextStyle(
                             fontSize: 12.5, fontWeight: FontWeight.w700),
                       ),
@@ -613,9 +610,7 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
               Icon(Icons.auto_awesome_rounded, size: 15, color: c.primary),
               const SizedBox(width: 6),
               Text(
-                english
-                    ? 'Suggested for your target role:'
-                    : 'مقترحات ذكية لمسماك الوظيفي:',
+                AppLocalizations.of(context).cvSkillsSuggested,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
