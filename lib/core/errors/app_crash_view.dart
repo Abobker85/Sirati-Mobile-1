@@ -16,9 +16,9 @@ class AppCrashView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.languageCode.value == 'en';
+    final english = AppLocale.baseLanguage == 'en';
     return Directionality(
-      textDirection: english ? TextDirection.ltr : TextDirection.rtl,
+      textDirection: AppLocale.currentDirection,
       child: Material(
         // Shown when the app has crashed, possibly before any theme exists;
         // core may not import the shared palette.
