@@ -14,6 +14,7 @@ import 'package:sirati/features/jobs/presentation/widgets/job_news_card.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_common.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_filters_bar.dart';
 import 'package:sirati/features/jobs/presentation/widgets/profile_context_banner.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -107,9 +108,7 @@ class _JobNewsScreenState extends ConsumerState<JobNewsScreen> {
             fallbackOnEmptyError: JobNewsFeed.empty(english: english),
             errorMessage: (error) => error is ApiException
                 ? error.displayMessage
-                : (english
-                    ? 'Could not load job news.'
-                    : 'تعذر تحميل أخبار الوظائف.'),
+                : AppLocalizations.of(context).jobsLoadFailed,
             loading: shell(
               JobNewsSkeleton(horizontalPadding: horizontalPadding),
             ),
@@ -259,13 +258,12 @@ class _JobNewsList extends ConsumerWidget {
                         if (feed.items.isEmpty)
                           EmptyJobNews(
                             english: english,
-                            onClearFilters: filters.isActive
-                                ? onClearFilters
-                                : null,
+                            onClearFilters:
+                                filters.isActive ? onClearFilters : null,
                           )
                         else if (latest.isNotEmpty) ...[
                           Text(
-                            english ? 'Latest Postings' : 'آخر الإعلانات',
+                            AppLocalizations.of(context).jobsLatestPostings,
                             textAlign: TextAlign.start,
                             style: AppTextStyles.titleMd(context.sirati),
                           ),
@@ -305,5 +303,4 @@ class _JobNewsList extends ConsumerWidget {
       ),
     );
   }
-
 }

@@ -54,9 +54,7 @@ class EmptyJobNews extends StatelessWidget {
           Text(
             onClearFilters != null
                 ? AppLocalizations.of(context).noMatchingJobs
-                : english
-                    ? 'No job news is published yet.'
-                    : 'لا توجد أخبار وظائف منشورة حالياً.',
+                : AppLocalizations.of(context).jobsEmptyFeed,
             textAlign: TextAlign.center,
             style: AppTypography.of(context, AppTypography.bodyMd,
                 color: context.sirati.textSecondary),

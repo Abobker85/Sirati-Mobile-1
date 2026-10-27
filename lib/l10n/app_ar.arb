@@ -452,6 +452,392 @@
   "sharedLoading": "جارٍ التحميل...",
   "jm4ConfirmFact": "أؤكد أن هذه المعلومة صحيحة عني",
   "jm4HonestyHint": "أكد فقط المعلومات التي يمكنك إثبات صحتها بصدق. سيُضاف هذا النص إلى سيرتك الذاتية.",
+  "jobsFilterAll": "الكل",
+  "@jobsFilterAll": {
+    "description": "Job news filter chip that clears the preset or category filter."
+  },
+  "jobsPresetMatched": "مناسبة لي 🎯",
+  "@jobsPresetMatched": {
+    "description": "Job news preset chip: jobs matching the user profile."
+  },
+  "jobsPresetGov": "جهات حكومية 🏛️",
+  "@jobsPresetGov": {
+    "description": "Job news preset chip: government employers."
+  },
+  "jobsPresetEnterprise": "شركات كبرى 🏢",
+  "@jobsPresetEnterprise": {
+    "description": "Job news preset chip: large companies."
+  },
+  "jobsPresetTamheer": "تمهير وتدريب 🇸🇦",
+  "@jobsPresetTamheer": {
+    "description": "Job news preset chip: Tamheer training programme."
+  },
+  "jobsFilterRemote": "عن بعد 🌐",
+  "@jobsFilterRemote": {
+    "description": "Job news preset and city chip: remote jobs."
+  },
+  "jobsSearchHint": "ابحث عن وظيفة أو شركة...",
+  "@jobsSearchHint": {
+    "description": "Hint text of the job news search field."
+  },
+  "jobsCategoryTech": "تقنية",
+  "@jobsCategoryTech": {
+    "description": "Job news category chip: technology."
+  },
+  "jobsCategoryFinance": "تمويل",
+  "@jobsCategoryFinance": {
+    "description": "Job news category chip: finance."
+  },
+  "jobsCategoryHealth": "صحة",
+  "@jobsCategoryHealth": {
+    "description": "Job news category chip: health."
+  },
+  "jobsCityAll": "كل المناطق",
+  "@jobsCityAll": {
+    "description": "Job news city chip that clears the city filter."
+  },
+  "jobsCityRiyadh": "الرياض",
+  "@jobsCityRiyadh": {
+    "description": "Job news city chip."
+  },
+  "jobsCityJeddah": "جدة",
+  "@jobsCityJeddah": {
+    "description": "Job news city chip."
+  },
+  "jobsCityDammam": "الدمام",
+  "@jobsCityDammam": {
+    "description": "Job news city chip."
+  },
+  "jobsCityKhobar": "الخبر",
+  "@jobsCityKhobar": {
+    "description": "Job news city chip."
+  },
+  "jobsCityMecca": "مكة",
+  "@jobsCityMecca": {
+    "description": "Job news city chip."
+  },
+  "jobsCityMedina": "المدينة",
+  "@jobsCityMedina": {
+    "description": "Job news city chip."
+  },
+  "jobsPersonalizedTitle": "فرص مهنية مخصصة لك",
+  "@jobsPersonalizedTitle": {
+    "description": "Title of the job news profile banner."
+  },
+  "jobsPersonalizedFallback": "عرض وظائف متوافقة مع مهاراتك وخبراتك.",
+  "@jobsPersonalizedFallback": {
+    "description": "Job news profile banner subtitle when the user has no career field."
+  },
+  "jobsMatchedActive": "المطابقة ✓",
+  "@jobsMatchedActive": {
+    "description": "Job news profile banner toggle while the matched filter is on."
+  },
+  "jobsMatchToggle": "المطابقة 🎯",
+  "@jobsMatchToggle": {
+    "description": "Job news profile banner toggle that turns the matched filter on."
+  },
+  "jobsEmptyFeed": "لا توجد أخبار وظائف منشورة حالياً.",
+  "@jobsEmptyFeed": {
+    "description": "Empty state of the job news list when no filter is active."
+  },
+  "jobsLoadFailed": "تعذر تحميل أخبار الوظائف.",
+  "@jobsLoadFailed": {
+    "description": "Error shown when the job news feed fails to load."
+  },
+  "jobsLatestPostings": "آخر الإعلانات",
+  "@jobsLatestPostings": {
+    "description": "Section title above the job news list."
+  },
+  "jobsDetailTitle": "تفاصيل الخبر",
+  "@jobsDetailTitle": {
+    "description": "App bar title of the job news detail screen."
+  },
+  "jobsVerifiedSourceDetail": "جهة موثقة معتمدة",
+  "@jobsVerifiedSourceDetail": {
+    "description": "Fallback source badge on the job detail screen for a verified employer."
+  },
+  "jobsTamheerProgram": "برنامج تمهير 🇸🇦",
+  "@jobsTamheerProgram": {
+    "description": "Badge on the job detail screen for Tamheer programme jobs."
+  },
+  "jobsCompatibilityTitle": "توافق الوظيفة مع ملفك المهني",
+  "@jobsCompatibilityTitle": {
+    "description": "Title of the match card on the job detail screen."
+  },
+  "jobsSkillsRequired": "المهارات المطلوبة للوظيفة",
+  "@jobsSkillsRequired": {
+    "description": "Section title of required skills on the job detail screen."
+  },
+  "jobsDescriptionTitle": "تفاصيل ومتطلبات الإعلان",
+  "@jobsDescriptionTitle": {
+    "description": "Section title of the posting text on the job detail screen."
+  },
+  "jobsTailorCv": "تخصيص سيرتي الذاتية لهذه الوظيفة 🪄",
+  "@jobsTailorCv": {
+    "description": "Button that opens the CV generator targeted at this job."
+  },
+  "jobsOpenApplyFailed": "تعذر فتح صفحة التقديم.",
+  "@jobsOpenApplyFailed": {
+    "description": "Error when the external application link cannot be opened."
+  },
+  "jobsApplyOfficialSite": "التقديم عبر الموقع الرسمي",
+  "@jobsApplyOfficialSite": {
+    "description": "Button that opens the external application page."
+  },
+  "jobsVerifiedSourceCard": "موثقة",
+  "@jobsVerifiedSourceCard": {
+    "description": "Fallback source badge on a job news card for a verified employer."
+  },
+  "jobsTamheerBadge": "تمهير 🇸🇦",
+  "@jobsTamheerBadge": {
+    "description": "Badge on a job news card for Tamheer programme jobs."
+  },
+  "jobsNewBadge": "جديد",
+  "@jobsNewBadge": {
+    "description": "Badge on the newest job news card."
+  },
+  "jobsDetailsLink": "التفاصيل ←",
+  "@jobsDetailsLink": {
+    "description": "Link text at the bottom of a job news card."
+  },
+  "jobsVerifiedSourceFeatured": "جهة موثقة",
+  "@jobsVerifiedSourceFeatured": {
+    "description": "Fallback source badge on the featured job card for a verified employer."
+  },
+  "jobsTamheerBadgeFeatured": "تمهير 🇸🇦",
+  "@jobsTamheerBadgeFeatured": {
+    "description": "Badge on the featured job card for Tamheer programme jobs."
+  },
+  "jobsApplyNow": "تقدم الآن",
+  "@jobsApplyNow": {
+    "description": "Call to action on the featured job card."
+  },
+  "atsFileTooLarge": "يجب أن يكون حجم الملف {size} ميغابايت أو أقل.",
+  "@atsFileTooLarge": {
+    "description": "Error when the picked CV file is larger than the upload limit (size in MB).",
+    "placeholders": {
+      "size": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "atsUnsupportedFileType": "يُدعم فقط ملف PDF أو TXT.",
+  "@atsUnsupportedFileType": {
+    "description": "Error when the picked CV file is not PDF or TXT."
+  },
+  "atsResumeRequired": "الصق نص السيرة أو ارفع ملف PDF/TXT للبدء.",
+  "@atsResumeRequired": {
+    "description": "Error when the ATS scan is started without a CV."
+  },
+  "atsCancelled": "تم الإلغاء",
+  "@atsCancelled": {
+    "description": "Snack bar after the user cancels a running ATS analysis."
+  },
+  "atsAiStillWorkingAnalysis": "لا يزال الذكاء الاصطناعي يعمل. نتيجتك الأساسية جاهزة، ويمكنك إعادة محاولة التوصيات لاحقاً.",
+  "@atsAiStillWorkingAnalysis": {
+    "description": "Warning when AI suggestions time out but the ATS score is ready."
+  },
+  "atsAnalyzeUnexpectedError": "حدث خطأ غير متوقع أثناء تحليل السيرة.",
+  "@atsAnalyzeUnexpectedError": {
+    "description": "Error when the ATS analysis fails unexpectedly."
+  },
+  "atsOpenAnalysisFailed": "تعذر فتح هذا التحليل.",
+  "@atsOpenAnalysisFailed": {
+    "description": "Error when a saved ATS analysis cannot be loaded."
+  },
+  "atsResultsTitle": "نتائج التحليل",
+  "@atsResultsTitle": {
+    "description": "App bar title of the ATS analysis result screen."
+  },
+  "atsTabScore": "الدرجة والمعايير",
+  "@atsTabScore": {
+    "description": "ATS result tab with the score and criteria."
+  },
+  "atsTabRecommendations": "التوصيات",
+  "@atsTabRecommendations": {
+    "description": "ATS result tab with recommendations."
+  },
+  "atsGenerateImprovedCv": "توليد سيرة محسّنة",
+  "@atsGenerateImprovedCv": {
+    "description": "Button that generates an improved CV from the ATS analysis."
+  },
+  "atsGenerating": "جارٍ التوليد...",
+  "@atsGenerating": {
+    "description": "Loading label of the generate improved CV button."
+  },
+  "atsGenerateUnexpectedError": "حدث خطأ غير متوقع أثناء توليد السيرة.",
+  "@atsGenerateUnexpectedError": {
+    "description": "Error when improved CV generation fails unexpectedly."
+  },
+  "atsAiStillWorkingGeneration": "لا يزال الذكاء الاصطناعي يعمل. نسخة محلية من سيرتك جاهزة، ويمكنك إعادة محاولة التوليد لاحقاً.",
+  "@atsAiStillWorkingGeneration": {
+    "description": "Warning when AI generation times out but a local CV is ready."
+  },
+  "atsUploadTapHint": "اضغط لرفع ملف PDF أو TXT",
+  "@atsUploadTapHint": {
+    "description": "Upload area prompt on the ATS scan form."
+  },
+  "atsUploadMaxSize": "الحد الأقصى 5 ميجابايت",
+  "@atsUploadMaxSize": {
+    "description": "Upload size limit hint on the ATS scan form."
+  },
+  "atsRemoveFile": "إزالة الملف",
+  "@atsRemoveFile": {
+    "description": "Tooltip of the button that removes the picked CV file."
+  },
+  "atsOr": "أو",
+  "@atsOr": {
+    "description": "Divider between the upload and paste options on the ATS scan form."
+  },
+  "atsNoKeywords": "لا توجد كلمات مفتاحية حالياً",
+  "@atsNoKeywords": {
+    "description": "Empty state of an ATS keyword group."
+  },
+  "atsShowMoreCount": "+{count} أخرى",
+  "@atsShowMoreCount": {
+    "description": "Button that expands an ATS keyword group; count is the number of hidden keywords.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "atsKeywordDialogTitle": "كلمة مفتاحية: {keyword}",
+  "@atsKeywordDialogTitle": {
+    "description": "Title of the advice sheet for a missing ATS keyword.",
+    "placeholders": {
+      "keyword": {
+        "type": "String",
+        "example": "Laravel"
+      }
+    }
+  },
+  "atsKeywordDialogBody": "تبحث أنظمة فرز السير الذاتية (ATS) عن كلمة \"{keyword}\" في قسم الخبرات والمهارات. إضافتها ضمن سياق إنجازاتك المقاسة يرفع نسبة تطابق سيرتك بشكل ملحوظ.",
+  "@atsKeywordDialogBody": {
+    "description": "Body of the advice sheet for a missing ATS keyword.",
+    "placeholders": {
+      "keyword": {
+        "type": "String",
+        "example": "Laravel"
+      }
+    }
+  },
+  "atsGotIt": "فهمت ذلك",
+  "@atsGotIt": {
+    "description": "Button that closes the ATS keyword advice sheet."
+  },
+  "atsCriteriaDetails": "تفاصيل المعايير",
+  "@atsCriteriaDetails": {
+    "description": "Section title of the ATS criteria list."
+  },
+  "atsKeywordsTitle": "الكلمات المفتاحية",
+  "@atsKeywordsTitle": {
+    "description": "Section title of the ATS keyword lists."
+  },
+  "atsGradeLabel": "تقدير  {grade}",
+  "@atsGradeLabel": {
+    "description": "Grade chip in the ATS score hero.",
+    "placeholders": {
+      "grade": {
+        "type": "String",
+        "example": "A"
+      }
+    }
+  },
+  "atsJobMatchSemantic": "تطابق الوظيفة",
+  "@atsJobMatchSemantic": {
+    "description": "Screen reader label of the ATS job match progress bar."
+  },
+  "atsJobMatchPercentage": "نسبة التطابق مع الوظيفة",
+  "@atsJobMatchPercentage": {
+    "description": "Caption under the ATS job match progress bar."
+  },
+  "atsKeywordsFound": "موجودة  ({count})",
+  "@atsKeywordsFound": {
+    "description": "Header of the found ATS keywords group with their count.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "8"
+      }
+    }
+  },
+  "atsKeywordsMissing": "ناقصة  ({count})",
+  "@atsKeywordsMissing": {
+    "description": "Header of the missing ATS keywords group with their count.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "atsNoStrengths": "لا توجد نقاط قوة متاحة حالياً",
+  "@atsNoStrengths": {
+    "description": "Empty state of the ATS strengths list."
+  },
+  "atsQuickWins": "تحسينات سريعة",
+  "@atsQuickWins": {
+    "description": "Section title of the ATS quick wins list."
+  },
+  "atsNoQuickWins": "لا توجد تحسينات سريعة متاحة حالياً",
+  "@atsNoQuickWins": {
+    "description": "Empty state of the ATS quick wins list."
+  },
+  "atsUpgradeTitle": "جاهز لترقية سيرتك؟",
+  "@atsUpgradeTitle": {
+    "description": "Title of the improved CV call to action on the recommendations tab."
+  },
+  "atsUpgradeBody": "سنولّد لك سيرة ذاتية محسّنة تلقائياً بناءً على نتائج هذا التحليل",
+  "@atsUpgradeBody": {
+    "description": "Body of the improved CV call to action on the recommendations tab."
+  },
+  "atsKeywordSourceJd": "التقييم مبني على وصف الوظيفة الذي أدخلته",
+  "@atsKeywordSourceJd": {
+    "description": "ATS keyword source badge when keywords come from the pasted job description."
+  },
+  "atsKeywordSourceGeneric": "قائمة عامة — أضف وصف الوظيفة في المرة القادمة لتقييم أدق",
+  "@atsKeywordSourceGeneric": {
+    "description": "ATS keyword source badge when a generic keyword list was used."
+  },
+  "atsBandExcellent": "ممتاز - سيرتك قوية ومؤهلة",
+  "@atsBandExcellent": {
+    "description": "ATS score band description: excellent."
+  },
+  "atsBandVeryGood": "جيد جداً - مع بعض التحسينات",
+  "@atsBandVeryGood": {
+    "description": "ATS score band description: very good."
+  },
+  "atsBandFair": "مقبول - يحتاج مراجعة",
+  "@atsBandFair": {
+    "description": "ATS score band description: fair."
+  },
+  "atsBandWeak": "ضعيف - يحتاج إعادة هيكلة",
+  "@atsBandWeak": {
+    "description": "ATS score band description: weak."
+  },
+  "jobsMatchScore": "{score}% تطابق",
+  "@jobsMatchScore": {
+    "description": "Match score chip on job news cards.",
+    "placeholders": {
+      "score": {
+        "type": "int",
+        "example": "88"
+      }
+    }
+  },
+  "atsBenchmark": "معيار التقييم: {category}",
+  "@atsBenchmark": {
+    "description": "ATS score benchmark line; category is the scoring category label.",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "Software engineering"
+      }
+    }
+  },
   "atsInputTitle": "فحص التوافق (ATS)",
   "atsInputIntroduction": "قارن سيرتك بمتطلبات الوظيفة واكتشف فرص التحسين والكلمات المفتاحية المفقودة.",
   "atsInputCvSource": "مصدر السيرة الذاتية",

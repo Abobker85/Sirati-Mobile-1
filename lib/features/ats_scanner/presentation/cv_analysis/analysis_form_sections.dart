@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Card title used by every section of the analysis form.
@@ -92,7 +93,6 @@ class UploadDropZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
     final colors = context.sirati;
     final radius = BorderRadius.circular(14);
     return Semantics(
@@ -127,9 +127,7 @@ class UploadDropZone extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  english
-                      ? 'Tap to upload PDF or TXT'
-                      : 'اضغط لرفع ملف PDF أو TXT',
+                  AppLocalizations.of(context).atsUploadTapHint,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -140,7 +138,7 @@ class UploadDropZone extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  english ? 'Maximum size 5 MB' : 'الحد الأقصى 5 ميجابايت',
+                  AppLocalizations.of(context).atsUploadMaxSize,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: colors.primaryInk),
                 ),
@@ -166,7 +164,6 @@ class SelectedFileTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
     final colors = context.sirati;
     return Container(
       padding: const EdgeInsetsDirectional.only(start: 14, top: 4, bottom: 4),
@@ -198,7 +195,7 @@ class SelectedFileTile extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: english ? 'Remove file' : 'إزالة الملف',
+            tooltip: AppLocalizations.of(context).atsRemoveFile,
             icon: Icon(Icons.close, size: 18, color: colors.error),
             onPressed: onRemove,
           ),
@@ -214,7 +211,6 @@ class OrDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
     final colors = context.sirati;
     return Row(
       children: [
@@ -229,7 +225,7 @@ class OrDivider extends StatelessWidget {
               border: Border.all(color: colors.border),
             ),
             child: Text(
-              english ? 'OR' : 'أو',
+              AppLocalizations.of(context).atsOr,
               style: TextStyle(fontSize: 12, color: colors.textSecondary),
             ),
           ),

@@ -8,6 +8,7 @@ import 'package:sirati/features/jobs/domain/job_news_feed.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_common.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_format.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_title_display.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -27,7 +28,7 @@ class JobNewsDetailScreen extends StatelessWidget {
     final highMatch = isHighMatch(matchScore);
 
     return Scaffold(
-      appBar: AppBar(title: Text(english ? 'Job Details' : 'تفاصيل الخبر')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).jobsDetailTitle)),
       body: CustomScrollView(
         slivers: [
           SliverPadding(
@@ -70,7 +71,8 @@ class JobNewsDetailScreen extends StatelessWidget {
                                 Flexible(
                                   child: Text(
                                     item.sourceBadge ??
-                                        (english ? 'Verified' : 'جهة موثقة معتمدة'),
+                                        AppLocalizations.of(context)
+                                            .jobsVerifiedSourceDetail,
                                     softWrap: true,
                                     style: TextStyle(
                                       fontSize: 13,
@@ -90,12 +92,12 @@ class JobNewsDetailScreen extends StatelessWidget {
                               color: context.sirati.warningLight,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: context.sirati.amber
-                                    .withValues(alpha: 0.3),
+                                color:
+                                    context.sirati.amber.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(
-                              english ? 'Tamheer Program' : 'برنامج تمهير 🇸🇦',
+                              AppLocalizations.of(context).jobsTamheerProgram,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -185,9 +187,8 @@ class JobNewsDetailScreen extends StatelessWidget {
                                   const SizedBox(width: 8),
                                   Flexible(
                                     child: Text(
-                                      english
-                                          ? 'Profile & CV Compatibility'
-                                          : 'توافق الوظيفة مع ملفك المهني',
+                                      AppLocalizations.of(context)
+                                          .jobsCompatibilityTitle,
                                       softWrap: true,
                                       style: TextStyle(
                                         fontSize: 14.5,
@@ -267,9 +268,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                   if (item.skillsRequired.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Text(
-                      english
-                          ? 'Key Skills Required'
-                          : 'المهارات المطلوبة للوظيفة',
+                      AppLocalizations.of(context).jobsSkillsRequired,
                       style: AppTextStyles.titleMd(context.sirati),
                     ),
                     const SizedBox(height: 8),
@@ -325,7 +324,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                   ],
                   const SizedBox(height: 22),
                   Text(
-                    english ? 'Job Description' : 'تفاصيل ومتطلبات الإعلان',
+                    AppLocalizations.of(context).jobsDescriptionTitle,
                     style: AppTextStyles.titleMd(context.sirati),
                   ),
                   const SizedBox(height: 8),
@@ -351,9 +350,7 @@ class JobNewsDetailScreen extends StatelessWidget {
                     )),
                     icon: const Icon(Icons.auto_awesome_rounded),
                     label: Text(
-                      english
-                          ? 'Tailor My CV for this Job'
-                          : 'تخصيص سيرتي الذاتية لهذه الوظيفة 🪄',
+                      AppLocalizations.of(context).jobsTailorCv,
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: context.sirati.primary,
@@ -372,17 +369,13 @@ class JobNewsDetailScreen extends StatelessWidget {
                         if (!opened && context.mounted) {
                           AppSnackBar.error(
                             context,
-                            english
-                                ? 'Could not open the application page.'
-                                : 'تعذر فتح صفحة التقديم.',
+                            AppLocalizations.of(context).jobsOpenApplyFailed,
                           );
                         }
                       },
                       icon: const Icon(Icons.open_in_new_rounded),
                       label: Text(
-                        english
-                            ? 'Apply on Official Site'
-                            : 'التقديم عبر الموقع الرسمي',
+                        AppLocalizations.of(context).jobsApplyOfficialSite,
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: context.sirati.primaryInk,

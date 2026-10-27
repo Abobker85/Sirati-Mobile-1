@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/features/jobs/domain/job_news_feed.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -53,7 +54,7 @@ class ProfileContextBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  english ? 'Personalized For You' : 'فرص مهنية مخصصة لك',
+                  AppLocalizations.of(context).jobsPersonalizedTitle,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -64,9 +65,7 @@ class ProfileContextBanner extends StatelessWidget {
                 Text(
                   hasCareer
                       ? '$careerField${city.isNotEmpty ? ' · $city' : ''}'
-                      : (english
-                          ? 'Showing jobs tailored to your background.'
-                          : 'عرض وظائف متوافقة مع مهاراتك وخبراتك.'),
+                      : AppLocalizations.of(context).jobsPersonalizedFallback,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -110,8 +109,8 @@ class ProfileContextBanner extends StatelessWidget {
                       ],
                       Text(
                         isMatchedActive
-                            ? (english ? 'Matched ✓' : 'المطابقة ✓')
-                            : (english ? 'Match 🎯' : 'المطابقة 🎯'),
+                            ? AppLocalizations.of(context).jobsMatchedActive
+                            : AppLocalizations.of(context).jobsMatchToggle,
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,

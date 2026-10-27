@@ -8,6 +8,7 @@ import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/application/improved_cv_controller.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/recommendations_tab.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_tab.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -34,7 +35,7 @@ class AnalysisResultScreen extends ConsumerWidget {
         child: Scaffold(
           backgroundColor: context.sirati.background,
           appBar: AppBar(
-            title: Text(english ? 'Analysis Results' : 'نتائج التحليل'),
+            title: Text(AppLocalizations.of(context).atsResultsTitle),
             toolbarHeight:
                 56 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 2),
             actions: const [LanguageToggle()],
@@ -44,9 +45,11 @@ class AnalysisResultScreen extends ConsumerWidget {
               tabs: [
                 Tab(
                   height: 56,
-                  text: english ? 'Score & Criteria' : 'الدرجة والمعايير',
+                  text: AppLocalizations.of(context).atsTabScore,
                 ),
-                Tab(height: 56, text: english ? 'Recommendations' : 'التوصيات'),
+                Tab(
+                    height: 56,
+                    text: AppLocalizations.of(context).atsTabRecommendations),
               ],
             ),
           ),
@@ -59,8 +62,8 @@ class AnalysisResultScreen extends ConsumerWidget {
                 boxShadow: context.sirati.softShadow,
               ),
               child: SubmitButton(
-                label: english ? 'Generate Improved CV' : 'توليد سيرة محسّنة',
-                loadingLabel: english ? 'Generating...' : 'جارٍ التوليد...',
+                label: AppLocalizations.of(context).atsGenerateImprovedCv,
+                loadingLabel: AppLocalizations.of(context).atsGenerating,
                 isLoading: isGenerating,
                 icon: Icons.auto_awesome_rounded,
                 onPressed: isGenerating ? null : () => _generate(context, ref),
@@ -111,29 +114,25 @@ class AnalysisResultScreen extends ConsumerWidget {
         } else {
           AppSnackBar.error(
             context,
-            english
-                ? 'An unexpected error occurred while generating the CV.'
-                : 'حدث خطأ غير متوقع أثناء توليد السيرة.',
+            AppLocalizations.of(context).atsGenerateUnexpectedError,
           );
         }
       case ImprovedCvReady(
-        :final generatedCvId,
-        :final timedOut,
-        :final aiFailed,
-        :final aiError,
-      ):
+          :final generatedCvId,
+          :final timedOut,
+          :final aiFailed,
+          :final aiError,
+        ):
         if (timedOut) {
           AppSnackBar.warning(
             context,
-            english
-                ? 'AI is still working. A usable local CV is ready, and you can retry generation later.'
-                : 'لا يزال الذكاء الاصطناعي يعمل. نسخة محلية من سيرتك جاهزة، ويمكنك إعادة محاولة التوليد لاحقاً.',
+            AppLocalizations.of(context).atsAiStillWorkingGeneration,
           );
         } else if (aiFailed) {
           AppSnackBar.error(
             context,
             AiErrorMessage.generationFailed(aiError, english: english),
-            actionLabel: english ? 'Retry' : 'إعادة المحاولة',
+            actionLabel: AppLocalizations.of(context).retry,
             onAction: () => _generate(context, ref),
           );
         }

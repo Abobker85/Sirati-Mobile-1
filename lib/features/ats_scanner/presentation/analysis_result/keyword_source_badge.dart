@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Tells the user whether the score was built against the job description
@@ -25,12 +26,8 @@ class KeywordSourceBadge extends StatelessWidget {
     final icon =
         fromJd ? Icons.verified_rounded : Icons.lightbulb_outline_rounded;
     final label = fromJd
-        ? (english
-            ? 'Scored against the job description you pasted'
-            : 'التقييم مبني على وصف الوظيفة الذي أدخلته')
-        : (english
-            ? 'Generic list — paste a job description next time for a sharper score'
-            : 'قائمة عامة — أضف وصف الوظيفة في المرة القادمة لتقييم أدق');
+        ? AppLocalizations.of(context).atsKeywordSourceJd
+        : AppLocalizations.of(context).atsKeywordSourceGeneric;
 
     return Container(
       width: double.infinity,

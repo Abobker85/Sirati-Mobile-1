@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/jobs/presentation/widgets/featured_job_card.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
@@ -36,6 +37,9 @@ void main() {
 
     await tester.pumpWidget(MaterialApp(
       theme: AppTheme.lightFor(arabic: false),
+      locale: const Locale('en'),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: Scaffold(
         body: FeaturedJobCard(item: job, english: true, onTap: () {}),
       ),
