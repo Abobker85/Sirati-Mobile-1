@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:sirati/core/l10n/icu_lite.dart';
 import 'package:sirati/core/l10n/remote_strings.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/l10n/remote_app_localizations.dart';
@@ -14,19 +17,30 @@ import 'package:sirati/l10n/remote_app_localizations.dart';
 /// mapping comes from the real label lookups, never from reading source.
 class L10nLabelRecorder {
   final Map<String, Set<String>> _keysByValue = {};
+  final Map<(String, String), Map<String, String>> _args = {};
 
   /// Final trimmed string -> every key that produced it.
   Map<String, Set<String>> get keysByValue => {
         for (final e in _keysByValue.entries) e.key: Set.unmodifiable(e.value),
       };
 
-  void record(String key, String value) {
+  /// (key, final trimmed string) -> the placeholder arguments, as displayed
+  /// text keyed by placeholder name, of the call that produced it.
+  Map<(String, String), Map<String, String>> get argsByKeyValue => {
+        for (final e in _args.entries) e.key: Map.unmodifiable(e.value),
+      };
+
+  void record(String key, String value, [Map<String, String>? args]) {
     final text = value.trim();
     if (text.isEmpty) return;
     _keysByValue.putIfAbsent(text, () => <String>{}).add(key);
+    if (args != null && args.isNotEmpty) _args[(key, text)] = args;
   }
 
-  void clear() => _keysByValue.clear();
+  void clear() {
+    _keysByValue.clear();
+    _args.clear();
+  }
 }
 
 /// Remote lookup whose layers hold the bundled ARB messages, so every label
@@ -50,8 +64,32 @@ class RecordingRemoteStringLookup extends RemoteStringLookup {
     String Function(String message, String locale) render,
   ) {
     final value = super.format(key, render);
-    if (value != null) recorder.record(key, value);
+    if (value != null) recorder.record(key, value, _args(key, value, render));
     return value;
+  }
+
+  /// Arguments of the call: [render] closes over them, so rendering a bare
+  /// `{name}` message per placeholder of the layer that produced [value]
+  /// yields each argument's display text (number/date formats applied).
+  Map<String, String>? _args(
+    String key,
+    String value,
+    String Function(String message, String locale) render,
+  ) {
+    for (final layer in layers) {
+      final message = layer.strings[key];
+      if (message == null || message.trim().isEmpty) continue;
+      try {
+        if (render(message, layer.locale) != value) continue;
+        return {
+          for (final name in IcuLite.argumentNames(message))
+            name: render('{$name}', layer.locale),
+        };
+      } catch (_) {
+        continue;
+      }
+    }
+    return null;
   }
 }
 
@@ -104,23 +142,104 @@ Map<String, String> readArbCatalog(String language) {
   };
 }
 
+double _round(double v) => (v * 10).roundToDouble() / 10;
+
+String _hex(int rgb) =>
+    '#${(rgb & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+
+/// How a label's text is painted, read from the laid-out render object, so
+/// the admin can repaint edited text over the screenshot.
+@immutable
+class LabelStyle {
+  const LabelStyle({
+    required this.fontFamily,
+    required this.fontSize,
+    required this.fontWeight,
+    required this.color,
+    required this.opacity,
+    required this.align,
+    required this.direction,
+    required this.lineHeight,
+    required this.maxLines,
+    required this.lines,
+  });
+
+  /// Null when the style names none (the platform font is used).
+  final String? fontFamily;
+
+  /// Logical px, text scaling applied.
+  final double fontSize;
+
+  /// 100..900.
+  final int fontWeight;
+
+  /// Text colour without alpha (`0xRRGGBB`).
+  final int color;
+
+  /// Colour alpha times every ancestor opacity, 0..1.
+  final double opacity;
+
+  /// [TextAlign] name.
+  final String align;
+
+  /// [TextDirection] name (`rtl` / `ltr`).
+  final String direction;
+
+  /// Laid-out height of the line holding the label, logical px.
+  final double lineHeight;
+  final int? maxLines;
+
+  /// Laid-out line count of the whole paragraph.
+  final int lines;
+
+  Map<String, Object?> toJson() => {
+        'font_family': fontFamily,
+        'font_size': _round(fontSize),
+        'font_weight': fontWeight,
+        'color': _hex(color),
+        'opacity': (opacity * 1000).roundToDouble() / 1000,
+        'align': align,
+        'direction': direction,
+        'line_height': _round(lineHeight),
+        'max_lines': maxLines,
+        'lines': lines,
+      };
+}
+
 /// One on-screen label: the key it came from and its rect in logical px,
-/// relative to the top-left of the walked root.
+/// relative to the top-left of the walked root, plus the painted paragraph
+/// [text], the part of it that came from this key ([value]), the call's
+/// placeholder [args] (when the key has any) and its [style].
 @immutable
 class LabelHit {
-  const LabelHit(this.key, this.rect);
+  const LabelHit(
+    this.key,
+    this.rect, {
+    this.text = '',
+    this.value = '',
+    this.args,
+    this.style,
+  });
 
   final String key;
   final Rect rect;
+  final String text;
+  final String value;
+  final Map<String, String>? args;
+  final LabelStyle? style;
 
-  static double _round(double v) => (v * 10).roundToDouble() / 10;
-
-  Map<String, Object> toJson() => {
+  /// Manifest entry; [bg] is the sampled background colour (`0xRRGGBB`).
+  Map<String, Object?> toJson({int? bg}) => {
         'key': key,
         'x': _round(rect.left),
         'y': _round(rect.top),
         'w': _round(rect.width),
         'h': _round(rect.height),
+        'text': text,
+        'value': value,
+        if (args case final a? when a.isNotEmpty) 'args': a,
+        if (style case final s?) 'style': s.toJson(),
+        if (bg != null) 'bg': _hex(bg),
       };
 
   @override
@@ -132,6 +251,219 @@ class LabelHit {
 
   @override
   String toString() => 'LabelHit($key, $rect)';
+}
+
+/// Effective (merged) style of the span holding [offset] in [root]'s plain
+/// text (placeholders count as one character).
+TextStyle? _styleAt(InlineSpan root, int offset) {
+  TextStyle? found;
+  var position = 0;
+  bool visit(InlineSpan span, TextStyle? inherited) {
+    final own = span.style;
+    final style = inherited == null
+        ? own
+        : (own == null ? inherited : inherited.merge(own));
+    if (span is TextSpan) {
+      final length = span.text?.length ?? 0;
+      if (offset >= position && offset < position + length) {
+        found = style;
+        return false;
+      }
+      position += length;
+      for (final child in span.children ?? const <InlineSpan>[]) {
+        if (!visit(child, style)) return false;
+      }
+    } else {
+      if (offset == position) {
+        found = style;
+        return false;
+      }
+      position += 1;
+    }
+    return true;
+  }
+
+  visit(root, null);
+  return found ?? root.style;
+}
+
+/// A painter laid out like [box]'s own (same text, options and width
+/// constraints), for the line metrics the render objects keep private.
+TextPainter? _relayout(RenderBox box) {
+  if (box is RenderParagraph) {
+    final painter = TextPainter(
+      text: box.text,
+      textAlign: box.textAlign,
+      textDirection: box.textDirection,
+      textScaler: box.textScaler,
+      maxLines: box.maxLines,
+      ellipsis: box.overflow == TextOverflow.ellipsis ? '…' : null,
+      locale: box.locale,
+      strutStyle: box.strutStyle,
+      textWidthBasis: box.textWidthBasis,
+      textHeightBehavior: box.textHeightBehavior,
+    );
+    final placeholders = <PlaceholderSpan>[];
+    box.text.visitChildren((span) {
+      if (span is PlaceholderSpan) placeholders.add(span);
+      return true;
+    });
+    if (placeholders.isNotEmpty) {
+      final children = <RenderBox>[];
+      box.visitChildren((c) {
+        if (c is RenderBox) children.add(c);
+      });
+      Size sizeOf(int i) => i < children.length && children[i].hasSize
+          ? children[i].size
+          : Size.zero;
+      painter.setPlaceholderDimensions([
+        for (final (i, span) in placeholders.indexed)
+          PlaceholderDimensions(
+            size: sizeOf(i),
+            alignment: span.alignment,
+            baseline: span.baseline,
+            baselineOffset: span.alignment == ui.PlaceholderAlignment.baseline
+                ? sizeOf(i).height
+                : null,
+          ),
+      ]);
+    }
+    final c = box.constraints;
+    painter.layout(
+      minWidth: c.minWidth,
+      maxWidth: box.softWrap || box.overflow == TextOverflow.ellipsis
+          ? c.maxWidth
+          : double.infinity,
+    );
+    return painter;
+  }
+  if (box is RenderEditable && box.text != null) {
+    final painter = TextPainter(
+      text: box.text,
+      textAlign: box.textAlign,
+      textDirection: box.textDirection,
+      textScaler: box.textScaler,
+      maxLines: box.maxLines,
+      locale: box.locale,
+      strutStyle: box.strutStyle,
+      textWidthBasis: box.textWidthBasis,
+      textHeightBehavior: box.textHeightBehavior,
+    );
+    // RenderEditable keeps a 1 px caret gap plus the cursor width free.
+    final c = box.constraints;
+    final maxWidth = max(0.0, c.maxWidth - 1.0 - box.cursorWidth);
+    painter.layout(
+      minWidth: box.forceLine ? maxWidth : min(c.minWidth, maxWidth),
+      maxWidth: box.maxLines == 1 ? double.infinity : maxWidth,
+    );
+    return painter;
+  }
+  return null;
+}
+
+LabelStyle _labelStyle(
+  RenderBox box,
+  InlineSpan span,
+  int start,
+  int end,
+  double opacity,
+) {
+  final (align, direction, scaler, maxLines) = switch (box) {
+    RenderParagraph p => (
+        p.textAlign,
+        p.textDirection,
+        p.textScaler,
+        p.maxLines
+      ),
+    RenderEditable e => (
+        e.textAlign,
+        e.textDirection,
+        e.textScaler,
+        e.maxLines
+      ),
+    _ => (TextAlign.start, TextDirection.ltr, TextScaler.noScaling, null),
+  };
+  final style = _styleAt(span, start);
+  final color =
+      style?.color ?? style?.foreground?.color ?? const Color(0xFF000000);
+  final fontSize = scaler.scale(style?.fontSize ?? kDefaultFontSize);
+  var lines = 1;
+  var lineHeight = fontSize * (style?.height ?? 1.0);
+  final painter = _relayout(box);
+  if (painter != null) {
+    final metrics = painter.computeLineMetrics();
+    if (metrics.isNotEmpty) {
+      lines = metrics.length;
+      final boxes = painter.getBoxesForSelection(
+          TextSelection(baseOffset: start, extentOffset: end));
+      final y =
+          boxes.isEmpty ? null : (boxes.first.top + boxes.first.bottom) / 2;
+      var line = metrics.first;
+      for (final m in metrics) {
+        if (y != null &&
+            y >= m.baseline - m.ascent - 0.01 &&
+            y <= m.baseline + m.descent + 0.01) {
+          line = m;
+          break;
+        }
+      }
+      lineHeight = line.height;
+    }
+    painter.dispose();
+  }
+  return LabelStyle(
+    fontFamily: style?.fontFamily,
+    fontSize: fontSize,
+    fontWeight: (style?.fontWeight ?? FontWeight.normal).value,
+    color: color.toARGB32() & 0xFFFFFF,
+    opacity: (color.a * opacity).clamp(0.0, 1.0),
+    align: align.name,
+    direction: direction.name,
+    lineHeight: lineHeight,
+    maxLines: maxLines,
+    lines: lines,
+  );
+}
+
+/// Background colour (`0xRRGGBB`) behind [rect] (logical px) in an RGBA
+/// image ([rgba], [width] x [height] device px at [pixelRatio]): the most
+/// common colour on the rings 2..4 device px outside the rect, where glyphs
+/// do not reach. Translucent pixels are composited over white.
+int sampleBackground(
+  ByteData rgba,
+  int width,
+  int height,
+  Rect rect,
+  double pixelRatio,
+) {
+  final counts = <int, int>{};
+  void sample(int x, int y) {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    final i = (y * width + x) * 4;
+    final a = rgba.getUint8(i + 3);
+    int over(int c) => (c * a + 255 * (255 - a) + 127) ~/ 255;
+    final rgb = (over(rgba.getUint8(i)) << 16) |
+        (over(rgba.getUint8(i + 1)) << 8) |
+        over(rgba.getUint8(i + 2));
+    counts[rgb] = (counts[rgb] ?? 0) + 1;
+  }
+
+  final left = (rect.left * pixelRatio).floor();
+  final top = (rect.top * pixelRatio).floor();
+  final right = (rect.right * pixelRatio).ceil() - 1;
+  final bottom = (rect.bottom * pixelRatio).ceil() - 1;
+  for (var d = 2; d <= 4; d++) {
+    for (var x = left - d; x <= right + d; x++) {
+      sample(x, top - d);
+      sample(x, bottom + d);
+    }
+    for (var y = top - d + 1; y < bottom + d; y++) {
+      sample(left - d, y);
+      sample(right + d, y);
+    }
+  }
+  if (counts.isEmpty) return 0xFFFFFF;
+  return counts.entries.reduce((a, b) => b.value > a.value ? b : a).key;
 }
 
 final _wordChar = RegExp(r'[\p{L}\p{N}\p{M}]', unicode: true);
@@ -148,21 +480,28 @@ final _wordChar = RegExp(r'[\p{L}\p{N}\p{M}]', unicode: true);
 /// exactly (RichText); then the longest recorded values that occur in it on
 /// word boundaries. One value with several keys yields one hit per key.
 /// Results are deduped and sorted by y, then x.
+///
+/// Each hit also carries the paragraph's plain [LabelHit.text], the matched
+/// [LabelHit.value], the call's arguments from [args] (see
+/// [L10nLabelRecorder.argsByKeyValue]) and the style of the span holding it.
 List<LabelHit> findLabelHits(
   RenderObject root,
-  Map<String, Set<String>> keysByValue,
-) {
+  Map<String, Set<String>> keysByValue, {
+  Map<(String, String), Map<String, String>> args = const {},
+}) {
   final hits = <LabelHit>{};
   final rootBox = root is RenderBox ? root : null;
   final bounds = rootBox == null ? Rect.largest : Offset.zero & rootBox.size;
 
   void addRange(
     RenderBox box,
+    InlineSpan span,
     List<TextBox> Function(TextSelection) boxesFor,
     int start,
     int end,
     Set<String> keys,
     Rect clip,
+    double opacity,
   ) {
     final boxes = boxesFor(TextSelection(baseOffset: start, extentOffset: end));
     if (boxes.isEmpty) return;
@@ -174,8 +513,14 @@ List<LabelHit> findLabelHits(
     final visible = global.intersect(clip);
     if (visible.width <= 0 || visible.height <= 0) return;
     if (rootBox != null && _occluded(rootBox, box, visible.center)) return;
+    final plain = span.toPlainText(includeSemanticsLabels: false);
+    final value = plain.substring(start, end);
+    final text = span.toPlainText(
+        includeSemanticsLabels: false, includePlaceholders: false);
+    final style = _labelStyle(box, span, start, end, opacity);
     for (final key in keys) {
-      hits.add(LabelHit(key, visible));
+      hits.add(LabelHit(key, visible,
+          text: text, value: value, args: args[(key, value)], style: style));
     }
   }
 
@@ -184,14 +529,18 @@ List<LabelHit> findLabelHits(
     InlineSpan span,
     List<TextBox> Function(TextSelection) boxesFor,
     Rect clip,
+    double opacity,
   ) {
+    void add(int s, int e, Set<String> keys) =>
+        addRange(box, span, boxesFor, s, e, keys, clip, opacity);
+
     final plain = span.toPlainText(includeSemanticsLabels: false);
     final trimmed = plain.trim();
     if (trimmed.isEmpty) return;
     final whole = keysByValue[trimmed];
     if (whole != null) {
       final start = plain.indexOf(trimmed);
-      addRange(box, boxesFor, start, start + trimmed.length, whole, clip);
+      add(start, start + trimmed.length, whole);
       return;
     }
 
@@ -208,7 +557,7 @@ List<LabelHit> findLabelHits(
         final keys = t.isEmpty ? null : keysByValue[t];
         if (keys != null) {
           final s = offset + text.indexOf(t);
-          addRange(box, boxesFor, s, s + t.length, keys, clip);
+          add(s, s + t.length, keys);
           covered.add((s, s + t.length));
         }
         offset += text.length;
@@ -242,20 +591,27 @@ List<LabelHit> findLabelHits(
     });
     for (final (s, e, keys) in candidates) {
       if (overlaps(s, e)) continue;
-      addRange(box, boxesFor, s, e, keys, clip);
+      add(s, e, keys);
       covered.add((s, e));
     }
   }
 
-  void walk(RenderObject node, Rect clip) {
+  void walk(RenderObject node, Rect clip, double opacity) {
     if (node is RenderParagraph) {
-      matchText(node, node.text, node.getBoxesForSelection, clip);
+      matchText(node, node.text, node.getBoxesForSelection, clip, opacity);
     } else if (node is RenderEditable && !node.obscureText) {
       final text = node.text;
       if (text != null) {
-        matchText(node, text, node.getBoxesForSelection, clip);
+        matchText(node, text, node.getBoxesForSelection, clip, opacity);
       }
     }
+    final childOpacity = opacity *
+        switch (node) {
+          RenderOpacity(:final opacity) => opacity,
+          RenderSliverOpacity(:final opacity) => opacity,
+          RenderAnimatedOpacityMixin(:final opacity) => opacity.value,
+          _ => 1.0,
+        };
     node.visitChildrenForSemantics((child) {
       var childClip = clip;
       final local = node.describeApproximatePaintClip(child);
@@ -265,11 +621,11 @@ List<LabelHit> findLabelHits(
         );
       }
       if (childClip.width <= 0 || childClip.height <= 0) return;
-      walk(child, childClip);
+      walk(child, childClip, childOpacity);
     });
   }
 
-  walk(root, bounds);
+  walk(root, bounds, 1.0);
   final sorted = hits.toList()
     ..sort((a, b) {
       final byY = a.rect.top.compareTo(b.rect.top);
