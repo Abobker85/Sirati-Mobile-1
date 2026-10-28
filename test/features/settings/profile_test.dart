@@ -137,8 +137,8 @@ void main() {
       for (final location in [null, '', '  Jeddah  ', 'الخبر، السعودية']) {
         auth.calls.clear();
         for (final change in changes) {
-          await container.read(profileSaveProvider.notifier).save(ProfileUpdate(
-              name: 'Sara', jobTitle: change, location: location));
+          await container.read(profileSaveProvider.notifier).save(
+              ProfileUpdate(name: 'Sara', jobTitle: change, location: location));
         }
         expect(auth.calls.map((c) => c.location).toSet(), {location?.trim()},
             reason: 'location "$location" must pass through unchanged');
@@ -178,8 +178,7 @@ void main() {
           jobTitlesProvider.overrideWith((ref) => titles()),
         ],
         child: MaterialApp(
-          theme: dark
-              ? AppTheme.darkFor(arabic: language == 'ar')
+          theme: dark ? AppTheme.darkFor(arabic: language == 'ar')
               : AppTheme.lightFor(arabic: language == 'ar'),
           locale: Locale(language),
           supportedLocales: AppLocalizations.supportedLocales,
@@ -213,19 +212,17 @@ void main() {
 
     for (final language in ['en', 'ar']) {
       for (final dark in [false, true]) {
-        testWidgets(
-            'title catalogue retry is actionable ($language, dark=$dark)',
-            (tester) async {
+        testWidgets('title catalogue retry is actionable ($language, dark=$dark)', (tester) async {
           AppLocale.languageCode.value = language;
           var requests = 0;
-          await pump(tester, _FakeAuth(user: _user),
-              language: language, dark: dark, titles: () async {
-            requests++;
-            if (requests == 1) throw StateError('offline');
-            return [_title(5, 'Platform engineer')];
-          });
-          final retry = find.widgetWithText(
-              TextButton, language == 'en' ? 'Retry' : 'إعادة المحاولة');
+          await pump(tester, _FakeAuth(user: _user), language: language, dark: dark,
+              titles: () async {
+                requests++;
+                if (requests == 1) throw StateError('offline');
+                return [_title(5, 'Platform engineer')];
+              });
+          final retry = find.widgetWithText(TextButton,
+              language == 'en' ? 'Retry' : 'إعادة المحاولة');
           expect(retry, findsOneWidget);
           final size = tester.getSize(retry);
           expect(size.width, greaterThanOrEqualTo(48));
@@ -293,8 +290,8 @@ void main() {
 
               expect(fieldText(tester, 'email'), 'salem@x.io');
               if (phone == null) {
-                expect(
-                    find.byKey(const ValueKey('profile-phone')), findsNothing);
+                expect(find.byKey(const ValueKey('profile-phone')),
+                    findsNothing);
               } else {
                 expect(fieldText(tester, 'phone'), phone);
               }

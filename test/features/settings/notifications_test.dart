@@ -67,25 +67,20 @@ class _FakeContent extends MobileContentService {
 void main() {
   for (final language in ['en', 'ar']) {
     for (final dark in [false, true]) {
-      testWidgets(
-          'empty inbox refresh fetches new notifications ($language, dark=$dark)',
-          (tester) async {
+      testWidgets('empty inbox refresh fetches new notifications ($language, dark=$dark)', (tester) async {
         AppLocale.languageCode.value = language;
         SessionCache.instance.clear();
         final content = _FakeContent([]);
-        await tester.pumpWidget(ProviderScope(
-            overrides: [
-              mobileContentServiceProvider.overrideWithValue(content),
-            ],
-            child: MaterialApp(
-              theme: dark
-                  ? AppTheme.darkFor(arabic: language == 'ar')
-                  : AppTheme.lightFor(arabic: language == 'ar'),
-              locale: Locale(language),
-              supportedLocales: AppLocalizations.supportedLocales,
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              home: const NotificationsScreen(),
-            )));
+        await tester.pumpWidget(ProviderScope(overrides: [
+          mobileContentServiceProvider.overrideWithValue(content),
+        ], child: MaterialApp(
+          theme: dark ? AppTheme.darkFor(arabic: language == 'ar')
+              : AppTheme.lightFor(arabic: language == 'ar'),
+          locale: Locale(language),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: const NotificationsScreen(),
+        )));
         await tester.pumpAndSettle();
         expect(content.fetches, 1);
         content.rows = [_row(42)];
