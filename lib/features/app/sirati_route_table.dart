@@ -101,6 +101,16 @@ Widget _widgetFor(ParsedRoute parsed) {
     case AppRoutes.jobMatch:
       final cvId = parsed.arguments;
       return JobMatchScreen(initialCvId: cvId is int ? cvId : null);
+    case AppRoutes.atsScan:
+      final args = parsed.arguments;
+      return args is AtsScanArgs
+          ? _SavedCvAnalysisEntry(
+              initialCvId: args.cvId,
+              initialSource: args.upload
+                  ? AnalysisCvSource.upload
+                  : AnalysisCvSource.saved,
+            )
+          : const _SavedCvAnalysisEntry();
     case AppRoutes.notFound:
       return const NotFoundScreen();
   }
@@ -131,7 +141,14 @@ Widget _widgetFor(ParsedRoute parsed) {
 
 /// Compose the saved list here so ATS never imports the CV builder feature.
 class _SavedCvAnalysisEntry extends ConsumerWidget {
-  const _SavedCvAnalysisEntry();
+  const _SavedCvAnalysisEntry({
+    this.initialCvId,
+    this.initialSource = AnalysisCvSource.saved,
+  });
+
+  final int? initialCvId;
+  final AnalysisCvSource initialSource;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final english = AppLocale.isEnglish(context);
@@ -144,6 +161,8 @@ class _SavedCvAnalysisEntry extends ConsumerWidget {
         ],
       ),
       onRetrySaved: () => ref.invalidate(myCvsProvider(english)),
+      initialCvId: initialCvId,
+      initialSource: initialSource,
     );
   }
 }

@@ -4380,6 +4380,92 @@ class RemoteAppLocalizations extends AppLocalizations {
       ) ??
       _base.atsBenchmark(category);
 
+  @override
+  String get myCvsHeaderSubtitle =>
+      remote.text('myCvsHeaderSubtitle') ?? _base.myCvsHeaderSubtitle;
+
+  @override
+  String get myCvsToolsTitle =>
+      remote.text('myCvsToolsTitle') ?? _base.myCvsToolsTitle;
+
+  @override
+  String get myCvsToolCreateTitle =>
+      remote.text('myCvsToolCreateTitle') ?? _base.myCvsToolCreateTitle;
+
+  @override
+  String get myCvsToolCreateBody =>
+      remote.text('myCvsToolCreateBody') ?? _base.myCvsToolCreateBody;
+
+  @override
+  String get myCvsToolScanTitle =>
+      remote.text('myCvsToolScanTitle') ?? _base.myCvsToolScanTitle;
+
+  @override
+  String get myCvsToolScanBody =>
+      remote.text('myCvsToolScanBody') ?? _base.myCvsToolScanBody;
+
+  @override
+  String get myCvsToolUploadTitle =>
+      remote.text('myCvsToolUploadTitle') ?? _base.myCvsToolUploadTitle;
+
+  @override
+  String get myCvsToolUploadBody =>
+      remote.text('myCvsToolUploadBody') ?? _base.myCvsToolUploadBody;
+
+  @override
+  String get myCvsToolTargetTitle =>
+      remote.text('myCvsToolTargetTitle') ?? _base.myCvsToolTargetTitle;
+
+  @override
+  String get myCvsToolTargetBody =>
+      remote.text('myCvsToolTargetBody') ?? _base.myCvsToolTargetBody;
+
+  @override
+  String get myCvsListTitle =>
+      remote.text('myCvsListTitle') ?? _base.myCvsListTitle;
+
+  @override
+  String get myCvsEmptyBody =>
+      remote.text('myCvsEmptyBody') ?? _base.myCvsEmptyBody;
+
+  @override
+  String get myCvsEmptyCreate =>
+      remote.text('myCvsEmptyCreate') ?? _base.myCvsEmptyCreate;
+
+  @override
+  String get myCvsEmptyUpload =>
+      remote.text('myCvsEmptyUpload') ?? _base.myCvsEmptyUpload;
+
+  @override
+  String get cvCardOpen => remote.text('cvCardOpen') ?? _base.cvCardOpen;
+
+  @override
+  String get cvCardMore => remote.text('cvCardMore') ?? _base.cvCardMore;
+
+  @override
+  String cvCardScore(int score) =>
+      remote.format(
+        'cvCardScore',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'score': score},
+        ),
+      ) ??
+      _base.cvCardScore(score);
+
+  @override
+  String get cvCardNotScanned =>
+      remote.text('cvCardNotScanned') ?? _base.cvCardNotScanned;
+
+  @override
+  String get cvCardScanNow =>
+      remote.text('cvCardScanNow') ?? _base.cvCardScanNow;
+
+  @override
+  String get cvCardNeedsWork =>
+      remote.text('cvCardNeedsWork') ?? _base.cvCardNeedsWork;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -4866,6 +4952,14 @@ class RemoteAppLocalizations extends AppLocalizations {
     'sharedPasswordStrengthStrong': [],
     'sharedPasswordStrengthSemantics': ['String'],
     'sharedOfflineShowingSaved': [],
+    'sharedOfflineTitle': [],
+    'sharedOfflineBody': [],
+    'sharedOfflineWaiting': [],
+    'sharedOfflineChecking': [],
+    'sharedOfflineTipsTitle': [],
+    'sharedOfflineTipAirplane': [],
+    'sharedOfflineTipSignal': [],
+    'sharedOfflineOpenSaved': [],
     'sharedNoDataAvailable': [],
     'sharedSomethingWentWrong': [],
     'sharedAiImprovingWording': [],
@@ -4884,6 +4978,7 @@ class RemoteAppLocalizations extends AppLocalizations {
     'sharedClear': [],
     'sharedJobTitleSearchHint': [],
     'sharedJobTitleNoMatches': [],
+    'sharedJobTitleEnterManually': ['String'],
     'sharedNotifications': [],
     'sharedNotificationsUnread': ['int'],
     'sharedProfile': [],
@@ -4955,14 +5050,6 @@ class RemoteAppLocalizations extends AppLocalizations {
     'dashboardEducationInterestRegistered': [],
     'dashboardEducationCtaTitle': [],
     'dashboardEducationCtaBody': [],
-    'sharedOfflineTitle': [],
-    'sharedOfflineBody': [],
-    'sharedOfflineWaiting': [],
-    'sharedOfflineChecking': [],
-    'sharedOfflineTipsTitle': [],
-    'sharedOfflineTipAirplane': [],
-    'sharedOfflineTipSignal': [],
-    'sharedOfflineOpenSaved': [],
     'dashboardEducationDetailTitle': [],
     'dashboardEducationDetailLoadFailed': [],
     'dashboardUntitled': [],
@@ -4981,7 +5068,6 @@ class RemoteAppLocalizations extends AppLocalizations {
     'cvEntryChooseStart': [],
     'cvEntryChooseEnd': [],
     'cvEntryEndBeforeStart': [],
-    'sharedJobTitleEnterManually': ['String'],
     'cvEntryFrom': [],
     'cvEntryTo': [],
     'cvEntryJobTitle': [],
@@ -5159,6 +5245,13 @@ class RemoteAppLocalizations extends AppLocalizations {
     'authCreatingAccount': [],
     'authContinueWithoutAccount': [],
     'authSessionExpired': [],
+    'authSessionExpiredBadge': [],
+    'authSessionExpiredChip': [],
+    'authSessionExpiredTitle': [],
+    'authSessionExpiredBody': [],
+    'authSessionExpiredDataSafe': [],
+    'authSessionExpiredSignIn': [],
+    'authSessionExpiredHelp': [],
     'authLoginUnexpectedError': [],
     'authSocialSignInSoon': ['String'],
     'authLoginSubtitle': [],
@@ -5248,13 +5341,6 @@ class RemoteAppLocalizations extends AppLocalizations {
     'settingsPhotoGallery': [],
     'settingsPhotoCamera': [],
     'settingsPhotoRemove': [],
-    'authSessionExpiredBadge': [],
-    'authSessionExpiredChip': [],
-    'authSessionExpiredTitle': [],
-    'authSessionExpiredBody': [],
-    'authSessionExpiredDataSafe': [],
-    'authSessionExpiredSignIn': [],
-    'authSessionExpiredHelp': [],
     'settingsPhotoRemoved': [],
     'settingsPhotoUpdated': [],
     'settingsPhotoUpdateFailed': [],
@@ -5355,6 +5441,26 @@ class RemoteAppLocalizations extends AppLocalizations {
     'atsBandWeak': [],
     'jobsMatchScore': ['int'],
     'atsBenchmark': ['String'],
+    'myCvsHeaderSubtitle': [],
+    'myCvsToolsTitle': [],
+    'myCvsToolCreateTitle': [],
+    'myCvsToolCreateBody': [],
+    'myCvsToolScanTitle': [],
+    'myCvsToolScanBody': [],
+    'myCvsToolUploadTitle': [],
+    'myCvsToolUploadBody': [],
+    'myCvsToolTargetTitle': [],
+    'myCvsToolTargetBody': [],
+    'myCvsListTitle': [],
+    'myCvsEmptyBody': [],
+    'myCvsEmptyCreate': [],
+    'myCvsEmptyUpload': [],
+    'cvCardOpen': [],
+    'cvCardMore': [],
+    'cvCardScore': ['int'],
+    'cvCardNotScanned': [],
+    'cvCardScanNow': [],
+    'cvCardNeedsWork': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -5858,6 +5964,14 @@ class RemoteAppLocalizations extends AppLocalizations {
         'sharedPasswordStrengthSemantics' =>
           l.sharedPasswordStrengthSemantics(a[0] as String),
         'sharedOfflineShowingSaved' => l.sharedOfflineShowingSaved,
+        'sharedOfflineTitle' => l.sharedOfflineTitle,
+        'sharedOfflineBody' => l.sharedOfflineBody,
+        'sharedOfflineWaiting' => l.sharedOfflineWaiting,
+        'sharedOfflineChecking' => l.sharedOfflineChecking,
+        'sharedOfflineTipsTitle' => l.sharedOfflineTipsTitle,
+        'sharedOfflineTipAirplane' => l.sharedOfflineTipAirplane,
+        'sharedOfflineTipSignal' => l.sharedOfflineTipSignal,
+        'sharedOfflineOpenSaved' => l.sharedOfflineOpenSaved,
         'sharedNoDataAvailable' => l.sharedNoDataAvailable,
         'sharedSomethingWentWrong' => l.sharedSomethingWentWrong,
         'sharedAiImprovingWording' => l.sharedAiImprovingWording,
@@ -5878,6 +5992,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'sharedClear' => l.sharedClear,
         'sharedJobTitleSearchHint' => l.sharedJobTitleSearchHint,
         'sharedJobTitleNoMatches' => l.sharedJobTitleNoMatches,
+        'sharedJobTitleEnterManually' =>
+          l.sharedJobTitleEnterManually(a[0] as String),
         'sharedNotifications' => l.sharedNotifications,
         'sharedNotificationsUnread' => l.sharedNotificationsUnread(a[0] as int),
         'sharedProfile' => l.sharedProfile,
@@ -5962,14 +6078,6 @@ class RemoteAppLocalizations extends AppLocalizations {
         'dashboardEducationDetailTitle' => l.dashboardEducationDetailTitle,
         'dashboardEducationDetailLoadFailed' =>
           l.dashboardEducationDetailLoadFailed,
-        'sharedOfflineTitle' => l.sharedOfflineTitle,
-        'sharedOfflineBody' => l.sharedOfflineBody,
-        'sharedOfflineWaiting' => l.sharedOfflineWaiting,
-        'sharedOfflineChecking' => l.sharedOfflineChecking,
-        'sharedOfflineTipsTitle' => l.sharedOfflineTipsTitle,
-        'sharedOfflineTipAirplane' => l.sharedOfflineTipAirplane,
-        'sharedOfflineTipSignal' => l.sharedOfflineTipSignal,
-        'sharedOfflineOpenSaved' => l.sharedOfflineOpenSaved,
         'dashboardUntitled' => l.dashboardUntitled,
         'dashboardEducationDetailNoContent' =>
           l.dashboardEducationDetailNoContent,
@@ -5990,8 +6098,6 @@ class RemoteAppLocalizations extends AppLocalizations {
         'cvEntryFrom' => l.cvEntryFrom,
         'cvEntryTo' => l.cvEntryTo,
         'cvEntryJobTitle' => l.cvEntryJobTitle,
-        'sharedJobTitleEnterManually' =>
-          l.sharedJobTitleEnterManually(a[0] as String),
         'cvEntryJobTitleHint' => l.cvEntryJobTitleHint,
         'cvEntryCompany' => l.cvEntryCompany,
         'cvEntryCity' => l.cvEntryCity,
@@ -6168,6 +6274,13 @@ class RemoteAppLocalizations extends AppLocalizations {
         'authCreatingAccount' => l.authCreatingAccount,
         'authContinueWithoutAccount' => l.authContinueWithoutAccount,
         'authSessionExpired' => l.authSessionExpired,
+        'authSessionExpiredBadge' => l.authSessionExpiredBadge,
+        'authSessionExpiredChip' => l.authSessionExpiredChip,
+        'authSessionExpiredTitle' => l.authSessionExpiredTitle,
+        'authSessionExpiredBody' => l.authSessionExpiredBody,
+        'authSessionExpiredDataSafe' => l.authSessionExpiredDataSafe,
+        'authSessionExpiredSignIn' => l.authSessionExpiredSignIn,
+        'authSessionExpiredHelp' => l.authSessionExpiredHelp,
         'authLoginUnexpectedError' => l.authLoginUnexpectedError,
         'authSocialSignInSoon' => l.authSocialSignInSoon(a[0] as String),
         'authLoginSubtitle' => l.authLoginSubtitle,
@@ -6272,13 +6385,6 @@ class RemoteAppLocalizations extends AppLocalizations {
         'settingsProfileUpdated' => l.settingsProfileUpdated,
         'settingsProfileUpdateFailed' => l.settingsProfileUpdateFailed,
         'settingsProfileLoadFailed' => l.settingsProfileLoadFailed,
-        'authSessionExpiredBadge' => l.authSessionExpiredBadge,
-        'authSessionExpiredChip' => l.authSessionExpiredChip,
-        'authSessionExpiredTitle' => l.authSessionExpiredTitle,
-        'authSessionExpiredBody' => l.authSessionExpiredBody,
-        'authSessionExpiredDataSafe' => l.authSessionExpiredDataSafe,
-        'authSessionExpiredSignIn' => l.authSessionExpiredSignIn,
-        'authSessionExpiredHelp' => l.authSessionExpiredHelp,
         'settingsProfileFullNameLabel' => l.settingsProfileFullNameLabel,
         'settingsProfileNameHint' => l.settingsProfileNameHint,
         'settingsProfileNameRequired' => l.settingsProfileNameRequired,
@@ -6372,6 +6478,26 @@ class RemoteAppLocalizations extends AppLocalizations {
         'atsBandWeak' => l.atsBandWeak,
         'jobsMatchScore' => l.jobsMatchScore(a[0] as int),
         'atsBenchmark' => l.atsBenchmark(a[0] as String),
+        'myCvsHeaderSubtitle' => l.myCvsHeaderSubtitle,
+        'myCvsToolsTitle' => l.myCvsToolsTitle,
+        'myCvsToolCreateTitle' => l.myCvsToolCreateTitle,
+        'myCvsToolCreateBody' => l.myCvsToolCreateBody,
+        'myCvsToolScanTitle' => l.myCvsToolScanTitle,
+        'myCvsToolScanBody' => l.myCvsToolScanBody,
+        'myCvsToolUploadTitle' => l.myCvsToolUploadTitle,
+        'myCvsToolUploadBody' => l.myCvsToolUploadBody,
+        'myCvsToolTargetTitle' => l.myCvsToolTargetTitle,
+        'myCvsToolTargetBody' => l.myCvsToolTargetBody,
+        'myCvsListTitle' => l.myCvsListTitle,
+        'myCvsEmptyBody' => l.myCvsEmptyBody,
+        'myCvsEmptyCreate' => l.myCvsEmptyCreate,
+        'myCvsEmptyUpload' => l.myCvsEmptyUpload,
+        'cvCardOpen' => l.cvCardOpen,
+        'cvCardMore' => l.cvCardMore,
+        'cvCardScore' => l.cvCardScore(a[0] as int),
+        'cvCardNotScanned' => l.cvCardNotScanned,
+        'cvCardScanNow' => l.cvCardScanNow,
+        'cvCardNeedsWork' => l.cvCardNeedsWork,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

@@ -2893,5 +2893,90 @@
         "example": "Software engineering"
       }
     }
+  },
+  "myCvsHeaderSubtitle": "أنشئ سيرتك، وافحصها، وأدر نسخك من مكان واحد",
+  "@myCvsHeaderSubtitle": {
+    "description": "Subtitle under the My CVs header"
+  },
+  "myCvsToolsTitle": "الأدوات",
+  "@myCvsToolsTitle": {
+    "description": "Title of the tools card on My CVs"
+  },
+  "myCvsToolCreateTitle": "إنشاء السيرة",
+  "@myCvsToolCreateTitle": {
+    "description": "Tool tile: create a CV"
+  },
+  "myCvsToolCreateBody": "متوافقة مع أنظمة الفرز الآلي ATS",
+  "@myCvsToolCreateBody": {
+    "description": "Tool tile body: create a CV"
+  },
+  "myCvsToolScanTitle": "فحص",
+  "@myCvsToolScanTitle": {
+    "description": "Tool tile: ATS scan"
+  },
+  "myCvsToolScanBody": "فحص السيرة بنظام (ATS)",
+  "@myCvsToolScanBody": {
+    "description": "Tool tile body: ATS scan"
+  },
+  "myCvsToolUploadTitle": "رفع سيرة خارجية",
+  "@myCvsToolUploadTitle": {
+    "description": "Tool tile: upload an external CV"
+  },
+  "myCvsToolUploadBody": "ارفع سيرتك الذاتية PDF وافحص توافقها مع أنظمة الفرز الآلي.",
+  "@myCvsToolUploadBody": {
+    "description": "Tool tile body: upload an external CV for an ATS scan"
+  },
+  "myCvsToolTargetTitle": "استهداف وظيفة",
+  "@myCvsToolTargetTitle": {
+    "description": "Tool tile: tailor a CV to a job"
+  },
+  "myCvsToolTargetBody": "إنشاء سيرة مطابقة لوصف وظيفي معين.",
+  "@myCvsToolTargetBody": {
+    "description": "Tool tile body: tailor a CV to a job"
+  },
+  "myCvsListTitle": "سيري الذاتية",
+  "@myCvsListTitle": {
+    "description": "Section title above the saved CV list"
+  },
+  "myCvsEmptyBody": "أنشئ أول سيرة متوافقة مع ATS، أو ارفع سيرة خارجية لتفحصها.",
+  "@myCvsEmptyBody": {
+    "description": "Empty state body on My CVs"
+  },
+  "myCvsEmptyCreate": "أنشئ سيرتك",
+  "@myCvsEmptyCreate": {
+    "description": "Empty state primary button: create a CV"
+  },
+  "myCvsEmptyUpload": "ارفع سيرة خارجية",
+  "@myCvsEmptyUpload": {
+    "description": "Empty state secondary button: upload a CV"
+  },
+  "cvCardOpen": "فتح",
+  "@cvCardOpen": {
+    "description": "CV card button that opens the CV"
+  },
+  "cvCardMore": "خيارات السيرة",
+  "@cvCardMore": {
+    "description": "Label of the CV card overflow menu"
+  },
+  "cvCardScore": "نتيجة الفرز الآلي: {score}",
+  "@cvCardScore": {
+    "description": "CV card ATS score line",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "cvCardNotScanned": "لم تُفحص بعد",
+  "@cvCardNotScanned": {
+    "description": "CV card chip when the CV has no ATS score"
+  },
+  "cvCardScanNow": "افحص الآن",
+  "@cvCardScanNow": {
+    "description": "CV card link that starts an ATS scan"
+  },
+  "cvCardNeedsWork": "تحتاج سيرتك إلى تحسينات مهمة، ابدأ بها الآن.",
+  "@cvCardNeedsWork": {
+    "description": "CV card warning for a low ATS score"
   }
 }

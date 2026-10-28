@@ -12,6 +12,7 @@ import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart
 import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_template_picker.dart';
+import 'package:sirati/features/cv_builder/presentation/my_cvs/my_cvs_tools.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
@@ -19,16 +20,14 @@ import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
-import 'package:sirati/shared/widgets/directional_icon.dart';
-import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
-import 'package:sirati/shared/widgets/screen_header.dart';
 
-/// "My CVs" tab: saved CVs with edit, download (per template), and delete.
+/// "My CVs" tab (design/cv-tab): tools to create, scan, upload or target a
+/// job, then saved CVs with open, edit, download (per template) and delete.
 class MyCvsScreen extends ConsumerStatefulWidget {
   const MyCvsScreen({super.key});
 
@@ -189,12 +188,40 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     }
   }
 
+  void _openScan({int? cvId, bool upload = false}) {
+    unawaited(() async {
+      await Navigator.of(context).pushNamed(
+        AppRoutes.atsScan,
+        arguments: AtsScanArgs(cvId: cvId, upload: upload),
+      );
+      if (mounted) await _refresh();
+    }());
+  }
+
+  void _openJobMatch() {
+    unawaited(() async {
+      await Navigator.of(context).pushNamed(AppRoutes.jobMatch);
+      if (mounted) await _refresh();
+    }());
+  }
+
+  void _open(CvListItem item) {
+    final id = item.id;
+    if (id == null) return;
+    unawaited(() async {
+      await Navigator.of(context).pushNamed(AppRoutes.cv(id));
+      if (mounted) await _refresh();
+    }());
+  }
+
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
     final cvs = ref.watch(myCvsProvider(english));
 
+    // The brand band draws under the status bar; the rest stays inset.
     return SafeArea(
+      top: false,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxContentWidth = constraints.maxWidth >= 1100
@@ -220,15 +247,17 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
             errorMessage: (error) => error is ApiException
                 ? error.displayMessage
                 : AppLocalizations.of(context).cvListLoadFailed,
-            loading: shell(
-              CvListSkeleton(horizontalPadding: horizontalPadding),
-            ),
-            builder: (data) => shell(
-              RefreshIndicator(
-                color: context.sirati.primary,
-                onRefresh: _refresh,
-                child: _buildList(context, data, english, horizontalPadding),
+            loading: SafeArea(
+              bottom: false,
+              child: shell(
+                CvListSkeleton(horizontalPadding: horizontalPadding),
               ),
+            ),
+            builder: (data) => RefreshIndicator(
+              color: context.sirati.primary,
+              onRefresh: _refresh,
+              child: _buildList(context, data, english, horizontalPadding,
+                  shell: shell),
             ),
           );
         },
@@ -236,89 +265,108 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     );
   }
 
+  /// How far the tools card reaches up into the brand band.
+  static const _toolsOverlap = 40.0;
+
   Widget _buildList(
     BuildContext context,
     CvList data,
     bool english,
-    double horizontalPadding,
-  ) {
+    double horizontalPadding, {
+    required Widget Function(Widget child) shell,
+  }) {
     final items = data.items;
-    // Header, then the empty state or every card plus the create CTA.
-    final itemCount = items.isEmpty ? 2 : items.length + 2;
+    final gutter = EdgeInsets.symmetric(horizontal: horizontalPadding);
+    // Header block, then the empty state or every card.
+    final itemCount = items.isEmpty ? 2 : items.length + 1;
 
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(horizontalPadding, 18, horizontalPadding,
-          AppSpacing.scrollBottomNavFab),
+      padding: const EdgeInsets.only(bottom: AppSpacing.scrollBottomNavFab),
       itemCount: itemCount,
       itemBuilder: (context, index) {
         if (index == 0) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ScreenHeader(
-                english: english,
+              MyCvsHeader(
                 title: data.title,
-                icon: Icons.description_rounded,
                 unreadCount: SessionCache.instance.unreadCount,
                 onNotifications: () =>
                     Navigator.of(context).pushNamed(AppRoutes.notifications),
-                onAvatarTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.settings),
               ),
-              if (data.offline) ...[
-                const SizedBox(height: AppSpacing.sm),
-                OfflineCacheBanner(english: english, surface: 'cvs'),
-              ],
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                AppLocalizations.of(context).cvCount(items.length),
-                textAlign: TextAlign.start,
-                style: AppTextStyles.bodySm(context.sirati),
+              Stack(
+                children: [
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: _toolsOverlap,
+                    child: DecoratedBox(
+                      decoration: MyCvsHeader.brandBand(context),
+                    ),
+                  ),
+                  shell(Padding(
+                    padding: gutter,
+                    child: MotionReveal(
+                      order: 0,
+                      child: MyCvsToolsCard(
+                        onCreate: _openGenerator,
+                        onScan: _openScan,
+                        onUpload: () => _openScan(upload: true),
+                        onTarget: _openJobMatch,
+                      ),
+                    ),
+                  )),
+                ],
               ),
-              const SizedBox(height: AppSpacing.md),
-              _JobMatchEntryTile(
-                onTap: () async {
-                  await Navigator.of(context).pushNamed(AppRoutes.jobMatch);
-                  if (mounted) await _refresh();
-                },
-              ),
-              const SizedBox(height: AppSpacing.md),
+              shell(Padding(
+                padding: gutter,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (data.offline) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      OfflineCacheBanner(english: english, surface: 'cvs'),
+                    ],
+                    const SizedBox(height: AppSpacing.xl),
+                    MyCvsListHeading(count: items.length),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                ),
+              )),
             ],
           );
         }
 
         if (items.isEmpty) {
-          return AppEmptyState(
-            icon: Icons.description_outlined,
-            title: AppLocalizations.of(context).cvListEmptyTitle,
-            subtitle: AppLocalizations.of(context).cvListEmptyBody,
-            actionLabel: AppLocalizations.of(context).cvCreateNew,
-            onAction: _openGenerator,
-            scrollable: false,
-          );
-        }
-
-        if (index == items.length + 1) {
-          return CreateCvCard(english: english, onTap: _openGenerator);
+          return shell(Padding(
+            padding: gutter,
+            child: MyCvsEmptyCard(
+              onCreate: _openGenerator,
+              onUpload: () => _openScan(upload: true),
+            ),
+          ));
         }
 
         final item = items[index - 1];
-        return Padding(
+        return shell(Padding(
           // Stable key: a delete shifts rows without reusing card state.
           key: ValueKey(item.id ?? 'row-$index'),
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          padding: gutter.copyWith(bottom: AppSpacing.sm),
           // order > maxStaggerIndex → no reveal controller.
           child: MotionReveal(
-            order: index - 1,
+            order: index,
             child: CvDocumentCard(
               item: item,
+              onOpen: () => _open(item),
               onEdit: () => unawaited(_edit(item)),
               onDelete: () => unawaited(_delete(item)),
               onDownload: () => unawaited(_download(item)),
+              onScan: () => _openScan(cvId: item.id),
             ),
           ),
-        );
+        ));
       },
     );
   }
@@ -336,65 +384,4 @@ final class _Chosen extends _TemplateChoice {
 
 final class _Cancelled extends _TemplateChoice {
   const _Cancelled();
-}
-
-/// Entry to Job Match (a separate feature, reached by route).
-class _JobMatchEntryTile extends StatelessWidget {
-  const _JobMatchEntryTile({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.sirati;
-    final l = AppLocalizations.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.border),
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          key: const ValueKey('my-cvs-job-match'),
-          borderRadius: AppRadius.lgAll,
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
-              children: [
-                Icon(Icons.work_outline_rounded, color: c.primaryInk),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l.jobMatchEntryTitle,
-                        style: AppTypography.of(context, AppTypography.titleSm),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        l.jobMatchEntrySubtitle,
-                        style: AppTypography.of(
-                          context,
-                          AppTypography.bodySm,
-                          color: c.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                DirectionalIcon(
-                  Icons.chevron_right_rounded,
-                  color: c.textSecondary,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
