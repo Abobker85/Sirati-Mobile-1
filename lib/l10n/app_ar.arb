@@ -2022,6 +2022,15 @@
       }
     }
   },
+  "authSocialSignInNotConfigured": "تسجيل الدخول عبر {provider} غير مهيأ في هذه النسخة من التطبيق.",
+  "@authSocialSignInNotConfigured": {
+    "description": "Error when a social sign-in provider has no client id in this build. provider is a brand name such as Google or Apple.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
   "authLoginSubtitle": "سجّل دخولك للمتابعة",
   "@authLoginSubtitle": {
     "description": "Sign-in screen subtitle."

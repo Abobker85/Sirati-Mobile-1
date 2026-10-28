@@ -997,6 +997,7 @@
   "authSessionExpired": "Session expired, please log in again.",
   "authLoginUnexpectedError": "An unexpected error occurred while signing in.",
   "authSocialSignInSoon": "{provider} sign-in will be available in an upcoming update.",
+  "authSocialSignInNotConfigured": "{provider} sign-in is not set up in this build of the app.",
   "authLoginSubtitle": "Sign in to continue",
   "authForgotPasswordLink": "Forgot password?",
   "authSignInButton": "Sign in",

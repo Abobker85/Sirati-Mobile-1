@@ -2237,6 +2237,18 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('sharedJobTitleNoMatches') ?? _base.sharedJobTitleNoMatches;
 
   @override
+  String sharedJobTitleEnterManually(String query) =>
+      remote.format(
+        'sharedJobTitleEnterManually',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'query': query},
+        ),
+      ) ??
+      _base.sharedJobTitleEnterManually(query);
+
+  @override
   String get sharedNotifications =>
       remote.text('sharedNotifications') ?? _base.sharedNotifications;
 
@@ -2268,18 +2280,6 @@ class RemoteAppLocalizations extends AppLocalizations {
           icuMessage,
           locale: icuLocale,
           args: {'percent': percent},
-  @override
-  String sharedJobTitleEnterManually(String query) =>
-      remote.format(
-        'sharedJobTitleEnterManually',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'query': query},
-        ),
-      ) ??
-      _base.sharedJobTitleEnterManually(query);
-
         ),
       ) ??
       _base.sharedCareerReadinessPercent(percent);
@@ -3446,6 +3446,18 @@ class RemoteAppLocalizations extends AppLocalizations {
         ),
       ) ??
       _base.authSocialSignInSoon(provider);
+
+  @override
+  String authSocialSignInNotConfigured(String provider) =>
+      remote.format(
+        'authSocialSignInNotConfigured',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'provider': provider},
+        ),
+      ) ??
+      _base.authSocialSignInNotConfigured(provider);
 
   @override
   String get authLoginSubtitle =>
@@ -4823,6 +4835,7 @@ class RemoteAppLocalizations extends AppLocalizations {
     'sharedClear': [],
     'sharedJobTitleSearchHint': [],
     'sharedJobTitleNoMatches': [],
+    'sharedJobTitleEnterManually': ['String'],
     'sharedNotifications': [],
     'sharedNotificationsUnread': ['int'],
     'sharedProfile': [],
@@ -5091,6 +5104,7 @@ class RemoteAppLocalizations extends AppLocalizations {
     'authSessionExpired': [],
     'authLoginUnexpectedError': [],
     'authSocialSignInSoon': ['String'],
+    'authSocialSignInNotConfigured': ['String'],
     'authLoginSubtitle': [],
     'authForgotPasswordLink': [],
     'authSignInButton': [],
@@ -5801,6 +5815,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'sharedClear' => l.sharedClear,
         'sharedJobTitleSearchHint' => l.sharedJobTitleSearchHint,
         'sharedJobTitleNoMatches' => l.sharedJobTitleNoMatches,
+        'sharedJobTitleEnterManually' =>
+          l.sharedJobTitleEnterManually(a[0] as String),
         'sharedNotifications' => l.sharedNotifications,
         'sharedNotificationsUnread' => l.sharedNotificationsUnread(a[0] as int),
         'sharedProfile' => l.sharedProfile,
@@ -6083,6 +6099,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'authSessionExpired' => l.authSessionExpired,
         'authLoginUnexpectedError' => l.authLoginUnexpectedError,
         'authSocialSignInSoon' => l.authSocialSignInSoon(a[0] as String),
+        'authSocialSignInNotConfigured' =>
+          l.authSocialSignInNotConfigured(a[0] as String),
         'authLoginSubtitle' => l.authLoginSubtitle,
         'authForgotPasswordLink' => l.authForgotPasswordLink,
         'authSignInButton' => l.authSignInButton,

@@ -70,7 +70,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _login() async {
     if (ref.read(loginControllerProvider)) return;
-    final l10n = AppLocalizations.of(context);
     setState(() {
       _submitted = true;
       _showFormBanner = false;
@@ -86,11 +85,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           password: _passwordController.text,
         );
     if (!mounted) return;
+    if (outcome is LoginSucceeded) {
+      // Lets the platform password manager offer to save the credentials.
+      TextInput.finishAutofillContext();
+    }
+    _handleOutcome(outcome, method: 'email', retry: _login);
+  }
+
+  /// Shared by every sign-in method so they route and report alike.
+  void _handleOutcome(
+    LoginOutcome outcome, {
+    required String method,
+    required Future<void> Function() retry,
+  }) {
+    final l10n = AppLocalizations.of(context);
     switch (outcome) {
       case LoginSucceeded(:final email, :final emailVerified):
-        // Lets the platform password manager offer to save the credentials.
-        TextInput.finishAutofillContext();
-        unawaited(AnalyticsService.logLoginSuccess(method: 'email'));
+        unawaited(AnalyticsService.logLoginSuccess(method: method));
         unawaited(HapticFeedback.lightImpact());
         // Unverified accounts must complete email OTP before using the app.
         if (!emailVerified) {
@@ -103,23 +114,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context,
           error,
           retryLabel: l10n.authRetry,
-          onRetry: () => unawaited(_login()),
+          onRetry: () => unawaited(retry()),
         );
       case LoginFailedUnexpectedly():
         AppSnackBar.error(
           context,
           l10n.authLoginUnexpectedError,
         );
+      case LoginProviderNotConfigured():
+        AppSnackBar.error(
+          context,
+          l10n.authSocialSignInNotConfigured(_providerLabel(method)),
+        );
       case LoginIgnored():
         break;
     }
   }
 
+  static String _providerLabel(String method) =>
+      method == 'google' ? 'Google' : 'Apple';
+
   Future<void> _loginWithGoogle() async {
-    AppSnackBar.info(
-      context,
-      AppLocalizations.of(context).authSocialSignInSoon('Google'),
-    );
+    final outcome =
+        await ref.read(loginControllerProvider.notifier).signInWithGoogle();
+    if (!mounted) return;
+    _handleOutcome(outcome, method: 'google', retry: _loginWithGoogle);
   }
 
   Future<void> _loginWithApple() async {
@@ -144,6 +163,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isLoading = ref.watch(loginControllerProvider);
+    final social = ref.watch(socialSignInOptionsProvider);
     final insets = MediaQuery.paddingOf(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       // Light status-bar icons over the dark hero.
@@ -190,7 +210,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: Padding(
                             padding: EdgeInsets.all(
                                 compact ? AppSpacing.md : AppSpacing.xl),
-                            child: _buildForm(context, l10n, isLoading),
+                            child: _buildForm(context, l10n, isLoading, social),
                           ),
                         ),
                       ),
@@ -205,8 +225,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildForm(
-      BuildContext context, AppLocalizations l10n, bool isLoading) {
+  Widget _buildForm(BuildContext context, AppLocalizations l10n, bool isLoading,
+      SocialSignInOptions social) {
     return AutofillGroup(
       child: Form(
         key: _formKey,
@@ -298,7 +318,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               isLoading: isLoading,
               onPressed: () => unawaited(_login()),
             ),
-            if (socialSignInEnabled) ...[
+            if (social.any) ...[
               const SizedBox(height: AppSpacing.xl),
               // The label wraps at large text sizes instead of overflowing,
               // and the two rules stay equal so it stays centred.
@@ -327,22 +347,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  Expanded(
-                    child: _SocialButton(
-                      mark: const _GoogleMark(size: 20),
-                      label: 'Google',
-                      onTap: _loginWithGoogle,
+                  if (social.google)
+                    Expanded(
+                      child: _SocialButton(
+                        mark: const _GoogleMark(size: 20),
+                        label: 'Google',
+                        onTap: _loginWithGoogle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _SocialButton(
-                      mark: Icon(Icons.apple,
-                          size: 22, color: context.sirati.textPrimary),
-                      label: 'Apple',
-                      onTap: _loginWithApple,
+                  if (social.google && social.apple) const SizedBox(width: 12),
+                  if (social.apple)
+                    Expanded(
+                      child: _SocialButton(
+                        mark: Icon(Icons.apple,
+                            size: 22, color: context.sirati.textPrimary),
+                        label: 'Apple',
+                        onTap: _loginWithApple,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
