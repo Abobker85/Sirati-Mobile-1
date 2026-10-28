@@ -296,6 +296,10 @@ void main() {
         expect(hit.value.trim(), hit.value);
         expect(hit.value, isNotEmpty);
         _expectValidStyle(hit.style!);
+        // The room the text may grow into is never narrower than the text.
+        if (hit.style!.maxWidth case final w?) {
+          expect(w, greaterThanOrEqualTo(hit.rect.width - 0.5));
+        }
         expect(hit.style!.direction, direction);
       }
 

@@ -162,6 +162,7 @@ class LabelStyle {
     required this.lineHeight,
     required this.maxLines,
     required this.lines,
+    this.maxWidth,
   });
 
   /// Null when the style names none (the platform font is used).
@@ -192,6 +193,10 @@ class LabelStyle {
   /// Laid-out line count of the whole paragraph.
   final int lines;
 
+  /// Widest the text may grow (its layout constraint), logical px; null when
+  /// unbounded. The painted rect only hugs the current text.
+  final double? maxWidth;
+
   Map<String, Object?> toJson() => {
         'font_family': fontFamily,
         'font_size': _round(fontSize),
@@ -203,6 +208,7 @@ class LabelStyle {
         'line_height': _round(lineHeight),
         'max_lines': maxLines,
         'lines': lines,
+        if (maxWidth case final w?) 'max_width': _round(w),
       };
 }
 
@@ -366,8 +372,10 @@ LabelStyle _labelStyle(
   InlineSpan span,
   int start,
   int end,
-  double opacity,
-) {
+  double opacity, {
+  double scale = 1.0,
+  double atLeast = 0.0,
+}) {
   final (align, direction, scaler, maxLines) = switch (box) {
     RenderParagraph p => (
         p.textAlign,
@@ -411,6 +419,9 @@ LabelStyle _labelStyle(
     }
     painter.dispose();
   }
+  var maxWidth = box.constraints.maxWidth;
+  // RenderEditable keeps a 1 px caret gap plus the cursor width free.
+  if (box is RenderEditable) maxWidth -= 1.0 + box.cursorWidth;
   return LabelStyle(
     fontFamily: style?.fontFamily,
     fontSize: fontSize,
@@ -422,6 +433,8 @@ LabelStyle _labelStyle(
     lineHeight: lineHeight,
     maxLines: maxLines,
     lines: lines,
+    // In root units; overflowing text (no wrap) may already be wider.
+    maxWidth: maxWidth.isFinite ? max(maxWidth * scale, atLeast) : null,
   );
 }
 
@@ -517,7 +530,9 @@ List<LabelHit> findLabelHits(
     final value = plain.substring(start, end);
     final text = span.toPlainText(
         includeSemanticsLabels: false, includePlaceholders: false);
-    final style = _labelStyle(box, span, start, end, opacity);
+    final style = _labelStyle(box, span, start, end, opacity,
+        scale: local.width > 0 ? global.width / local.width : 1.0,
+        atLeast: visible.width);
     for (final key in keys) {
       hits.add(LabelHit(key, visible,
           text: text, value: value, args: args[(key, value)], style: style));
