@@ -12,6 +12,7 @@ import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
 import 'package:sirati/features/auth/presentation/register_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/theme/auth_hero_palette.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
@@ -201,7 +202,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             border: Border.all(color: context.sirati.border),
                             boxShadow: const [
                               BoxShadow(
-                                color: Color(0x14000000),
+                                color: AuthHeroPalette.cardShadow,
                                 blurRadius: 24,
                                 offset: Offset(0, 8),
                               ),
@@ -408,11 +409,7 @@ class _LoginHero extends StatelessWidget {
 
   /// The logo's gradient with the teal end deepened so white copy keeps AA
   /// against every stop.
-  static const gradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF12384F), Color(0xFF0B7A72)],
-  );
+  static const gradient = AuthHeroPalette.gradient;
 
   @override
   Widget build(BuildContext context) {
@@ -449,15 +446,15 @@ class _LoginHero extends StatelessWidget {
                             MaterialLocalizations.of(context).backButtonTooltip,
                         icon: const DirectionalIcon(
                           Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white,
+                          color: AuthHeroPalette.onHero,
                           size: 18,
                         ),
                       ),
                     const Spacer(),
                     const LanguageToggle(
-                      backgroundColor: Color(0x24000000),
-                      foregroundColor: Colors.white,
-                      side: BorderSide(color: Color(0x4DFFFFFF)),
+                      backgroundColor: AuthHeroPalette.pillBackground,
+                      foregroundColor: AuthHeroPalette.onHero,
+                      side: BorderSide(color: AuthHeroPalette.pillBorder),
                     ),
                   ],
                 ),
@@ -474,7 +471,7 @@ class _LoginHero extends StatelessWidget {
                   style: AppTypography.of(
                     context,
                     compact ? AppTypography.titleLg : AppTypography.headlineMd,
-                    color: Colors.white,
+                    color: AuthHeroPalette.onHero,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
@@ -484,7 +481,7 @@ class _LoginHero extends StatelessWidget {
                   style: AppTypography.of(
                     context,
                     AppTypography.bodyMd,
-                    color: Colors.white,
+                    color: AuthHeroPalette.onHero,
                   ),
                 ),
               ],
@@ -509,7 +506,7 @@ class _HeroGridPainter extends CustomPainter {
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0x1FFFFFFF), Color(0x00FFFFFF)],
+        colors: AuthHeroPalette.gridFade,
       ).createShader(Offset.zero & size);
     for (var x = cell; x < size.width; x += cell) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
@@ -622,14 +619,14 @@ class _GoogleMarkPainter extends CustomPainter {
       ..strokeWidth = stroke;
     // Radians clockwise from 3 o'clock; the opening faces right.
     canvas
-      ..drawArc(rect, -0.80, -1.55, false, arc(const Color(0xFFEA4335)))
-      ..drawArc(rect, -2.35, -1.60, false, arc(const Color(0xFFFBBC05)))
-      ..drawArc(rect, 2.33, -1.60, false, arc(const Color(0xFF34A853)))
-      ..drawArc(rect, 0.73, -0.73, false, arc(const Color(0xFF4285F4)))
+      ..drawArc(rect, -0.80, -1.55, false, arc(AuthHeroPalette.googleRed))
+      ..drawArc(rect, -2.35, -1.60, false, arc(AuthHeroPalette.googleYellow))
+      ..drawArc(rect, 2.33, -1.60, false, arc(AuthHeroPalette.googleGreen))
+      ..drawArc(rect, 0.73, -0.73, false, arc(AuthHeroPalette.googleBlue))
       ..drawLine(
         Offset(size.width / 2, size.height / 2),
         Offset(size.width - stroke / 2, size.height / 2),
-        arc(const Color(0xFF4285F4)),
+        arc(AuthHeroPalette.googleBlue),
       );
   }
 
