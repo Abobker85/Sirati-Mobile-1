@@ -1174,7 +1174,8 @@ void additionalTests() {
       expect(api.submittedText, isNull);
       expect(
         find.text(
-          'Choose a saved CV, upload a PDF/TXT file, or paste CV text.',
+          lookupAppLocalizations(const Locale('en'))
+              .atsInputSelectSourceRequired,
         ),
         findsOneWidget,
       );
