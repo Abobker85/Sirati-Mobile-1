@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/ats_scanner/application/saved_analysis_cvs.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -97,16 +98,18 @@ Future<void> _submitAnalysis(
         theme: AppTheme.light,
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: const CvAnalysisScreen(),
+        // A saved CV with its text supplied, as the CV hub opens the screen.
+        home: const CvAnalysisScreen(
+          savedCvs: AsyncData([SavedAnalysisCv(id: 1, title: 'Laravel CV')]),
+          initialCvId: 1,
+          initialMarkdown:
+              'Laravel developer resume with API, SQL, Git, and measurable results.',
+        ),
       ),
     ),
   );
   await tester.pump();
 
-  // Paste is an explicit source in the redesigned input screen. Keep all
-  // polling/cancellation assertions and original field copy unchanged.
-  await tester.tap(find.byKey(const ValueKey(AnalysisCvSource.paste)));
-  await tester.pump();
   await tester.scrollUntilVisible(
     _fieldWithHint('e.g. Laravel Backend Developer'),
     300,
@@ -115,16 +118,6 @@ Future<void> _submitAnalysis(
   await tester.enterText(
     _fieldWithHint('e.g. Laravel Backend Developer'),
     'Laravel Developer',
-  );
-  // Return to the selected source panel to enter the resume text.
-  await tester.scrollUntilVisible(
-    _fieldWithHint('Paste the full resume text here...'),
-    -300,
-    scrollable: find.byType(Scrollable).first,
-  );
-  await tester.enterText(
-    _fieldWithHint('Paste the full resume text here...'),
-    'Laravel developer resume with API, SQL, Git, and measurable results.',
   );
   await tester.drag(
     find.byType(Scrollable).first,
