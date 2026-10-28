@@ -4380,6 +4380,95 @@ class RemoteAppLocalizations extends AppLocalizations {
       ) ??
       _base.atsBenchmark(category);
 
+  @override
+  String get settingsNotificationsFilterAll =>
+      remote.text('settingsNotificationsFilterAll') ??
+      _base.settingsNotificationsFilterAll;
+
+  @override
+  String get settingsNotificationsCategoryCv =>
+      remote.text('settingsNotificationsCategoryCv') ??
+      _base.settingsNotificationsCategoryCv;
+
+  @override
+  String get settingsNotificationsCategoryJobs =>
+      remote.text('settingsNotificationsCategoryJobs') ??
+      _base.settingsNotificationsCategoryJobs;
+
+  @override
+  String get settingsNotificationsCategoryAnalysis =>
+      remote.text('settingsNotificationsCategoryAnalysis') ??
+      _base.settingsNotificationsCategoryAnalysis;
+
+  @override
+  String get settingsNotificationsCategoryLearning =>
+      remote.text('settingsNotificationsCategoryLearning') ??
+      _base.settingsNotificationsCategoryLearning;
+
+  @override
+  String get settingsNotificationsCategoryGeneral =>
+      remote.text('settingsNotificationsCategoryGeneral') ??
+      _base.settingsNotificationsCategoryGeneral;
+
+  @override
+  String get settingsNotificationsToday =>
+      remote.text('settingsNotificationsToday') ??
+      _base.settingsNotificationsToday;
+
+  @override
+  String get settingsNotificationsYesterday =>
+      remote.text('settingsNotificationsYesterday') ??
+      _base.settingsNotificationsYesterday;
+
+  @override
+  String get settingsNotificationsThisWeek =>
+      remote.text('settingsNotificationsThisWeek') ??
+      _base.settingsNotificationsThisWeek;
+
+  @override
+  String get settingsNotificationsEarlier =>
+      remote.text('settingsNotificationsEarlier') ??
+      _base.settingsNotificationsEarlier;
+
+  @override
+  String settingsNotificationsNewCount(int count) =>
+      remote.format(
+        'settingsNotificationsNewCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.settingsNotificationsNewCount(count);
+
+  @override
+  String settingsNotificationsCount(int count) =>
+      remote.format(
+        'settingsNotificationsCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.settingsNotificationsCount(count);
+
+  @override
+  String get settingsNotificationsViewCv =>
+      remote.text('settingsNotificationsViewCv') ??
+      _base.settingsNotificationsViewCv;
+
+  @override
+  String get settingsNotificationsScanCta =>
+      remote.text('settingsNotificationsScanCta') ??
+      _base.settingsNotificationsScanCta;
+
+  @override
+  String get settingsNotificationsFilterEmpty =>
+      remote.text('settingsNotificationsFilterEmpty') ??
+      _base.settingsNotificationsFilterEmpty;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -4866,6 +4955,14 @@ class RemoteAppLocalizations extends AppLocalizations {
     'sharedPasswordStrengthStrong': [],
     'sharedPasswordStrengthSemantics': ['String'],
     'sharedOfflineShowingSaved': [],
+    'sharedOfflineTitle': [],
+    'sharedOfflineBody': [],
+    'sharedOfflineWaiting': [],
+    'sharedOfflineChecking': [],
+    'sharedOfflineTipsTitle': [],
+    'sharedOfflineTipAirplane': [],
+    'sharedOfflineTipSignal': [],
+    'sharedOfflineOpenSaved': [],
     'sharedNoDataAvailable': [],
     'sharedSomethingWentWrong': [],
     'sharedAiImprovingWording': [],
@@ -4884,6 +4981,7 @@ class RemoteAppLocalizations extends AppLocalizations {
     'sharedClear': [],
     'sharedJobTitleSearchHint': [],
     'sharedJobTitleNoMatches': [],
+    'sharedJobTitleEnterManually': ['String'],
     'sharedNotifications': [],
     'sharedNotificationsUnread': ['int'],
     'sharedProfile': [],
@@ -4955,14 +5053,6 @@ class RemoteAppLocalizations extends AppLocalizations {
     'dashboardEducationInterestRegistered': [],
     'dashboardEducationCtaTitle': [],
     'dashboardEducationCtaBody': [],
-    'sharedOfflineTitle': [],
-    'sharedOfflineBody': [],
-    'sharedOfflineWaiting': [],
-    'sharedOfflineChecking': [],
-    'sharedOfflineTipsTitle': [],
-    'sharedOfflineTipAirplane': [],
-    'sharedOfflineTipSignal': [],
-    'sharedOfflineOpenSaved': [],
     'dashboardEducationDetailTitle': [],
     'dashboardEducationDetailLoadFailed': [],
     'dashboardUntitled': [],
@@ -4981,7 +5071,6 @@ class RemoteAppLocalizations extends AppLocalizations {
     'cvEntryChooseStart': [],
     'cvEntryChooseEnd': [],
     'cvEntryEndBeforeStart': [],
-    'sharedJobTitleEnterManually': ['String'],
     'cvEntryFrom': [],
     'cvEntryTo': [],
     'cvEntryJobTitle': [],
@@ -5159,6 +5248,13 @@ class RemoteAppLocalizations extends AppLocalizations {
     'authCreatingAccount': [],
     'authContinueWithoutAccount': [],
     'authSessionExpired': [],
+    'authSessionExpiredBadge': [],
+    'authSessionExpiredChip': [],
+    'authSessionExpiredTitle': [],
+    'authSessionExpiredBody': [],
+    'authSessionExpiredDataSafe': [],
+    'authSessionExpiredSignIn': [],
+    'authSessionExpiredHelp': [],
     'authLoginUnexpectedError': [],
     'authSocialSignInSoon': ['String'],
     'authLoginSubtitle': [],
@@ -5248,13 +5344,6 @@ class RemoteAppLocalizations extends AppLocalizations {
     'settingsPhotoGallery': [],
     'settingsPhotoCamera': [],
     'settingsPhotoRemove': [],
-    'authSessionExpiredBadge': [],
-    'authSessionExpiredChip': [],
-    'authSessionExpiredTitle': [],
-    'authSessionExpiredBody': [],
-    'authSessionExpiredDataSafe': [],
-    'authSessionExpiredSignIn': [],
-    'authSessionExpiredHelp': [],
     'settingsPhotoRemoved': [],
     'settingsPhotoUpdated': [],
     'settingsPhotoUpdateFailed': [],
@@ -5355,6 +5444,21 @@ class RemoteAppLocalizations extends AppLocalizations {
     'atsBandWeak': [],
     'jobsMatchScore': ['int'],
     'atsBenchmark': ['String'],
+    'settingsNotificationsFilterAll': [],
+    'settingsNotificationsCategoryCv': [],
+    'settingsNotificationsCategoryJobs': [],
+    'settingsNotificationsCategoryAnalysis': [],
+    'settingsNotificationsCategoryLearning': [],
+    'settingsNotificationsCategoryGeneral': [],
+    'settingsNotificationsToday': [],
+    'settingsNotificationsYesterday': [],
+    'settingsNotificationsThisWeek': [],
+    'settingsNotificationsEarlier': [],
+    'settingsNotificationsNewCount': ['int'],
+    'settingsNotificationsCount': ['int'],
+    'settingsNotificationsViewCv': [],
+    'settingsNotificationsScanCta': [],
+    'settingsNotificationsFilterEmpty': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -5858,6 +5962,14 @@ class RemoteAppLocalizations extends AppLocalizations {
         'sharedPasswordStrengthSemantics' =>
           l.sharedPasswordStrengthSemantics(a[0] as String),
         'sharedOfflineShowingSaved' => l.sharedOfflineShowingSaved,
+        'sharedOfflineTitle' => l.sharedOfflineTitle,
+        'sharedOfflineBody' => l.sharedOfflineBody,
+        'sharedOfflineWaiting' => l.sharedOfflineWaiting,
+        'sharedOfflineChecking' => l.sharedOfflineChecking,
+        'sharedOfflineTipsTitle' => l.sharedOfflineTipsTitle,
+        'sharedOfflineTipAirplane' => l.sharedOfflineTipAirplane,
+        'sharedOfflineTipSignal' => l.sharedOfflineTipSignal,
+        'sharedOfflineOpenSaved' => l.sharedOfflineOpenSaved,
         'sharedNoDataAvailable' => l.sharedNoDataAvailable,
         'sharedSomethingWentWrong' => l.sharedSomethingWentWrong,
         'sharedAiImprovingWording' => l.sharedAiImprovingWording,
@@ -5878,6 +5990,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'sharedClear' => l.sharedClear,
         'sharedJobTitleSearchHint' => l.sharedJobTitleSearchHint,
         'sharedJobTitleNoMatches' => l.sharedJobTitleNoMatches,
+        'sharedJobTitleEnterManually' =>
+          l.sharedJobTitleEnterManually(a[0] as String),
         'sharedNotifications' => l.sharedNotifications,
         'sharedNotificationsUnread' => l.sharedNotificationsUnread(a[0] as int),
         'sharedProfile' => l.sharedProfile,
@@ -5962,14 +6076,6 @@ class RemoteAppLocalizations extends AppLocalizations {
         'dashboardEducationDetailTitle' => l.dashboardEducationDetailTitle,
         'dashboardEducationDetailLoadFailed' =>
           l.dashboardEducationDetailLoadFailed,
-        'sharedOfflineTitle' => l.sharedOfflineTitle,
-        'sharedOfflineBody' => l.sharedOfflineBody,
-        'sharedOfflineWaiting' => l.sharedOfflineWaiting,
-        'sharedOfflineChecking' => l.sharedOfflineChecking,
-        'sharedOfflineTipsTitle' => l.sharedOfflineTipsTitle,
-        'sharedOfflineTipAirplane' => l.sharedOfflineTipAirplane,
-        'sharedOfflineTipSignal' => l.sharedOfflineTipSignal,
-        'sharedOfflineOpenSaved' => l.sharedOfflineOpenSaved,
         'dashboardUntitled' => l.dashboardUntitled,
         'dashboardEducationDetailNoContent' =>
           l.dashboardEducationDetailNoContent,
@@ -5990,8 +6096,6 @@ class RemoteAppLocalizations extends AppLocalizations {
         'cvEntryFrom' => l.cvEntryFrom,
         'cvEntryTo' => l.cvEntryTo,
         'cvEntryJobTitle' => l.cvEntryJobTitle,
-        'sharedJobTitleEnterManually' =>
-          l.sharedJobTitleEnterManually(a[0] as String),
         'cvEntryJobTitleHint' => l.cvEntryJobTitleHint,
         'cvEntryCompany' => l.cvEntryCompany,
         'cvEntryCity' => l.cvEntryCity,
@@ -6168,6 +6272,13 @@ class RemoteAppLocalizations extends AppLocalizations {
         'authCreatingAccount' => l.authCreatingAccount,
         'authContinueWithoutAccount' => l.authContinueWithoutAccount,
         'authSessionExpired' => l.authSessionExpired,
+        'authSessionExpiredBadge' => l.authSessionExpiredBadge,
+        'authSessionExpiredChip' => l.authSessionExpiredChip,
+        'authSessionExpiredTitle' => l.authSessionExpiredTitle,
+        'authSessionExpiredBody' => l.authSessionExpiredBody,
+        'authSessionExpiredDataSafe' => l.authSessionExpiredDataSafe,
+        'authSessionExpiredSignIn' => l.authSessionExpiredSignIn,
+        'authSessionExpiredHelp' => l.authSessionExpiredHelp,
         'authLoginUnexpectedError' => l.authLoginUnexpectedError,
         'authSocialSignInSoon' => l.authSocialSignInSoon(a[0] as String),
         'authLoginSubtitle' => l.authLoginSubtitle,
@@ -6272,13 +6383,6 @@ class RemoteAppLocalizations extends AppLocalizations {
         'settingsProfileUpdated' => l.settingsProfileUpdated,
         'settingsProfileUpdateFailed' => l.settingsProfileUpdateFailed,
         'settingsProfileLoadFailed' => l.settingsProfileLoadFailed,
-        'authSessionExpiredBadge' => l.authSessionExpiredBadge,
-        'authSessionExpiredChip' => l.authSessionExpiredChip,
-        'authSessionExpiredTitle' => l.authSessionExpiredTitle,
-        'authSessionExpiredBody' => l.authSessionExpiredBody,
-        'authSessionExpiredDataSafe' => l.authSessionExpiredDataSafe,
-        'authSessionExpiredSignIn' => l.authSessionExpiredSignIn,
-        'authSessionExpiredHelp' => l.authSessionExpiredHelp,
         'settingsProfileFullNameLabel' => l.settingsProfileFullNameLabel,
         'settingsProfileNameHint' => l.settingsProfileNameHint,
         'settingsProfileNameRequired' => l.settingsProfileNameRequired,
@@ -6372,6 +6476,28 @@ class RemoteAppLocalizations extends AppLocalizations {
         'atsBandWeak' => l.atsBandWeak,
         'jobsMatchScore' => l.jobsMatchScore(a[0] as int),
         'atsBenchmark' => l.atsBenchmark(a[0] as String),
+        'settingsNotificationsFilterAll' => l.settingsNotificationsFilterAll,
+        'settingsNotificationsCategoryCv' => l.settingsNotificationsCategoryCv,
+        'settingsNotificationsCategoryJobs' =>
+          l.settingsNotificationsCategoryJobs,
+        'settingsNotificationsCategoryAnalysis' =>
+          l.settingsNotificationsCategoryAnalysis,
+        'settingsNotificationsCategoryLearning' =>
+          l.settingsNotificationsCategoryLearning,
+        'settingsNotificationsCategoryGeneral' =>
+          l.settingsNotificationsCategoryGeneral,
+        'settingsNotificationsToday' => l.settingsNotificationsToday,
+        'settingsNotificationsYesterday' => l.settingsNotificationsYesterday,
+        'settingsNotificationsThisWeek' => l.settingsNotificationsThisWeek,
+        'settingsNotificationsEarlier' => l.settingsNotificationsEarlier,
+        'settingsNotificationsNewCount' =>
+          l.settingsNotificationsNewCount(a[0] as int),
+        'settingsNotificationsCount' =>
+          l.settingsNotificationsCount(a[0] as int),
+        'settingsNotificationsViewCv' => l.settingsNotificationsViewCv,
+        'settingsNotificationsScanCta' => l.settingsNotificationsScanCta,
+        'settingsNotificationsFilterEmpty' =>
+          l.settingsNotificationsFilterEmpty,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

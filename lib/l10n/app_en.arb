@@ -1198,5 +1198,20 @@
   "atsBandFair": "Fair - review and polish needed",
   "atsBandWeak": "Weak - needs restructuring",
   "jobsMatchScore": "{score}% Match",
-  "atsBenchmark": "Benchmark: {category}"
+  "atsBenchmark": "Benchmark: {category}",
+  "settingsNotificationsFilterAll": "All",
+  "settingsNotificationsCategoryCv": "CV",
+  "settingsNotificationsCategoryJobs": "Jobs",
+  "settingsNotificationsCategoryAnalysis": "Analysis",
+  "settingsNotificationsCategoryLearning": "Learning",
+  "settingsNotificationsCategoryGeneral": "General",
+  "settingsNotificationsToday": "Today",
+  "settingsNotificationsYesterday": "Yesterday",
+  "settingsNotificationsThisWeek": "This week",
+  "settingsNotificationsEarlier": "Earlier",
+  "settingsNotificationsNewCount": "{count, plural, one{1 new} other{{count} new}}",
+  "settingsNotificationsCount": "{count, plural, one{1 notification} other{{count} notifications}}",
+  "settingsNotificationsViewCv": "View CV",
+  "settingsNotificationsScanCta": "Scan your CV now",
+  "settingsNotificationsFilterEmpty": "Nothing in this section yet."
 }
