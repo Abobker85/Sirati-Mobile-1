@@ -13,26 +13,56 @@ import 'support/contrast_probe.dart';
 
 void expectHeaderPaint(WidgetTester tester) {
   final mark = tester.element(find.byType(SiratiMark));
-  final colors = Theme.of(mark).extension<SiratiColors>()!;
-  expect(paintedBackgroundsOf(mark), [colors.surface]);
-  final headers = <BoxDecoration>[];
+  // The mark sits in a full-bleed hero painted with a gradient whose bottom
+  // corners round into the form card.
+  final heroes = <BoxDecoration>[];
   mark.visitAncestorElements((ancestor) {
-    if (ancestor.widget is DecoratedBox) {
-      final paint = ancestor.findRenderObject()! as RenderDecoratedBox;
-      final decoration = paint.decoration;
-      if (decoration is BoxDecoration && decoration.border != null) {
-        headers.add(decoration);
+    final widget = ancestor.widget;
+    if (widget is DecoratedBox) {
+      final decoration = widget.decoration;
+      if (decoration is BoxDecoration && decoration.gradient != null) {
+        heroes.add(decoration);
       }
     }
     return true;
   });
-  expect(headers, hasLength(1));
-  expect(headers.single.color, colors.surface);
-  final border = headers.single.border! as Border;
-  expect(border.bottom.color, colors.outline);
-  expect(border.bottom.width, greaterThan(0));
+  expect(heroes, hasLength(1));
+  final hero = heroes.single;
+  final radius = hero.borderRadius! as BorderRadius;
+  expect(radius.bottomLeft.x, greaterThan(0));
+  expect(radius.bottomRight.x, greaterThan(0));
+  // The hero's copy is white, so every stop must keep white at AA.
+  for (final stop in hero.gradient!.colors) {
+    expect(AppContrast.ratio(Colors.white, stop), greaterThanOrEqualTo(4.5),
+        reason: 'white on hero stop $stop');
+  }
+  final heroBox = tester.getRect(find.ancestor(
+    of: find.byType(SiratiMark),
+    matching: find.byWidgetPredicate(
+        (w) => w is DecoratedBox && identical(w.decoration, hero)),
+  ));
+  final scrollBox = tester.getRect(find.byType(SingleChildScrollView));
+  expect(heroBox.left, scrollBox.left);
+  expect(heroBox.right, scrollBox.right);
+  // Every text in the hero passes AA on what it is painted over.
+  for (final element in find
+      .descendant(
+          of: find.byWidgetPredicate(
+              (w) => w is DecoratedBox && identical(w.decoration, hero)),
+          matching: find.byType(Text))
+      .evaluate()) {
+    final ink =
+        (element.findRenderObject()! as RenderParagraph).text.style!.color!;
+    for (final background in paintedBackgroundsOf(element)) {
+      expect(
+        AppContrast.ratio(Color.alphaBlend(ink, background), background),
+        greaterThanOrEqualTo(4.5),
+        reason: '"${(element.widget as Text).data}" on $background',
+      );
+    }
+  }
   final markPaint = tester.renderObject<RenderDecoratedBox>(find.descendant(
-    of: find.byType(SiratiMark), matching: find.byType(DecoratedBox)));
+      of: find.byType(SiratiMark), matching: find.byType(DecoratedBox)));
   final decoration = markPaint.decoration as BoxDecoration;
   // The agreed brand logo is a rounded square (Salem review, 2026-10-24).
   expect(decoration.shape, BoxShape.rectangle);
@@ -104,7 +134,10 @@ void main() {
       phoneLoginTest(arabic: arabic, dark: dark);
     }
     for (final size in const [
-      Size(390, 844), Size(390, 520), Size(390, 519), Size(390, 480),
+      Size(390, 844),
+      Size(390, 520),
+      Size(390, 519),
+      Size(390, 480),
     ]) {
       shortLoginTest(arabic: arabic, size: size, keyboard: false);
       if (size.height < 520) {
@@ -155,7 +188,8 @@ void phoneLoginTest({required bool arabic, required bool dark}) {
         .position;
     expect(position.maxScrollExtent, greaterThan(0));
 
-    final title = find.text(arabic ? 'مرحباً بك في سيرتي' : 'Welcome to Siratie');
+    final title =
+        find.text(arabic ? 'مرحباً بك في سيرتي' : 'Welcome to Siratie');
     final titleBefore = tester.getTopLeft(title).dy;
     await tester.drag(scroll, const Offset(0, -240));
     await tester.pump();

@@ -2268,6 +2268,18 @@ class RemoteAppLocalizations extends AppLocalizations {
           icuMessage,
           locale: icuLocale,
           args: {'percent': percent},
+  @override
+  String sharedJobTitleEnterManually(String query) =>
+      remote.format(
+        'sharedJobTitleEnterManually',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'query': query},
+        ),
+      ) ??
+      _base.sharedJobTitleEnterManually(query);
+
         ),
       ) ??
       _base.sharedCareerReadinessPercent(percent);

@@ -114,9 +114,8 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('no third-party sign-in controls while the flag is off',
+  testWidgets('third-party sign-in follows the flag, Apple always with Google',
       (tester) async {
-    expect(socialSignInEnabled, isFalse);
     tester.view.physicalSize = const Size(1080, 4000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -136,10 +135,14 @@ void main() {
       ));
       await tester.pumpAndSettle();
       final name = screen.runtimeType;
-      expect(find.text('Or continue with'), findsNothing, reason: '$name');
-      expect(find.text('Google'), findsNothing, reason: '$name');
-      expect(find.text('Apple'), findsNothing, reason: '$name');
-      expect(find.byIcon(Icons.apple), findsNothing, reason: '$name');
+      // Only the login screen offers them, and only while the flag is on.
+      final offered = socialSignInEnabled && screen is LoginScreen;
+      final expected = offered ? findsOneWidget : findsNothing;
+      expect(find.text('Or continue with'), expected, reason: '$name');
+      expect(find.text('Google'), expected, reason: '$name');
+      // App Store 4.8: Google sign-in is never offered without Apple's.
+      expect(find.text('Apple'), expected, reason: '$name');
+      expect(find.byIcon(Icons.apple), expected, reason: '$name');
     }
   });
 }
