@@ -2926,5 +2926,13 @@
   },
   "settingsNotificationsViewCv": "عرض السيرة",
   "settingsNotificationsScanCta": "فحص سيرتك الآن",
-  "settingsNotificationsFilterEmpty": "لا توجد إشعارات في هذا القسم."
+  "settingsNotificationsFilterEmpty": "لا توجد إشعارات في هذا القسم.",
+  "settingsNotificationsPreviewTitle": "ماذا ستصلك هنا؟",
+  "settingsNotificationsPreviewCvTitle": "سيرتك الذاتية جاهزة",
+  "settingsNotificationsPreviewCvBody": "عندما تنتهي سيرتك وتصبح جاهزة للمراجعة والتصدير.",
+  "settingsNotificationsPreviewJobsTitle": "وظائف تناسب مسماك",
+  "settingsNotificationsPreviewJobsBody": "وظائف جديدة منشورة تطابق مسماك الوظيفي.",
+  "settingsNotificationsPreviewAnalysisTitle": "نتائج فحص سيرتك (ATS)",
+  "settingsNotificationsPreviewAnalysisBody": "درجة توافق سيرتك واقتراحات لتحسينها.",
+  "settingsNotificationsCreateCvCta": "إنشاء سيرة ذاتية"
 }

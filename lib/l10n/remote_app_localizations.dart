@@ -4469,6 +4469,46 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('settingsNotificationsFilterEmpty') ??
       _base.settingsNotificationsFilterEmpty;
 
+  @override
+  String get settingsNotificationsPreviewTitle =>
+      remote.text('settingsNotificationsPreviewTitle') ??
+      _base.settingsNotificationsPreviewTitle;
+
+  @override
+  String get settingsNotificationsPreviewCvTitle =>
+      remote.text('settingsNotificationsPreviewCvTitle') ??
+      _base.settingsNotificationsPreviewCvTitle;
+
+  @override
+  String get settingsNotificationsPreviewCvBody =>
+      remote.text('settingsNotificationsPreviewCvBody') ??
+      _base.settingsNotificationsPreviewCvBody;
+
+  @override
+  String get settingsNotificationsPreviewJobsTitle =>
+      remote.text('settingsNotificationsPreviewJobsTitle') ??
+      _base.settingsNotificationsPreviewJobsTitle;
+
+  @override
+  String get settingsNotificationsPreviewJobsBody =>
+      remote.text('settingsNotificationsPreviewJobsBody') ??
+      _base.settingsNotificationsPreviewJobsBody;
+
+  @override
+  String get settingsNotificationsPreviewAnalysisTitle =>
+      remote.text('settingsNotificationsPreviewAnalysisTitle') ??
+      _base.settingsNotificationsPreviewAnalysisTitle;
+
+  @override
+  String get settingsNotificationsPreviewAnalysisBody =>
+      remote.text('settingsNotificationsPreviewAnalysisBody') ??
+      _base.settingsNotificationsPreviewAnalysisBody;
+
+  @override
+  String get settingsNotificationsCreateCvCta =>
+      remote.text('settingsNotificationsCreateCvCta') ??
+      _base.settingsNotificationsCreateCvCta;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -5459,6 +5499,14 @@ class RemoteAppLocalizations extends AppLocalizations {
     'settingsNotificationsViewCv': [],
     'settingsNotificationsScanCta': [],
     'settingsNotificationsFilterEmpty': [],
+    'settingsNotificationsPreviewTitle': [],
+    'settingsNotificationsPreviewCvTitle': [],
+    'settingsNotificationsPreviewCvBody': [],
+    'settingsNotificationsPreviewJobsTitle': [],
+    'settingsNotificationsPreviewJobsBody': [],
+    'settingsNotificationsPreviewAnalysisTitle': [],
+    'settingsNotificationsPreviewAnalysisBody': [],
+    'settingsNotificationsCreateCvCta': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -6498,6 +6546,22 @@ class RemoteAppLocalizations extends AppLocalizations {
         'settingsNotificationsScanCta' => l.settingsNotificationsScanCta,
         'settingsNotificationsFilterEmpty' =>
           l.settingsNotificationsFilterEmpty,
+        'settingsNotificationsPreviewTitle' =>
+          l.settingsNotificationsPreviewTitle,
+        'settingsNotificationsPreviewCvTitle' =>
+          l.settingsNotificationsPreviewCvTitle,
+        'settingsNotificationsPreviewCvBody' =>
+          l.settingsNotificationsPreviewCvBody,
+        'settingsNotificationsPreviewJobsTitle' =>
+          l.settingsNotificationsPreviewJobsTitle,
+        'settingsNotificationsPreviewJobsBody' =>
+          l.settingsNotificationsPreviewJobsBody,
+        'settingsNotificationsPreviewAnalysisTitle' =>
+          l.settingsNotificationsPreviewAnalysisTitle,
+        'settingsNotificationsPreviewAnalysisBody' =>
+          l.settingsNotificationsPreviewAnalysisBody,
+        'settingsNotificationsCreateCvCta' =>
+          l.settingsNotificationsCreateCvCta,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

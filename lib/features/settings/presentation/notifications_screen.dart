@@ -14,7 +14,6 @@ import 'package:sirati/shared/services/notification_service.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
-import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
@@ -75,12 +74,12 @@ class NotificationsScreen extends ConsumerWidget {
     }
   }
 
-  /// Empty-inbox call to action: same router as a push to the ATS scanner.
-  void _openScanner(BuildContext context) {
+  /// Empty-inbox calls to action: same router as a push to [route].
+  void _openRoute(BuildContext context, String route) {
     final handler = NotificationService.instance.onNotificationTap;
     if (handler == null) return;
     Navigator.of(context).pop();
-    handler(const {'action_type': 'screen', 'action_url': 'cv-analysis'});
+    handler({'action_type': 'screen', 'action_url': route});
   }
 
   @override
@@ -93,21 +92,22 @@ class NotificationsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.settingsNotificationsTitle),
+        // Shown only when it can act: a greyed-out "Read all" over an empty
+        // or fully read inbox is noise (and fails text contrast).
         actions: [
-          TextButton(
-            onPressed: hasUnread
-                ? () async {
-                    final ok = await ref
-                        .read(notificationsInboxProvider.notifier)
-                        .markAllRead();
-                    if (!ok && context.mounted) _reportFailure(context);
-                  }
-                : null,
-            style: TextButton.styleFrom(
-              minimumSize: const Size(48, 48),
+          if (hasUnread)
+            TextButton(
+              onPressed: () async {
+                final ok = await ref
+                    .read(notificationsInboxProvider.notifier)
+                    .markAllRead();
+                if (!ok && context.mounted) _reportFailure(context);
+              },
+              style: TextButton.styleFrom(
+                minimumSize: const Size(48, 48),
+              ),
+              child: Text(l10n.settingsNotificationsReadAll),
             ),
-            child: Text(l10n.settingsNotificationsReadAll),
-          ),
         ],
       ),
       body: AppAsyncBody<List<NotificationItem>>(
@@ -125,16 +125,10 @@ class NotificationsScreen extends ConsumerWidget {
         isEmpty: (items) => items.isEmpty,
         empty: RefreshIndicator(
           onRefresh: () => _refresh(ref),
-          child: AppEmptyState(
-            icon: Icons.notifications_none_rounded,
-            title: l10n.settingsNotificationsEmptyTitle,
-            subtitle: l10n.settingsNotificationsEmptyBody,
-            actionLabel: l10n.settingsNotificationsScanCta,
-            actionIcon: Icons.document_scanner_outlined,
-            onAction: NotificationService.instance.onNotificationTap == null
+          child: NotificationsEmptyState(
+            onRoute: NotificationService.instance.onNotificationTap == null
                 ? null
-                : () => _openScanner(context),
-            scrollable: true,
+                : (route) => _openRoute(context, route),
           ),
         ),
         builder: (items) => NotificationInbox(
@@ -433,7 +427,14 @@ class NotificationGroupHeader extends StatelessWidget {
       bg: c.errorLight,
     );
   }
-  return switch (item.category) {
+  return notificationCategoryTile(item.category, c);
+}
+
+({IconData icon, Color fg, Color bg}) notificationCategoryTile(
+  NotificationCategory category,
+  SiratiColors c,
+) {
+  return switch (category) {
     NotificationCategory.cv => (
         icon: Icons.description_outlined,
         fg: c.primaryInk,
@@ -619,4 +620,205 @@ class NotificationCard extends StatelessWidget {
   /// Inline shortcut only where it saves a decision: a fresh, ready CV.
   bool get _showsViewCv =>
       !item.isRead && item.type == 'cv_ready' && item.opensSomething;
+}
+
+/// Inbox with no notifications at all: what will arrive here, plus the two
+/// actions that start producing it. [onRoute] opens an in-app route through
+/// the push router; without one the buttons are hidden.
+class NotificationsEmptyState extends StatelessWidget {
+  const NotificationsEmptyState({super.key, required this.onRoute});
+
+  final ValueChanged<String>? onRoute;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final c = context.sirati;
+    final previews = [
+      (
+        NotificationCategory.cv,
+        l10n.settingsNotificationsPreviewCvTitle,
+        l10n.settingsNotificationsPreviewCvBody,
+      ),
+      (
+        NotificationCategory.jobs,
+        l10n.settingsNotificationsPreviewJobsTitle,
+        l10n.settingsNotificationsPreviewJobsBody,
+      ),
+      (
+        NotificationCategory.analysis,
+        l10n.settingsNotificationsPreviewAnalysisTitle,
+        l10n.settingsNotificationsPreviewAnalysisBody,
+      ),
+    ];
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.xxl),
+      children: [
+        const Center(child: _BellHero()),
+        const SizedBox(height: AppSpacing.lg),
+        Semantics(
+          header: true,
+          child: Text(
+            l10n.settingsNotificationsEmptyTitle,
+            textAlign: TextAlign.center,
+            style: AppTypography.of(context, AppTypography.titleLg),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          l10n.settingsNotificationsEmptyBody,
+          textAlign: TextAlign.center,
+          style: AppTypography.of(context, AppTypography.bodyMd,
+              color: c.textSecondary),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: c.border),
+            boxShadow: c.softShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded,
+                        size: 20, color: c.primaryInk),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          l10n.settingsNotificationsPreviewTitle,
+                          style: AppTextStyles.titleSm(c),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              for (final (category, title, body) in previews) ...[
+                Divider(height: 1, color: c.border),
+                _PreviewRow(category: category, title: title, body: body),
+              ],
+            ],
+          ),
+        ),
+        if (onRoute case final open?) ...[
+          const SizedBox(height: AppSpacing.xl),
+          FilledButton.icon(
+            onPressed: () => open('cv-analysis'),
+            icon: const Icon(Icons.document_scanner_outlined, size: 20),
+            label: Text(l10n.settingsNotificationsScanCta),
+            style: FilledButton.styleFrom(
+              backgroundColor: c.primary,
+              foregroundColor: c.onPrimary,
+              minimumSize: const Size.fromHeight(52),
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+              textStyle: AppTypography.of(context, AppTypography.labelLg),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          TextButton.icon(
+            onPressed: () => open('create-cv'),
+            icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+            label: Text(l10n.settingsNotificationsCreateCvCta),
+            style: TextButton.styleFrom(
+              foregroundColor: c.primaryInk,
+              minimumSize: const Size.fromHeight(AppTouchTarget.min),
+              textStyle: AppTypography.of(context, AppTypography.labelLg),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Bell on a primary disc inside two soft rings.
+class _BellHero extends StatelessWidget {
+  const _BellHero();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return ExcludeSemantics(
+      child: Container(
+        width: 112,
+        height: 112,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: c.primaryLight.withValues(alpha: .5),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: c.primaryLight,
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(shape: BoxShape.circle, color: c.primary),
+            child: Icon(Icons.notifications_none_rounded,
+                size: 36, color: c.onPrimary),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A sample of a future notification, using the inbox's own category tile.
+class _PreviewRow extends StatelessWidget {
+  const _PreviewRow({
+    required this.category,
+    required this.title,
+    required this.body,
+  });
+
+  final NotificationCategory category;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    final tile = notificationCategoryTile(category, c);
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: tile.bg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(tile.icon, size: 22, color: tile.fg),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTextStyles.titleSm(c)),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(body, style: AppTextStyles.bodySm(c)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

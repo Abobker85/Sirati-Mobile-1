@@ -235,7 +235,9 @@ void main() {
             node.owner!.performAction(node.id, ui.SemanticsAction.tap);
             await tester.pumpAndSettle();
             expect(
-                tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+                tester
+                    .widget<SwitchListTile>(find.byType(SwitchListTile))
+                    .value,
                 isFalse);
             final off = tester.getSemantics(control).getSemanticsData();
             expect(off.label, l10n.pushNotifications);

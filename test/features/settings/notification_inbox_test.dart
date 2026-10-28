@@ -8,6 +8,7 @@ import 'package:sirati/features/settings/domain/notification_groups.dart';
 import 'package:sirati/features/settings/domain/notification_item.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/navigation/notification_target.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/services/notification_service.dart';
@@ -408,13 +409,15 @@ void main() {
   group('empty inbox', () {
     tearDown(() => NotificationService.instance.onNotificationTap = null);
 
-    Widget app() => ProviderScope(
+    Widget app({String language = 'en', bool dark = false}) => ProviderScope(
           overrides: [
             mobileContentServiceProvider.overrideWithValue(_EmptyContent()),
           ],
           child: MaterialApp(
-            theme: AppTheme.lightFor(arabic: false),
-            locale: const Locale('en'),
+            theme: dark
+                ? AppTheme.darkFor(arabic: language == 'ar')
+                : AppTheme.lightFor(arabic: language == 'ar'),
+            locale: Locale(language),
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: const Scaffold(body: Center(child: Text('home'))),
@@ -422,34 +425,75 @@ void main() {
           ),
         );
 
-    Future<void> open(WidgetTester tester) async {
-      AppLocale.languageCode.value = 'en';
+    Future<AppLocalizations> open(WidgetTester tester,
+        {String language = 'en', bool dark = false}) async {
+      tallView(tester);
+      AppLocale.languageCode.value = language;
       SessionCache.instance.clear();
-      await tester.pumpWidget(app());
+      await tester.pumpWidget(app(language: language, dark: dark));
       unawaited(tester
           .state<NavigatorState>(find.byType(Navigator))
           .pushNamed('/inbox'));
       await tester.pumpAndSettle();
+      return AppLocalizations.of(
+          tester.element(find.byType(NotificationsEmptyState)));
     }
 
-    testWidgets('scan CTA leaves the inbox and routes like a push',
+    for (final (label, target) in [
+      ('scan', const OpenScreen(NotificationScreen.cvAnalysis)),
+      ('create', const OpenScreen(NotificationScreen.cvGenerator)),
+    ]) {
+      testWidgets('$label CTA leaves the inbox and routes like a push',
+          (tester) async {
+        final routed = <Map<String, dynamic>>[];
+        NotificationService.instance.onNotificationTap = routed.add;
+        final l10n = await open(tester);
+        await tester.tap(find.text(label == 'scan'
+            ? l10n.settingsNotificationsScanCta
+            : l10n.settingsNotificationsCreateCvCta));
+        await tester.pumpAndSettle();
+        expect(routed, hasLength(1));
+        expect(resolveNotificationTarget(routed.single), target,
+            reason: 'the payload resolves through the real push router');
+        expect(find.byType(NotificationsScreen), findsNothing);
+      });
+    }
+
+    testWidgets('preview rows use the inbox tiles; no router, no buttons',
         (tester) async {
-      final routed = <Map<String, dynamic>>[];
-      NotificationService.instance.onNotificationTap = routed.add;
-      await open(tester);
-      await tester.tap(find.text('Scan your CV now'));
-      await tester.pumpAndSettle();
-      expect(routed.single,
-          {'action_type': 'screen', 'action_url': 'cv-analysis'});
-      expect(find.byType(NotificationsScreen), findsNothing);
+      NotificationService.instance.onNotificationTap = null;
+      final l10n = await open(tester);
+      final c = tester.element(find.byType(NotificationsEmptyState)).sirati;
+      expect(find.text(l10n.settingsNotificationsEmptyTitle), findsOneWidget);
+      expect(find.text(l10n.settingsNotificationsPreviewTitle), findsOneWidget);
+      for (final category in [
+        NotificationCategory.cv,
+        NotificationCategory.jobs,
+        NotificationCategory.analysis,
+      ]) {
+        final tile = notificationCategoryTile(category, c);
+        expect(
+            find.byWidgetPredicate(
+                (w) => w is Icon && w.icon == tile.icon && w.color == tile.fg),
+            findsOneWidget,
+            reason: '$category preview matches its inbox tile');
+      }
+      expect(find.byType(FilledButton), findsNothing);
+      expect(find.byType(TextButton), findsNothing);
     });
 
-    testWidgets('no router, no CTA', (tester) async {
-      NotificationService.instance.onNotificationTap = null;
-      await open(tester);
-      expect(find.text('No notifications yet'), findsOneWidget);
-      expect(find.text('Scan your CV now'), findsNothing);
-    });
+    for (final language in ['en', 'ar']) {
+      for (final dark in [false, true]) {
+        final mode = '$language ${dark ? 'dark' : 'light'}';
+        testWidgets('empty state is AA ($mode)', (tester) async {
+          NotificationService.instance.onNotificationTap = (_) {};
+          await open(tester, language: language, dark: dark);
+          expectAllTextAa('empty inbox $mode');
+          expectAllIconsAa('empty inbox $mode');
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
   });
 }
 

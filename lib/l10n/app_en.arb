@@ -1213,5 +1213,13 @@
   "settingsNotificationsCount": "{count, plural, one{1 notification} other{{count} notifications}}",
   "settingsNotificationsViewCv": "View CV",
   "settingsNotificationsScanCta": "Scan your CV now",
-  "settingsNotificationsFilterEmpty": "Nothing in this section yet."
+  "settingsNotificationsFilterEmpty": "Nothing in this section yet.",
+  "settingsNotificationsPreviewTitle": "What will show up here?",
+  "settingsNotificationsPreviewCvTitle": "Your CV is ready",
+  "settingsNotificationsPreviewCvBody": "When a CV is finished and ready to review and export.",
+  "settingsNotificationsPreviewJobsTitle": "Jobs that fit your title",
+  "settingsNotificationsPreviewJobsBody": "New openings that match your job title.",
+  "settingsNotificationsPreviewAnalysisTitle": "Your ATS scan results",
+  "settingsNotificationsPreviewAnalysisBody": "Your CV's match score and how to improve it.",
+  "settingsNotificationsCreateCvCta": "Create a CV"
 }
