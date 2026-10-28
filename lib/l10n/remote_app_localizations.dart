@@ -2312,18 +2312,6 @@ class RemoteAppLocalizations extends AppLocalizations {
           icuMessage,
           locale: icuLocale,
           args: {'percent': percent},
-  @override
-  String sharedJobTitleEnterManually(String query) =>
-      remote.format(
-        'sharedJobTitleEnterManually',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'query': query},
-        ),
-      ) ??
-      _base.sharedJobTitleEnterManually(query);
-
         ),
       ) ??
       _base.sharedCareerReadinessPercent(percent);
@@ -4478,6 +4466,135 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get cvCardNeedsWork =>
       remote.text('cvCardNeedsWork') ?? _base.cvCardNeedsWork;
 
+  @override
+  String get settingsNotificationsFilterAll =>
+      remote.text('settingsNotificationsFilterAll') ??
+      _base.settingsNotificationsFilterAll;
+
+  @override
+  String get settingsNotificationsCategoryCv =>
+      remote.text('settingsNotificationsCategoryCv') ??
+      _base.settingsNotificationsCategoryCv;
+
+  @override
+  String get settingsNotificationsCategoryJobs =>
+      remote.text('settingsNotificationsCategoryJobs') ??
+      _base.settingsNotificationsCategoryJobs;
+
+  @override
+  String get settingsNotificationsCategoryAnalysis =>
+      remote.text('settingsNotificationsCategoryAnalysis') ??
+      _base.settingsNotificationsCategoryAnalysis;
+
+  @override
+  String get settingsNotificationsCategoryLearning =>
+      remote.text('settingsNotificationsCategoryLearning') ??
+      _base.settingsNotificationsCategoryLearning;
+
+  @override
+  String get settingsNotificationsCategoryGeneral =>
+      remote.text('settingsNotificationsCategoryGeneral') ??
+      _base.settingsNotificationsCategoryGeneral;
+
+  @override
+  String get settingsNotificationsToday =>
+      remote.text('settingsNotificationsToday') ??
+      _base.settingsNotificationsToday;
+
+  @override
+  String get settingsNotificationsYesterday =>
+      remote.text('settingsNotificationsYesterday') ??
+      _base.settingsNotificationsYesterday;
+
+  @override
+  String get settingsNotificationsThisWeek =>
+      remote.text('settingsNotificationsThisWeek') ??
+      _base.settingsNotificationsThisWeek;
+
+  @override
+  String get settingsNotificationsEarlier =>
+      remote.text('settingsNotificationsEarlier') ??
+      _base.settingsNotificationsEarlier;
+
+  @override
+  String settingsNotificationsNewCount(int count) =>
+      remote.format(
+        'settingsNotificationsNewCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.settingsNotificationsNewCount(count);
+
+  @override
+  String settingsNotificationsCount(int count) =>
+      remote.format(
+        'settingsNotificationsCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.settingsNotificationsCount(count);
+
+  @override
+  String get settingsNotificationsViewCv =>
+      remote.text('settingsNotificationsViewCv') ??
+      _base.settingsNotificationsViewCv;
+
+  @override
+  String get settingsNotificationsScanCta =>
+      remote.text('settingsNotificationsScanCta') ??
+      _base.settingsNotificationsScanCta;
+
+  @override
+  String get settingsNotificationsFilterEmpty =>
+      remote.text('settingsNotificationsFilterEmpty') ??
+      _base.settingsNotificationsFilterEmpty;
+
+  @override
+  String get settingsNotificationsPreviewTitle =>
+      remote.text('settingsNotificationsPreviewTitle') ??
+      _base.settingsNotificationsPreviewTitle;
+
+  @override
+  String get settingsNotificationsPreviewCvTitle =>
+      remote.text('settingsNotificationsPreviewCvTitle') ??
+      _base.settingsNotificationsPreviewCvTitle;
+
+  @override
+  String get settingsNotificationsPreviewCvBody =>
+      remote.text('settingsNotificationsPreviewCvBody') ??
+      _base.settingsNotificationsPreviewCvBody;
+
+  @override
+  String get settingsNotificationsPreviewJobsTitle =>
+      remote.text('settingsNotificationsPreviewJobsTitle') ??
+      _base.settingsNotificationsPreviewJobsTitle;
+
+  @override
+  String get settingsNotificationsPreviewJobsBody =>
+      remote.text('settingsNotificationsPreviewJobsBody') ??
+      _base.settingsNotificationsPreviewJobsBody;
+
+  @override
+  String get settingsNotificationsPreviewAnalysisTitle =>
+      remote.text('settingsNotificationsPreviewAnalysisTitle') ??
+      _base.settingsNotificationsPreviewAnalysisTitle;
+
+  @override
+  String get settingsNotificationsPreviewAnalysisBody =>
+      remote.text('settingsNotificationsPreviewAnalysisBody') ??
+      _base.settingsNotificationsPreviewAnalysisBody;
+
+  @override
+  String get settingsNotificationsCreateCvCta =>
+      remote.text('settingsNotificationsCreateCvCta') ??
+      _base.settingsNotificationsCreateCvCta;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -5473,6 +5590,29 @@ class RemoteAppLocalizations extends AppLocalizations {
     'cvCardNotScanned': [],
     'cvCardScanNow': [],
     'cvCardNeedsWork': [],
+    'settingsNotificationsFilterAll': [],
+    'settingsNotificationsCategoryCv': [],
+    'settingsNotificationsCategoryJobs': [],
+    'settingsNotificationsCategoryAnalysis': [],
+    'settingsNotificationsCategoryLearning': [],
+    'settingsNotificationsCategoryGeneral': [],
+    'settingsNotificationsToday': [],
+    'settingsNotificationsYesterday': [],
+    'settingsNotificationsThisWeek': [],
+    'settingsNotificationsEarlier': [],
+    'settingsNotificationsNewCount': ['int'],
+    'settingsNotificationsCount': ['int'],
+    'settingsNotificationsViewCv': [],
+    'settingsNotificationsScanCta': [],
+    'settingsNotificationsFilterEmpty': [],
+    'settingsNotificationsPreviewTitle': [],
+    'settingsNotificationsPreviewCvTitle': [],
+    'settingsNotificationsPreviewCvBody': [],
+    'settingsNotificationsPreviewJobsTitle': [],
+    'settingsNotificationsPreviewJobsBody': [],
+    'settingsNotificationsPreviewAnalysisTitle': [],
+    'settingsNotificationsPreviewAnalysisBody': [],
+    'settingsNotificationsCreateCvCta': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -6510,6 +6650,44 @@ class RemoteAppLocalizations extends AppLocalizations {
         'cvCardNotScanned' => l.cvCardNotScanned,
         'cvCardScanNow' => l.cvCardScanNow,
         'cvCardNeedsWork' => l.cvCardNeedsWork,
+        'settingsNotificationsFilterAll' => l.settingsNotificationsFilterAll,
+        'settingsNotificationsCategoryCv' => l.settingsNotificationsCategoryCv,
+        'settingsNotificationsCategoryJobs' =>
+          l.settingsNotificationsCategoryJobs,
+        'settingsNotificationsCategoryAnalysis' =>
+          l.settingsNotificationsCategoryAnalysis,
+        'settingsNotificationsCategoryLearning' =>
+          l.settingsNotificationsCategoryLearning,
+        'settingsNotificationsCategoryGeneral' =>
+          l.settingsNotificationsCategoryGeneral,
+        'settingsNotificationsToday' => l.settingsNotificationsToday,
+        'settingsNotificationsYesterday' => l.settingsNotificationsYesterday,
+        'settingsNotificationsThisWeek' => l.settingsNotificationsThisWeek,
+        'settingsNotificationsEarlier' => l.settingsNotificationsEarlier,
+        'settingsNotificationsNewCount' =>
+          l.settingsNotificationsNewCount(a[0] as int),
+        'settingsNotificationsCount' =>
+          l.settingsNotificationsCount(a[0] as int),
+        'settingsNotificationsViewCv' => l.settingsNotificationsViewCv,
+        'settingsNotificationsScanCta' => l.settingsNotificationsScanCta,
+        'settingsNotificationsFilterEmpty' =>
+          l.settingsNotificationsFilterEmpty,
+        'settingsNotificationsPreviewTitle' =>
+          l.settingsNotificationsPreviewTitle,
+        'settingsNotificationsPreviewCvTitle' =>
+          l.settingsNotificationsPreviewCvTitle,
+        'settingsNotificationsPreviewCvBody' =>
+          l.settingsNotificationsPreviewCvBody,
+        'settingsNotificationsPreviewJobsTitle' =>
+          l.settingsNotificationsPreviewJobsTitle,
+        'settingsNotificationsPreviewJobsBody' =>
+          l.settingsNotificationsPreviewJobsBody,
+        'settingsNotificationsPreviewAnalysisTitle' =>
+          l.settingsNotificationsPreviewAnalysisTitle,
+        'settingsNotificationsPreviewAnalysisBody' =>
+          l.settingsNotificationsPreviewAnalysisBody,
+        'settingsNotificationsCreateCvCta' =>
+          l.settingsNotificationsCreateCvCta,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

@@ -2978,5 +2978,46 @@
   "cvCardNeedsWork": "تحتاج سيرتك إلى تحسينات مهمة، ابدأ بها الآن.",
   "@cvCardNeedsWork": {
     "description": "CV card warning for a low ATS score"
-  }
+  },
+  "settingsNotificationsFilterAll": "الكل",
+  "settingsNotificationsCategoryCv": "السيرة الذاتية",
+  "settingsNotificationsCategoryJobs": "الوظائف",
+  "settingsNotificationsCategoryAnalysis": "التحليل",
+  "settingsNotificationsCategoryLearning": "التعلّم",
+  "settingsNotificationsCategoryGeneral": "عام",
+  "settingsNotificationsToday": "اليوم",
+  "settingsNotificationsYesterday": "أمس",
+  "settingsNotificationsThisWeek": "هذا الأسبوع",
+  "settingsNotificationsEarlier": "سابقاً",
+  "settingsNotificationsNewCount": "{count, plural, one{إشعار جديد} two{إشعاران جديدان} few{{count} جديدة} many{{count} جديداً} other{{count} جديد}}",
+  "@settingsNotificationsNewCount": {
+    "description": "Inbox date-section header, end side: unread rows in the section.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "settingsNotificationsCount": "{count, plural, one{إشعار واحد} two{إشعاران} few{{count} إشعارات} many{{count} إشعاراً} other{{count} إشعار}}",
+  "@settingsNotificationsCount": {
+    "description": "Inbox date-section header, end side: rows in a section with nothing unread.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "settingsNotificationsViewCv": "عرض السيرة",
+  "settingsNotificationsScanCta": "فحص سيرتك الآن",
+  "settingsNotificationsFilterEmpty": "لا توجد إشعارات في هذا القسم.",
+  "settingsNotificationsPreviewTitle": "ماذا ستصلك هنا؟",
+  "settingsNotificationsPreviewCvTitle": "سيرتك الذاتية جاهزة",
+  "settingsNotificationsPreviewCvBody": "عندما تنتهي سيرتك وتصبح جاهزة للمراجعة والتصدير.",
+  "settingsNotificationsPreviewJobsTitle": "وظائف تناسب مسماك",
+  "settingsNotificationsPreviewJobsBody": "وظائف جديدة منشورة تطابق مسماك الوظيفي.",
+  "settingsNotificationsPreviewAnalysisTitle": "نتائج فحص سيرتك (ATS)",
+  "settingsNotificationsPreviewAnalysisBody": "درجة توافق سيرتك واقتراحات لتحسينها.",
+  "settingsNotificationsCreateCvCta": "إنشاء سيرة ذاتية"
 }
