@@ -12,14 +12,21 @@ void main() {
     ('light', AppTheme.lightFor(arabic: false)),
     ('dark', AppTheme.darkFor(arabic: false)),
   ]) {
-    for (final draft in [false, true]) {
-      testWidgets('CV card texts are AA in $mode mode (draft: $draft)',
+    // Unscored (chip + scan link), low (warning banner) and high scores.
+    for (final (draft, score) in [
+      (false, 92),
+      (false, 41),
+      (false, null),
+      (true, null),
+    ]) {
+      testWidgets(
+          'CV card texts are AA in $mode mode (draft: $draft, score: $score)',
           (tester) async {
         final item = CvListItem.fromJson({
           'id': 1,
           'title': 'Backend Developer CV',
-          'badge': draft ? 'Draft' : 'ATS 92',
           'is_draft': draft,
+          'score_total': score,
           'updated_label': '2 days ago',
         });
         await tester.pumpWidget(MaterialApp(
@@ -32,17 +39,18 @@ void main() {
               children: [
                 CvDocumentCard(
                   item: item,
+                  onOpen: () {},
                   onEdit: () {},
                   onDelete: () {},
                   onDownload: () {},
+                  onScan: () {},
                 ),
-                CreateCvCard(english: true, onTap: () {}),
               ],
             ),
           ),
         ));
 
-        expectAllTextAa('$mode, draft: $draft');
+        expectAllTextAa('$mode, draft: $draft, score: $score');
       });
     }
   }

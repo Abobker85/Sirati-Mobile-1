@@ -337,21 +337,22 @@ void main() {
         final semantics = tester.ensureSemantics();
         try {
           final key = GlobalKey();
-          var downloads = 0;
+          var opens = 0;
           await tester.pumpWidget(_app(RepaintBoundary(key: key, child: CvDocumentCard(
             item: const CvListItem(id: 10, title: 'Engineer', badge: '', isDraft: false,
               canDownload: true, pdfUrl: '', templatePdfUrl: '', updatedAt: null, updatedLabel: ''),
-            onEdit: () {}, onDelete: () {}, onDownload: () => downloads++,
+            onOpen: () => opens++, onEdit: () {}, onDelete: () {}, onDownload: () {}, onScan: () {},
           )), lang: lang, dark: dark, scale: 1));
           await tester.pumpAndSettle();
-          final action = find.bySemanticsLabel(lang == 'en' ? 'Download' : 'تنزيل').first;
+          final action = find.byKey(CvDocumentCard.openKey(10));
           _target(tester, action);
-          _target(tester, find.bySemanticsLabel(lang == 'en' ? 'Delete' : 'حذف').first);
+          _target(tester, find.byKey(CvDocumentCard.scanKey(10)));
+          _target(tester, find.byKey(CvDocumentCard.menuKey(10)));
           final before = await _pixels(tester, key);
           final oldStrategy = FocusManager.instance.highlightStrategy;
           addTearDown(() => FocusManager.instance.highlightStrategy = oldStrategy);
           FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
-          Focus.of(tester.element(find.byIcon(Icons.download_rounded))).requestFocus();
+          Focus.of(tester.element(find.descendant(of: action, matching: find.byType(Text)))).requestFocus();
           await tester.pumpAndSettle();
           final focused = await _pixels(tester, key);
           expect(focused, isNot(equals(before)), reason: 'focus must visibly paint over the opaque card');
@@ -369,7 +370,7 @@ void main() {
           expect(pressed, isNot(equals(before)), reason: 'tap ink must be visible');
           await gesture.up();
           await tester.pumpAndSettle();
-          expect(downloads, 1);
+          expect(opens, 1);
         } finally {
           semantics.dispose();
         }

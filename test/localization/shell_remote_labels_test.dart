@@ -22,7 +22,8 @@ RemoteL10nState _state(Map<String, Map<String, String>> strings) =>
 /// Catalog key behind the default title of each error class. Every class
 /// must be listed, so a new [ApiErrorType] without a remote label fails here.
 const _titleKeys = {
-  ApiErrorType.network: 'sharedErrorTitleNetwork',
+  // Network errors show the full-screen OfflineView.
+  ApiErrorType.network: 'sharedOfflineTitle',
   ApiErrorType.timeout: 'sharedErrorTitleTimeout',
   ApiErrorType.auth: 'sharedErrorTitleAuth',
   ApiErrorType.notFound: 'sharedErrorTitleNotFound',

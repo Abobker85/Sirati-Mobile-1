@@ -195,6 +195,7 @@ class AppRouter {
       case AppRoutes.notifications:
       case AppRoutes.gallery:
       case AppRoutes.jobMatch:
+      case AppRoutes.atsScan:
       case AppRoutes.notFound:
         return ParsedRoute(name: path);
       case AppRoutes.premium:

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
@@ -81,9 +82,13 @@ void main() {
         ));
         await tester.pumpAndSettle();
 
+        // Download lives in the card's "⋯" menu.
+        final menu = find.byKey(CvDocumentCard.menuKey(7));
+        await tester.ensureVisible(menu);
+        await tester.tap(menu);
+        await tester.pumpAndSettle();
         final download = find.byIcon(Icons.download_rounded);
         expect(download, findsOneWidget);
-        await tester.ensureVisible(download);
         await tester.tap(download);
         await tester.pumpAndSettle();
 

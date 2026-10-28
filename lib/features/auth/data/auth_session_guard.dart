@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
+import 'package:sirati/features/auth/presentation/session_expired_screen.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/notification_service.dart';
 
@@ -49,7 +50,8 @@ class AuthSessionGuard {
     ApiClient.onAuthExpired = null;
   }
 
-  /// Clear local session and push Login once (parallel 401s debounce).
+  /// Clear local session and leave authenticated screens once (parallel 401s
+  /// debounce): to [SessionExpiredScreen] when [showMessage], else to Login.
   ///
   /// [requestToken] is the bearer token that received the 401. A delayed
   /// 401 for an older token is ignored when a newer session is already saved.
@@ -76,9 +78,9 @@ class AuthSessionGuard {
         if (nav != null) {
           unawaited(nav.pushAndRemoveUntil(
             MaterialPageRoute(
-              builder: (_) => LoginScreen(
-                sessionExpiredNotice: showMessage,
-              ),
+              builder: (_) => showMessage
+                  ? const SessionExpiredScreen()
+                  : const LoginScreen(),
             ),
             (route) => false,
           ));
