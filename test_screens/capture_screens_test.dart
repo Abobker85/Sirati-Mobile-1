@@ -9,7 +9,13 @@
 /// Output (git-ignored): `build/l10n_screens/<id>.<locale>.png` at 390 px
 /// wide, pixel ratio 2, light theme, bundled IBM Plex Sans Arabic, plus
 /// `build/l10n_screens/manifest.json` (version 1) listing each screen's
-/// labels as `{key, x, y, w, h}` in logical px of that image. Scroll views
+/// labels as `{key, x, y, w, h}` in logical px of that image, plus (so the
+/// admin can paint edited text over the old one) the paragraph's plain
+/// `text`, this key's `value` within it, `args` (placeholder name ->
+/// displayed argument, keys with placeholders only), the `style` of the span
+/// holding it (font_family, font_size, font_weight, color #RRGGBB, opacity,
+/// align, direction, line_height, max_lines, lines) and `bg`, the most common
+/// colour just outside the rect in the rendered pixels. Scroll views
 /// are captured at their full content height (capped at [_maxHeight]); the
 /// image height is in the manifest.
 ///
@@ -433,15 +439,20 @@ Future<double> _fitToContent(WidgetTester tester) async {
   return height;
 }
 
-Future<void> _writePng(WidgetTester tester, String path) async {
+/// Writes the PNG and returns the same image's RGBA pixels with its size
+/// (device px), for sampling label backgrounds.
+Future<(ByteData, int, int)> _writePng(WidgetTester tester, String path) async {
   final boundary =
       tester.renderObject<RenderRepaintBoundary>(find.byKey(_rootKey));
-  await tester.runAsync(() async {
+  return (await tester.runAsync(() async {
     final image = await boundary.toImage(pixelRatio: _pixelRatio);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    final rgba = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final size = (image.width, image.height);
     image.dispose();
     File(path).writeAsBytesSync(bytes!.buffer.asUint8List());
-  });
+    return (rgba!, size.$1, size.$2);
+  }))!;
 }
 
 String? _gitCommit() {
@@ -524,7 +535,8 @@ void main() {
           await _settle(tester);
 
           final root = tester.renderObject(find.byKey(_rootKey));
-          final hits = findLabelHits(root, recorder.keysByValue);
+          final hits = findLabelHits(root, recorder.keysByValue,
+              args: recorder.argsByKeyValue);
           expect(hits, isNotEmpty, reason: 'no labels found on ${screen.id}');
           for (final hit in hits) {
             expect(enKeys, contains(hit.key));
@@ -535,12 +547,18 @@ void main() {
           }
 
           final image = '${screen.id}.$language.png';
-          await _writePng(tester, '$_outDir/$image');
+          final (rgba, imageW, imageH) =
+              await _writePng(tester, '$_outDir/$image');
           (captured[screen.id] ??= {})[language] = {
             'image': image,
             'width': _width,
             'height': height,
-            'labels': [for (final hit in hits) hit.toJson()],
+            'labels': [
+              for (final hit in hits)
+                hit.toJson(
+                    bg: sampleBackground(
+                        rgba, imageW, imageH, hit.rect, _pixelRatio)),
+            ],
           };
 
           // Unmount inside the zone so pending timers are cancelled.
