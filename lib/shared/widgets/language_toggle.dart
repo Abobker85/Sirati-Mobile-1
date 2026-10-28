@@ -5,7 +5,17 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 class LanguageToggle extends StatelessWidget {
-  const LanguageToggle({super.key});
+  /// Overrides for toggles painted on a brand hero instead of a surface.
+  final Color? backgroundColor;
+  final Color? foregroundColor;
+  final BorderSide side;
+
+  const LanguageToggle({
+    super.key,
+    this.backgroundColor,
+    this.foregroundColor,
+    this.side = BorderSide.none,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,8 +26,8 @@ class LanguageToggle extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: context.sirati.surfaceLow,
-        shape: const CircleBorder(),
+        color: backgroundColor ?? context.sirati.surfaceLow,
+        shape: CircleBorder(side: side),
         child: InkWell(
           onTap: () {
             AppLocale.toggle(context);
@@ -36,7 +46,7 @@ class LanguageToggle extends StatelessWidget {
                     style: AppTypography.of(
                       context,
                       AppTypography.bodySm,
-                      color: context.sirati.primaryInk,
+                      color: foregroundColor ?? context.sirati.primaryInk,
                     ).copyWith(fontWeight: FontWeight.w700),
                   ),
                 ),

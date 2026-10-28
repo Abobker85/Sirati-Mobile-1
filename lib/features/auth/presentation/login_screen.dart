@@ -25,6 +25,9 @@ const _loginCompactHeaderExtent = 520.0;
 
 const _loginMarkSize = 56.0;
 const _loginCompactMarkSize = 40.0;
+const _loginHeroRadius = 32.0;
+const _loginCardRadius = 24.0;
+const _loginCardOverlap = 28.0;
 
 class LoginScreen extends ConsumerStatefulWidget {
   /// When true, shows a one-shot "session expired" snackbar after first frame.
@@ -141,259 +144,361 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isLoading = ref.watch(loginControllerProvider);
-    return Scaffold(
-      backgroundColor: context.sirati.background,
-      body: AuthFormConstraint(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // Height the body can actually use, including a keyboard that
-            // shrinks the scaffold. Full-screen size stays tall while typing.
-            final compact = constraints.maxHeight < _loginCompactHeaderExtent;
-            final sectionGap = compact ? AppSpacing.sm : AppSpacing.xl;
-            return SafeArea(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  compact ? AppSpacing.xs : AppSpacing.md,
-                  AppSpacing.lg,
-                  AppSpacing.xl,
-                ),
+    final insets = MediaQuery.paddingOf(context);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Light status-bar icons over the dark hero.
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: context.sirati.background,
+        body: AuthFormConstraint(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Height the body can actually use, including a keyboard that
+              // shrinks the scaffold. Full-screen size stays tall while typing.
+              final compact = constraints.maxHeight < _loginCompactHeaderExtent;
+              return SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: insets.bottom),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: context.sirati.surface,
-                        border: Border(
-                          bottom: BorderSide(color: context.sirati.outline),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              children: [
-                                if (Navigator.of(context).canPop())
-                                  IconButton(
-                                    onPressed: () =>
-                                        Navigator.maybePop(context),
-                                    tooltip: MaterialLocalizations.of(context)
-                                        .backButtonTooltip,
-                                    icon: DirectionalIcon(
-                                      Icons.arrow_back_ios_new_rounded,
-                                      color: context.sirati.textPrimary,
-                                      size: 18,
-                                    ),
-                                  ),
-                                const Spacer(),
-                                const LanguageToggle(),
-                              ],
-                            ),
-                            SizedBox(height: sectionGap),
-                            Center(
-                              child: SiratiMark(
-                                size: compact
-                                    ? _loginCompactMarkSize
-                                    : _loginMarkSize,
-                              ),
-                            ),
-                            SizedBox(height: sectionGap),
-                            Text(
-                              l10n.welcomeToSirati,
-                              textAlign: TextAlign.center,
-                              style: AppTypography.of(
-                                context,
-                                compact
-                                    ? AppTypography.titleLg
-                                    : AppTypography.headlineMd,
-                                color: context.sirati.primaryInk,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              l10n.authLoginSubtitle,
-                              textAlign: TextAlign.center,
-                              style: AppTypography.of(
-                                context,
-                                AppTypography.bodyMd,
-                                color: context.sirati.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    _LoginHero(
+                      compact: compact,
+                      topInset: insets.top,
+                      title: l10n.welcomeToSirati,
+                      subtitle: l10n.authLoginSubtitle,
                     ),
-                    SizedBox(height: sectionGap),
-                    AutofillGroup(
-                      child: Form(
-                        key: _formKey,
-                        autovalidateMode: _submitted
-                            ? AutovalidateMode.onUserInteraction
-                            : AutovalidateMode.disabled,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (_showFormBanner)
-                              AppFormErrorBanner(
-                                message: l10n.authFixHighlightedFields,
-                                onDismiss: () =>
-                                    setState(() => _showFormBanner = false),
-                              ),
-                            _AuthLabel(text: l10n.emailLabel),
-                            const SizedBox(height: 6),
-                            AppTextFormField(
-                              controller: _emailController,
-                              showSuccessWhenValid: true,
-                              successMessage: l10n.authLooksGood,
-                              autovalidateMode: _submitted
-                                  ? AutovalidateMode.onUserInteraction
-                                  : AutovalidateMode.disabled,
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.email],
-                              textDirection: TextDirection.ltr,
-                              textAlign: TextAlign.start,
-                              textInputAction: TextInputAction.next,
-                              onFieldSubmitted: (_) =>
-                                  FocusScope.of(context).nextFocus(),
-                              hintText: 'name@example.com',
-                              prefixIcon: const Icon(Icons.email_outlined),
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) {
-                                  return l10n.authEmailRequired;
-                                }
-                                if (!v.contains('@')) {
-                                  return l10n.authEmailInvalid;
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            _AuthLabel(text: l10n.authPasswordLabel),
-                            const SizedBox(height: 6),
-                            AppTextFormField(
-                              controller: _passwordController,
-                              showSuccessWhenValid: true,
-                              autovalidateMode: _submitted
-                                  ? AutovalidateMode.onUserInteraction
-                                  : AutovalidateMode.disabled,
-                              obscureText: _obscurePassword,
-                              autofillHints: const [AutofillHints.password],
-                              textDirection: TextDirection.ltr,
-                              textAlign: TextAlign.start,
-                              textInputAction: TextInputAction.send,
-                              onFieldSubmitted: (_) => unawaited(_login()),
-                              hintText: '••••••••',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                tooltip: _obscurePassword
-                                    ? l10n.showPassword
-                                    : l10n.hidePassword,
-                                icon: Icon(_obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined),
-                                onPressed: () => setState(
-                                    () => _obscurePassword = !_obscurePassword),
-                              ),
-                              // Presence only: the server has no length rule for
-                              // sign-in, and a client one can lock out accounts.
-                              validator: (v) => loginPasswordError(v) == null
-                                  ? null
-                                  : l10n.authPasswordRequired,
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: TextButton(
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                      builder: (_) =>
-                                          const ForgotPasswordScreen()),
-                                ),
-                                child: Text(l10n.authForgotPasswordLink),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            SubmitButton(
-                              label: l10n.authSignInButton,
-                              loadingLabel: l10n.authSigningIn,
-                              isLoading: isLoading,
-                              onPressed: () => unawaited(_login()),
-                            ),
-                            if (socialSignInEnabled) ...[
-                              const SizedBox(height: AppSpacing.xl),
-                              Row(
-                                children: [
-                                  Expanded(
-                                      child: Divider(
-                                          color: context.sirati.border)),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 14),
-                                    child: Text(
-                                      l10n.authOrContinueWith,
-                                      style: TextStyle(
-                                          fontSize: 13,
-                                          color: context.sirati.textSecondary),
-                                    ),
-                                  ),
-                                  Expanded(
-                                      child: Divider(
-                                          color: context.sirati.border)),
-                                ],
-                              ),
-                              const SizedBox(height: 20),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _SocialButton(
-                                      icon: Icons.g_mobiledata_rounded,
-                                      label: 'Google',
-                                      onTap: _loginWithGoogle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _SocialButton(
-                                      icon: Icons.apple,
-                                      label: 'Apple',
-                                      onTap: _loginWithApple,
-                                    ),
-                                  ),
-                                ],
+                    // The form card rides up over the hero's rounded edge.
+                    Transform.translate(
+                      offset: const Offset(0, -_loginCardOverlap),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: context.sirati.surface,
+                            borderRadius:
+                                BorderRadius.circular(_loginCardRadius),
+                            border: Border.all(color: context.sirati.border),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x14000000),
+                                blurRadius: 24,
+                                offset: Offset(0, 8),
                               ),
                             ],
-                            const SizedBox(height: 28),
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text(
-                                  l10n.authNoAccount,
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      color: context.sirati.textSecondary),
-                                ),
-                                TextButton(
-                                  onPressed: _goToRegister,
-                                  child: Text(l10n.authCreateAccountLink),
-                                ),
-                              ],
-                            ),
-                          ],
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(
+                                compact ? AppSpacing.md : AppSpacing.xl),
+                            child: _buildForm(context, l10n, isLoading),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
   }
+
+  Widget _buildForm(
+      BuildContext context, AppLocalizations l10n, bool isLoading) {
+    return AutofillGroup(
+      child: Form(
+        key: _formKey,
+        autovalidateMode: _submitted
+            ? AutovalidateMode.onUserInteraction
+            : AutovalidateMode.disabled,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_showFormBanner)
+              AppFormErrorBanner(
+                message: l10n.authFixHighlightedFields,
+                onDismiss: () => setState(() => _showFormBanner = false),
+              ),
+            _AuthLabel(text: l10n.emailLabel),
+            const SizedBox(height: 6),
+            AppTextFormField(
+              controller: _emailController,
+              showSuccessWhenValid: true,
+              successMessage: l10n.authLooksGood,
+              autovalidateMode: _submitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.start,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+              hintText: 'name@example.com',
+              prefixIcon: const Icon(Icons.email_outlined),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) {
+                  return l10n.authEmailRequired;
+                }
+                if (!v.contains('@')) {
+                  return l10n.authEmailInvalid;
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _AuthLabel(text: l10n.authPasswordLabel),
+            const SizedBox(height: 6),
+            AppTextFormField(
+              controller: _passwordController,
+              showSuccessWhenValid: true,
+              autovalidateMode: _submitted
+                  ? AutovalidateMode.onUserInteraction
+                  : AutovalidateMode.disabled,
+              obscureText: _obscurePassword,
+              autofillHints: const [AutofillHints.password],
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.start,
+              textInputAction: TextInputAction.send,
+              onFieldSubmitted: (_) => unawaited(_login()),
+              hintText: '••••••••',
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                tooltip:
+                    _obscurePassword ? l10n.showPassword : l10n.hidePassword,
+                icon: Icon(_obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              ),
+              // Presence only: the server has no length rule for
+              // sign-in, and a client one can lock out accounts.
+              validator: (v) => loginPasswordError(v) == null
+                  ? null
+                  : l10n.authPasswordRequired,
+            ),
+            const SizedBox(height: AppSpacing.xxs),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const ForgotPasswordScreen()),
+                ),
+                child: Text(l10n.authForgotPasswordLink),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            SubmitButton(
+              label: l10n.authSignInButton,
+              loadingLabel: l10n.authSigningIn,
+              isLoading: isLoading,
+              onPressed: () => unawaited(_login()),
+            ),
+            if (socialSignInEnabled) ...[
+              const SizedBox(height: AppSpacing.xl),
+              // The label wraps at large text sizes instead of overflowing,
+              // and the two rules stay equal so it stays centred.
+              LayoutBuilder(
+                builder: (context, constraints) => Row(
+                  children: [
+                    Expanded(child: Divider(color: context.sirati.border)),
+                    ConstrainedBox(
+                      constraints:
+                          BoxConstraints(maxWidth: constraints.maxWidth * 0.6),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        child: Text(
+                          l10n.authOrContinueWith,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: context.sirati.textSecondary),
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: context.sirati.border)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SocialButton(
+                      mark: const _GoogleMark(size: 20),
+                      label: 'Google',
+                      onTap: _loginWithGoogle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _SocialButton(
+                      mark: Icon(Icons.apple,
+                          size: 22, color: context.sirati.textPrimary),
+                      label: 'Apple',
+                      onTap: _loginWithApple,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  l10n.authNoAccount,
+                  style: TextStyle(
+                      fontSize: 14, color: context.sirati.textSecondary),
+                ),
+                TextButton(
+                  onPressed: _goToRegister,
+                  child: Text(l10n.authCreateAccountLink),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-bleed brand band: the logo's gradient under a fading grid, with the
+/// mark and the welcome copy in white.
+class _LoginHero extends StatelessWidget {
+  final bool compact;
+  final double topInset;
+  final String title;
+  final String subtitle;
+
+  const _LoginHero({
+    required this.compact,
+    required this.topInset,
+    required this.title,
+    required this.subtitle,
+  });
+
+  /// The logo's gradient with the teal end deepened so white copy keeps AA
+  /// against every stop.
+  static const gradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF12384F), Color(0xFF0B7A72)],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final gap = compact ? AppSpacing.xs : AppSpacing.md;
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(_loginHeroRadius),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(_loginHeroRadius),
+        ),
+        child: CustomPaint(
+          painter: const _HeroGridPainter(),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              topInset + (compact ? AppSpacing.xxs : AppSpacing.xs),
+              AppSpacing.md,
+              _loginCardOverlap + (compact ? AppSpacing.md : AppSpacing.xxl),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    if (Navigator.of(context).canPop())
+                      IconButton(
+                        onPressed: () => Navigator.maybePop(context),
+                        tooltip:
+                            MaterialLocalizations.of(context).backButtonTooltip,
+                        icon: const DirectionalIcon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    const Spacer(),
+                    const LanguageToggle(
+                      backgroundColor: Color(0x24000000),
+                      foregroundColor: Colors.white,
+                      side: BorderSide(color: Color(0x4DFFFFFF)),
+                    ),
+                  ],
+                ),
+                SizedBox(height: compact ? 0 : AppSpacing.xs),
+                Center(
+                  child: SiratiMark(
+                    size: compact ? _loginCompactMarkSize : _loginMarkSize,
+                  ),
+                ),
+                SizedBox(height: gap),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.of(
+                    context,
+                    compact ? AppTypography.titleLg : AppTypography.headlineMd,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.of(
+                    context,
+                    AppTypography.bodyMd,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Thin white grid that fades out toward the bottom of the hero.
+class _HeroGridPainter extends CustomPainter {
+  static const cell = 24.0;
+
+  const _HeroGridPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..strokeWidth = 1
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0x1FFFFFFF), Color(0x00FFFFFF)],
+      ).createShader(Offset.zero & size);
+    for (var x = cell; x < size.width; x += cell) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var y = cell; y < size.height; y += cell) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_HeroGridPainter oldDelegate) => false;
 }
 
 class _AuthLabel extends StatelessWidget {
@@ -419,12 +524,12 @@ class _AuthLabel extends StatelessWidget {
 }
 
 class _SocialButton extends StatelessWidget {
-  final IconData icon;
+  final Widget mark;
   final String label;
   final VoidCallback onTap;
 
   const _SocialButton(
-      {required this.icon, required this.label, required this.onTap});
+      {required this.mark, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -444,7 +549,7 @@ class _SocialButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 22, color: context.sirati.textPrimary),
+                mark,
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
@@ -465,4 +570,47 @@ class _SocialButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Google's four-colour "G", drawn so the button needs no image asset.
+class _GoogleMark extends StatelessWidget {
+  final double size;
+
+  const _GoogleMark({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: size,
+      child: const CustomPaint(painter: _GoogleMarkPainter()),
+    );
+  }
+}
+
+class _GoogleMarkPainter extends CustomPainter {
+  const _GoogleMarkPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stroke = size.width * 0.2;
+    final rect = (Offset.zero & size).deflate(stroke / 2);
+    Paint arc(Color color) => Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke;
+    // Radians clockwise from 3 o'clock; the opening faces right.
+    canvas
+      ..drawArc(rect, -0.80, -1.55, false, arc(const Color(0xFFEA4335)))
+      ..drawArc(rect, -2.35, -1.60, false, arc(const Color(0xFFFBBC05)))
+      ..drawArc(rect, 2.33, -1.60, false, arc(const Color(0xFF34A853)))
+      ..drawArc(rect, 0.73, -0.73, false, arc(const Color(0xFF4285F4)))
+      ..drawLine(
+        Offset(size.width / 2, size.height / 2),
+        Offset(size.width - stroke / 2, size.height / 2),
+        arc(const Color(0xFF4285F4)),
+      );
+  }
+
+  @override
+  bool shouldRepaint(_GoogleMarkPainter oldDelegate) => false;
 }
