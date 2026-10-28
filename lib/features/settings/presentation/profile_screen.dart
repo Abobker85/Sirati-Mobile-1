@@ -397,6 +397,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 _selectedId = title?.id;
                 if (title?.isOther != true) _otherCtrl.clear();
               }),
+              onManualEntry: (text) => setState(() => _otherCtrl.text = text),
             ),
             if (titlesAsync.hasError && !titlesAsync.hasValue) ...[
               const SizedBox(height: 6),

@@ -324,6 +324,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         _jobTitleOtherController.clear();
                       }
                     }),
+                    onManualEntry: (text) => setState(() {
+                      _jobTitleOtherController.text = text;
+                    }),
                   ),
                   if (_isOther) ...[
                     const SizedBox(height: AppSpacing.md),

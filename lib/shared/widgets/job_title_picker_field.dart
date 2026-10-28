@@ -11,6 +11,10 @@ class JobTitlePickerField extends StatelessWidget {
   final List<JobTitle> titles;
   final JobTitle? value;
   final ValueChanged<JobTitle?> onChanged;
+
+  /// Called with the typed search text when the user picks "enter manually"
+  /// from an empty search result; [onChanged] has already received "Other".
+  final ValueChanged<String>? onManualEntry;
   final bool english;
   final bool enabled;
   final bool submitted;
@@ -23,6 +27,7 @@ class JobTitlePickerField extends StatelessWidget {
     required this.value,
     required this.onChanged,
     required this.english,
+    this.onManualEntry,
     this.enabled = true,
     this.submitted = false,
     this.errorText,
@@ -51,6 +56,11 @@ class JobTitlePickerField extends StatelessWidget {
     // explicitly clears via the clear action inside the sheet (sentinel).
     if (selected is _ClearJobTitle) {
       onChanged(null);
+      return;
+    }
+    if (selected is _ManualJobTitle) {
+      onChanged(selected.other);
+      onManualEntry?.call(selected.query);
       return;
     }
     if (selected != null) {
@@ -138,6 +148,23 @@ class _ClearJobTitle extends JobTitle {
         );
 }
 
+/// Returned when the user chooses to type a title the search did not find.
+class _ManualJobTitle extends JobTitle {
+  final JobTitle other;
+  final String query;
+
+  _ManualJobTitle(this.other, this.query)
+      : super(
+          id: other.id,
+          slug: other.slug,
+          nameAr: other.nameAr,
+          nameEn: other.nameEn,
+          category: other.category,
+          keywords: other.keywords,
+          sortOrder: other.sortOrder,
+        );
+}
+
 class _JobTitlePickerSheet extends StatefulWidget {
   final List<JobTitle> titles;
   final JobTitle? selected;
@@ -168,6 +195,44 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
     return widget.titles
         .where((t) => t.searchBlob().contains(q))
         .toList(growable: false);
+  }
+
+  JobTitle? get _otherTitle {
+    for (final t in widget.titles) {
+      if (t.isOther) return t;
+    }
+    return null;
+  }
+
+  Widget _noMatches(BuildContext context, AppLocalizations l10n) {
+    final query = _query.text.trim();
+    final other = _otherTitle;
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Text(
+            l10n.sharedJobTitleNoMatches,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: context.sirati.textSecondary),
+          ),
+        ),
+        if (other != null && query.isNotEmpty)
+          ListTile(
+            leading:
+                Icon(Icons.edit_outlined, color: context.sirati.primaryInk),
+            title: Text(
+              l10n.sharedJobTitleEnterManually(
+                BidiText.hasArabic(query) ? query : BidiText.isolateLtr(query),
+              ),
+              textAlign: TextAlign.start,
+              style: AppTypography.of(context, AppTypography.bodyLg,
+                  color: context.sirati.primaryInk),
+            ),
+            onTap: () => Navigator.pop(context, _ManualJobTitle(other, query)),
+          ),
+      ],
+    );
   }
 
   @override
@@ -227,12 +292,7 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
               const SizedBox(height: 8),
               Expanded(
                 child: filtered.isEmpty
-                    ? Center(
-                        child: Text(
-                          l10n.sharedJobTitleNoMatches,
-                          style: TextStyle(color: context.sirati.textSecondary),
-                        ),
-                      )
+                    ? _noMatches(context, l10n)
                     : ListView.separated(
                         itemCount: filtered.length,
                         separatorBuilder: (_, __) =>

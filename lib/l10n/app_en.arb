@@ -728,6 +728,7 @@
   "sharedClear": "Clear",
   "sharedJobTitleSearchHint": "Search titles…",
   "sharedJobTitleNoMatches": "No matching titles",
+  "sharedJobTitleEnterManually": "Enter “{query}” manually",
   "sharedNotifications": "Notifications",
   "sharedNotificationsUnread": "Notifications, {count} unread",
   "sharedProfile": "Profile",

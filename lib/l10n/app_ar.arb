@@ -871,6 +871,15 @@
   "@sharedJobTitleNoMatches": {
     "description": "Shown when the job-title search has no results."
   },
+  "sharedJobTitleEnterManually": "أدخل «{query}» يدويًا",
+  "@sharedJobTitleEnterManually": {
+    "description": "Option shown when the job-title search has no results; picks Other and prefills the typed text.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
   "sharedNotifications": "الإشعارات",
   "@sharedNotifications": {
     "description": "Tooltip and screen-reader label of the notification bell."
