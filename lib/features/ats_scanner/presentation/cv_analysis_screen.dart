@@ -29,7 +29,7 @@ bool pausesPolling(AppLifecycleState state) =>
     state == AppLifecycleState.hidden ||
     state == AppLifecycleState.detached;
 
-enum AnalysisCvSource { saved, upload, paste }
+enum AnalysisCvSource { saved, upload }
 
 class CvAnalysisScreen extends ConsumerStatefulWidget {
   const CvAnalysisScreen({
@@ -62,7 +62,6 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
   final _formKey = GlobalKey<FormState>();
   final _jobTitleController = TextEditingController();
   final _jobDescriptionController = TextEditingController();
-  final _resumeTextController = TextEditingController();
   final _keys = IdempotencyKeyRing(newIdempotencyKey);
   PlatformFile? _uploadedFile;
   bool _isLoading = false;
@@ -93,7 +92,6 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
     WidgetsBinding.instance.removeObserver(this);
     _jobTitleController.dispose();
     _jobDescriptionController.dispose();
-    _resumeTextController.dispose();
     super.dispose();
   }
 
@@ -118,11 +116,8 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
   AnalysisDraft get _draft => AnalysisDraft(
         jobTitle: _jobTitleController.text,
         jobDescription: _jobDescriptionController.text,
-        resumeText: _source == AnalysisCvSource.saved
-            ? _savedResumeText
-            : _source == AnalysisCvSource.paste
-                ? _resumeTextController.text
-                : '',
+        resumeText:
+            _source == AnalysisCvSource.saved ? _savedResumeText : '',
         fileName:
             _source == AnalysisCvSource.upload ? _uploadedFile?.name : null,
         fileSize:
@@ -461,8 +456,6 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
                                         l.atsInputSavedCv,
                                       AnalysisCvSource.upload =>
                                         l.atsInputUploadFile,
-                                      AnalysisCvSource.paste =>
-                                        l.atsInputPasteText,
                                     },
                                     textAlign: TextAlign.center),
                               ),
@@ -538,18 +531,6 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
                           fileName: file.name,
                           onRemove: () => setState(() => _uploadedFile = null),
                         ),
-                    if (_source == AnalysisCvSource.paste)
-                      TextFormField(
-                        key: const ValueKey('ats-input-resume-text'),
-                        controller: _resumeTextController,
-                        autovalidateMode: _autovalidate,
-                        minLines: 8,
-                        maxLines: null,
-                        decoration: decoration(l.atsInputResumeTextHint),
-                        validator: (v) => v == null || v.trim().isEmpty
-                            ? l.atsInputResumeTextRequired
-                            : null,
-                      ),
                   ],
                 ),
               ),
