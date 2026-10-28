@@ -40,6 +40,24 @@ class AuthApiService {
     return session;
   }
 
+  /// Exchanges a provider ID token (`google`, `apple`) for a Sirati session.
+  /// The server verifies the token; the answer is the same as [login]'s.
+  Future<AuthSession> socialSignIn({
+    required String provider,
+    required String idToken,
+    String? nonce,
+  }) async {
+    final response = await _publicClient.postJson('/auth/social/$provider', {
+      'id_token': idToken,
+      if (nonce != null) 'nonce': nonce,
+      'device_name': 'sirati-mobile',
+    });
+
+    final session = AuthSession.fromJson(response);
+    await _saveSession(session);
+    return session;
+  }
+
   Future<AuthSession> register({
     required String name,
     required String email,

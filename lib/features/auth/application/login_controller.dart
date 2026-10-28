@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/features/auth/data/google_id_token_source.dart';
+import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 
 sealed class LoginOutcome {
@@ -22,9 +24,15 @@ final class LoginFailedUnexpectedly extends LoginOutcome {
   const LoginFailedUnexpectedly();
 }
 
-/// Dropped because a sign-in was already running.
+/// Dropped because a sign-in was already running, or the user closed the
+/// provider's account picker.
 final class LoginIgnored extends LoginOutcome {
   const LoginIgnored();
+}
+
+/// This build has no client id for the provider, so it can't be used.
+final class LoginProviderNotConfigured extends LoginOutcome {
+  const LoginProviderNotConfigured();
 }
 
 /// Login form rule: the server only requires a password to be present, so
@@ -45,13 +53,34 @@ class LoginController extends Notifier<bool> {
   Future<LoginOutcome> signIn({
     required String email,
     required String password,
-  }) async {
+  }) =>
+      _run(() => ref
+          .read(authApiServiceProvider)
+          .login(email: email.trim(), password: password));
+
+  /// Google account picker, then the server checks the ID token. Shares the
+  /// busy flag with [signIn], so neither runs while the other does.
+  Future<LoginOutcome> signInWithGoogle() async {
+    if (state) return const LoginIgnored();
+    final google = ref.read(googleIdTokenSourceProvider);
+    if (google == null) return const LoginProviderNotConfigured();
+    return _run(() async {
+      final idToken = await google.idToken();
+      if (idToken == null) return null;
+      return ref
+          .read(authApiServiceProvider)
+          .socialSignIn(provider: 'google', idToken: idToken);
+    });
+  }
+
+  /// Runs [attempt] unless a sign-in is already in flight; a null session
+  /// means the user cancelled.
+  Future<LoginOutcome> _run(Future<AuthSession?> Function() attempt) async {
     if (state) return const LoginIgnored();
     state = true;
     try {
-      final session = await ref
-          .read(authApiServiceProvider)
-          .login(email: email.trim(), password: password);
+      final session = await attempt();
+      if (session == null) return const LoginIgnored();
       return LoginSucceeded(
         email: session.user.email,
         emailVerified: session.user.emailVerified,

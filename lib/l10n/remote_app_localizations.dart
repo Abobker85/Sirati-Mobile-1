@@ -3509,6 +3509,18 @@ class RemoteAppLocalizations extends AppLocalizations {
       _base.authSocialSignInSoon(provider);
 
   @override
+  String authSocialSignInNotConfigured(String provider) =>
+      remote.format(
+        'authSocialSignInNotConfigured',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'provider': provider},
+        ),
+      ) ??
+      _base.authSocialSignInNotConfigured(provider);
+
+  @override
   String get authLoginSubtitle =>
       remote.text('authLoginSubtitle') ?? _base.authLoginSubtitle;
 
@@ -5383,6 +5395,7 @@ class RemoteAppLocalizations extends AppLocalizations {
     'authSessionExpiredHelp': [],
     'authLoginUnexpectedError': [],
     'authSocialSignInSoon': ['String'],
+    'authSocialSignInNotConfigured': ['String'],
     'authLoginSubtitle': [],
     'authForgotPasswordLink': [],
     'authSignInButton': [],
@@ -6435,6 +6448,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'authSessionExpiredHelp' => l.authSessionExpiredHelp,
         'authLoginUnexpectedError' => l.authLoginUnexpectedError,
         'authSocialSignInSoon' => l.authSocialSignInSoon(a[0] as String),
+        'authSocialSignInNotConfigured' =>
+          l.authSocialSignInNotConfigured(a[0] as String),
         'authLoginSubtitle' => l.authLoginSubtitle,
         'authForgotPasswordLink' => l.authForgotPasswordLink,
         'authSignInButton' => l.authSignInButton,
