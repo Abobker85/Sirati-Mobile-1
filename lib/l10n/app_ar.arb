@@ -777,6 +777,38 @@
   "@sharedOfflineShowingSaved": {
     "description": "Banner shown when cached data is displayed while offline."
   },
+  "sharedOfflineTitle": "لا يوجد اتصال بالإنترنت",
+  "@sharedOfflineTitle": {
+    "description": "Title of the full-screen offline state."
+  },
+  "sharedOfflineBody": "تحقق من الواي فاي أو بيانات الجوال. سنعيد المحاولة تلقائيًا عند عودة الاتصال.",
+  "@sharedOfflineBody": {
+    "description": "Body of the full-screen offline state; the screen retries on its own."
+  },
+  "sharedOfflineWaiting": "بانتظار الاتصال…",
+  "@sharedOfflineWaiting": {
+    "description": "Live status pill on the offline screen while it waits to retry."
+  },
+  "sharedOfflineChecking": "جارٍ التحقق…",
+  "@sharedOfflineChecking": {
+    "description": "Retry button label while the offline screen is re-checking the connection."
+  },
+  "sharedOfflineTipsTitle": "نصائح سريعة للمتابعة",
+  "@sharedOfflineTipsTitle": {
+    "description": "Heading of the tips card on the offline screen."
+  },
+  "sharedOfflineTipAirplane": "تأكد من إيقاف وضع الطيران",
+  "@sharedOfflineTipAirplane": {
+    "description": "Offline tip: airplane mode."
+  },
+  "sharedOfflineTipSignal": "اقترب من موجه الواي فاي (الراوتر) أو أعد تشغيل بيانات الجوال",
+  "@sharedOfflineTipSignal": {
+    "description": "Offline tip: move closer to the router or toggle mobile data."
+  },
+  "sharedOfflineOpenSaved": "فتح السير الذاتية المحفوظة",
+  "@sharedOfflineOpenSaved": {
+    "description": "Secondary button on the offline screen that opens CVs saved on the device."
+  },
   "sharedNoDataAvailable": "لا توجد بيانات.",
   "@sharedNoDataAvailable": {
     "description": "Error panel message when a request returned no data."
@@ -2008,6 +2040,34 @@
   "authSessionExpired": "انتهت الجلسة، سجّل الدخول مجدداً.",
   "@authSessionExpired": {
     "description": "Notice on the sign-in screen after the session expired."
+  },
+  "authSessionExpiredBadge": "حماية وأمان الحساب",
+  "@authSessionExpiredBadge": {
+    "description": "Small pill at the top of the session-expired screen."
+  },
+  "authSessionExpiredChip": "انتهت مدة الجلسة",
+  "@authSessionExpiredChip": {
+    "description": "Status chip above the session-expired title."
+  },
+  "authSessionExpiredTitle": "انتهت جلستك",
+  "@authSessionExpiredTitle": {
+    "description": "Title of the screen shown after the server rejects the session (HTTP 401)."
+  },
+  "authSessionExpiredBody": "لحمايتك، انتهت صلاحية جلسة الدخول. سجّل الدخول مجددًا للمتابعة من حيث توقفت.",
+  "@authSessionExpiredBody": {
+    "description": "Body of the session-expired screen."
+  },
+  "authSessionExpiredDataSafe": "سيرك الذاتية ونتائج الفحص محفوظة بأمان في حسابك.",
+  "@authSessionExpiredDataSafe": {
+    "description": "Reassurance card on the session-expired screen: account data is not lost."
+  },
+  "authSessionExpiredSignIn": "تسجيل الدخول مجددًا",
+  "@authSessionExpiredSignIn": {
+    "description": "Primary button on the session-expired screen; opens sign-in."
+  },
+  "authSessionExpiredHelp": "تحتاج مساعدة؟ تواصل معنا",
+  "@authSessionExpiredHelp": {
+    "description": "Footer link on the session-expired screen; opens an email to support."
   },
   "authLoginUnexpectedError": "حدث خطأ غير متوقع أثناء تسجيل الدخول.",
   "@authLoginUnexpectedError": {

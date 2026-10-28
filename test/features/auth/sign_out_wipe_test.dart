@@ -14,7 +14,7 @@ import 'package:sirati/core/storage/storage_cleanup_exception.dart';
 import 'package:sirati/core/storage/user_scoped_storage.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/auth/data/auth_session_guard.dart';
-import 'package:sirati/features/auth/presentation/login_screen.dart';
+import 'package:sirati/features/auth/presentation/session_expired_screen.dart';
 import 'package:sirati/features/cv_builder/application/cv_draft_store.dart';
 import 'package:sirati/features/cv_builder/data/cv_repository_provider.dart';
 import 'package:sirati/features/cv_builder/domain/cv_form_data.dart';
@@ -253,7 +253,8 @@ void main() {
     expect(calls, _cleanupSteps);
   });
 
-  testWidgets('installed expiry handler reports failure and still opens login',
+  testWidgets(
+      'installed expiry handler reports failure and still leaves the account',
       (tester) async {
     AppLocale.languageCode.value = 'en';
     final calls = <String>[];
@@ -282,7 +283,7 @@ void main() {
     expect(tester.takeException(), isA<LocalSessionCleanupException>());
     expect(calls, _cleanupSteps);
     await tester.pumpAndSettle();
-    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byType(SessionExpiredScreen), findsOneWidget);
     expect(find.text('private account screen'), findsNothing);
     await tester.pump(const Duration(seconds: 2));
   });

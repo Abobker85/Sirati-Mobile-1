@@ -2142,6 +2142,38 @@ class RemoteAppLocalizations extends AppLocalizations {
       _base.sharedOfflineShowingSaved;
 
   @override
+  String get sharedOfflineTitle =>
+      remote.text('sharedOfflineTitle') ?? _base.sharedOfflineTitle;
+
+  @override
+  String get sharedOfflineBody =>
+      remote.text('sharedOfflineBody') ?? _base.sharedOfflineBody;
+
+  @override
+  String get sharedOfflineWaiting =>
+      remote.text('sharedOfflineWaiting') ?? _base.sharedOfflineWaiting;
+
+  @override
+  String get sharedOfflineChecking =>
+      remote.text('sharedOfflineChecking') ?? _base.sharedOfflineChecking;
+
+  @override
+  String get sharedOfflineTipsTitle =>
+      remote.text('sharedOfflineTipsTitle') ?? _base.sharedOfflineTipsTitle;
+
+  @override
+  String get sharedOfflineTipAirplane =>
+      remote.text('sharedOfflineTipAirplane') ?? _base.sharedOfflineTipAirplane;
+
+  @override
+  String get sharedOfflineTipSignal =>
+      remote.text('sharedOfflineTipSignal') ?? _base.sharedOfflineTipSignal;
+
+  @override
+  String get sharedOfflineOpenSaved =>
+      remote.text('sharedOfflineOpenSaved') ?? _base.sharedOfflineOpenSaved;
+
+  @override
   String get sharedNoDataAvailable =>
       remote.text('sharedNoDataAvailable') ?? _base.sharedNoDataAvailable;
 
@@ -2235,6 +2267,18 @@ class RemoteAppLocalizations extends AppLocalizations {
   @override
   String get sharedJobTitleNoMatches =>
       remote.text('sharedJobTitleNoMatches') ?? _base.sharedJobTitleNoMatches;
+
+  @override
+  String sharedJobTitleEnterManually(String query) =>
+      remote.format(
+        'sharedJobTitleEnterManually',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'query': query},
+        ),
+      ) ??
+      _base.sharedJobTitleEnterManually(query);
 
   @override
   String get sharedNotifications =>
@@ -3418,6 +3462,35 @@ class RemoteAppLocalizations extends AppLocalizations {
   @override
   String get authSessionExpired =>
       remote.text('authSessionExpired') ?? _base.authSessionExpired;
+
+  @override
+  String get authSessionExpiredBadge =>
+      remote.text('authSessionExpiredBadge') ?? _base.authSessionExpiredBadge;
+
+  @override
+  String get authSessionExpiredChip =>
+      remote.text('authSessionExpiredChip') ?? _base.authSessionExpiredChip;
+
+  @override
+  String get authSessionExpiredTitle =>
+      remote.text('authSessionExpiredTitle') ?? _base.authSessionExpiredTitle;
+
+  @override
+  String get authSessionExpiredBody =>
+      remote.text('authSessionExpiredBody') ?? _base.authSessionExpiredBody;
+
+  @override
+  String get authSessionExpiredDataSafe =>
+      remote.text('authSessionExpiredDataSafe') ??
+      _base.authSessionExpiredDataSafe;
+
+  @override
+  String get authSessionExpiredSignIn =>
+      remote.text('authSessionExpiredSignIn') ?? _base.authSessionExpiredSignIn;
+
+  @override
+  String get authSessionExpiredHelp =>
+      remote.text('authSessionExpiredHelp') ?? _base.authSessionExpiredHelp;
 
   @override
   String get authLoginUnexpectedError =>
@@ -4882,6 +4955,14 @@ class RemoteAppLocalizations extends AppLocalizations {
     'dashboardEducationInterestRegistered': [],
     'dashboardEducationCtaTitle': [],
     'dashboardEducationCtaBody': [],
+    'sharedOfflineTitle': [],
+    'sharedOfflineBody': [],
+    'sharedOfflineWaiting': [],
+    'sharedOfflineChecking': [],
+    'sharedOfflineTipsTitle': [],
+    'sharedOfflineTipAirplane': [],
+    'sharedOfflineTipSignal': [],
+    'sharedOfflineOpenSaved': [],
     'dashboardEducationDetailTitle': [],
     'dashboardEducationDetailLoadFailed': [],
     'dashboardUntitled': [],
@@ -4900,6 +4981,7 @@ class RemoteAppLocalizations extends AppLocalizations {
     'cvEntryChooseStart': [],
     'cvEntryChooseEnd': [],
     'cvEntryEndBeforeStart': [],
+    'sharedJobTitleEnterManually': ['String'],
     'cvEntryFrom': [],
     'cvEntryTo': [],
     'cvEntryJobTitle': [],
@@ -5166,6 +5248,13 @@ class RemoteAppLocalizations extends AppLocalizations {
     'settingsPhotoGallery': [],
     'settingsPhotoCamera': [],
     'settingsPhotoRemove': [],
+    'authSessionExpiredBadge': [],
+    'authSessionExpiredChip': [],
+    'authSessionExpiredTitle': [],
+    'authSessionExpiredBody': [],
+    'authSessionExpiredDataSafe': [],
+    'authSessionExpiredSignIn': [],
+    'authSessionExpiredHelp': [],
     'settingsPhotoRemoved': [],
     'settingsPhotoUpdated': [],
     'settingsPhotoUpdateFailed': [],
@@ -5873,6 +5962,14 @@ class RemoteAppLocalizations extends AppLocalizations {
         'dashboardEducationDetailTitle' => l.dashboardEducationDetailTitle,
         'dashboardEducationDetailLoadFailed' =>
           l.dashboardEducationDetailLoadFailed,
+        'sharedOfflineTitle' => l.sharedOfflineTitle,
+        'sharedOfflineBody' => l.sharedOfflineBody,
+        'sharedOfflineWaiting' => l.sharedOfflineWaiting,
+        'sharedOfflineChecking' => l.sharedOfflineChecking,
+        'sharedOfflineTipsTitle' => l.sharedOfflineTipsTitle,
+        'sharedOfflineTipAirplane' => l.sharedOfflineTipAirplane,
+        'sharedOfflineTipSignal' => l.sharedOfflineTipSignal,
+        'sharedOfflineOpenSaved' => l.sharedOfflineOpenSaved,
         'dashboardUntitled' => l.dashboardUntitled,
         'dashboardEducationDetailNoContent' =>
           l.dashboardEducationDetailNoContent,
@@ -5893,6 +5990,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'cvEntryFrom' => l.cvEntryFrom,
         'cvEntryTo' => l.cvEntryTo,
         'cvEntryJobTitle' => l.cvEntryJobTitle,
+        'sharedJobTitleEnterManually' =>
+          l.sharedJobTitleEnterManually(a[0] as String),
         'cvEntryJobTitleHint' => l.cvEntryJobTitleHint,
         'cvEntryCompany' => l.cvEntryCompany,
         'cvEntryCity' => l.cvEntryCity,
@@ -6173,6 +6272,13 @@ class RemoteAppLocalizations extends AppLocalizations {
         'settingsProfileUpdated' => l.settingsProfileUpdated,
         'settingsProfileUpdateFailed' => l.settingsProfileUpdateFailed,
         'settingsProfileLoadFailed' => l.settingsProfileLoadFailed,
+        'authSessionExpiredBadge' => l.authSessionExpiredBadge,
+        'authSessionExpiredChip' => l.authSessionExpiredChip,
+        'authSessionExpiredTitle' => l.authSessionExpiredTitle,
+        'authSessionExpiredBody' => l.authSessionExpiredBody,
+        'authSessionExpiredDataSafe' => l.authSessionExpiredDataSafe,
+        'authSessionExpiredSignIn' => l.authSessionExpiredSignIn,
+        'authSessionExpiredHelp' => l.authSessionExpiredHelp,
         'settingsProfileFullNameLabel' => l.settingsProfileFullNameLabel,
         'settingsProfileNameHint' => l.settingsProfileNameHint,
         'settingsProfileNameRequired' => l.settingsProfileNameRequired,
