@@ -30,8 +30,10 @@ dependencies:
   # Google Sign-In
   google_sign_in: ^6.2.0
 
-  # Apple Sign-In (iOS only)
+  # Apple Sign-In (native on iOS, web flow on Android)
   sign_in_with_apple: ^6.1.0
+  # sha256 of the Sign in with Apple nonce
+  crypto: ^3.0.7
 
   # Secure token storage
   flutter_secure_storage: ^9.0.0

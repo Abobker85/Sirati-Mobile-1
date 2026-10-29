@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/features/auth/data/apple_credential_source.dart';
 import 'package:sirati/features/auth/data/google_id_token_source.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
@@ -70,6 +71,25 @@ class LoginController extends Notifier<bool> {
       return ref
           .read(authApiServiceProvider)
           .socialSignIn(provider: 'google', idToken: idToken);
+    });
+  }
+
+  /// Sign in with Apple, then the server checks the token, its nonce and
+  /// the authorization code.
+  Future<LoginOutcome> signInWithApple() async {
+    if (state) return const LoginIgnored();
+    final apple = ref.read(appleCredentialSourceProvider);
+    if (apple == null) return const LoginProviderNotConfigured();
+    return _run(() async {
+      final result = await apple.signIn();
+      if (result == null) return null;
+      return ref.read(authApiServiceProvider).socialSignIn(
+            provider: 'apple',
+            idToken: result.idToken,
+            nonce: result.rawNonce,
+            authorizationCode: result.authorizationCode,
+            name: result.name,
+          );
     });
   }
 

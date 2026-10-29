@@ -142,10 +142,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _loginWithApple() async {
-    AppSnackBar.info(
-      context,
-      AppLocalizations.of(context).authSocialSignInSoon('Apple'),
-    );
+    final outcome =
+        await ref.read(loginControllerProvider.notifier).signInWithApple();
+    if (!mounted) return;
+    _handleOutcome(outcome, method: 'apple', retry: _loginWithApple);
   }
 
   void _goToRegister() {

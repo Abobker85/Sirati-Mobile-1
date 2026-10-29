@@ -24,6 +24,17 @@ const googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
 /// ios/Runner/Info.plist). Empty = taken from GoogleService-Info.plist.
 const googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
 
+/// The Apple **Services ID** used by Sign in with Apple's web flow on
+/// Android. iOS signs in natively with the bundle id and doesn't need it.
+const appleServiceId = String.fromEnvironment('APPLE_SERVICE_ID');
+
+/// Where Apple posts the web-flow result; the API forwards it to the app.
+/// Must be listed as a Return URL on the Services ID.
+const appleRedirectUri = String.fromEnvironment(
+  'APPLE_REDIRECT_URI',
+  defaultValue: 'https://siratie.com/api/auth/apple/callback',
+);
+
 /// Which provider buttons the login screen shows.
 @immutable
 class SocialSignInOptions {

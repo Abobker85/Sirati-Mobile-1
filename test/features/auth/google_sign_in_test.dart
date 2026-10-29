@@ -53,6 +53,8 @@ class _FakeAuth extends AuthApiService {
     required String provider,
     required String idToken,
     String? nonce,
+    String? authorizationCode,
+    String? name,
   }) async {
     social.add((provider, idToken));
     final e = error;

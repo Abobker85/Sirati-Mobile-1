@@ -46,10 +46,14 @@ class AuthApiService {
     required String provider,
     required String idToken,
     String? nonce,
+    String? authorizationCode,
+    String? name,
   }) async {
     final response = await _publicClient.postJson('/auth/social/$provider', {
       'id_token': idToken,
       if (nonce != null) 'nonce': nonce,
+      if (authorizationCode != null) 'authorization_code': authorizationCode,
+      if (name != null) 'name': name,
       'device_name': 'sirati-mobile',
     });
 

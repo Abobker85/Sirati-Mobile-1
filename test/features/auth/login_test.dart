@@ -189,7 +189,8 @@ void main() {
         final snack = find.byType(SnackBar);
         expect(snack, findsOneWidget, reason: 'HTTP $status: no feedback');
         final shown = tester
-            .widgetList<Text>(find.descendant(of: snack, matching: find.byType(Text)))
+            .widgetList<Text>(
+                find.descendant(of: snack, matching: find.byType(Text)))
             .map((t) => t.data ?? '')
             .join(' ');
         expect(shown.trim(), isNotEmpty, reason: 'HTTP $status');
