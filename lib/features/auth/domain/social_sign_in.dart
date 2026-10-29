@@ -35,7 +35,10 @@ const googleIosClientId = String.fromEnvironment(
 
 /// The Apple **Services ID** used by Sign in with Apple's web flow on
 /// Android. iOS signs in natively with the bundle id and doesn't need it.
-const appleServiceId = String.fromEnvironment('APPLE_SERVICE_ID');
+const appleServiceId = String.fromEnvironment(
+  'APPLE_SERVICE_ID',
+  defaultValue: 'com.sirati.signin',
+);
 
 /// Where Apple posts the web-flow result; the API forwards it to the app.
 /// Must be listed as a Return URL on the Services ID.
