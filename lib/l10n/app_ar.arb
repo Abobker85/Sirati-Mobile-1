@@ -3028,5 +3028,25 @@
   "settingsNotificationsPreviewJobsBody": "وظائف جديدة منشورة تطابق مسماك الوظيفي.",
   "settingsNotificationsPreviewAnalysisTitle": "نتائج فحص سيرتك (ATS)",
   "settingsNotificationsPreviewAnalysisBody": "درجة توافق سيرتك واقتراحات لتحسينها.",
-  "settingsNotificationsCreateCvCta": "إنشاء سيرة ذاتية"
+  "settingsNotificationsCreateCvCta": "إنشاء سيرة ذاتية",
+  "authSignInRequiredTitle": "سجّل الدخول للمتابعة",
+  "@authSignInRequiredTitle": {
+    "description": "Hero title on the page a guest sees when a feature needs an account"
+  },
+  "authSignInRequiredSubtitle": "الوظائف والتعلّم متاحة للجميع",
+  "@authSignInRequiredSubtitle": {
+    "description": "Hero subtitle: what guests can still use"
+  },
+  "authSignInRequiredCardTitle": "هذا القسم يحتاج إلى حساب",
+  "@authSignInRequiredCardTitle": {
+    "description": "Card title on the sign-in required page"
+  },
+  "authSignInRequiredBody": "أنشئ حساباً مجانياً أو سجّل الدخول لإنشاء سيرتك وفحصها، والاحتفاظ بنتائجك، وتلقي الإشعارات.",
+  "@authSignInRequiredBody": {
+    "description": "Card body on the sign-in required page"
+  },
+  "authSignInRequiredBrowseJobs": "تصفّح الوظائف",
+  "@authSignInRequiredBrowseJobs": {
+    "description": "Link back to the jobs tab from the sign-in required page"
+  }
 }

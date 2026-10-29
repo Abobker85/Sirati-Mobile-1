@@ -55,10 +55,10 @@ void main() {
             expect(find.descendant(of: card, matching: find.text(point)),
                 findsOneWidget);
           }
-          expect(
-              find.descendant(
-                  of: card, matching: find.byIcon(Icons.check_circle_rounded)),
-              findsNWidgets(5));
+          for (final icon in WelcomeBody.pointIcons) {
+            expect(find.descendant(of: card, matching: find.byIcon(icon)),
+                findsOneWidget);
+          }
 
           // Order matches the agreed design: logo, slogan, card, actions.
           double top(Finder f) => tester.getTopLeft(f).dy;

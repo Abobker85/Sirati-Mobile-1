@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/storage/guest_session.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/application/saved_analysis_cvs.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_loader_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/features/auth/presentation/register_screen.dart';
+import 'package:sirati/features/auth/presentation/sign_in_required_screen.dart';
 import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_builder_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
@@ -33,7 +35,7 @@ import 'package:sirati/shared/services/local_session_cleanup.dart';
 
 /// Composition root: maps route names onto feature screens.
 void registerSiratiRouteWidgets() {
-  AppRouter.registerWidgets(_widgetFor);
+  AppRouter.registerWidgets(_guardedWidgetFor);
   GeneratedCvHubLinks.atsCheck = openCvHubAtsCheck;
 }
 
@@ -59,6 +61,34 @@ Future<void> openCvHubAtsCheck(BuildContext context, GeneratedCv cv) async {
       initialJobDescription: cv.jobDescriptionInput,
     ),
   ));
+}
+
+/// Routes a guest ("Continue without account") may open: browsing jobs and
+/// learning, and the ways in. Everything else needs an account.
+const _openToGuests = {
+  AppRoutes.splash,
+  AppRoutes.home,
+  AppRoutes.login,
+  AppRoutes.register,
+  AppRoutes.myCvs,
+  AppRoutes.education,
+  AppRoutes.jobNews,
+  AppRoutes.privacy,
+  AppRoutes.notFound,
+};
+
+bool routeOpenToGuests(ParsedRoute parsed) =>
+    _openToGuests.contains(parsed.name) ||
+    (parsed.name.startsWith(AppRoutes.educationItemPrefix) &&
+        parsed.id != null);
+
+/// For a guest, an account-only route opens the sign-in invitation instead
+/// of a screen that would fail with a 401.
+Widget _guardedWidgetFor(ParsedRoute parsed) {
+  if (GuestSession.active.value && !routeOpenToGuests(parsed)) {
+    return const SignInRequiredScreen();
+  }
+  return _widgetFor(parsed);
 }
 
 Widget _widgetFor(ParsedRoute parsed) {

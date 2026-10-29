@@ -41,40 +41,6 @@ class FieldLabel extends StatelessWidget {
   }
 }
 
-class RegisterHero extends StatelessWidget {
-  const RegisterHero({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Column(
-      children: [
-        const SiratiMark(size: 52),
-        const SizedBox(height: 10),
-        Text(
-          l10n.authRegisterHeroTitle,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: context.sirati.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          l10n.authRegisterHeroSubtitle,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 13,
-            height: 1.6,
-            color: context.sirati.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// Checkbox row for accepting the terms; the whole row toggles.
 class TermsAgreement extends StatelessWidget {
   const TermsAgreement({

@@ -46,8 +46,13 @@ class _JobNewsScreenState extends ConsumerState<JobNewsScreen> {
     super.didUpdateWidget(oldWidget);
     // Returning to the tab always refetches so backend changes show up
     // immediately instead of after a restart or cache expiry.
+    // After the frame: this runs mid-build, and the refresh dirties other
+    // widgets watching the feed (the Home tab's jobs section).
     if (widget.isActive && !oldWidget.isActive) {
-      unawaited(refreshJobNews(ref, english: AppLocale.isEnglish(context)));
+      final english = AppLocale.isEnglish(context);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(refreshJobNews(ref, english: english));
+      });
     }
   }
 

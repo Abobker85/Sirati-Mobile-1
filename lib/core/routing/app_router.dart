@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/routing/entitlement_store.dart';
+import 'package:sirati/core/storage/guest_session.dart';
 
 /// Feature screens register themselves so `core/` never imports `features/`.
 typedef AppRouteWidgetBuilder = Widget Function(ParsedRoute parsed);
@@ -41,6 +41,8 @@ class AppRouter {
 
   /// After login / splash session restore: home under the stack, then deep link.
   static void openAfterAuth(BuildContext context) {
+    // Signed in now: account-only routes open normally again.
+    GuestSession.active.value = false;
     final pending = pendingLocation;
     pendingLocation = null;
     if (pending == null ||

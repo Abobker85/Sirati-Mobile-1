@@ -1242,5 +1242,10 @@
   "settingsNotificationsPreviewJobsBody": "New openings that match your job title.",
   "settingsNotificationsPreviewAnalysisTitle": "Your ATS scan results",
   "settingsNotificationsPreviewAnalysisBody": "Your CV's match score and how to improve it.",
-  "settingsNotificationsCreateCvCta": "Create a CV"
+  "settingsNotificationsCreateCvCta": "Create a CV",
+  "authSignInRequiredTitle": "Sign in to continue",
+  "authSignInRequiredSubtitle": "Jobs and learning are open to everyone",
+  "authSignInRequiredCardTitle": "This part needs an account",
+  "authSignInRequiredBody": "Create a free account or sign in to build and scan your CVs, keep your results and get notifications.",
+  "authSignInRequiredBrowseJobs": "Browse jobs"
 }

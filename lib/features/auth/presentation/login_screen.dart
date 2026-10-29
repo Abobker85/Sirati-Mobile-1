@@ -2,33 +2,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sirati/core/network/analytics_service.dart';
-import 'package:sirati/core/routing/app_router.dart';
-import 'package:sirati/core/utils/root_navigation.dart';
 import 'package:sirati/features/auth/application/login_controller.dart';
-import 'package:sirati/features/auth/domain/social_sign_in.dart';
-import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
 import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
 import 'package:sirati/features/auth/presentation/register_screen.dart';
+import 'package:sirati/features/auth/presentation/social_sign_in_section.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/theme/auth_hero_palette.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
-import 'package:sirati/shared/widgets/auth_form_constraint.dart';
-import 'package:sirati/shared/widgets/directional_icon.dart';
+import 'package:sirati/shared/widgets/auth_hero_page.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
-import 'package:sirati/shared/widgets/language_toggle.dart';
-import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
-
-/// Branding collapses below this viewport height so the form can move up.
-const _loginCompactHeaderExtent = 520.0;
-
-const _loginMarkSize = 56.0;
-const _loginCompactMarkSize = 40.0;
-const _loginHeroRadius = 32.0;
-const _loginCardRadius = 24.0;
-const _loginCardOverlap = 28.0;
 
 class LoginScreen extends ConsumerStatefulWidget {
   /// When true, shows a one-shot "session expired" snackbar after first frame.
@@ -90,63 +73,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // Lets the platform password manager offer to save the credentials.
       TextInput.finishAutofillContext();
     }
-    _handleOutcome(outcome, method: 'email', retry: _login);
-  }
-
-  /// Shared by every sign-in method so they route and report alike.
-  void _handleOutcome(
-    LoginOutcome outcome, {
-    required String method,
-    required Future<void> Function() retry,
-  }) {
-    final l10n = AppLocalizations.of(context);
-    switch (outcome) {
-      case LoginSucceeded(:final email, :final emailVerified):
-        unawaited(AnalyticsService.logLoginSuccess(method: method));
-        unawaited(HapticFeedback.lightImpact());
-        // Unverified accounts must complete email OTP before using the app.
-        if (!emailVerified) {
-          replaceRoot(context, EmailVerificationScreen(email: email));
-          return;
-        }
-        AppRouter.openAfterAuth(context);
-      case LoginRejected(:final error):
-        AppSnackBar.fromException(
-          context,
-          error,
-          retryLabel: l10n.authRetry,
-          onRetry: () => unawaited(retry()),
-        );
-      case LoginFailedUnexpectedly():
-        AppSnackBar.error(
-          context,
-          l10n.authLoginUnexpectedError,
-        );
-      case LoginProviderNotConfigured():
-        AppSnackBar.error(
-          context,
-          l10n.authSocialSignInNotConfigured(_providerLabel(method)),
-        );
-      case LoginIgnored():
-        break;
-    }
-  }
-
-  static String _providerLabel(String method) =>
-      method == 'google' ? 'Google' : 'Apple';
-
-  Future<void> _loginWithGoogle() async {
-    final outcome =
-        await ref.read(loginControllerProvider.notifier).signInWithGoogle();
-    if (!mounted) return;
-    _handleOutcome(outcome, method: 'google', retry: _loginWithGoogle);
-  }
-
-  Future<void> _loginWithApple() async {
-    AppSnackBar.info(
-      context,
-      AppLocalizations.of(context).authSocialSignInSoon('Apple'),
-    );
+    handleLoginOutcome(context, outcome, method: 'email', retry: _login);
   }
 
   void _goToRegister() {
@@ -164,70 +91,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isLoading = ref.watch(loginControllerProvider);
-    final social = ref.watch(socialSignInOptionsProvider);
-    final insets = MediaQuery.paddingOf(context);
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      // Light status-bar icons over the dark hero.
-      value: SystemUiOverlayStyle.light,
-      child: Scaffold(
-        backgroundColor: context.sirati.background,
-        body: AuthFormConstraint(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // Height the body can actually use, including a keyboard that
-              // shrinks the scaffold. Full-screen size stays tall while typing.
-              final compact = constraints.maxHeight < _loginCompactHeaderExtent;
-              return SingleChildScrollView(
-                padding: EdgeInsets.only(bottom: insets.bottom),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _LoginHero(
-                      compact: compact,
-                      topInset: insets.top,
-                      title: l10n.welcomeToSirati,
-                      subtitle: l10n.authLoginSubtitle,
-                    ),
-                    // The form card rides up over the hero's rounded edge.
-                    Transform.translate(
-                      offset: const Offset(0, -_loginCardOverlap),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: context.sirati.surface,
-                            borderRadius:
-                                BorderRadius.circular(_loginCardRadius),
-                            border: Border.all(color: context.sirati.border),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: AuthHeroPalette.cardShadow,
-                                blurRadius: 24,
-                                offset: Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.all(
-                                compact ? AppSpacing.md : AppSpacing.xl),
-                            child: _buildForm(context, l10n, isLoading, social),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
+    return Scaffold(
+      backgroundColor: context.sirati.background,
+      body: AuthHeroPage(
+        size: AuthHeroSize.regular,
+        title: l10n.welcomeToSirati,
+        subtitle: l10n.authLoginSubtitle,
+        card: _buildForm(context, l10n, isLoading),
       ),
     );
   }
 
-  Widget _buildForm(BuildContext context, AppLocalizations l10n, bool isLoading,
-      SocialSignInOptions social) {
+  Widget _buildForm(
+      BuildContext context, AppLocalizations l10n, bool isLoading) {
     return AutofillGroup(
       child: Form(
         key: _formKey,
@@ -319,56 +195,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               isLoading: isLoading,
               onPressed: () => unawaited(_login()),
             ),
-            if (social.any) ...[
-              const SizedBox(height: AppSpacing.xl),
-              // The label wraps at large text sizes instead of overflowing,
-              // and the two rules stay equal so it stays centred.
-              LayoutBuilder(
-                builder: (context, constraints) => Row(
-                  children: [
-                    Expanded(child: Divider(color: context.sirati.border)),
-                    ConstrainedBox(
-                      constraints:
-                          BoxConstraints(maxWidth: constraints.maxWidth * 0.6),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        child: Text(
-                          l10n.authOrContinueWith,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: context.sirati.textSecondary),
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: context.sirati.border)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  if (social.google)
-                    Expanded(
-                      child: _SocialButton(
-                        mark: const _GoogleMark(size: 20),
-                        label: 'Google',
-                        onTap: _loginWithGoogle,
-                      ),
-                    ),
-                  if (social.google && social.apple) const SizedBox(width: 12),
-                  if (social.apple)
-                    Expanded(
-                      child: _SocialButton(
-                        mark: Icon(Icons.apple,
-                            size: 22, color: context.sirati.textPrimary),
-                        label: 'Apple',
-                        onTap: _loginWithApple,
-                      ),
-                    ),
-                ],
-              ),
-            ],
+            const SocialSignInSection(),
             const SizedBox(height: AppSpacing.md),
             Wrap(
               alignment: WrapAlignment.center,
@@ -392,134 +219,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-/// Full-bleed brand band: the logo's gradient under a fading grid, with the
-/// mark and the welcome copy in white.
-class _LoginHero extends StatelessWidget {
-  final bool compact;
-  final double topInset;
-  final String title;
-  final String subtitle;
-
-  const _LoginHero({
-    required this.compact,
-    required this.topInset,
-    required this.title,
-    required this.subtitle,
-  });
-
-  /// The logo's gradient with the teal end deepened so white copy keeps AA
-  /// against every stop.
-  static const gradient = AuthHeroPalette.gradient;
-
-  @override
-  Widget build(BuildContext context) {
-    final gap = compact ? AppSpacing.xs : AppSpacing.md;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(_loginHeroRadius),
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(_loginHeroRadius),
-        ),
-        child: CustomPaint(
-          painter: const _HeroGridPainter(),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              topInset + (compact ? AppSpacing.xxs : AppSpacing.xs),
-              AppSpacing.md,
-              _loginCardOverlap + (compact ? AppSpacing.md : AppSpacing.xxl),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    if (Navigator.of(context).canPop())
-                      IconButton(
-                        onPressed: () => Navigator.maybePop(context),
-                        tooltip:
-                            MaterialLocalizations.of(context).backButtonTooltip,
-                        icon: const DirectionalIcon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: AuthHeroPalette.onHero,
-                          size: 18,
-                        ),
-                      ),
-                    const Spacer(),
-                    const LanguageToggle(
-                      backgroundColor: AuthHeroPalette.pillBackground,
-                      foregroundColor: AuthHeroPalette.onHero,
-                      side: BorderSide(color: AuthHeroPalette.pillBorder),
-                    ),
-                  ],
-                ),
-                SizedBox(height: compact ? 0 : AppSpacing.xs),
-                Center(
-                  child: SiratiMark(
-                    size: compact ? _loginCompactMarkSize : _loginMarkSize,
-                  ),
-                ),
-                SizedBox(height: gap),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.of(
-                    context,
-                    compact ? AppTypography.titleLg : AppTypography.headlineMd,
-                    color: AuthHeroPalette.onHero,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  subtitle,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.of(
-                    context,
-                    AppTypography.bodyMd,
-                    color: AuthHeroPalette.onHero,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Thin white grid that fades out toward the bottom of the hero.
-class _HeroGridPainter extends CustomPainter {
-  static const cell = 24.0;
-
-  const _HeroGridPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..strokeWidth = 1
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: AuthHeroPalette.gridFade,
-      ).createShader(Offset.zero & size);
-    for (var x = cell; x < size.width; x += cell) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (var y = cell; y < size.height; y += cell) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_HeroGridPainter oldDelegate) => false;
-}
-
 class _AuthLabel extends StatelessWidget {
   final String text;
 
@@ -540,96 +239,4 @@ class _AuthLabel extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SocialButton extends StatelessWidget {
-  final Widget mark;
-  final String label;
-  final VoidCallback onTap;
-
-  const _SocialButton(
-      {required this.mark, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return PressScale(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 50),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              color: context.sirati.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: context.sirati.border),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                mark,
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: context.sirati.textPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Google's four-colour "G", drawn so the button needs no image asset.
-class _GoogleMark extends StatelessWidget {
-  final double size;
-
-  const _GoogleMark({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: size,
-      child: const CustomPaint(painter: _GoogleMarkPainter()),
-    );
-  }
-}
-
-class _GoogleMarkPainter extends CustomPainter {
-  const _GoogleMarkPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = size.width * 0.2;
-    final rect = (Offset.zero & size).deflate(stroke / 2);
-    Paint arc(Color color) => Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke;
-    // Radians clockwise from 3 o'clock; the opening faces right.
-    canvas
-      ..drawArc(rect, -0.80, -1.55, false, arc(AuthHeroPalette.googleRed))
-      ..drawArc(rect, -2.35, -1.60, false, arc(AuthHeroPalette.googleYellow))
-      ..drawArc(rect, 2.33, -1.60, false, arc(AuthHeroPalette.googleGreen))
-      ..drawArc(rect, 0.73, -0.73, false, arc(AuthHeroPalette.googleBlue))
-      ..drawLine(
-        Offset(size.width / 2, size.height / 2),
-        Offset(size.width - stroke / 2, size.height / 2),
-        arc(AuthHeroPalette.googleBlue),
-      );
-  }
-
-  @override
-  bool shouldRepaint(_GoogleMarkPainter oldDelegate) => false;
 }

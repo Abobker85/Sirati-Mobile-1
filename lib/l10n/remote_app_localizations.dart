@@ -4607,6 +4607,29 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('settingsNotificationsCreateCvCta') ??
       _base.settingsNotificationsCreateCvCta;
 
+  @override
+  String get authSignInRequiredTitle =>
+      remote.text('authSignInRequiredTitle') ?? _base.authSignInRequiredTitle;
+
+  @override
+  String get authSignInRequiredSubtitle =>
+      remote.text('authSignInRequiredSubtitle') ??
+      _base.authSignInRequiredSubtitle;
+
+  @override
+  String get authSignInRequiredCardTitle =>
+      remote.text('authSignInRequiredCardTitle') ??
+      _base.authSignInRequiredCardTitle;
+
+  @override
+  String get authSignInRequiredBody =>
+      remote.text('authSignInRequiredBody') ?? _base.authSignInRequiredBody;
+
+  @override
+  String get authSignInRequiredBrowseJobs =>
+      remote.text('authSignInRequiredBrowseJobs') ??
+      _base.authSignInRequiredBrowseJobs;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -5626,6 +5649,11 @@ class RemoteAppLocalizations extends AppLocalizations {
     'settingsNotificationsPreviewAnalysisTitle': [],
     'settingsNotificationsPreviewAnalysisBody': [],
     'settingsNotificationsCreateCvCta': [],
+    'authSignInRequiredTitle': [],
+    'authSignInRequiredSubtitle': [],
+    'authSignInRequiredCardTitle': [],
+    'authSignInRequiredBody': [],
+    'authSignInRequiredBrowseJobs': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -6703,6 +6731,11 @@ class RemoteAppLocalizations extends AppLocalizations {
           l.settingsNotificationsPreviewAnalysisBody,
         'settingsNotificationsCreateCvCta' =>
           l.settingsNotificationsCreateCvCta,
+        'authSignInRequiredTitle' => l.authSignInRequiredTitle,
+        'authSignInRequiredSubtitle' => l.authSignInRequiredSubtitle,
+        'authSignInRequiredCardTitle' => l.authSignInRequiredCardTitle,
+        'authSignInRequiredBody' => l.authSignInRequiredBody,
+        'authSignInRequiredBrowseJobs' => l.authSignInRequiredBrowseJobs,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }
