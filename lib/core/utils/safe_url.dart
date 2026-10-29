@@ -17,6 +17,30 @@ Uri? parseSafeExternalUrl(String? raw) {
   return null;
 }
 
+/// Opens the mail app addressed to [address]; false when [address] is not a
+/// plain email or no mail app opens. Kept apart from [launchSafeExternalUrl],
+/// which only opens https pages.
+Future<bool> launchMailto(String address, {String? subject}) async {
+  final trimmed = address.trim();
+  if (!RegExp(
+          r'^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$')
+      .hasMatch(trimmed)) {
+    return false;
+  }
+  final uri = Uri(
+    scheme: 'mailto',
+    path: trimmed,
+    query: subject == null || subject.trim().isEmpty
+        ? null
+        : 'subject=${Uri.encodeComponent(subject.trim())}',
+  );
+  try {
+    return await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (_) {
+    return false;
+  }
+}
+
 Future<bool> launchSafeExternalUrl(String? raw) async {
   final uri = parseSafeExternalUrl(raw);
   if (uri == null) return false;

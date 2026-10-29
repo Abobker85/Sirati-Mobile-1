@@ -20,10 +20,6 @@ void main() {
         'salary_max': 15000,
         'salary_range': '10,000 - 15,000 ر.س',
         'skills_required': ['Python', 'Flutter', 'PyTorch'],
-        'match_score': 92,
-        'match_reasons': ['مجال الوظيفة يطابق مجالك المهني', 'تطابق في 2 من المهارات المطلوبة'],
-        'matched_skills': ['Python', 'Flutter'],
-        'missing_skills': ['PyTorch'],
         'source_badge': '🏛️ جهة حكومية معتمدة',
         'action_url': 'https://sdaia.gov.sa/jobs',
         'published_at': '2026-09-12T12:00:00Z',
@@ -43,10 +39,6 @@ void main() {
       expect(job.salaryMax, 15000);
       expect(job.salaryRange, '10,000 - 15,000 ر.س');
       expect(job.skillsRequired, containsAll(['Python', 'Flutter', 'PyTorch']));
-      expect(job.matchScore, 92);
-      expect(job.matchReasons.length, 2);
-      expect(job.matchedSkills, containsAll(['Python', 'Flutter']));
-      expect(job.missingSkills, containsAll(['PyTorch']));
       expect(job.sourceBadge, '🏛️ جهة حكومية معتمدة');
     });
 
@@ -74,8 +66,6 @@ void main() {
         'salary_min': '8000', // string number
         'salary_max': null,
         'skills_required': 'not_a_list', // invalid type gracefully handled
-        'match_reasons': null,
-        'matched_skills': null,
       };
 
       final job = JobNews.fromJson(json);
@@ -85,13 +75,35 @@ void main() {
       expect(job.salaryMin, 8000);
       expect(job.salaryMax, isNull);
       expect(job.skillsRequired, isEmpty);
-      expect(job.matchReasons, isEmpty);
-      expect(job.matchedSkills, isEmpty);
-      expect(job.missingSkills, isEmpty);
-      expect(job.matchScore, isNull);
       expect(job.isGov, isFalse);
       expect(job.isEnterprise, isFalse);
       expect(job.isTamheer, isFalse);
+    });
+
+    test('apply fields parse; legacy payloads without apply_method keep the link for the guard', () {
+      final modern = JobNews.fromJson({
+        'id': 1,
+        'apply_method': 'email',
+        'apply_email': 'hr@x.example',
+        'apply_instructions': 'Send CV',
+        'source_url': 'https://t.me/c/1',
+        'source_name': '@c',
+      });
+      expect(modern.applyMethod, 'email');
+      expect(modern.applyEmail, 'hr@x.example');
+      expect(modern.applyInstructions, 'Send CV');
+      expect(modern.url, 'https://t.me/c/1');
+      expect(modern.sourceName, '@c');
+
+      final legacy = JobNews.fromJson({'id': 2, 'url': 'https://t.me/c/2', 'apply_url': 'https://t.me/c/2'});
+      expect(legacy.applyMethod, '', reason: 'unknown method, resolved by ApplyDestination');
+      expect(legacy.url, 'https://t.me/c/2');
+    });
+
+    test('match fields from old servers are ignored, not exposed', () {
+      final job = JobNews.fromJson({'id': 3, 'match_score': 92, 'match_reasons': ['x']});
+      expect(job.applyMethod, '');
+      expect(job.title, '');
     });
   });
 }

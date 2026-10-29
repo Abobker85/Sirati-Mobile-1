@@ -19,16 +19,12 @@ const _filterBarKeys = [
   'jobsPresetTamheer',
   'jobsFilterRemote',
   'jobsSearchHint',
-  'jobsCategoryTech',
-  'jobsCategoryFinance',
-  'jobsCategoryHealth',
-  'jobsCityAll',
-  'jobsCityRiyadh',
-  'jobsCityJeddah',
-  'jobsCityDammam',
-  'jobsCityKhobar',
-  'jobsCityMecca',
-  'jobsCityMedina',
+  'jobsRegionAll',
+  'jobsRegionCentral',
+  'jobsRegionEastern',
+  'jobsRegionWestern',
+  'jobsRegionNorthern',
+  'jobsRegionSouthern',
 ];
 
 RemoteL10nState _state(String code, Map<String, String> strings) =>
@@ -58,12 +54,7 @@ Widget _filterBar(bool english) => Column(
           selectedPreset: 'all',
           onSelected: (_) {},
         ),
-        CategoryChips(
-          english: english,
-          selectedCategory: 'all',
-          onSelected: (_) {},
-        ),
-        CityChips(english: english, selectedCity: 'all', onSelected: (_) {}),
+        RegionChips(selectedRegion: 'all', onSelected: (_) {}),
       ],
     );
 
@@ -91,22 +82,23 @@ void main() {
       }
     });
 
-    testWidgets('a remote match-score label formats its placeholder ($code)',
+    testWidgets('a remote apply-host label formats its placeholder ($code)',
         (tester) async {
       AppLocale.languageCode.value = code;
-      for (final score in [0, 1, 7, 88, 100]) {
+      for (final host in ['jadarat.sa', 'careers.acme.example', 'forms.gle']) {
         final job = JobNews.fromJson({
-          'id': score + 1,
+          'id': host.length,
           'title': 'Data Analyst',
           'body': 'SQL',
-          'match_score': score,
+          'apply_method': 'url',
+          'apply_url': 'https://www.$host/jobs/1',
         });
         await tester.pumpWidget(_app(
-          _state(code, {'jobsMatchScore': '[{score}] fit'}),
+          _state(code, {'jobsApplyOpensHost': '[{host}] site'}),
           code,
           FeaturedJobCard(item: job, english: code == 'en', onTap: () {}),
         ));
-        expect(find.text('[$score] fit'), findsOneWidget, reason: '$score');
+        expect(find.text('[$host] site'), findsOneWidget, reason: host);
       }
     });
   }
@@ -123,14 +115,10 @@ Map<String, String> _bundledTexts(AppLocalizations l) => {
       'jobsPresetTamheer': l.jobsPresetTamheer,
       'jobsFilterRemote': l.jobsFilterRemote,
       'jobsSearchHint': l.jobsSearchHint,
-      'jobsCategoryTech': l.jobsCategoryTech,
-      'jobsCategoryFinance': l.jobsCategoryFinance,
-      'jobsCategoryHealth': l.jobsCategoryHealth,
-      'jobsCityAll': l.jobsCityAll,
-      'jobsCityRiyadh': l.jobsCityRiyadh,
-      'jobsCityJeddah': l.jobsCityJeddah,
-      'jobsCityDammam': l.jobsCityDammam,
-      'jobsCityKhobar': l.jobsCityKhobar,
-      'jobsCityMecca': l.jobsCityMecca,
-      'jobsCityMedina': l.jobsCityMedina,
+      'jobsRegionAll': l.jobsRegionAll,
+      'jobsRegionCentral': l.jobsRegionCentral,
+      'jobsRegionEastern': l.jobsRegionEastern,
+      'jobsRegionWestern': l.jobsRegionWestern,
+      'jobsRegionNorthern': l.jobsRegionNorthern,
+      'jobsRegionSouthern': l.jobsRegionSouthern,
     };

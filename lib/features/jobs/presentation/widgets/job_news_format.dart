@@ -12,7 +12,11 @@ String jobPublishedText(JobNews item, {required bool english}) {
   return AppFormat.digits(label, english: english);
 }
 
+/// A stated application deadline. The server labels curated listings only;
+/// aggregated posts carry an internal retirement date that is not a deadline,
+/// so without the label there is nothing to show.
 String jobValidUntilText(JobNews item, {required bool english}) {
+  if ((item.validUntilLabel ?? '').trim().isEmpty) return '';
   if (item.validUntil != null) {
     return AppFormat.shortDate(item.validUntil!, english: english);
   }

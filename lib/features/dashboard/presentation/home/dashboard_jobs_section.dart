@@ -62,13 +62,12 @@ class DashboardJobsSection extends ConsumerWidget {
         else if (items.isEmpty)
           Text(l.homeJobsEmpty, style: TextStyle(color: c.textSecondary))
         else
-          for (final (index, item) in items.take(limit).indexed)
+          for (final item in items.take(limit))
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: JobNewsCard(
                 item: item,
                 english: english,
-                isNew: index == 0,
                 onTap: () => unawaited(
                   Navigator.of(context).push(
                     MaterialPageRoute(

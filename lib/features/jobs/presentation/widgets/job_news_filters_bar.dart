@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/features/jobs/domain/job_news_filters.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
+/// Label for a region key from [JobNewsFilters.regions].
+String jobRegionLabel(AppLocalizations l, String region) => switch (region) {
+      'central' => l.jobsRegionCentral,
+      'eastern' => l.jobsRegionEastern,
+      'western' => l.jobsRegionWestern,
+      'northern' => l.jobsRegionNorthern,
+      'southern' => l.jobsRegionSouthern,
+      _ => l.jobsRegionAll,
+    };
+
+/// Source / work-mode presets: all, in my field, government, companies,
+/// Tamheer & training, remote. One row, scrolls horizontally.
 class PresetChips extends StatelessWidget {
   final bool english;
   final String selectedPreset;
@@ -17,79 +30,158 @@ class PresetChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final presets = [
-      _PresetOption('all', AppLocalizations.of(context).jobsFilterAll,
-          Icons.dashboard_outlined),
-      _PresetOption('matched', AppLocalizations.of(context).jobsPresetMatched,
-          Icons.stars_rounded),
-      _PresetOption('gov', AppLocalizations.of(context).jobsPresetGov,
-          Icons.account_balance_outlined),
-      _PresetOption(
-          'enterprise',
-          AppLocalizations.of(context).jobsPresetEnterprise,
-          Icons.business_outlined),
-      _PresetOption('tamheer', AppLocalizations.of(context).jobsPresetTamheer,
-          Icons.school_outlined),
-      _PresetOption('remote', AppLocalizations.of(context).jobsFilterRemote,
-          Icons.public_rounded),
+    final l = AppLocalizations.of(context);
+    final c = context.sirati;
+    final options = <(String, String, IconData, Color)>[
+      (JobNewsFilters.all, l.jobsFilterAll, Icons.apps_rounded, c.primaryInk),
+      ('matched', l.jobsPresetMatched, Icons.track_changes_rounded, c.red),
+      ('gov', l.jobsPresetGov, Icons.account_balance_rounded, c.amber),
+      ('enterprise', l.jobsPresetEnterprise, Icons.apartment_rounded, c.info),
+      ('tamheer', l.jobsPresetTamheer, Icons.school_rounded, c.primaryInk),
+      (
+        JobNewsFilters.remote,
+        l.jobsFilterRemote,
+        Icons.laptop_mac_rounded,
+        c.tertiary
+      ),
     ];
 
-    return Material(
-      type: MaterialType.transparency,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (final preset in presets)
-              Padding(
-                padding: const EdgeInsetsDirectional.only(end: 6),
-                child: PressScale(
-                  pressedScale: 0.96,
-                  child: ChoiceChip(
-                    materialTapTargetSize: MaterialTapTargetSize.padded,
-                    visualDensity: VisualDensity.standard,
-                    label: Text(preset.label),
-                    selected: selectedPreset == preset.key,
-                    onSelected: (_) => onSelected(preset.key),
-                    showCheckmark: false,
-                    labelStyle: TextStyle(
-                      fontSize: 13,
-                      fontWeight: selectedPreset == preset.key
-                          ? FontWeight.w700
-                          : FontWeight.w400,
-                      color: selectedPreset == preset.key
-                          ? context.sirati.onPrimary
-                          : context.sirati.textSecondary,
-                    ),
-                    selectedColor: context.sirati.primary,
-                    backgroundColor: context.sirati.surface,
-                    side: BorderSide(
-                      color: selectedPreset == preset.key
-                          ? context.sirati.primary
-                          : context.sirati.border,
-                      width: selectedPreset == preset.key ? 1.2 : 1,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  ),
-                ),
-              ),
-          ],
-        ),
+    return _ChipRow(
+      children: [
+        for (final (key, label, icon, tint) in options)
+          _FilterPill(
+            label: label,
+            icon: icon,
+            iconColor: tint,
+            selected: selectedPreset == key,
+            onTap: () => onSelected(key),
+          ),
+      ],
+    );
+  }
+}
+
+/// Saudi regions; "all regions" first.
+class RegionChips extends StatelessWidget {
+  final String selectedRegion;
+  final ValueChanged<String> onSelected;
+
+  const RegionChips({
+    super.key,
+    required this.selectedRegion,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return _ChipRow(
+      children: [
+        for (final region in JobNewsFilters.regions)
+          _FilterPill(
+            label: jobRegionLabel(l, region),
+            icon: region == JobNewsFilters.all
+                ? Icons.map_outlined
+                : Icons.location_on_outlined,
+            iconColor: context.sirati.textSecondary,
+            selected: selectedRegion == region,
+            onTap: () => onSelected(region),
+          ),
+      ],
+    );
+  }
+}
+
+class _ChipRow extends StatelessWidget {
+  const _ChipRow({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: Row(
+        children: [
+          for (final child in children)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: AppSpacing.xs),
+              child: child,
+            ),
+        ],
       ),
     );
   }
 }
 
-class _PresetOption {
-  final String key;
+/// A 48dp-tall pill. Selected = dark brand fill + check icon, so the state
+/// never relies on colour alone.
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
+    required this.label,
+    required this.icon,
+    required this.iconColor,
+    required this.selected,
+    required this.onTap,
+  });
+
   final String label;
   final IconData icon;
+  final Color iconColor;
+  final bool selected;
+  final VoidCallback onTap;
 
-  const _PresetOption(this.key, this.label, this.icon);
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    // brandSurface keeps white text at AA in both themes (primary does not).
+    final fg = selected ? c.onBrandSurface : c.textPrimary;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: PressScale(
+        pressedScale: 0.96,
+        child: Material(
+          color: selected ? c.brandSurface : c.surface,
+          shape: StadiumBorder(
+            side: BorderSide(color: selected ? c.brandSurface : c.border),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const StadiumBorder(),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      selected ? Icons.check_rounded : icon,
+                      size: 18,
+                      color: selected ? fg : iconColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w600,
+                        color: fg,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class JobSearchBar extends StatelessWidget {
@@ -112,186 +204,34 @@ class JobSearchBar extends StatelessWidget {
         controller: controller,
         onChanged: onChanged,
         textAlign: TextAlign.start,
+        textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: AppLocalizations.of(context).jobsSearchHint,
           // Keep the search affordance on the physical leading edge of the field
           // (left) in both locales — matches the current product screenshots.
           prefixIcon:
-              english ? const Icon(Icons.search_rounded, size: 18) : null,
+              english ? const Icon(Icons.search_rounded, size: 20) : null,
           suffixIcon:
-              english ? null : const Icon(Icons.search_rounded, size: 18),
+              english ? null : const Icon(Icons.search_rounded, size: 20),
           filled: true,
           fillColor: context.sirati.surface,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: context.sirati.border),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: context.sirati.border),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: context.sirati.primary, width: 1.4),
           ),
         ),
         style: TextStyle(
-            fontSize: 13.5, height: 1.3, color: context.sirati.textPrimary),
-      ),
-    );
-  }
-}
-
-class CategoryChips extends StatelessWidget {
-  final bool english;
-  final String selectedCategory;
-  final ValueChanged<String> onSelected;
-
-  const CategoryChips({
-    super.key,
-    required this.english,
-    required this.selectedCategory,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final options = [
-      _CategoryOption('all', AppLocalizations.of(context).jobsFilterAll),
-      _CategoryOption('tech', AppLocalizations.of(context).jobsCategoryTech),
-      _CategoryOption(
-          'finance', AppLocalizations.of(context).jobsCategoryFinance),
-      _CategoryOption(
-          'health', AppLocalizations.of(context).jobsCategoryHealth),
-    ];
-
-    return Material(
-      type: MaterialType.transparency,
-      child: Wrap(
-        spacing: AppSpacing.xs,
-        runSpacing: AppSpacing.xs,
-        children: [
-          for (final option in options)
-            PressScale(
-              pressedScale: .98,
-              child: ChoiceChip(
-                materialTapTargetSize: MaterialTapTargetSize.padded,
-                visualDensity: VisualDensity.standard,
-                label: Text(option.label),
-                selected: selectedCategory == option.key,
-                onSelected: (_) => onSelected(option.key),
-                showCheckmark: false,
-                labelStyle: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: selectedCategory == option.key
-                      ? context.sirati.onPrimary
-                      : context.sirati.textSecondary,
-                ),
-                selectedColor: context.sirati.primary,
-                backgroundColor: context.sirati.primaryLight,
-                side: BorderSide.none,
-                shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryOption {
-  final String key;
-  final String label;
-
-  const _CategoryOption(this.key, this.label);
-}
-
-class CityChips extends StatelessWidget {
-  final bool english;
-  final String selectedCity;
-  final ValueChanged<String> onSelected;
-
-  const CityChips({
-    super.key,
-    required this.english,
-    required this.selectedCity,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final options = [
-      _CategoryOption('all', AppLocalizations.of(context).jobsCityAll),
-      _CategoryOption('riyadh', AppLocalizations.of(context).jobsCityRiyadh),
-      _CategoryOption('jeddah', AppLocalizations.of(context).jobsCityJeddah),
-      _CategoryOption('dammam', AppLocalizations.of(context).jobsCityDammam),
-      _CategoryOption('khobar', AppLocalizations.of(context).jobsCityKhobar),
-      _CategoryOption('mecca', AppLocalizations.of(context).jobsCityMecca),
-      _CategoryOption('medina', AppLocalizations.of(context).jobsCityMedina),
-      _CategoryOption('remote', AppLocalizations.of(context).jobsFilterRemote),
-    ];
-
-    return Material(
-      type: MaterialType.transparency,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (final option in options)
-              Padding(
-                padding: const EdgeInsetsDirectional.only(end: 6),
-                child: PressScale(
-                  pressedScale: .98,
-                  child: FilterChip(
-                    materialTapTargetSize: MaterialTapTargetSize.padded,
-                    visualDensity: VisualDensity.standard,
-                    label: Text(option.label),
-                    selected: selectedCity == option.key,
-                    onSelected: (_) => onSelected(option.key),
-                    showCheckmark: false,
-                    avatar: option.key == 'remote'
-                        ? Icon(
-                            Icons.public_rounded,
-                            size: 14,
-                            color: selectedCity == option.key
-                                ? context.sirati.primaryInk
-                                : context.sirati.textSecondary,
-                          )
-                        : Icon(
-                            Icons.location_on_outlined,
-                            size: 14,
-                            color: selectedCity == option.key
-                                ? context.sirati.primaryInk
-                                : context.sirati.textSecondary,
-                          ),
-                    labelStyle: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: selectedCity == option.key
-                          ? context.sirati.primaryInk
-                          : context.sirati.textSecondary,
-                    ),
-                    selectedColor: context.sirati.primaryLight,
-                    backgroundColor: context.sirati.surface,
-                    side: BorderSide(
-                      color: selectedCity == option.key
-                          ? context.sirati.primary
-                          : context.sirati.border,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  ),
-                ),
-              ),
-          ],
-        ),
+            fontSize: 14, height: 1.3, color: context.sirati.textPrimary),
       ),
     );
   }

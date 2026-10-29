@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/features/jobs/application/job_news_controllers.dart';
 import 'package:sirati/features/jobs/domain/job_news_feed.dart';
+import 'package:sirati/features/jobs/domain/job_news_filters.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 
@@ -12,6 +13,7 @@ class _Call {
     required this.category,
     required this.preset,
     required this.city,
+    required this.region,
     required this.isRemote,
     required this.query,
     required this.force,
@@ -21,6 +23,7 @@ class _Call {
   final String? category;
   final String? preset;
   final String? city;
+  final String? region;
   final bool? isRemote;
   final String? query;
   final bool force;
@@ -36,6 +39,7 @@ class _FakeContent extends MobileContentService {
     String? category,
     String? preset,
     String? city,
+    String? region,
     int? jobTitleId,
     bool? isRemote,
     bool? isVerified,
@@ -49,6 +53,7 @@ class _FakeContent extends MobileContentService {
       category: category,
       preset: preset,
       city: city,
+      region: region,
       isRemote: isRemote,
       query: query,
       force: force,
@@ -96,7 +101,7 @@ void main() {
     await feed();
     expect(content.calls.single.force, isFalse);
 
-    filters().setCategory('tech');
+    filters().setRegion('eastern');
     await feed();
     filters().setPreset('matched');
     await feed();
@@ -110,27 +115,36 @@ void main() {
   test('filters reach the API with "all" omitted and remote derived', () async {
     await feed();
     var call = content.calls.last;
-    expect([call.category, call.preset, call.city], [null, null, null]);
+    expect([call.category, call.preset, call.city, call.region],
+        [null, null, null, null]);
     expect(call.isRemote, isFalse);
 
-    filters()
-      ..setCity('remote')
-      ..setCategory('health')
-      ..setQuery('  nurse  ');
-    await feed();
-    call = content.calls.last;
-    expect(call.city, 'remote');
-    expect(call.category, 'health');
-    expect(call.isRemote, isTrue);
-    expect(call.query, 'nurse', reason: 'query is trimmed');
+    for (final preset in JobNewsFilters.presets) {
+      for (final region in JobNewsFilters.regions) {
+        filters()
+          ..setPreset(preset)
+          ..setRegion(region)
+          ..setQuery('  nurse  ');
+        await feed();
+        call = content.calls.last;
+        expect(call.preset, preset == JobNewsFilters.all ? null : preset);
+        expect(call.region, region == JobNewsFilters.all ? null : region);
+        expect(call.isRemote, preset == JobNewsFilters.remote);
+        expect(call.category, isNull, reason: 'category chips were removed');
+        expect(call.city, isNull, reason: 'regions replace city chips');
+        expect(call.query, 'nurse', reason: 'query is trimmed');
+      }
+    }
   });
 
-  test('toggleMatched flips between matched and all', () {
-    expect(container.read(jobNewsFiltersProvider).preset, 'all');
-    filters().toggleMatched();
-    expect(container.read(jobNewsFiltersProvider).preset, 'matched');
-    filters().toggleMatched();
-    expect(container.read(jobNewsFiltersProvider).preset, 'all');
+  test('clear resets preset, region and query', () {
+    filters()
+      ..setPreset('matched')
+      ..setRegion('southern')
+      ..setQuery('x');
+    expect(container.read(jobNewsFiltersProvider).isActive, isTrue);
+    filters().clear();
+    expect(container.read(jobNewsFiltersProvider), const JobNewsFilters());
   });
 
   test('a failure surfaces as an error and is not auto-retried', () async {

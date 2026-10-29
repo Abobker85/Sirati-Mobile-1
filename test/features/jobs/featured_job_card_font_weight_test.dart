@@ -27,10 +27,10 @@ void main() {
       'source_badge': 'Sirati',
       'is_verified': true,
       'is_tamheer': true,
-      'match_score': 88,
-      'match_reasons': ['skills'],
+      'apply_method': 'url',
+      'apply_url': 'https://careers.sirati.example/jobs/1',
+      'source_type': 'gov',
       'skills_required': ['Dart'],
-      'matched_skills': ['Dart'],
       'salary_range': '15k',
       'published_at': '2026-10-19T08:00:00Z',
     });

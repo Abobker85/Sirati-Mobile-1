@@ -13,7 +13,7 @@ import 'package:sirati/features/jobs/presentation/widgets/featured_job_card.dart
 import 'package:sirati/features/jobs/presentation/widgets/job_news_card.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_common.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_filters_bar.dart';
-import 'package:sirati/features/jobs/presentation/widgets/profile_context_banner.dart';
+import 'package:sirati/features/jobs/presentation/widgets/matched_preset_note.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/services/session_cache.dart';
@@ -165,10 +165,14 @@ class _JobNewsList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final filterController = ref.read(jobNewsFiltersProvider.notifier);
-    final featured = feed.featured;
-    final latest = feed.latest;
-    final profile = feed.profile;
+    final now = DateTime.now();
+    final featured = feed.featuredAt(now);
+    final latest = feed.latestAt(now);
+    final regionOnly = filters.region != JobNewsFilters.all &&
+        filters.preset == JobNewsFilters.all &&
+        filters.query.trim().isEmpty;
     // Changing filters or results swaps the featured block with an animation.
     final resultsKey = '${filters.hashCode}|${feed.items.length}|'
         '${featured?.id ?? 0}';
@@ -205,15 +209,6 @@ class _JobNewsList extends ConsumerWidget {
                       padding: EdgeInsets.only(top: 10, bottom: 2),
                       child: LinearProgressIndicator(minHeight: 3),
                     ),
-                  if (profile != null && profile.hasProfile) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    ProfileContextBanner(
-                      english: english,
-                      profile: profile,
-                      isMatchedActive: filters.preset == 'matched',
-                      onToggleMatched: filterController.toggleMatched,
-                    ),
-                  ],
                   const SizedBox(height: AppSpacing.md),
                   JobSearchBar(
                     english: english,
@@ -227,18 +222,19 @@ class _JobNewsList extends ConsumerWidget {
                     onSelected: filterController.setPreset,
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  CategoryChips(
-                    english: english,
-                    selectedCategory: filters.category,
-                    onSelected: filterController.setCategory,
+                  RegionChips(
+                    selectedRegion: filters.region,
+                    onSelected: filterController.setRegion,
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  CityChips(
-                    english: english,
-                    selectedCity: filters.city,
-                    onSelected: filterController.setCity,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+                  if (filters.preset == 'matched') ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    MatchedPresetNote(
+                      profile: feed.profile,
+                      onSetJobTitle: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.settings),
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.lg),
                   AnimatedSwitcher(
                     duration: MotionSettings.reduce(context)
                         ? Duration.zero
@@ -263,12 +259,17 @@ class _JobNewsList extends ConsumerWidget {
                         if (feed.items.isEmpty)
                           EmptyJobNews(
                             english: english,
+                            regionLabel: regionOnly
+                                ? jobRegionLabel(l, filters.region)
+                                : null,
+                            onShowAllRegions: () =>
+                                filterController.setRegion(JobNewsFilters.all),
                             onClearFilters:
                                 filters.isActive ? onClearFilters : null,
                           )
                         else if (latest.isNotEmpty) ...[
                           Text(
-                            AppLocalizations.of(context).jobsLatestPostings,
+                            l.jobsLatestPostings,
                             textAlign: TextAlign.start,
                             style: AppTextStyles.titleMd(context.sirati),
                           ),
@@ -289,14 +290,14 @@ class _JobNewsList extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final item = latest[index];
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
                   // +1: the featured card is reveal order 0.
                   child: MotionReveal(
                     order: index + 1,
                     child: JobNewsCard(
                       item: item,
                       english: english,
-                      isNew: index == 0,
+                      now: now,
                       onTap: () => onOpenJob(item),
                     ),
                   ),

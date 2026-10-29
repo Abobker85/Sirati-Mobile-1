@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/jobs/domain/apply_destination.dart';
+import 'package:sirati/features/jobs/presentation/widgets/job_apply_actions.dart';
+import 'package:sirati/features/jobs/presentation/widgets/job_news_card.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_format.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_title_display.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -7,6 +11,9 @@ import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
+/// Hero for the newest posting that has a real application link (the feed
+/// only offers one when that holds). The card opens the details; the button
+/// opens the employer's page, whose site is named under it.
 class FeaturedJobCard extends StatelessWidget {
   final JobNews item;
   final bool english;
@@ -21,252 +28,153 @@ class FeaturedJobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final c = context.sirati;
+    final destination = ApplyDestination.of(item);
+    final meta = jobMetaLine(item, english: english);
+    final published = jobPublishedText(item, english: english);
+    final onHero = c.onBrandSurface;
+
     return PressScale(
       child: Material(
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                // brandSurface, not primary: white text needs a dark fill in both
-                // themes (primary -> white is ~2.8:1 light, ~2:1 dark).
-                colors: [
-                  context.sirati.brandSurface,
-                  context.sirati.brandSurfaceDeep,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: context.sirati.primaryLight,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context).jobsNewBadge,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: context.sirati.primaryInk,
-                        ),
-                      ),
-                    ),
-                    if (item.isVerified)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 9, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: context.sirati.brandSurfaceDeep,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: context.sirati.onBrandSurface
-                                .withValues(alpha: 0.45),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              item.isGov
-                                  ? Icons.account_balance_rounded
-                                  : item.isEnterprise
-                                      ? Icons.business_rounded
-                                      : Icons.verified_rounded,
-                              size: 14,
-                              color: context.sirati.onBrandSurface,
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                item.sourceBadge ??
-                                    AppLocalizations.of(context)
-                                        .jobsVerifiedSourceFeatured,
-                                softWrap: true,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: context.sirati.onBrandSurface,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (item.isTamheer)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 9, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: context.sirati.brandSurfaceDeep,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          AppLocalizations.of(context).jobsTamheerBadgeFeatured,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: context.sirati.onBrandSurface,
-                          ),
-                        ),
-                      ),
-                    if (item.matchScore != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 9, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: context.sirati.onBrandSurface,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.stars_rounded,
-                              size: 14,
-                              color: context.sirati.onWhitePill,
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                AppLocalizations.of(context)
-                                    .jobsMatchScore(item.matchScore!),
-                                softWrap: true,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: context.sirati.onWhitePill,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                JobTitleDisplay(
-                  title: item.title,
-                  primaryStyle: TextStyle(
-                    fontSize: 17,
-                    height: 1.35,
-                    fontWeight: FontWeight.w700,
-                    color: context.sirati.onBrandSurface,
-                  ),
-                  secondaryStyle: TextStyle(
-                    fontSize: 13.5,
-                    height: 1.35,
-                    fontWeight: FontWeight.w600,
-                    color: context.sirati.onBrandSurface.withValues(alpha: .9),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  LocaleFormat.mixedTitle(item.company ?? '', english: english),
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    height: 1.45,
-                    color: context.sirati.onBrandSurface.withValues(alpha: .88),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  [
-                    if ((item.location ?? '').isNotEmpty) item.location!,
-                    jobPublishedText(item, english: english),
-                  ].where((s) => s.isNotEmpty).join(' · '),
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                    fontSize: 13,
-                    height: 1.45,
-                    color: context.sirati.onBrandSurface.withValues(alpha: .85),
-                  ),
-                ),
-                if (item.skillsRequired.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: item.skillsRequired.take(3).map((skill) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: context.sirati.onBrandSurface
-                              .withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: context.sirati.onBrandSurface
-                                .withValues(alpha: 0.3),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Text(
-                          skill,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: context.sirati.onBrandSurface,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-                const SizedBox(height: 16),
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: context.sirati.onBrandSurface,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context).jobsApplyNow,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: context.sirati.onWhitePill,
-                        ),
-                      ),
-                    ),
-                    if (item.salaryRange != null &&
-                        item.salaryRange!.isNotEmpty)
-                      Text(
-                        item.salaryRange!,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: context.sirati.onBrandSurface,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
+        borderRadius: BorderRadius.circular(24),
+        clipBehavior: Clip.antiAlias,
+        // The card's tap (details) and the Apply button are siblings, not
+        // nested, so each is its own target for touch and screen readers.
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: AlignmentDirectional.topStart,
+              end: AlignmentDirectional.bottomEnd,
+              // brandSurface, not primary: white text needs a dark fill in
+              // both themes (primary -> white is ~2.8:1 light, ~2:1 dark).
+              colors: [c.brandSurface, c.brandSurfaceDeep],
             ),
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              InkWell(
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          _HeroTag(label: l.jobsNewBadge),
+                          if (jobSourceTypeLabel(l, item) case final label?)
+                            _HeroTag(
+                                label: label, icon: jobSourceTypeIcon(item)),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      JobTitleDisplay(
+                        title: item.title,
+                        primaryStyle: TextStyle(
+                          fontSize: 19,
+                          height: 1.4,
+                          fontWeight: FontWeight.w700,
+                          color: onHero,
+                        ),
+                        secondaryStyle: TextStyle(
+                          fontSize: 14,
+                          height: 1.35,
+                          fontWeight: FontWeight.w600,
+                          color: onHero,
+                        ),
+                      ),
+                      if (meta.isNotEmpty || published.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          [meta, published]
+                              .where((s) => s.isNotEmpty)
+                              .join(' · '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontSize: 13.5, height: 1.45, color: onHero),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              if (destination case ApplyLink(:final displayHost))
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: () => unawaited(
+                            openJobApplication(context, item, destination)),
+                        icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                        label: Text(l.jobsApplyNow),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: onHero,
+                          foregroundColor: c.onWhitePill,
+                          minimumSize: const Size(48, 48),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          shape: const StadiumBorder(),
+                        ),
+                      ),
+                      Text(
+                        l.jobsApplyOpensHost(displayHost),
+                        style: TextStyle(fontSize: 12.5, color: onHero),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _HeroTag extends StatelessWidget {
+  const _HeroTag({required this.label, this.icon});
+
+  final String label;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: c.brandSurfaceDeep,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: c.onBrandSurface.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: c.onBrandSurface),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: c.onBrandSurface,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

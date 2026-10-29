@@ -4,70 +4,135 @@ import 'package:sirati/shared/theme/app_theme.dart';
 
 class MetaChip extends StatelessWidget {
   final String text;
+  final IconData? icon;
   final bool highlight;
 
-  const MetaChip({super.key, required this.text, this.highlight = false});
+  const MetaChip(
+      {super.key, required this.text, this.icon, this.highlight = false});
 
   @override
   Widget build(BuildContext context) {
-    if (!highlight) {
-      return Chip(
-        label: Text(
-          text,
-          style: const TextStyle(fontSize: 13),
-        ),
-      );
-    }
-    return Chip(
-      label: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13,
-          color: context.sirati.primaryInk,
-          fontWeight: FontWeight.w700,
-        ),
+    final c = context.sirati;
+    final fg = highlight ? c.primaryInk : c.textPrimary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: highlight ? c.primaryLight : c.surfaceLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: highlight ? c.borderStrong : c.border),
       ),
-      backgroundColor: context.sirati.primaryLight,
-      side: BorderSide(color: context.sirati.borderStrong),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon,
+                size: 16, color: highlight ? c.primaryInk : c.textSecondary),
+            const SizedBox(width: 6),
+          ],
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: highlight ? FontWeight.w700 : FontWeight.w600,
+                color: fg,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
+/// Empty results. With [regionLabel] it is the "no postings in this region"
+/// state and offers all regions; otherwise it offers to clear the filters
+/// when [onClearFilters] is set, or says the feed is empty.
 class EmptyJobNews extends StatelessWidget {
   final bool english;
-
   final VoidCallback? onClearFilters;
+  final String? regionLabel;
+  final VoidCallback? onShowAllRegions;
 
-  const EmptyJobNews({super.key, required this.english, this.onClearFilters});
+  const EmptyJobNews({
+    super.key,
+    required this.english,
+    this.onClearFilters,
+    this.regionLabel,
+    this.onShowAllRegions,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final c = context.sirati;
+    final region = regionLabel;
+    final title = region != null
+        ? l.jobsEmptyRegionTitle(region)
+        : onClearFilters != null
+            ? l.noMatchingJobs
+            : l.jobsEmptyFeed;
+    final action = region != null && onShowAllRegions != null
+        ? (l.jobsShowAllRegions, onShowAllRegions!)
+        : onClearFilters != null
+            ? (l.clearFilters, onClearFilters!)
+            : null;
+
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
       decoration: BoxDecoration(
-        color: context.sirati.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.sirati.border),
+        color: c.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: c.border),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            onClearFilters != null
-                ? AppLocalizations.of(context).noMatchingJobs
-                : AppLocalizations.of(context).jobsEmptyFeed,
-            textAlign: TextAlign.center,
-            style: AppTypography.of(context, AppTypography.bodyMd,
-                color: context.sirati.textSecondary),
-          ),
-          if (onClearFilters != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            TextButton(
-              onPressed: onClearFilters,
-              style: TextButton.styleFrom(
-                minimumSize: const Size(48, 48),
-                foregroundColor: context.sirati.primaryInk,
+          ExcludeSemantics(
+            child: Center(
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: c.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  region != null
+                      ? Icons.location_off_outlined
+                      : Icons.work_off_outlined,
+                  size: 34,
+                  color: c.primaryInk,
+                ),
               ),
-              child: Text(AppLocalizations.of(context).clearFilters),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.titleMd(c),
+          ),
+          if (region != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              l.jobsEmptyRegionBody,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 13.5, height: 1.5, color: c.textSecondary),
+            ),
+          ],
+          if (action != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            FilledButton(
+              onPressed: action.$2,
+              style: FilledButton.styleFrom(
+                backgroundColor: c.brandSurface,
+                foregroundColor: c.onBrandSurface,
+                minimumSize: const Size.fromHeight(48),
+                shape: const StadiumBorder(),
+              ),
+              child: Text(action.$1),
             ),
           ],
         ],

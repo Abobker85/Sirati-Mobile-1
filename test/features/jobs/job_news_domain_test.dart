@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/features/jobs/domain/apply_destination.dart';
 import 'package:sirati/features/jobs/domain/job_news_feed.dart';
 import 'package:sirati/features/jobs/domain/job_news_filters.dart';
+import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 
 Map<String, dynamic> _job(int id) => {
@@ -12,26 +14,6 @@ Map<String, dynamic> _job(int id) => {
     };
 
 void main() {
-  group('JobNewsFeed featured / latest', () {
-    test('every item appears exactly once across featured + latest', () {
-      for (var n = 0; n <= 6; n++) {
-        final feed = JobNewsFeed.fromPayload(
-          {
-            'items': [for (var i = 1; i <= n; i++) _job(i)]
-          },
-          english: true,
-        );
-        final shown = [
-          if (feed.featured != null) feed.featured!.id,
-          ...feed.latest.map((j) => j.id),
-        ];
-        expect(shown, [for (var i = 1; i <= n; i++) i], reason: 'n=$n');
-        expect(shown.toSet().length, shown.length,
-            reason: 'n=$n: a job was rendered twice');
-      }
-    });
-  });
-
   group('JobNewsFeed.fromPayload', () {
     test('skips malformed entries instead of rendering blank jobs', () {
       final feed = JobNewsFeed.fromPayload({
@@ -123,52 +105,179 @@ void main() {
     });
   });
 
-  group('isHighMatch', () {
-    test('is monotonic in the score and false for null', () {
-      expect(isHighMatch(null), isFalse);
-      for (var s = -10; s < 120; s++) {
-        if (isHighMatch(s)) {
-          expect(isHighMatch(s + 1), isTrue, reason: 'score ${s + 1}');
-        }
-      }
-      expect(isHighMatch(highMatchThreshold), isTrue);
-      expect(isHighMatch(highMatchThreshold - 1), isFalse);
-    });
-  });
-
   group('JobNewsFilters', () {
-    const values = ['all', 'remote', 'matched', 'tech', 'riyadh'];
-
     test('"all" is never sent to the API; other values pass through', () {
-      for (final v in values) {
-        final f = JobNewsFilters(preset: v, category: v, city: v);
-        final expected = v == JobNewsFilters.all ? null : v;
-        expect(f.presetParam, expected);
-        expect(f.categoryParam, expected);
-        expect(f.cityParam, expected);
-      }
-    });
-
-    test('isRemote is true exactly when preset or city is remote', () {
-      for (final preset in values) {
-        for (final city in values) {
-          final f = JobNewsFilters(preset: preset, city: city);
-          expect(f.isRemote, preset == 'remote' || city == 'remote',
-              reason: 'preset=$preset city=$city');
+      for (final preset in JobNewsFilters.presets) {
+        for (final region in JobNewsFilters.regions) {
+          final f = JobNewsFilters(preset: preset, region: region);
+          expect(f.presetParam, preset == JobNewsFilters.all ? null : preset);
+          expect(f.regionParam, region == JobNewsFilters.all ? null : region);
+          expect(f.isRemote, preset == JobNewsFilters.remote);
+          expect(f.isActive,
+              preset != JobNewsFilters.all || region != JobNewsFilters.all);
         }
       }
     });
 
     test('equality is by value and copyWith changes only what it names', () {
-      const base = JobNewsFilters(preset: 'matched', city: 'riyadh');
-      expect(base, const JobNewsFilters(preset: 'matched', city: 'riyadh'));
+      const base = JobNewsFilters(preset: 'matched', region: 'eastern');
+      expect(base, const JobNewsFilters(preset: 'matched', region: 'eastern'));
       expect(base.hashCode,
-          const JobNewsFilters(preset: 'matched', city: 'riyadh').hashCode);
-      final changed = base.copyWith(category: 'tech');
+          const JobNewsFilters(preset: 'matched', region: 'eastern').hashCode);
+      final changed = base.copyWith(query: 'nurse');
       expect(changed.preset, 'matched');
-      expect(changed.city, 'riyadh');
-      expect(changed.category, 'tech');
+      expect(changed.region, 'eastern');
       expect(changed, isNot(base));
+      expect(changed.isActive, isTrue);
+    });
+  });
+
+  group('freshness and the hero', () {
+    final now = DateTime.utc(2026, 10, 29, 12);
+    JobNews job(int id, {Duration? age, String? applyUrl}) => JobNews.fromJson({
+          'id': id,
+          'title': 'Job $id',
+          'body': 'b',
+          'category': 'general',
+          if (age != null) 'published_at': now.subtract(age).toIso8601String(),
+          if (applyUrl != null) 'apply_method': 'url',
+          if (applyUrl != null) 'apply_url': applyUrl,
+        });
+
+    test('fresh means published within 48 hours, not in the future', () {
+      for (var h = -3; h < 80; h++) {
+        expect(
+            isFreshJob(job(1, age: Duration(hours: h)), now), h >= 0 && h < 48,
+            reason: 'age ${h}h');
+      }
+      expect(isFreshJob(job(1), now), isFalse, reason: 'unknown date');
+    });
+
+    test('the hero is the best-ranked eligible item within the top 3', () {
+      for (final eligibleAt in [0, 1, 2, 3, 4]) {
+        final items = [
+          for (var i = 0; i < 6; i++)
+            job(i + 1,
+                age: const Duration(hours: 1),
+                applyUrl: i == eligibleAt ? 'https://jadarat.sa/x' : null),
+        ];
+        final feed = JobNewsFeed(title: 't', items: items);
+        final hero = feed.featuredAt(now);
+        expect(hero?.id,
+            eligibleAt < JobNewsFeed.heroWindow ? eligibleAt + 1 : null);
+        final shown = [
+          if (hero != null) hero.id,
+          ...feed.latestAt(now).map((j) => j.id)
+        ];
+        expect(shown.toSet(), {for (var i = 1; i <= 6; i++) i});
+        expect(shown.length, 6);
+        expect(
+            feed.latestAt(now).map((j) => j.id).toList(),
+            [
+              for (var i = 1; i <= 6; i++)
+                if (i != hero?.id) i
+            ],
+            reason: 'the rest keep server order');
+      }
+    });
+
+    test(
+        'a hero needs a fresh first item with an allowed link; nothing is listed twice',
+        () {
+      final cases = <(Duration?, String?, bool)>[
+        (const Duration(hours: 2), 'https://jadarat.sa/x', true),
+        (const Duration(hours: 2), 'https://t.me/jobs/5', false),
+        (const Duration(hours: 2), null, false),
+        (const Duration(days: 3), 'https://jadarat.sa/x', false),
+        (null, 'https://jadarat.sa/x', false),
+      ];
+      for (final (age, url, expectHero) in cases) {
+        for (final count in [1, 2, 5]) {
+          final feed = JobNewsFeed(title: 't', items: [
+            job(1, age: age, applyUrl: url),
+            for (var i = 2; i <= count; i++)
+              job(i, age: const Duration(hours: 1)),
+          ]);
+          expect(feed.featuredAt(now) != null, expectHero, reason: '$age $url');
+          final shown = [
+            if (feed.featuredAt(now) case final f?) f.id,
+            ...feed.latestAt(now).map((j) => j.id),
+          ];
+          expect(shown, [for (var i = 1; i <= count; i++) i],
+              reason: 'every item exactly once, in order');
+        }
+      }
+    });
+  });
+  group('ApplyDestination guard', () {
+    JobNews job(Map<String, dynamic> extra) =>
+        JobNews.fromJson({'id': 1, 'title': 't', 'body': 'b', ...extra});
+
+    test('denied hosts, shorteners and search pages never become links', () {
+      for (final url in [
+        'https://t.me/jobs/1',
+        'https://www.t.me/jobs/1',
+        'https://lnkd.in/eAb12',
+        'https://clck.ru/Ab12',
+        'https://dlvr.it/Ab12',
+        'https://dlvr.it/Ab12?utm_source=tg',
+        'https://dlvr.it/Ab12Cd34Ef56Gh7',
+        'https://xyz.co/k9F2x',
+        'https://example.com/hashtag/jobs',
+        'https://example.com/search?x=1',
+        'https://example.com/?q=%23jobs',
+        'https://www.linkedin.com/in/someone',
+        'http://careers.example.com/jobs/1',
+        'https://10.0.0.1/jobs',
+        'https://user:pw@careers.example.com/jobs',
+        'https://careers.example.com:8443/jobs',
+      ]) {
+        for (final method in ['url', '']) {
+          expect(
+              ApplyDestination.of(
+                  job({'apply_method': method, 'apply_url': url})),
+              isA<ApplyNone>(),
+              reason: '$method $url');
+        }
+      }
+    });
+
+    test('real careers pages are not mistaken for shorteners', () {
+      for (final url in [
+        'https://qiwa.sa/login',
+        'https://hr.sabb.sa/Ab3k',
+        'https://acme.sa/about',
+        'https://herfy.com/careers',
+        'https://www.uap.sa/',
+        'https://jadarat.sa/ExploreJobs',
+        'https://forms.gle/2HHVtUTWwp8xhM2i9',
+        'https://acme.sa/jobs/12',
+      ]) {
+        expect(isApplyLinkAllowed(url), isTrue, reason: url);
+      }
+    });
+
+    test('the source post is never the fallback', () {
+      final d = ApplyDestination.of(
+          job({'url': 'https://careers.example.com/jobs/1'}));
+      expect(d, isA<ApplyNone>());
+    });
+
+    test('allowed links and emails resolve; method none wins over stray fields',
+        () {
+      expect(
+          ApplyDestination.of(job(
+              {'apply_method': 'url', 'apply_url': 'https://jadarat.sa/x'})),
+          isA<ApplyLink>());
+      expect(
+          ApplyDestination.of(
+              job({'apply_method': 'email', 'apply_email': 'HR@x.example'})),
+          isA<ApplyEmail>()
+              .having((e) => e.address, 'address', 'hr@x.example'));
+      expect(
+          ApplyDestination.of(job(
+              {'apply_method': 'none', 'apply_url': 'https://jadarat.sa/x'})),
+          isA<ApplyNone>());
     });
   });
 }

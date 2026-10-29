@@ -14,16 +14,9 @@ class JobNewsFiltersController extends Notifier<JobNewsFilters> {
   JobNewsFilters build() => const JobNewsFilters();
 
   void setPreset(String preset) => state = state.copyWith(preset: preset);
-  void setCategory(String category) =>
-      state = state.copyWith(category: category);
-  void setCity(String city) => state = state.copyWith(city: city);
+  void setRegion(String region) => state = state.copyWith(region: region);
   void setQuery(String query) => state = state.copyWith(query: query.trim());
   void clear() => state = const JobNewsFilters();
-
-  /// Toggles the "matched to my profile" preset from the profile banner.
-  void toggleMatched() => setPreset(
-        state.preset == 'matched' ? JobNewsFilters.all : 'matched',
-      );
 }
 
 /// Job-news feed for the current filters, keyed by UI language.
@@ -52,9 +45,8 @@ class JobNewsFeedController extends AsyncNotifier<JobNewsFeed> {
 
     final data = await ref.read(mobileContentServiceProvider).jobNews(
           english,
-          category: filters.categoryParam,
           preset: filters.presetParam,
-          city: filters.cityParam,
+          region: filters.regionParam,
           isRemote: filters.isRemote,
           query: filters.query,
           force: force,
