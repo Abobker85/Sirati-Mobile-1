@@ -3819,6 +3819,35 @@ class RemoteAppLocalizations extends AppLocalizations {
       _base.settingsDeleteConfirmWithPassword;
 
   @override
+  String get settingsDeleteConfirmWithProvider =>
+      remote.text('settingsDeleteConfirmWithProvider') ??
+      _base.settingsDeleteConfirmWithProvider;
+
+  @override
+  String settingsDeleteWithProvider(String provider) =>
+      remote.format(
+        'settingsDeleteWithProvider',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'provider': provider},
+        ),
+      ) ??
+      _base.settingsDeleteWithProvider(provider);
+
+  @override
+  String settingsDeleteProviderMismatch(String provider) =>
+      remote.format(
+        'settingsDeleteProviderMismatch',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'provider': provider},
+        ),
+      ) ??
+      _base.settingsDeleteProviderMismatch(provider);
+
+  @override
   String get settingsDeletePasswordRequired =>
       remote.text('settingsDeletePasswordRequired') ??
       _base.settingsDeletePasswordRequired;
@@ -5183,6 +5212,9 @@ class RemoteAppLocalizations extends AppLocalizations {
     'settingsDeleteFailed': [],
     'settingsDeleteWarning': [],
     'settingsDeleteConfirmWithPassword': [],
+    'settingsDeleteConfirmWithProvider': [],
+    'settingsDeleteWithProvider': ['String'],
+    'settingsDeleteProviderMismatch': ['String'],
     'settingsDeletePasswordRequired': [],
     'settingsDeleteMyAccount': [],
     'settingsDeleting': [],
@@ -6186,6 +6218,12 @@ class RemoteAppLocalizations extends AppLocalizations {
         'settingsDeleteWarning' => l.settingsDeleteWarning,
         'settingsDeleteConfirmWithPassword' =>
           l.settingsDeleteConfirmWithPassword,
+        'settingsDeleteConfirmWithProvider' =>
+          l.settingsDeleteConfirmWithProvider,
+        'settingsDeleteWithProvider' =>
+          l.settingsDeleteWithProvider(a[0] as String),
+        'settingsDeleteProviderMismatch' =>
+          l.settingsDeleteProviderMismatch(a[0] as String),
         'settingsDeletePasswordRequired' => l.settingsDeletePasswordRequired,
         'settingsDeleteMyAccount' => l.settingsDeleteMyAccount,
         'settingsDeleting' => l.settingsDeleting,

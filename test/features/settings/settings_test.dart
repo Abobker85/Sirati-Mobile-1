@@ -67,10 +67,10 @@ class _FakeGateway extends NotificationPrefsGateway {
 class _FakeAuth extends AuthApiService {
   Object? logoutError;
   int logouts = 0;
+  AuthUser user = const AuthUser(id: 1, name: 'Sara', email: 'sara@x.io');
 
   @override
-  Future<AuthUser?> me() async =>
-      const AuthUser(id: 1, name: 'Sara', email: 'sara@x.io');
+  Future<AuthUser?> me() async => user;
 
   @override
   Future<void> logout() async {
@@ -205,6 +205,32 @@ void main() {
       ));
       await tester.pumpAndSettle();
     }
+
+    testWidgets('change password is offered only to accounts with one',
+        (tester) async {
+      for (final (hasPassword, providers) in <(bool, List<String>)>[
+        (true, []),
+        (true, ['google']),
+        (false, ['google']),
+        (false, ['apple', 'google']),
+      ]) {
+        final auth = _FakeAuth()
+          ..user = AuthUser(
+            id: 1,
+            name: 'Sara',
+            email: 'sara@x.io',
+            hasPassword: hasPassword,
+            socialProviders: providers,
+          );
+        await tester.pumpWidget(app(auth));
+        await tester.pumpAndSettle();
+        expect(find.text('Change password'),
+            hasPassword ? findsOneWidget : findsNothing,
+            reason: 'hasPassword=$hasPassword $providers');
+        await tester.pumpWidget(const SizedBox());
+        SessionCache.instance.clear();
+      }
+    });
 
     for (final language in ['en', 'ar']) {
       for (final dark in [false, true]) {

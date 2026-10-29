@@ -36,6 +36,14 @@ class AuthUser {
   /// when the payload did not include it.
   final Map<String, dynamic>? subscription;
 
+  /// False for Google/Apple accounts that never set a password: they
+  /// confirm sensitive actions by signing in with the provider again.
+  /// Assumed true when the server doesn't say (older API).
+  final bool hasPassword;
+
+  /// Linked sign-in providers, e.g. `['apple', 'google']`.
+  final List<String> socialProviders;
+
   const AuthUser({
     required this.id,
     required this.name,
@@ -48,6 +56,8 @@ class AuthUser {
     this.jobTitle,
     this.emailVerified = false,
     this.subscription,
+    this.hasPassword = true,
+    this.socialProviders = const [],
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -67,6 +77,14 @@ class AuthUser {
       subscription: json['subscription'] is Map
           ? Map<String, dynamic>.from(json['subscription'] as Map)
           : null,
+      hasPassword:
+          json['has_password'] == null ? true : _asBool(json['has_password']),
+      socialProviders: json['social_providers'] is List
+          ? [
+              for (final p in json['social_providers'] as List)
+                if (p is String && p.isNotEmpty) p,
+            ]
+          : const [],
     );
   }
 
@@ -91,6 +109,8 @@ class AuthUser {
       jobTitle: jobTitle ?? this.jobTitle,
       emailVerified: emailVerified ?? this.emailVerified,
       subscription: subscription,
+      hasPassword: hasPassword,
+      socialProviders: socialProviders,
     );
   }
 

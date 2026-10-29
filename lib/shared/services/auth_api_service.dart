@@ -213,9 +213,23 @@ class AuthApiService {
   /// must leave the session — including push delivery — exactly as it was.
   /// Once the account is gone, every local cleanup step is attempted; any
   /// failures are reported separately from server deletion errors.
-  Future<void> deleteAccount({required String password}) async {
+  ///
+  /// Accounts with a password confirm with it; Google/Apple-only accounts
+  /// confirm with a fresh provider ID token ([provider], [idToken], and
+  /// Apple's raw [nonce]).
+  Future<void> deleteAccount({
+    String? password,
+    String? provider,
+    String? idToken,
+    String? nonce,
+  }) async {
+    assert((password != null) != (provider != null && idToken != null),
+        'confirm with a password or with a provider token, not both');
     await _apiClient.deleteJson('/auth/account', body: {
-      'password': password,
+      if (password != null) 'password': password,
+      if (provider != null) 'provider': provider,
+      if (idToken != null) 'id_token': idToken,
+      if (nonce != null) 'nonce': nonce,
     });
     // No FCM unregister call here: the server already deleted this account's
     // tokens, and calling the API with the now-revoked bearer would 401 and

@@ -5,17 +5,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/auth/application/provider_reauth.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/auth_session.dart';
+import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
+import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/password_visibility_toggle.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
+/// Providers this screen can re-authenticate with, in display order.
+const _reauthProviders = ['google', 'apple'];
+
 class DeleteAccountScreen extends ConsumerStatefulWidget {
-  const DeleteAccountScreen({super.key});
+  /// [user] defaults to the signed-in user from [SessionCache].
+  const DeleteAccountScreen({super.key, this.user});
+
+  final AuthUser? user;
 
   @override
   ConsumerState<DeleteAccountScreen> createState() =>
@@ -30,25 +40,28 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   bool _submitted = false;
   bool _confirming = false;
 
+  AuthUser? get _user => widget.user ?? SessionCache.instance.user.value;
+
+  /// Google/Apple-only accounts have no password to type: they confirm by
+  /// signing in with a linked provider again. Without one (unexpected) the
+  /// password form stays, and "Forgot password" can set one.
+  List<String> get _providers {
+    final user = _user;
+    if (user == null || user.hasPassword) return const [];
+    return [
+      for (final p in _reauthProviders)
+        if (user.socialProviders.contains(p)) p,
+    ];
+  }
+
   @override
   void dispose() {
     _passwordCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _delete() async {
-    // One flow at a time: keyboard Done + button must not stack two
-    // confirmation dialogs or two delete requests.
-    if (_loading || _confirming) return;
-    // Arabic keeps the server's own wording for a wrong password.
-    final en = AppLocale.isEnglish(context);
-    final l10n = AppLocalizations.of(context);
-    setState(() => _submitted = true);
-    if (!_formKey.currentState!.validate()) {
-      unawaited(HapticFeedback.selectionClick());
-      return;
-    }
-
+  /// The second, explicit "delete forever" confirmation.
+  Future<bool> _confirm(AppLocalizations l10n) async {
     _confirming = true;
     final second = await showDialog<bool>(
       context: context,
@@ -69,13 +82,71 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       ),
     );
     _confirming = false;
-    if (second != true || !mounted) return;
+    return second == true && mounted;
+  }
 
+  Future<void> _deleteWithPassword() async {
+    // One flow at a time: keyboard Done + button must not stack two
+    // confirmation dialogs or two delete requests.
+    if (_loading || _confirming) return;
+    final l10n = AppLocalizations.of(context);
+    setState(() => _submitted = true);
+    if (!_formKey.currentState!.validate()) {
+      unawaited(HapticFeedback.selectionClick());
+      return;
+    }
+    if (!await _confirm(l10n)) return;
+
+    await _run(
+      l10n,
+      (auth) async {
+        await auth.deleteAccount(password: _passwordCtrl.text);
+        return true;
+      },
+      errorField: 'password',
+      englishFieldError: l10n.settingsDeletePasswordIncorrect,
+    );
+  }
+
+  Future<void> _deleteWithProvider(String provider) async {
+    if (_loading || _confirming) return;
+    final l10n = AppLocalizations.of(context);
+    final label = providerLabel(provider);
+    if (!await _confirm(l10n)) return;
+
+    await _run(
+      l10n,
+      (auth) async {
+        final proof = await ref.read(providerReauthProvider).prove(provider);
+        if (proof == null) return false;
+        await auth.deleteAccount(
+          provider: proof.provider,
+          idToken: proof.idToken,
+          nonce: proof.nonce,
+        );
+        return true;
+      },
+      errorField: 'id_token',
+      englishFieldError: l10n.settingsDeleteProviderMismatch(label),
+      notConfigured: l10n.authSocialSignInNotConfigured(label),
+    );
+  }
+
+  /// Runs one delete attempt. [call] returns false when the user backed out
+  /// (e.g. closed the provider's sign-in sheet).
+  Future<void> _run(
+    AppLocalizations l10n,
+    Future<bool> Function(AuthApiService auth) call, {
+    required String errorField,
+    required String englishFieldError,
+    String? notConfigured,
+  }) async {
+    // Arabic keeps the server's own wording for a field error.
+    final en = AppLocale.isEnglish(context);
     setState(() => _loading = true);
     final auth = ref.read(authApiServiceProvider);
     try {
-      await auth.deleteAccount(password: _passwordCtrl.text);
-      if (!mounted) return;
+      if (!await call(auth) || !mounted) return;
       AppSnackBar.success(
         context,
         l10n.settingsAccountDeleted,
@@ -97,14 +168,15 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       ));
     } on ApiException catch (e) {
       if (!mounted) return;
-      final pwd = e.errors['password'];
-      if (pwd != null && pwd.isNotEmpty) {
-        AppSnackBar.error(
-          context,
-          en ? l10n.settingsDeletePasswordIncorrect : pwd.first,
-        );
+      final field = e.errors[errorField];
+      if (field != null && field.isNotEmpty) {
+        AppSnackBar.error(context, en ? englishFieldError : field.first);
       } else {
         AppSnackBar.fromException(context, e);
+      }
+    } on ProviderNotConfigured {
+      if (mounted) {
+        AppSnackBar.error(context, notConfigured ?? l10n.settingsDeleteFailed);
       }
     } catch (_) {
       if (mounted) {
@@ -121,6 +193,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final providers = _providers;
 
     return Scaffold(
       backgroundColor: context.sirati.background,
@@ -153,41 +226,61 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text(
-              l10n.settingsDeleteConfirmWithPassword,
-              textAlign: TextAlign.start,
-              style: AppTextStyles.titleSm(context.sirati)
-                  .copyWith(color: context.sirati.textSecondary),
-            ),
-            const SizedBox(height: 6),
-            AppTextFormField(
-              controller: _passwordCtrl,
-              autovalidateMode: _submitted
-                  ? AutovalidateMode.onUserInteraction
-                  : AutovalidateMode.disabled,
-              obscureText: _obscure,
-              textDirection: TextDirection.ltr,
-              textAlign: TextAlign.start,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => unawaited(_delete()),
-              hintText: '••••••••',
-              prefixIcon: const Icon(Icons.lock_outline_rounded),
-              suffixIcon: PasswordVisibilityToggle(
-                obscured: _obscure,
-                onToggle: () => setState(() => _obscure = !_obscure),
+            if (providers.isNotEmpty) ...[
+              Text(
+                l10n.settingsDeleteConfirmWithProvider,
+                textAlign: TextAlign.start,
+                style: AppTextStyles.titleSm(context.sirati)
+                    .copyWith(color: context.sirati.textSecondary),
               ),
-              validator: (v) => (v == null || v.isEmpty)
-                  ? l10n.settingsDeletePasswordRequired
-                  : null,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            SubmitButton(
-              label: l10n.settingsDeleteMyAccount,
-              loadingLabel: l10n.settingsDeleting,
-              isLoading: _loading,
-              icon: Icons.delete_forever_rounded,
-              onPressed: () => unawaited(_delete()),
-            ),
+              for (final provider in providers) ...[
+                const SizedBox(height: AppSpacing.md),
+                SubmitButton(
+                  label:
+                      l10n.settingsDeleteWithProvider(providerLabel(provider)),
+                  loadingLabel: l10n.settingsDeleting,
+                  isLoading: _loading,
+                  icon: Icons.delete_forever_rounded,
+                  onPressed: () => unawaited(_deleteWithProvider(provider)),
+                ),
+              ],
+            ] else ...[
+              Text(
+                l10n.settingsDeleteConfirmWithPassword,
+                textAlign: TextAlign.start,
+                style: AppTextStyles.titleSm(context.sirati)
+                    .copyWith(color: context.sirati.textSecondary),
+              ),
+              const SizedBox(height: 6),
+              AppTextFormField(
+                controller: _passwordCtrl,
+                autovalidateMode: _submitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                obscureText: _obscure,
+                textDirection: TextDirection.ltr,
+                textAlign: TextAlign.start,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => unawaited(_deleteWithPassword()),
+                hintText: '••••••••',
+                prefixIcon: const Icon(Icons.lock_outline_rounded),
+                suffixIcon: PasswordVisibilityToggle(
+                  obscured: _obscure,
+                  onToggle: () => setState(() => _obscure = !_obscure),
+                ),
+                validator: (v) => (v == null || v.isEmpty)
+                    ? l10n.settingsDeletePasswordRequired
+                    : null,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              SubmitButton(
+                label: l10n.settingsDeleteMyAccount,
+                loadingLabel: l10n.settingsDeleting,
+                isLoading: _loading,
+                icon: Icons.delete_forever_rounded,
+                onPressed: () => unawaited(_deleteWithPassword()),
+              ),
+            ],
           ],
         ),
       ),

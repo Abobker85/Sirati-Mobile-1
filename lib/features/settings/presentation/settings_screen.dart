@@ -183,12 +183,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: l10n.editProfile,
             onTap: () => unawaited(_editProfile()),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          AppListTile(
-            leadingIcon: Icons.lock_outline_rounded,
-            title: l10n.changePassword,
-            onTap: () => _push(const ChangePasswordScreen()),
-          ),
+          // Google/Apple-only accounts have no current password to change;
+          // "Forgot password" on the login screen can set one.
+          if (user?.hasPassword ?? true) ...[
+            const SizedBox(height: AppSpacing.sm),
+            AppListTile(
+              leadingIcon: Icons.lock_outline_rounded,
+              title: l10n.changePassword,
+              onTap: () => _push(const ChangePasswordScreen()),
+            ),
+          ],
           const SizedBox(height: AppSpacing.xl),
           SettingsSectionLabel(l10n.preferencesSection),
           const SizedBox(height: AppSpacing.sm),
