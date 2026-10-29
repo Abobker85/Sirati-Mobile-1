@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
@@ -39,6 +40,14 @@ class FcmTokenSource {
   Future<void> deleteToken() => _messaging.deleteToken();
 }
 
+/// Shows a local notification; replacing an existing one with the same [id].
+typedef LocalNotificationDisplay = void Function(
+  int id,
+  String? title,
+  String? body,
+  String payload,
+);
+
 /// Handles all push notification logic: permissions, token management,
 /// foreground display, tap handling, and backend registration.
 class NotificationService {
@@ -54,14 +63,20 @@ class NotificationService {
   void configureForTest({
     FcmTokenSource? tokens,
     ApiClient Function()? clientFactory,
+    LocalNotificationDisplay? localDisplay,
   }) {
     if (tokens != null) _tokens = tokens;
     if (clientFactory != null) _clientFactory = clientFactory;
+    if (localDisplay != null) _localDisplay = localDisplay;
     _registeringToken = false;
     _lastRegisteredToken = null;
     _lastRegisterAttemptAt = null;
   }
 
+  static const _installIdKey = 'sirati_push_install_id';
+
+  bool _initialized = false;
+  late LocalNotificationDisplay _localDisplay = _showLocalNotification;
   bool _registeringToken = false;
   String? _lastRegisteredToken;
   DateTime? _lastRegisterAttemptAt;
@@ -101,6 +116,10 @@ class NotificationService {
   ///
   /// Safe when Firebase is not configured (missing plist / google-services).
   Future<void> initialize() async {
+    // A second call would add duplicate stream listeners.
+    if (_initialized) return;
+    _initialized = true;
+
     try {
       // Create Android notification channel
       await _localNotifications
@@ -138,8 +157,7 @@ class NotificationService {
         sound: true,
       );
 
-      // Foreground messages → show local notification
-      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      FirebaseMessaging.onMessage.listen(handleForegroundMessage);
 
       // Notification tap when app was in background
       FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
@@ -289,7 +307,8 @@ class NotificationService {
   // Private
   // ---------------------------------------------------------------------------
 
-  void _handleForegroundMessage(RemoteMessage message) {
+  @visibleForTesting
+  void handleForegroundMessage(RemoteMessage message) {
     debugPrint('[FCM] Foreground message: ${message.messageId}');
     final notification = message.notification;
 
@@ -299,11 +318,35 @@ class NotificationService {
       return;
     }
 
-    // Display as local notification so the user sees it
-    _localNotifications.show(
-      message.hashCode,
+    // iOS already shows the banner via setForegroundNotificationPresentationOptions.
+    if (defaultTargetPlatform == TargetPlatform.iOS) return;
+
+    _localDisplay(
+      _localNotificationId(message),
       notification.title,
       notification.body,
+      jsonEncode(message.data),
+    );
+  }
+
+  /// Same server notification -> same id, so a repeat replaces, not stacks.
+  int _localNotificationId(RemoteMessage message) {
+    final serverId = int.tryParse('${message.data['notification_id'] ?? ''}');
+    if (serverId != null) return serverId & 0x7fffffff;
+    return (message.messageId ?? jsonEncode(message.data)).hashCode &
+        0x7fffffff;
+  }
+
+  void _showLocalNotification(
+    int id,
+    String? title,
+    String? body,
+    String payload,
+  ) {
+    _localNotifications.show(
+      id,
+      title,
+      body,
       NotificationDetails(
         android: AndroidNotificationDetails(
           _androidChannel.id,
@@ -319,7 +362,7 @@ class NotificationService {
           presentSound: true,
         ),
       ),
-      payload: jsonEncode(message.data),
+      payload: payload,
     );
   }
 
@@ -361,18 +404,21 @@ class NotificationService {
     registerToken();
   }
 
+  /// Random v4 UUID kept per install; AndroidDeviceInfo.id is the build id
+  /// and is shared by many phones, so it cannot identify a device.
   Future<String> _getDeviceId() async {
-    final deviceInfo = DeviceInfoPlugin();
-    try {
-      if (Platform.isAndroid) {
-        final info = await deviceInfo.androidInfo;
-        return info.id;
-      } else {
-        final info = await deviceInfo.iosInfo;
-        return info.identifierForVendor ?? 'unknown-ios';
-      }
-    } catch (e) {
-      return 'unknown';
-    }
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_installIdKey);
+    if (existing != null && existing.isNotEmpty) return existing;
+
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    final id = '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+    await prefs.setString(_installIdKey, id);
+    return id;
   }
 }

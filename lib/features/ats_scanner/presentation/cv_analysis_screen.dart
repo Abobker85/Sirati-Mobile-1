@@ -40,6 +40,7 @@ class CvAnalysisScreen extends ConsumerStatefulWidget {
     this.initialMarkdown,
     this.initialJobTitle,
     this.initialJobDescription,
+    this.initialSource = AnalysisCvSource.saved,
   });
 
   final AsyncValue<List<SavedAnalysisCv>>? savedCvs;
@@ -52,6 +53,9 @@ class CvAnalysisScreen extends ConsumerStatefulWidget {
   /// Prefill for the target job title / description (e.g. from the CV hub).
   final String? initialJobTitle;
   final String? initialJobDescription;
+
+  /// Source tab selected on open (the upload tile opens on [AnalysisCvSource.upload]).
+  final AnalysisCvSource initialSource;
 
   @override
   ConsumerState<CvAnalysisScreen> createState() => _CvAnalysisScreenState();
@@ -66,7 +70,7 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
   PlatformFile? _uploadedFile;
   bool _isLoading = false;
   bool _submitted = false;
-  AnalysisCvSource _source = AnalysisCvSource.saved;
+  late AnalysisCvSource _source = widget.initialSource;
   int? _selectedCvId;
 
   /// Bumped on each submit/cancel so a late AI response cannot apply.
@@ -116,8 +120,7 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
   AnalysisDraft get _draft => AnalysisDraft(
         jobTitle: _jobTitleController.text,
         jobDescription: _jobDescriptionController.text,
-        resumeText:
-            _source == AnalysisCvSource.saved ? _savedResumeText : '',
+        resumeText: _source == AnalysisCvSource.saved ? _savedResumeText : '',
         fileName:
             _source == AnalysisCvSource.upload ? _uploadedFile?.name : null,
         fileSize:

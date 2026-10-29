@@ -135,10 +135,9 @@ void main() {
       ));
       await tester.pumpAndSettle();
       final name = screen.runtimeType;
-      // Only the login screen offers them, and only while the flag is on.
+      // Both screens offer them, and only while the flag is on.
       final options = SocialSignInOptions.fromBuild();
-      final login = screen is LoginScreen;
-      Matcher shown(bool on) => on && login ? findsOneWidget : findsNothing;
+      Matcher shown(bool on) => on ? findsOneWidget : findsNothing;
       expect(find.text('Or continue with'), shown(options.any),
           reason: '$name');
       expect(find.text('Google'), shown(options.google), reason: '$name');

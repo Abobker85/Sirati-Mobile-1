@@ -13,6 +13,7 @@ import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/features/app/sirati_route_table.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
+import 'package:sirati/features/cv_builder/presentation/my_cvs/my_cvs_tools.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_tab.dart';
 import 'package:sirati/features/job_match/application/job_match_controller.dart';
@@ -174,7 +175,7 @@ void main() {
         ),
       ));
       await settle(tester);
-      await tapVisible(tester, find.byKey(const ValueKey('my-cvs-job-match')));
+      await tapVisible(tester, find.byKey(MyCvsToolsCard.targetKey));
       await settle(tester);
       await enterJob(tester, title: title, description: jd);
       await tapVisible(tester, find.byKey(JobMatchScreen.submitKey));

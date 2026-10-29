@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -34,6 +35,19 @@ class _CvAnalysisLoaderScreenState
     _future = ref.read(cvApiServiceProvider).getAnalysis(widget.analysisId);
   }
 
+  /// Fetches before swapping the future so the offline screen's automatic
+  /// retries don't flash the loader. While still offline the error is
+  /// rethrown to [OfflineView], which stays up and tries again later.
+  Future<void> _retry({required bool offline}) async {
+    final next = ref.read(cvApiServiceProvider).getAnalysis(widget.analysisId);
+    try {
+      await next;
+    } on ApiException catch (e) {
+      if (offline && e.type == ApiErrorType.network) rethrow;
+    } catch (_) {}
+    if (mounted) setState(() => _future = next);
+  }
+
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
@@ -44,21 +58,20 @@ class _CvAnalysisLoaderScreenState
           return AnalysisResultScreen(analysis: snapshot.data!);
         }
         if (snapshot.hasError) {
+          final error = snapshot.error;
+          final apiError = error is ApiException ? error : null;
           return Scaffold(
             backgroundColor: context.sirati.background,
             appBar: AppBar(),
             body: AppErrorState(
               english: english,
-              message: snapshot.error is ApiException
-                  ? (snapshot.error as ApiException).displayMessage
-                  : AppLocalizations.of(context).atsOpenAnalysisFailed,
-              onRetry: () {
-                setState(() {
-                  _future = ref
-                      .read(cvApiServiceProvider)
-                      .getAnalysis(widget.analysisId);
-                });
-              },
+              message: apiError?.displayMessage ??
+                  AppLocalizations.of(context).atsOpenAnalysisFailed,
+              exception: apiError,
+              onRetry: () => _retry(
+                offline: apiError?.type == ApiErrorType.network,
+              ),
+              onOpenSaved: () => Navigator.pushNamed(context, AppRoutes.myCvs),
             ),
           );
         }

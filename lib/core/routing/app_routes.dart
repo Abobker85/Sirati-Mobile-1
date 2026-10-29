@@ -18,6 +18,7 @@ class AppRoutes {
   static const gallery = '/gallery';
   static const cvBuilder = '/builder';
   static const jobMatch = '/job-match';
+  static const atsScan = '/scan';
   static const notFound = '/not-found';
 
   static const cvPrefix = '/cv/';
@@ -30,6 +31,15 @@ class AppRoutes {
       id != null ? '$cvBuilderPrefix$id' : cvBuilder;
   static String analysis(int id) => '$analysisPrefix$id';
   static String educationItem(int id) => '$educationItemPrefix$id';
+}
+
+/// Arguments for [AppRoutes.atsScan]: a saved CV to scan, or the upload
+/// source preselected.
+class AtsScanArgs {
+  const AtsScanArgs({this.cvId, this.upload = false});
+
+  final int? cvId;
+  final bool upload;
 }
 
 class ParsedRoute {

@@ -1,9 +1,14 @@
+import 'package:sirati/shared/navigation/dashboard_tab.dart';
 import 'package:sirati/shared/navigation/notification_target.dart';
+
+/// What a notification is about; drives the inbox icon and filter chips.
+enum NotificationCategory { cv, jobs, analysis, learning, general }
 
 /// One row of the in-app notification inbox.
 class NotificationItem {
   const NotificationItem({
     required this.id,
+    this.type = '',
     required this.title,
     required this.body,
     required this.isRead,
@@ -18,6 +23,7 @@ class NotificationItem {
     final id = json['id'];
     return NotificationItem(
       id: id is int ? id : int.tryParse(id?.toString() ?? ''),
+      type: _text(json['type']),
       title: _text(json['title']),
       body: _text(json['body']),
       isRead: json['is_read'] == true,
@@ -29,6 +35,9 @@ class NotificationItem {
   }
 
   final int? id;
+
+  /// Server kind such as `cv_ready`, `job_match` or a free-text campaign type.
+  final String type;
   final String title;
   final String body;
   final bool isRead;
@@ -45,6 +54,37 @@ class NotificationItem {
 
   NotificationTarget get target => resolveNotificationTarget(routePayload);
 
+  /// A CV generation that did not finish; shown with an error tile.
+  bool get isFailure => type == 'cv_failed';
+
+  /// Category from the server type; unknown types (admin campaigns) fall back
+  /// to where the notification opens.
+  NotificationCategory get category {
+    switch (type.toLowerCase()) {
+      case 'cv_ready' || 'cv_failed' || 'cv':
+        return NotificationCategory.cv;
+      case 'job_match' || 'job':
+        return NotificationCategory.jobs;
+      case 'analysis':
+        return NotificationCategory.analysis;
+      case 'education' || 'tip':
+        return NotificationCategory.learning;
+    }
+    if (actionUrl.isEmpty) return NotificationCategory.general;
+    return switch (target) {
+      OpenGeneratedCv() ||
+      OpenTab(tab: DashboardTab.myCvs) ||
+      OpenScreen(screen: NotificationScreen.cvGenerator) =>
+        NotificationCategory.cv,
+      OpenTab(tab: DashboardTab.jobNews) => NotificationCategory.jobs,
+      OpenScreen(screen: NotificationScreen.cvAnalysis) ||
+      OpenScreen(screen: NotificationScreen.history) =>
+        NotificationCategory.analysis,
+      OpenTab(tab: DashboardTab.education) => NotificationCategory.learning,
+      _ => NotificationCategory.general,
+    };
+  }
+
   /// Payload in the push-notification shape, so taps reuse the push router.
   Map<String, dynamic> get routePayload => {
         'action_type': actionType,
@@ -53,6 +93,7 @@ class NotificationItem {
 
   NotificationItem asRead() => NotificationItem(
         id: id,
+        type: type,
         title: title,
         body: body,
         isRead: true,

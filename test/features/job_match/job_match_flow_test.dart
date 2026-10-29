@@ -9,6 +9,7 @@ import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/app/sirati_route_table.dart';
+import 'package:sirati/features/cv_builder/presentation/my_cvs/my_cvs_tools.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/features/job_match/domain/job_match_input.dart';
 import 'package:sirati/features/job_match/presentation/job_match_result_screen.dart';
@@ -897,7 +898,7 @@ void main() {
       ));
       await settle(tester);
 
-      await tapVisible(tester, find.byKey(const ValueKey('my-cvs-job-match')));
+      await tapVisible(tester, find.byKey(MyCvsToolsCard.targetKey));
       await settle(tester);
       expect(find.byType(JobMatchScreen), findsOneWidget);
     });

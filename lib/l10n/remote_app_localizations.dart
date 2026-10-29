@@ -2142,6 +2142,38 @@ class RemoteAppLocalizations extends AppLocalizations {
       _base.sharedOfflineShowingSaved;
 
   @override
+  String get sharedOfflineTitle =>
+      remote.text('sharedOfflineTitle') ?? _base.sharedOfflineTitle;
+
+  @override
+  String get sharedOfflineBody =>
+      remote.text('sharedOfflineBody') ?? _base.sharedOfflineBody;
+
+  @override
+  String get sharedOfflineWaiting =>
+      remote.text('sharedOfflineWaiting') ?? _base.sharedOfflineWaiting;
+
+  @override
+  String get sharedOfflineChecking =>
+      remote.text('sharedOfflineChecking') ?? _base.sharedOfflineChecking;
+
+  @override
+  String get sharedOfflineTipsTitle =>
+      remote.text('sharedOfflineTipsTitle') ?? _base.sharedOfflineTipsTitle;
+
+  @override
+  String get sharedOfflineTipAirplane =>
+      remote.text('sharedOfflineTipAirplane') ?? _base.sharedOfflineTipAirplane;
+
+  @override
+  String get sharedOfflineTipSignal =>
+      remote.text('sharedOfflineTipSignal') ?? _base.sharedOfflineTipSignal;
+
+  @override
+  String get sharedOfflineOpenSaved =>
+      remote.text('sharedOfflineOpenSaved') ?? _base.sharedOfflineOpenSaved;
+
+  @override
   String get sharedNoDataAvailable =>
       remote.text('sharedNoDataAvailable') ?? _base.sharedNoDataAvailable;
 
@@ -3432,6 +3464,35 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('authSessionExpired') ?? _base.authSessionExpired;
 
   @override
+  String get authSessionExpiredBadge =>
+      remote.text('authSessionExpiredBadge') ?? _base.authSessionExpiredBadge;
+
+  @override
+  String get authSessionExpiredChip =>
+      remote.text('authSessionExpiredChip') ?? _base.authSessionExpiredChip;
+
+  @override
+  String get authSessionExpiredTitle =>
+      remote.text('authSessionExpiredTitle') ?? _base.authSessionExpiredTitle;
+
+  @override
+  String get authSessionExpiredBody =>
+      remote.text('authSessionExpiredBody') ?? _base.authSessionExpiredBody;
+
+  @override
+  String get authSessionExpiredDataSafe =>
+      remote.text('authSessionExpiredDataSafe') ??
+      _base.authSessionExpiredDataSafe;
+
+  @override
+  String get authSessionExpiredSignIn =>
+      remote.text('authSessionExpiredSignIn') ?? _base.authSessionExpiredSignIn;
+
+  @override
+  String get authSessionExpiredHelp =>
+      remote.text('authSessionExpiredHelp') ?? _base.authSessionExpiredHelp;
+
+  @override
   String get authLoginUnexpectedError =>
       remote.text('authLoginUnexpectedError') ?? _base.authLoginUnexpectedError;
 
@@ -4360,6 +4421,244 @@ class RemoteAppLocalizations extends AppLocalizations {
       ) ??
       _base.atsBenchmark(category);
 
+  @override
+  String get myCvsHeaderSubtitle =>
+      remote.text('myCvsHeaderSubtitle') ?? _base.myCvsHeaderSubtitle;
+
+  @override
+  String get myCvsToolsTitle =>
+      remote.text('myCvsToolsTitle') ?? _base.myCvsToolsTitle;
+
+  @override
+  String get myCvsToolCreateTitle =>
+      remote.text('myCvsToolCreateTitle') ?? _base.myCvsToolCreateTitle;
+
+  @override
+  String get myCvsToolCreateBody =>
+      remote.text('myCvsToolCreateBody') ?? _base.myCvsToolCreateBody;
+
+  @override
+  String get myCvsToolScanTitle =>
+      remote.text('myCvsToolScanTitle') ?? _base.myCvsToolScanTitle;
+
+  @override
+  String get myCvsToolScanBody =>
+      remote.text('myCvsToolScanBody') ?? _base.myCvsToolScanBody;
+
+  @override
+  String get myCvsToolUploadTitle =>
+      remote.text('myCvsToolUploadTitle') ?? _base.myCvsToolUploadTitle;
+
+  @override
+  String get myCvsToolUploadBody =>
+      remote.text('myCvsToolUploadBody') ?? _base.myCvsToolUploadBody;
+
+  @override
+  String get myCvsToolTargetTitle =>
+      remote.text('myCvsToolTargetTitle') ?? _base.myCvsToolTargetTitle;
+
+  @override
+  String get myCvsToolTargetBody =>
+      remote.text('myCvsToolTargetBody') ?? _base.myCvsToolTargetBody;
+
+  @override
+  String get myCvsListTitle =>
+      remote.text('myCvsListTitle') ?? _base.myCvsListTitle;
+
+  @override
+  String get myCvsEmptyBody =>
+      remote.text('myCvsEmptyBody') ?? _base.myCvsEmptyBody;
+
+  @override
+  String get myCvsEmptyCreate =>
+      remote.text('myCvsEmptyCreate') ?? _base.myCvsEmptyCreate;
+
+  @override
+  String get myCvsEmptyUpload =>
+      remote.text('myCvsEmptyUpload') ?? _base.myCvsEmptyUpload;
+
+  @override
+  String get cvCardOpen => remote.text('cvCardOpen') ?? _base.cvCardOpen;
+
+  @override
+  String get cvCardMore => remote.text('cvCardMore') ?? _base.cvCardMore;
+
+  @override
+  String cvCardScore(int score) =>
+      remote.format(
+        'cvCardScore',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'score': score},
+        ),
+      ) ??
+      _base.cvCardScore(score);
+
+  @override
+  String get cvCardNotScanned =>
+      remote.text('cvCardNotScanned') ?? _base.cvCardNotScanned;
+
+  @override
+  String get cvCardScanNow =>
+      remote.text('cvCardScanNow') ?? _base.cvCardScanNow;
+
+  @override
+  String get cvCardNeedsWork =>
+      remote.text('cvCardNeedsWork') ?? _base.cvCardNeedsWork;
+
+  @override
+  String get settingsNotificationsFilterAll =>
+      remote.text('settingsNotificationsFilterAll') ??
+      _base.settingsNotificationsFilterAll;
+
+  @override
+  String get settingsNotificationsCategoryCv =>
+      remote.text('settingsNotificationsCategoryCv') ??
+      _base.settingsNotificationsCategoryCv;
+
+  @override
+  String get settingsNotificationsCategoryJobs =>
+      remote.text('settingsNotificationsCategoryJobs') ??
+      _base.settingsNotificationsCategoryJobs;
+
+  @override
+  String get settingsNotificationsCategoryAnalysis =>
+      remote.text('settingsNotificationsCategoryAnalysis') ??
+      _base.settingsNotificationsCategoryAnalysis;
+
+  @override
+  String get settingsNotificationsCategoryLearning =>
+      remote.text('settingsNotificationsCategoryLearning') ??
+      _base.settingsNotificationsCategoryLearning;
+
+  @override
+  String get settingsNotificationsCategoryGeneral =>
+      remote.text('settingsNotificationsCategoryGeneral') ??
+      _base.settingsNotificationsCategoryGeneral;
+
+  @override
+  String get settingsNotificationsToday =>
+      remote.text('settingsNotificationsToday') ??
+      _base.settingsNotificationsToday;
+
+  @override
+  String get settingsNotificationsYesterday =>
+      remote.text('settingsNotificationsYesterday') ??
+      _base.settingsNotificationsYesterday;
+
+  @override
+  String get settingsNotificationsThisWeek =>
+      remote.text('settingsNotificationsThisWeek') ??
+      _base.settingsNotificationsThisWeek;
+
+  @override
+  String get settingsNotificationsEarlier =>
+      remote.text('settingsNotificationsEarlier') ??
+      _base.settingsNotificationsEarlier;
+
+  @override
+  String settingsNotificationsNewCount(int count) =>
+      remote.format(
+        'settingsNotificationsNewCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.settingsNotificationsNewCount(count);
+
+  @override
+  String settingsNotificationsCount(int count) =>
+      remote.format(
+        'settingsNotificationsCount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.settingsNotificationsCount(count);
+
+  @override
+  String get settingsNotificationsViewCv =>
+      remote.text('settingsNotificationsViewCv') ??
+      _base.settingsNotificationsViewCv;
+
+  @override
+  String get settingsNotificationsScanCta =>
+      remote.text('settingsNotificationsScanCta') ??
+      _base.settingsNotificationsScanCta;
+
+  @override
+  String get settingsNotificationsFilterEmpty =>
+      remote.text('settingsNotificationsFilterEmpty') ??
+      _base.settingsNotificationsFilterEmpty;
+
+  @override
+  String get settingsNotificationsPreviewTitle =>
+      remote.text('settingsNotificationsPreviewTitle') ??
+      _base.settingsNotificationsPreviewTitle;
+
+  @override
+  String get settingsNotificationsPreviewCvTitle =>
+      remote.text('settingsNotificationsPreviewCvTitle') ??
+      _base.settingsNotificationsPreviewCvTitle;
+
+  @override
+  String get settingsNotificationsPreviewCvBody =>
+      remote.text('settingsNotificationsPreviewCvBody') ??
+      _base.settingsNotificationsPreviewCvBody;
+
+  @override
+  String get settingsNotificationsPreviewJobsTitle =>
+      remote.text('settingsNotificationsPreviewJobsTitle') ??
+      _base.settingsNotificationsPreviewJobsTitle;
+
+  @override
+  String get settingsNotificationsPreviewJobsBody =>
+      remote.text('settingsNotificationsPreviewJobsBody') ??
+      _base.settingsNotificationsPreviewJobsBody;
+
+  @override
+  String get settingsNotificationsPreviewAnalysisTitle =>
+      remote.text('settingsNotificationsPreviewAnalysisTitle') ??
+      _base.settingsNotificationsPreviewAnalysisTitle;
+
+  @override
+  String get settingsNotificationsPreviewAnalysisBody =>
+      remote.text('settingsNotificationsPreviewAnalysisBody') ??
+      _base.settingsNotificationsPreviewAnalysisBody;
+
+  @override
+  String get settingsNotificationsCreateCvCta =>
+      remote.text('settingsNotificationsCreateCvCta') ??
+      _base.settingsNotificationsCreateCvCta;
+
+  @override
+  String get authSignInRequiredTitle =>
+      remote.text('authSignInRequiredTitle') ?? _base.authSignInRequiredTitle;
+
+  @override
+  String get authSignInRequiredSubtitle =>
+      remote.text('authSignInRequiredSubtitle') ??
+      _base.authSignInRequiredSubtitle;
+
+  @override
+  String get authSignInRequiredCardTitle =>
+      remote.text('authSignInRequiredCardTitle') ??
+      _base.authSignInRequiredCardTitle;
+
+  @override
+  String get authSignInRequiredBody =>
+      remote.text('authSignInRequiredBody') ?? _base.authSignInRequiredBody;
+
+  @override
+  String get authSignInRequiredBrowseJobs =>
+      remote.text('authSignInRequiredBrowseJobs') ??
+      _base.authSignInRequiredBrowseJobs;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -4846,6 +5145,14 @@ class RemoteAppLocalizations extends AppLocalizations {
     'sharedPasswordStrengthStrong': [],
     'sharedPasswordStrengthSemantics': ['String'],
     'sharedOfflineShowingSaved': [],
+    'sharedOfflineTitle': [],
+    'sharedOfflineBody': [],
+    'sharedOfflineWaiting': [],
+    'sharedOfflineChecking': [],
+    'sharedOfflineTipsTitle': [],
+    'sharedOfflineTipAirplane': [],
+    'sharedOfflineTipSignal': [],
+    'sharedOfflineOpenSaved': [],
     'sharedNoDataAvailable': [],
     'sharedSomethingWentWrong': [],
     'sharedAiImprovingWording': [],
@@ -5131,6 +5438,13 @@ class RemoteAppLocalizations extends AppLocalizations {
     'authCreatingAccount': [],
     'authContinueWithoutAccount': [],
     'authSessionExpired': [],
+    'authSessionExpiredBadge': [],
+    'authSessionExpiredChip': [],
+    'authSessionExpiredTitle': [],
+    'authSessionExpiredBody': [],
+    'authSessionExpiredDataSafe': [],
+    'authSessionExpiredSignIn': [],
+    'authSessionExpiredHelp': [],
     'authLoginUnexpectedError': [],
     'authSocialSignInSoon': ['String'],
     'authSocialSignInNotConfigured': ['String'],
@@ -5324,6 +5638,54 @@ class RemoteAppLocalizations extends AppLocalizations {
     'atsBandWeak': [],
     'jobsMatchScore': ['int'],
     'atsBenchmark': ['String'],
+    'myCvsHeaderSubtitle': [],
+    'myCvsToolsTitle': [],
+    'myCvsToolCreateTitle': [],
+    'myCvsToolCreateBody': [],
+    'myCvsToolScanTitle': [],
+    'myCvsToolScanBody': [],
+    'myCvsToolUploadTitle': [],
+    'myCvsToolUploadBody': [],
+    'myCvsToolTargetTitle': [],
+    'myCvsToolTargetBody': [],
+    'myCvsListTitle': [],
+    'myCvsEmptyBody': [],
+    'myCvsEmptyCreate': [],
+    'myCvsEmptyUpload': [],
+    'cvCardOpen': [],
+    'cvCardMore': [],
+    'cvCardScore': ['int'],
+    'cvCardNotScanned': [],
+    'cvCardScanNow': [],
+    'cvCardNeedsWork': [],
+    'settingsNotificationsFilterAll': [],
+    'settingsNotificationsCategoryCv': [],
+    'settingsNotificationsCategoryJobs': [],
+    'settingsNotificationsCategoryAnalysis': [],
+    'settingsNotificationsCategoryLearning': [],
+    'settingsNotificationsCategoryGeneral': [],
+    'settingsNotificationsToday': [],
+    'settingsNotificationsYesterday': [],
+    'settingsNotificationsThisWeek': [],
+    'settingsNotificationsEarlier': [],
+    'settingsNotificationsNewCount': ['int'],
+    'settingsNotificationsCount': ['int'],
+    'settingsNotificationsViewCv': [],
+    'settingsNotificationsScanCta': [],
+    'settingsNotificationsFilterEmpty': [],
+    'settingsNotificationsPreviewTitle': [],
+    'settingsNotificationsPreviewCvTitle': [],
+    'settingsNotificationsPreviewCvBody': [],
+    'settingsNotificationsPreviewJobsTitle': [],
+    'settingsNotificationsPreviewJobsBody': [],
+    'settingsNotificationsPreviewAnalysisTitle': [],
+    'settingsNotificationsPreviewAnalysisBody': [],
+    'settingsNotificationsCreateCvCta': [],
+    'authSignInRequiredTitle': [],
+    'authSignInRequiredSubtitle': [],
+    'authSignInRequiredCardTitle': [],
+    'authSignInRequiredBody': [],
+    'authSignInRequiredBrowseJobs': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -5827,6 +6189,14 @@ class RemoteAppLocalizations extends AppLocalizations {
         'sharedPasswordStrengthSemantics' =>
           l.sharedPasswordStrengthSemantics(a[0] as String),
         'sharedOfflineShowingSaved' => l.sharedOfflineShowingSaved,
+        'sharedOfflineTitle' => l.sharedOfflineTitle,
+        'sharedOfflineBody' => l.sharedOfflineBody,
+        'sharedOfflineWaiting' => l.sharedOfflineWaiting,
+        'sharedOfflineChecking' => l.sharedOfflineChecking,
+        'sharedOfflineTipsTitle' => l.sharedOfflineTipsTitle,
+        'sharedOfflineTipAirplane' => l.sharedOfflineTipAirplane,
+        'sharedOfflineTipSignal' => l.sharedOfflineTipSignal,
+        'sharedOfflineOpenSaved' => l.sharedOfflineOpenSaved,
         'sharedNoDataAvailable' => l.sharedNoDataAvailable,
         'sharedSomethingWentWrong' => l.sharedSomethingWentWrong,
         'sharedAiImprovingWording' => l.sharedAiImprovingWording,
@@ -6129,6 +6499,13 @@ class RemoteAppLocalizations extends AppLocalizations {
         'authCreatingAccount' => l.authCreatingAccount,
         'authContinueWithoutAccount' => l.authContinueWithoutAccount,
         'authSessionExpired' => l.authSessionExpired,
+        'authSessionExpiredBadge' => l.authSessionExpiredBadge,
+        'authSessionExpiredChip' => l.authSessionExpiredChip,
+        'authSessionExpiredTitle' => l.authSessionExpiredTitle,
+        'authSessionExpiredBody' => l.authSessionExpiredBody,
+        'authSessionExpiredDataSafe' => l.authSessionExpiredDataSafe,
+        'authSessionExpiredSignIn' => l.authSessionExpiredSignIn,
+        'authSessionExpiredHelp' => l.authSessionExpiredHelp,
         'authLoginUnexpectedError' => l.authLoginUnexpectedError,
         'authSocialSignInSoon' => l.authSocialSignInSoon(a[0] as String),
         'authSocialSignInNotConfigured' =>
@@ -6334,6 +6711,69 @@ class RemoteAppLocalizations extends AppLocalizations {
         'atsBandWeak' => l.atsBandWeak,
         'jobsMatchScore' => l.jobsMatchScore(a[0] as int),
         'atsBenchmark' => l.atsBenchmark(a[0] as String),
+        'myCvsHeaderSubtitle' => l.myCvsHeaderSubtitle,
+        'myCvsToolsTitle' => l.myCvsToolsTitle,
+        'myCvsToolCreateTitle' => l.myCvsToolCreateTitle,
+        'myCvsToolCreateBody' => l.myCvsToolCreateBody,
+        'myCvsToolScanTitle' => l.myCvsToolScanTitle,
+        'myCvsToolScanBody' => l.myCvsToolScanBody,
+        'myCvsToolUploadTitle' => l.myCvsToolUploadTitle,
+        'myCvsToolUploadBody' => l.myCvsToolUploadBody,
+        'myCvsToolTargetTitle' => l.myCvsToolTargetTitle,
+        'myCvsToolTargetBody' => l.myCvsToolTargetBody,
+        'myCvsListTitle' => l.myCvsListTitle,
+        'myCvsEmptyBody' => l.myCvsEmptyBody,
+        'myCvsEmptyCreate' => l.myCvsEmptyCreate,
+        'myCvsEmptyUpload' => l.myCvsEmptyUpload,
+        'cvCardOpen' => l.cvCardOpen,
+        'cvCardMore' => l.cvCardMore,
+        'cvCardScore' => l.cvCardScore(a[0] as int),
+        'cvCardNotScanned' => l.cvCardNotScanned,
+        'cvCardScanNow' => l.cvCardScanNow,
+        'cvCardNeedsWork' => l.cvCardNeedsWork,
+        'settingsNotificationsFilterAll' => l.settingsNotificationsFilterAll,
+        'settingsNotificationsCategoryCv' => l.settingsNotificationsCategoryCv,
+        'settingsNotificationsCategoryJobs' =>
+          l.settingsNotificationsCategoryJobs,
+        'settingsNotificationsCategoryAnalysis' =>
+          l.settingsNotificationsCategoryAnalysis,
+        'settingsNotificationsCategoryLearning' =>
+          l.settingsNotificationsCategoryLearning,
+        'settingsNotificationsCategoryGeneral' =>
+          l.settingsNotificationsCategoryGeneral,
+        'settingsNotificationsToday' => l.settingsNotificationsToday,
+        'settingsNotificationsYesterday' => l.settingsNotificationsYesterday,
+        'settingsNotificationsThisWeek' => l.settingsNotificationsThisWeek,
+        'settingsNotificationsEarlier' => l.settingsNotificationsEarlier,
+        'settingsNotificationsNewCount' =>
+          l.settingsNotificationsNewCount(a[0] as int),
+        'settingsNotificationsCount' =>
+          l.settingsNotificationsCount(a[0] as int),
+        'settingsNotificationsViewCv' => l.settingsNotificationsViewCv,
+        'settingsNotificationsScanCta' => l.settingsNotificationsScanCta,
+        'settingsNotificationsFilterEmpty' =>
+          l.settingsNotificationsFilterEmpty,
+        'settingsNotificationsPreviewTitle' =>
+          l.settingsNotificationsPreviewTitle,
+        'settingsNotificationsPreviewCvTitle' =>
+          l.settingsNotificationsPreviewCvTitle,
+        'settingsNotificationsPreviewCvBody' =>
+          l.settingsNotificationsPreviewCvBody,
+        'settingsNotificationsPreviewJobsTitle' =>
+          l.settingsNotificationsPreviewJobsTitle,
+        'settingsNotificationsPreviewJobsBody' =>
+          l.settingsNotificationsPreviewJobsBody,
+        'settingsNotificationsPreviewAnalysisTitle' =>
+          l.settingsNotificationsPreviewAnalysisTitle,
+        'settingsNotificationsPreviewAnalysisBody' =>
+          l.settingsNotificationsPreviewAnalysisBody,
+        'settingsNotificationsCreateCvCta' =>
+          l.settingsNotificationsCreateCvCta,
+        'authSignInRequiredTitle' => l.authSignInRequiredTitle,
+        'authSignInRequiredSubtitle' => l.authSignInRequiredSubtitle,
+        'authSignInRequiredCardTitle' => l.authSignInRequiredCardTitle,
+        'authSignInRequiredBody' => l.authSignInRequiredBody,
+        'authSignInRequiredBrowseJobs' => l.authSignInRequiredBrowseJobs,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

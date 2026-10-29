@@ -14,31 +14,45 @@ String cvUpdatedText(CvListItem item, {required bool english}) {
   return AppFormat.digits(item.updatedLabel, english: english);
 }
 
-/// One saved CV with edit / download / delete actions.
+/// One saved CV: title, date, ATS score (or a scan prompt), an open button
+/// and a "⋯" menu with edit / download / delete.
 class CvDocumentCard extends StatelessWidget {
   const CvDocumentCard({
     super.key,
     required this.item,
+    required this.onOpen,
     required this.onEdit,
     required this.onDelete,
     required this.onDownload,
+    required this.onScan,
   });
 
+  /// Below this the card shows the "needs important fixes" warning.
+  static const lowScore = 60;
+
+  static ValueKey<String> menuKey(int? id) => ValueKey('cv-card-menu-$id');
+  static ValueKey<String> openKey(int? id) => ValueKey('cv-card-open-$id');
+  static ValueKey<String> scanKey(int? id) => ValueKey('cv-card-scan-$id');
+
   final CvListItem item;
+  final VoidCallback onOpen;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onDownload;
+  final VoidCallback onScan;
 
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
     final colors = context.sirati;
+    final l = AppLocalizations.of(context);
     final updated = cvUpdatedText(item, english: english);
     final editable = item.id != null;
+    final score = item.scoreTotal;
 
     return PressScale(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 8, 14),
         decoration: BoxDecoration(
           color: colors.surface,
           borderRadius: BorderRadius.circular(16),
@@ -51,9 +65,7 @@ class CvDocumentCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _DocumentIcon(
-                  color: item.isDraft ? colors.textHint : colors.primary,
-                ),
+                _DocumentIcon(muted: item.isDraft),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -61,7 +73,7 @@ class CvDocumentCard extends StatelessWidget {
                     children: [
                       Text(
                         item.title.isEmpty
-                            ? AppLocalizations.of(context).cvUntitled
+                            ? l.cvUntitled
                             : LocaleFormat.mixedTitle(
                                 LocaleFormat.fixSampleTitle(item.title),
                                 english: english,
@@ -76,79 +88,105 @@ class CvDocumentCard extends StatelessWidget {
                         Text(
                           updated,
                           textAlign: TextAlign.start,
-                          style: AppTextStyles.bodySm(colors).copyWith(
-                            color: colors.textHint,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                      if (item.badge.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: _StatusBadge(
-                            label: LocaleFormat.atsBadge(
-                              item.badge,
-                              english: english,
-                            ),
-                            isDraft: item.isDraft,
-                          ),
+                          style: AppTextStyles.bodySm(colors),
                         ),
                       ],
                     ],
                   ),
                 ),
+                _CardMenu(
+                  key: menuKey(item.id),
+                  editable: editable,
+                  canDownload: item.canDownload,
+                  onEdit: onEdit,
+                  onDownload: onDownload,
+                  onDelete: onDelete,
+                ),
               ],
             ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: editable ? onEdit : null,
-                    icon: const Icon(Icons.edit_outlined, size: 16),
-                    label: Text(AppLocalizations.of(context).cvCardEdit),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colors.primaryLight,
-                      // primaryInk / primaryLight is the gated chip pair.
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: Divider(height: 24, color: colors.border),
+            ),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: score != null
+                        ? Row(
+                            children: [
+                              // The line beside it already reads the score.
+                              ExcludeSemantics(
+                                child: _ScoreRing(score: score),
+                              ),
+                              const SizedBox(width: 10),
+                              Flexible(
+                                child: Text(
+                                  l.cvCardScore(score),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.of(
+                                    context,
+                                    AppTypography.labelLg,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Wrap(
+                            spacing: 4,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              _NotScannedChip(label: l.cvCardNotScanned),
+                              if (editable)
+                                TextButton(
+                                  key: scanKey(item.id),
+                                  onPressed: onScan,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: colors.primaryInk,
+                                    minimumSize: const Size(0, 48),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                    textStyle: AppTypography.of(
+                                      context,
+                                      AppTypography.labelLg,
+                                    ).copyWith(
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                  child: Text(l.cvCardScanNow),
+                                ),
+                            ],
+                          ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    key: openKey(item.id),
+                    onPressed: editable ? onOpen : null,
+                    style: OutlinedButton.styleFrom(
                       foregroundColor: colors.primaryInk,
-                      elevation: 0,
-                      minimumSize: const Size(0, 40),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      // From the type tokens, not a bare TextStyle: a style
-                      // without the app font fell back to the system font.
+                      side: BorderSide(color: colors.primaryInk, width: 1.5),
+                      minimumSize: const Size(76, 48),
+                      shape: const StadiumBorder(),
                       textStyle: AppTypography.of(
                         context,
                         AppTypography.labelLg,
-                      ).copyWith(fontSize: 13),
+                      ),
                     ),
+                    child: Text(l.cvCardOpen),
                   ),
-                ),
-                const SizedBox(width: 8),
-                _CircleActionButton(
-                  icon: Icons.download_rounded,
-                  label: AppLocalizations.of(context).cvCardDownload,
-                  iconColor:
-                      item.canDownload ? colors.primaryInk : colors.textHint,
-                  borderColor:
-                      item.canDownload ? colors.borderStrong : colors.border,
-                  onTap: item.canDownload ? onDownload : null,
-                ),
-                const SizedBox(width: 8),
-                _CircleActionButton(
-                  icon: Icons.delete_outline_rounded,
-                  label: AppLocalizations.of(context).deleteItem,
-                  iconColor: colors.red,
-                  borderColor: colors.red.withValues(alpha: .18),
-                  fillColor: colors.redLight,
-                  onTap: editable ? onDelete : null,
-                ),
-              ],
+                ],
+              ),
             ),
+            if (score != null && score < lowScore) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 8),
+                child: _NeedsWorkBanner(label: l.cvCardNeedsWork),
+              ),
+            ],
           ],
         ),
       ),
@@ -157,29 +195,137 @@ class CvDocumentCard extends StatelessWidget {
 }
 
 class _DocumentIcon extends StatelessWidget {
-  const _DocumentIcon({required this.color});
+  const _DocumentIcon({required this.muted});
 
-  final Color color;
+  /// Drafts still generating get a neutral tile.
+  final bool muted;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sirati;
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: .12),
+        color: muted ? colors.surfaceLow : colors.primaryLight,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Center(child: SiratiMark(size: 22)),
+      child: Icon(
+        Icons.description_outlined,
+        color: muted ? colors.textSecondary : colors.primaryInk,
+      ),
     );
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.label, required this.isDraft});
+enum _CardAction { edit, download, delete }
+
+class _CardMenu extends StatelessWidget {
+  const _CardMenu({
+    super.key,
+    required this.editable,
+    required this.canDownload,
+    required this.onEdit,
+    required this.onDownload,
+    required this.onDelete,
+  });
+
+  final bool editable;
+  final bool canDownload;
+  final VoidCallback onEdit;
+  final VoidCallback onDownload;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sirati;
+    final l = AppLocalizations.of(context);
+
+    PopupMenuItem<_CardAction> entry(
+      _CardAction value,
+      IconData icon,
+      String label, {
+      required bool enabled,
+      Color? color,
+    }) =>
+        PopupMenuItem(
+          value: value,
+          enabled: enabled,
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: color ?? colors.textPrimary),
+              const SizedBox(width: 12),
+              Text(label, style: TextStyle(color: color)),
+            ],
+          ),
+        );
+
+    return PopupMenuButton<_CardAction>(
+      tooltip: l.cvCardMore,
+      icon: Icon(Icons.more_horiz_rounded, color: colors.textSecondary),
+      onSelected: (action) => switch (action) {
+        _CardAction.edit => onEdit(),
+        _CardAction.download => onDownload(),
+        _CardAction.delete => onDelete(),
+      },
+      itemBuilder: (_) => [
+        entry(_CardAction.edit, Icons.edit_outlined, l.cvCardEdit,
+            enabled: editable),
+        entry(_CardAction.download, Icons.download_rounded, l.cvCardDownload,
+            enabled: canDownload),
+        entry(_CardAction.delete, Icons.delete_outline_rounded, l.deleteItem,
+            enabled: editable, color: colors.error),
+      ],
+    );
+  }
+}
+
+/// Circular ATS score; the arc colour follows the score band, the number
+/// stays on body ink so it holds AA in both themes.
+class _ScoreRing extends StatelessWidget {
+  const _ScoreRing({required this.score});
+
+  final int score;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.sirati;
+    final arc = score >= 70
+        ? colors.success
+        : score >= CvDocumentCard.lowScore
+            ? colors.warning
+            : colors.error;
+    return SizedBox.square(
+      dimension: 44,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CircularProgressIndicator(
+            value: score / 100,
+            strokeWidth: 4,
+            strokeCap: StrokeCap.round,
+            color: arc,
+            backgroundColor: colors.surfaceLow,
+          ),
+          Center(
+            child: Text(
+              AppFormat.digits(
+                '$score',
+                english: AppLocale.isEnglish(context),
+              ),
+              style: AppTypography.of(context, AppTypography.labelLg),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotScannedChip extends StatelessWidget {
+  const _NotScannedChip({required this.label});
 
   final String label;
-  final bool isDraft;
 
   @override
   Widget build(BuildContext context) {
@@ -187,115 +333,69 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isDraft ? colors.surfaceLow : colors.primaryLight,
+        color: colors.surfaceLow,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: isDraft ? colors.textSecondary : colors.primaryInk,
-        ),
-      ),
-    );
-  }
-}
-
-class _CircleActionButton extends StatelessWidget {
-  const _CircleActionButton({
-    required this.icon,
-    required this.label,
-    required this.iconColor,
-    required this.borderColor,
-    this.fillColor,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color iconColor;
-  final Color borderColor;
-  final Color? fillColor;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: label,
-      child: Semantics(
-        label: label,
-        button: true,
-        enabled: onTap != null,
-        child: SizedBox(
-          width: 48,
-          height: 48,
-          child: Material(
-            color: fillColor ?? context.sirati.surface,
-            shape:
-                CircleBorder(side: BorderSide(color: borderColor, width: 1.5)),
-            clipBehavior: Clip.antiAlias,
-            child: InkResponse(
-              onTap: onTap,
-              containedInkWell: true,
-              highlightShape: BoxShape.circle,
-              radius: 24,
-              child: Icon(icon, color: iconColor, size: 18),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.radio_button_unchecked_rounded,
+            size: 12,
+            color: colors.textSecondary,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.of(
+                context,
+                AppTypography.labelMd,
+                color: colors.textSecondary,
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-/// Outlined "Create New CV" call to action below the list.
-class CreateCvCard extends StatelessWidget {
-  const CreateCvCard({super.key, required this.english, required this.onTap});
+class _NeedsWorkBanner extends StatelessWidget {
+  const _NeedsWorkBanner({required this.label});
 
-  final bool english;
-  final VoidCallback onTap;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.sirati;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: colors.surface,
-            border: Border.all(
-              color: colors.primary.withValues(alpha: .35),
-              width: 1.5,
-            ),
-            borderRadius: BorderRadius.circular(16),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colors.warningLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            size: 18,
+            color: colors.onWarningContainer,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add_rounded, size: 18, color: colors.primary),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  AppLocalizations.of(context).cvCreateNew,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.35,
-                    fontWeight: FontWeight.w700,
-                    // `primary` is a fill colour; text on surface uses ink.
-                    color: colors.primaryInk,
-                  ),
-                ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.of(
+                context,
+                AppTypography.bodySm,
+                color: colors.onWarningContainer,
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

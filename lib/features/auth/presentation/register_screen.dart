@@ -16,16 +16,15 @@ import 'package:sirati/features/auth/domain/registration_rules.dart';
 import 'package:sirati/features/auth/presentation/email_verification_screen.dart';
 import 'package:sirati/features/auth/presentation/login_screen.dart';
 import 'package:sirati/features/auth/presentation/register/register_widgets.dart';
+import 'package:sirati/features/auth/presentation/social_sign_in_section.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/services/job_titles_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
-import 'package:sirati/shared/widgets/auth_form_constraint.dart';
-import 'package:sirati/shared/widgets/directional_icon.dart';
+import 'package:sirati/shared/widgets/auth_hero_page.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/job_title_picker_field.dart';
-import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/password_strength_meter.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
@@ -191,240 +190,220 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: context.sirati.background,
-      body: SafeArea(
-        child: AuthFormConstraint(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 14, 24, 28),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: _handleBack,
-                        tooltip:
-                            MaterialLocalizations.of(context).backButtonTooltip,
-                        icon: DirectionalIcon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: context.sirati.textPrimary,
-                          size: 18,
-                        ),
-                      ),
-                      const Spacer(),
-                      const LanguageToggle(),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const RegisterHero(),
-                  const SizedBox(height: 22),
-                  if (_showFormBanner)
-                    AppFormErrorBanner(
-                      message: l10n.authFixHighlightedFields,
-                      onDismiss: () => setState(() => _showFormBanner = false),
-                    ),
-                  FieldLabel(text: l10n.authFullNameLabel),
-                  AppTextFormField(
-                    controller: _nameController,
-                    showSuccessWhenValid: true,
-                    successMessage: looksGood,
-                    autovalidateMode: _autovalidate,
-                    textAlign: TextAlign.start,
-                    textCapitalization: TextCapitalization.words,
-                    textInputAction: TextInputAction.next,
-                    onFieldSubmitted: next,
-                    hintText: l10n.authFullNameHint,
-                    prefixIcon: const Icon(Icons.person_outline_rounded),
-                    validator: _validator(
-                      RegistrationRules.name,
-                      requiredText: l10n.authNameRequired,
-                      max: RegistrationRules.nameMax,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  FieldLabel(text: l10n.authEmailAddressLabel),
-                  AppTextFormField(
-                    controller: _emailController,
-                    showSuccessWhenValid: true,
-                    successMessage: looksGood,
-                    autovalidateMode: _autovalidate,
-                    keyboardType: TextInputType.emailAddress,
-                    textDirection: TextDirection.ltr,
-                    textAlign: TextAlign.start,
-                    textInputAction: TextInputAction.next,
-                    onFieldSubmitted: next,
-                    hintText: 'example@mail.com',
-                    prefixIcon: const Icon(Icons.mail_outline_rounded),
-                    validator: _validator(
-                      RegistrationRules.email,
-                      requiredText: l10n.authEmailRequired,
-                      max: RegistrationRules.emailMax,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  FieldLabel(text: l10n.authPhoneLabel),
-                  AppTextFormField(
-                    controller: _phoneController,
-                    showSuccessWhenValid: true,
-                    successMessage: looksGood,
-                    autovalidateMode: _autovalidate,
-                    keyboardType: TextInputType.phone,
-                    textDirection: TextDirection.ltr,
-                    textAlign: TextAlign.start,
-                    textInputAction: TextInputAction.next,
-                    onFieldSubmitted: next,
-                    hintText: '05XXXXXXXX',
-                    prefixIcon: const Icon(Icons.phone_iphone_outlined),
-                    validator: _validator(
-                      RegistrationRules.phone,
-                      requiredText: l10n.authPhoneRequired,
-                      max: RegistrationRules.phoneMax,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  FieldLabel(text: l10n.authLocationLabel),
-                  AppTextFormField(
-                    controller: _locationController,
-                    showSuccessWhenValid: true,
-                    successMessage: looksGood,
-                    autovalidateMode: _autovalidate,
-                    textAlign: TextAlign.start,
-                    textInputAction: TextInputAction.next,
-                    onFieldSubmitted: next,
-                    hintText: l10n.authLocationHint,
-                    prefixIcon: const Icon(Icons.place_outlined),
-                    validator: _validator(
-                      RegistrationRules.location,
-                      requiredText: l10n.authLocationRequired,
-                      max: RegistrationRules.locationMax,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  FieldLabel(
-                    text: l10n.authJobTitleOptionalLabel,
-                  ),
-                  JobTitlePickerField(
-                    titles: jobTitles.value ?? const [],
-                    value: _selectedJobTitle,
-                    english: en,
-                    loading: jobTitles.isLoading && !jobTitles.hasValue,
-                    submitted: _submitted,
-                    errorText: otherError == null
-                        ? null
-                        : fieldErrorText(
-                            otherError,
-                            l10n: l10n,
-                            requiredText: otherRequired,
-                            max: RegistrationRules.jobTitleOtherMax,
-                          ),
-                    onChanged: (title) => setState(() {
-                      _selectedJobTitle = title;
-                      if (title?.isOther != true) {
-                        _jobTitleOtherController.clear();
-                      }
-                    }),
-                    onManualEntry: (text) => setState(() {
-                      _jobTitleOtherController.text = text;
-                    }),
-                  ),
-                  if (_isOther) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    FieldLabel(
-                      text: l10n.authJobTitleOtherLabel,
-                    ),
-                    AppTextFormField(
-                      controller: _jobTitleOtherController,
-                      showSuccessWhenValid: true,
-                      successMessage: looksGood,
-                      autovalidateMode: _autovalidate,
-                      textAlign: TextAlign.start,
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: next,
-                      maxLength: RegistrationRules.jobTitleOtherMax,
-                      hintText: l10n.authJobTitleOtherHint,
-                      prefixIcon: const Icon(Icons.edit_outlined),
-                      validator: _validator(
-                        (v) => RegistrationRules.jobTitleOther(
-                          v,
-                          isOther: _isOther,
-                        ),
+      body: AuthHeroPage(
+        size: AuthHeroSize.compact,
+        title: l10n.authRegisterHeroTitle,
+        subtitle: l10n.authRegisterHeroSubtitle,
+        onBack: _handleBack,
+        card: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_showFormBanner)
+                AppFormErrorBanner(
+                  message: l10n.authFixHighlightedFields,
+                  onDismiss: () => setState(() => _showFormBanner = false),
+                ),
+              FieldLabel(text: l10n.authFullNameLabel),
+              AppTextFormField(
+                controller: _nameController,
+                showSuccessWhenValid: true,
+                successMessage: looksGood,
+                autovalidateMode: _autovalidate,
+                textAlign: TextAlign.start,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: next,
+                hintText: l10n.authFullNameHint,
+                prefixIcon: const Icon(Icons.person_outline_rounded),
+                validator: _validator(
+                  RegistrationRules.name,
+                  requiredText: l10n.authNameRequired,
+                  max: RegistrationRules.nameMax,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              FieldLabel(text: l10n.authEmailAddressLabel),
+              AppTextFormField(
+                controller: _emailController,
+                showSuccessWhenValid: true,
+                successMessage: looksGood,
+                autovalidateMode: _autovalidate,
+                keyboardType: TextInputType.emailAddress,
+                textDirection: TextDirection.ltr,
+                textAlign: TextAlign.start,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: next,
+                hintText: 'example@mail.com',
+                prefixIcon: const Icon(Icons.mail_outline_rounded),
+                validator: _validator(
+                  RegistrationRules.email,
+                  requiredText: l10n.authEmailRequired,
+                  max: RegistrationRules.emailMax,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              FieldLabel(text: l10n.authPhoneLabel),
+              AppTextFormField(
+                controller: _phoneController,
+                showSuccessWhenValid: true,
+                successMessage: looksGood,
+                autovalidateMode: _autovalidate,
+                keyboardType: TextInputType.phone,
+                textDirection: TextDirection.ltr,
+                textAlign: TextAlign.start,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: next,
+                hintText: '05XXXXXXXX',
+                prefixIcon: const Icon(Icons.phone_iphone_outlined),
+                validator: _validator(
+                  RegistrationRules.phone,
+                  requiredText: l10n.authPhoneRequired,
+                  max: RegistrationRules.phoneMax,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              FieldLabel(text: l10n.authLocationLabel),
+              AppTextFormField(
+                controller: _locationController,
+                showSuccessWhenValid: true,
+                successMessage: looksGood,
+                autovalidateMode: _autovalidate,
+                textAlign: TextAlign.start,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: next,
+                hintText: l10n.authLocationHint,
+                prefixIcon: const Icon(Icons.place_outlined),
+                validator: _validator(
+                  RegistrationRules.location,
+                  requiredText: l10n.authLocationRequired,
+                  max: RegistrationRules.locationMax,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              FieldLabel(
+                text: l10n.authJobTitleOptionalLabel,
+              ),
+              JobTitlePickerField(
+                titles: jobTitles.value ?? const [],
+                value: _selectedJobTitle,
+                english: en,
+                loading: jobTitles.isLoading && !jobTitles.hasValue,
+                submitted: _submitted,
+                errorText: otherError == null
+                    ? null
+                    : fieldErrorText(
+                        otherError,
+                        l10n: l10n,
                         requiredText: otherRequired,
                         max: RegistrationRules.jobTitleOtherMax,
                       ),
+                onChanged: (title) => setState(() {
+                  _selectedJobTitle = title;
+                  if (title?.isOther != true) {
+                    _jobTitleOtherController.clear();
+                  }
+                }),
+                onManualEntry: (text) => setState(() {
+                  _jobTitleOtherController.text = text;
+                }),
+              ),
+              if (_isOther) ...[
+                const SizedBox(height: AppSpacing.md),
+                FieldLabel(
+                  text: l10n.authJobTitleOtherLabel,
+                ),
+                AppTextFormField(
+                  controller: _jobTitleOtherController,
+                  showSuccessWhenValid: true,
+                  successMessage: looksGood,
+                  autovalidateMode: _autovalidate,
+                  textAlign: TextAlign.start,
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: next,
+                  maxLength: RegistrationRules.jobTitleOtherMax,
+                  hintText: l10n.authJobTitleOtherHint,
+                  prefixIcon: const Icon(Icons.edit_outlined),
+                  validator: _validator(
+                    (v) => RegistrationRules.jobTitleOther(
+                      v,
+                      isOther: _isOther,
                     ),
-                  ],
-                  const SizedBox(height: AppSpacing.md),
-                  FieldLabel(text: l10n.authPasswordLabel),
-                  AppTextFormField(
-                    controller: _passwordController,
-                    showSuccessWhenValid: true,
-                    autovalidateMode: _autovalidate,
-                    obscureText: _obscurePassword,
-                    textDirection: TextDirection.ltr,
-                    textAlign: TextAlign.start,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => unawaited(_register()),
-                    hintText: '••••••••',
-                    prefixIcon: const Icon(Icons.lock_outline_rounded),
-                    suffixIcon: IconButton(
-                      tooltip: _obscurePassword
-                          ? l10n.showPassword
-                          : l10n.hidePassword,
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: context.sirati.textHint,
-                      ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                    validator: _validator(
-                      RegistrationRules.password,
-                      requiredText: l10n.authPasswordRequired,
-                    ),
+                    requiredText: otherRequired,
+                    max: RegistrationRules.jobTitleOtherMax,
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  PasswordStrengthMeter(
-                    password: _passwordController.text,
-                    english: en,
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              FieldLabel(text: l10n.authPasswordLabel),
+              AppTextFormField(
+                controller: _passwordController,
+                showSuccessWhenValid: true,
+                autovalidateMode: _autovalidate,
+                obscureText: _obscurePassword,
+                textDirection: TextDirection.ltr,
+                textAlign: TextAlign.start,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => unawaited(_register()),
+                hintText: '••••••••',
+                prefixIcon: const Icon(Icons.lock_outline_rounded),
+                suffixIcon: IconButton(
+                  tooltip:
+                      _obscurePassword ? l10n.showPassword : l10n.hidePassword,
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    color: context.sirati.textHint,
                   ),
-                  const SizedBox(height: 14),
-                  TermsAgreement(
-                    agreed: _agreedToTerms,
-                    onChanged: (value) =>
-                        setState(() => _agreedToTerms = value),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  SubmitButton(
-                    label: l10n.authCreateAccountButton,
-                    loadingLabel: l10n.authCreatingAccount,
-                    isLoading: isLoading,
-                    icon: Icons.arrow_forward_rounded,
-                    onPressed: () => unawaited(_register()),
-                  ),
-                  const SizedBox(height: 6),
-                  SignInPrompt(onTap: _goToLogin),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    // Preview mode: Home becomes the root route so Back
-                    // doesn't return to the auth screens.
-                    onPressed: () => AppRouter.openAfterAuth(context),
-                    child: Text(
-                      l10n.authContinueWithoutAccount,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: context.sirati.textHint,
-                      ),
-                    ),
-                  ),
-                ],
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                ),
+                onChanged: (_) => setState(() {}),
+                validator: _validator(
+                  RegistrationRules.password,
+                  requiredText: l10n.authPasswordRequired,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              PasswordStrengthMeter(
+                password: _passwordController.text,
+                english: en,
+              ),
+              const SizedBox(height: 14),
+              TermsAgreement(
+                agreed: _agreedToTerms,
+                onChanged: (value) => setState(() => _agreedToTerms = value),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              SubmitButton(
+                label: l10n.authCreateAccountButton,
+                loadingLabel: l10n.authCreatingAccount,
+                isLoading: isLoading,
+                onPressed: () => unawaited(_register()),
+              ),
+              const SocialSignInSection(),
+            ],
+          ),
+        ),
+        below: [
+          const SizedBox(height: AppSpacing.md),
+          SignInPrompt(onTap: _goToLogin),
+          const SizedBox(height: AppSpacing.xxs),
+          TextButton(
+            // Preview mode: Home becomes the root route so Back
+            // doesn't return to the auth screens.
+            onPressed: () => AppRouter.openAfterAuth(context),
+            child: Text(
+              l10n.authContinueWithoutAccount,
+              style: TextStyle(
+                fontSize: 12.5,
+                color: context.sirati.textHint,
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

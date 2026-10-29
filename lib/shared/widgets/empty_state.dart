@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/offline_view.dart';
 
 /// Centered empty-state panel with optional primary action.
 ///
@@ -114,7 +117,7 @@ class AppEmptyState extends StatelessWidget {
 ///
 /// If an [errorType] (or [exception]) is provided, the icon, background,
 /// and default title auto-adapt to the error class:
-/// * `network` → wifi_off
+/// * `network` → full-screen [OfflineView] (auto-retries; [onOpenSaved])
 /// * `timeout` → timer_off
 /// * `auth` → lock
 /// * `notFound` → search_off
@@ -123,11 +126,17 @@ class AppEmptyState extends StatelessWidget {
 class AppErrorState extends StatelessWidget {
   final String message;
   final bool english;
-  final VoidCallback? onRetry;
+
+  /// May return a future: [OfflineView] shows a checking state until it
+  /// completes and treats a thrown error as "still offline".
+  final FutureOr<void> Function()? onRetry;
   final String? title;
   final bool scrollable;
   final ApiErrorType? errorType;
   final ApiException? exception;
+
+  /// Offline only: opens content saved on the device.
+  final VoidCallback? onOpenSaved;
 
   const AppErrorState({
     super.key,
@@ -138,6 +147,7 @@ class AppErrorState extends StatelessWidget {
     this.scrollable = true,
     this.errorType,
     this.exception,
+    this.onOpenSaved,
   });
 
   @override
@@ -145,6 +155,9 @@ class AppErrorState extends StatelessWidget {
     // Prefer explicit type / exception; fall back to unknown (not network)
     // so unwired call sites show a neutral error glyph instead of wifi.
     final type = errorType ?? exception?.type ?? ApiErrorType.unknown;
+    if (type == ApiErrorType.network) {
+      return OfflineView(onRetry: onRetry, onOpenSaved: onOpenSaved);
+    }
     final icon = _iconFor(type);
     final l10n = AppLocalizations.of(context);
     final defaultTitle = _titleFor(type, l10n);
@@ -154,7 +167,9 @@ class AppErrorState extends StatelessWidget {
       title: title ?? defaultTitle,
       subtitle: _clientSubtitleFor(type, l10n) ?? message,
       actionLabel: onRetry == null ? null : l10n.retry,
-      onAction: onRetry,
+      onAction: onRetry == null
+          ? null
+          : () => unawaited(Future.sync(onRetry!).catchError((Object _) {})),
       actionIcon: Icons.refresh_rounded,
       iconBackground: context.sirati.errorLight,
       iconColor: context.sirati.error,

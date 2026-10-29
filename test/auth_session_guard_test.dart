@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -10,7 +12,12 @@ import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
 import 'package:sirati/features/auth/data/auth_session_guard.dart';
+import 'package:sirati/features/auth/presentation/login_screen.dart';
+import 'package:sirati/features/auth/presentation/session_expired_screen.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
+import 'package:sirati/shared/services/local_session_cleanup.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +60,77 @@ void main() {
 
     await expectLater(pending, throwsA(isA<ApiException>()));
     expect(store.value, 'token-b');
+  });
+
+  group('where an expired session lands', () {
+    Future<GlobalKey<NavigatorState>> pumpSignedIn(
+      WidgetTester tester,
+      MemoryAuthTokenStore store,
+    ) async {
+      final key = GlobalKey<NavigatorState>();
+      AuthSessionGuard.resetForTest(
+        store: store,
+        localSessionCleanup: LocalSessionCleanup(
+          clearToken: store.clearToken,
+          clearSession: () {},
+          clearCaches: () {},
+          wipeStorage: () {},
+          forgetDevice: () {},
+          clearAnalytics: () {},
+        ),
+      );
+      AuthSessionGuard.install(navigatorKey: key, store: store);
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          navigatorKey: key,
+          theme: AppTheme.light,
+          locale: const Locale('ar'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: const Scaffold(body: Text('signed-in home')),
+        ),
+      ));
+      return key;
+    }
+
+    for (final showMessage in [true, false]) {
+      testWidgets('showMessage=$showMessage clears the session and the stack',
+          (tester) async {
+        final store = MemoryAuthTokenStore('expired');
+        final key = await pumpSignedIn(tester, store);
+
+        await tester.runAsync(() => AuthSessionGuard.handleAuthExpired(
+              requestToken: 'expired',
+              showMessage: showMessage,
+            ));
+        await tester.pumpAndSettle();
+
+        expect(store.value, isNull);
+        expect(find.text('signed-in home'), findsNothing);
+        expect(key.currentState!.canPop(), isFalse);
+        expect(
+          find.byType(SessionExpiredScreen),
+          showMessage ? findsOneWidget : findsNothing,
+        );
+        expect(
+          find.byType(LoginScreen),
+          showMessage ? findsNothing : findsOneWidget,
+        );
+      });
+    }
+
+    testWidgets('a burst of 401s shows the screen once', (tester) async {
+      final store = MemoryAuthTokenStore('expired');
+      await pumpSignedIn(tester, store);
+
+      await tester.runAsync(() => Future.wait([
+            for (var i = 0; i < 4; i++)
+              AuthSessionGuard.handleAuthExpired(requestToken: 'expired'),
+          ]));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SessionExpiredScreen), findsOneWidget);
+    });
   });
 
   test('failed account deletion keeps the local session', () async {

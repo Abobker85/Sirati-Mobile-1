@@ -6,8 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sirati/core/storage/auth_token_store.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
+import 'package:sirati/features/auth/data/auth_session_guard.dart';
 import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/features/dashboard/presentation/education_detail_screen.dart';
@@ -708,6 +710,9 @@ void main() {
     testWidgets(
         '12. HomeScreen renders tool labels with AA contrast',
         (tester) async {
+      // A signed-in Home: guests see the sign-in invitation instead.
+      AuthSessionGuard.resetForTest(store: MemoryAuthTokenStore('session'));
+      addTearDown(AuthSessionGuard.resetForTest);
       await http.runWithClient(() async {
         await tester.pumpWidget(
           darkSubject(const HomeScreen()),

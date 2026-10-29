@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/core/network/analytics_service.dart';
+import 'package:sirati/core/storage/guest_session.dart';
 import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
+import 'package:sirati/features/auth/data/auth_session_guard.dart';
+import 'package:sirati/features/auth/presentation/sign_in_required_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_loader_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
@@ -25,8 +28,12 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
-/// Authenticated shell: bottom-navigation tabs, Android back handling, and
+/// App shell: bottom-navigation tabs, Android back handling, and
 /// push-notification routing.
+///
+/// Guests ("Continue without account") get Jobs and Education; Home and
+/// My CVs show [SignInRequiredView] instead, so they never call endpoints
+/// that need an account.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.initialIndex = 0});
 
@@ -40,19 +47,50 @@ class _HomeScreenState extends State<HomeScreen> {
   late DashboardTab _tab = DashboardTab.fromIndex(widget.initialIndex);
   DateTime? _lastBackAtRoot;
 
+  /// Null until the token store answers; then whether nobody is signed in.
+  /// If the store can't be read the shell behaves as signed in and the
+  /// server stays the judge.
+  bool? _guest;
+
   @override
   void initState() {
     super.initState();
     NotificationService.instance.onNotificationTap = _onNotificationTap;
+    _logTab(_tab);
+    unawaited(_resolveSession());
+  }
+
+  Future<void> _resolveSession() async {
+    String? token;
+    try {
+      token = await AuthSessionGuard.tokenStore.readToken();
+    } catch (_) {
+      token = 'unknown';
+    }
+    if (!mounted) return;
+    if (token == null || token.trim().isEmpty) {
+      GuestSession.active.value = true;
+      setState(() {
+        _guest = true;
+        // Land guests on what they can use.
+        if (_tab == DashboardTab.home) _tab = DashboardTab.jobNews;
+      });
+      _logTab(_tab);
+      return;
+    }
+    GuestSession.active.value = false;
+    setState(() => _guest = false);
     // Touch server activity so quiet/recent-activity policy stays accurate.
     unawaited(
       NotificationEngagementService.instance.reportActivity(event: 'app_open'),
     );
-    _logTab(_tab);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_activatePushAfterVisible());
     });
   }
+
+  static bool _needsAccount(DashboardTab tab) =>
+      tab == DashboardTab.home || tab == DashboardTab.myCvs;
 
   @override
   void dispose() {
@@ -155,13 +193,24 @@ class _HomeScreenState extends State<HomeScreen> {
           // Built from the enum so page order always matches the nav bar.
           children: [
             for (final tab in DashboardTab.values)
-              switch (tab) {
-                DashboardTab.home => DashboardHomeTab(onNavigate: _setTab),
-                DashboardTab.myCvs => const MyCvsScreen(),
-                DashboardTab.jobNews =>
-                  JobNewsScreen(isActive: _tab == DashboardTab.jobNews),
-                DashboardTab.education => const EducationScreen(),
-              },
+              // Account tabs wait for the session check, so a guest never
+              // calls their endpoints.
+              if (_needsAccount(tab) && _guest == null)
+                const SizedBox.shrink()
+              else if (_needsAccount(tab) && _guest == true)
+                SignInRequiredView(
+                  key: ValueKey('sign-in-required-${tab.name}'),
+                  onBrowseJobs: () => _setTab(DashboardTab.jobNews),
+                  showBack: false,
+                )
+              else
+                switch (tab) {
+                  DashboardTab.home => DashboardHomeTab(onNavigate: _setTab),
+                  DashboardTab.myCvs => const MyCvsScreen(),
+                  DashboardTab.jobNews =>
+                    JobNewsScreen(isActive: _tab == DashboardTab.jobNews),
+                  DashboardTab.education => const EducationScreen(),
+                },
           ],
         ),
         bottomNavigationBar: DashboardNavigationBar(
