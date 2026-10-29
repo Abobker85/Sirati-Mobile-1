@@ -168,6 +168,12 @@ class AppContrast {
         background: c.brandSurfaceDeep,
         minRatio: 4.5,
       ),
+      ContrastPair(
+        name: 'onBrandSurface / inkSurface',
+        foreground: c.onBrandSurface,
+        background: c.inkSurface,
+        minRatio: 4.5,
+      ),
     ];
   }
 }

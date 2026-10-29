@@ -55,6 +55,15 @@ class DashboardNavigationBar extends StatelessWidget {
   final DashboardTab current;
   final ValueChanged<DashboardTab> onChanged;
 
+  /// Display order from the approved board: Home, My CVs, Jobs, then
+  /// Learning (still "soon") last.
+  static const order = [
+    DashboardTab.home,
+    DashboardTab.myCvs,
+    DashboardTab.jobNews,
+    DashboardTab.education,
+  ];
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -70,8 +79,8 @@ class DashboardNavigationBar extends StatelessWidget {
           top: false,
           child: BottomNavigationBar(
             type: BottomNavigationBarType.fixed,
-            currentIndex: current.index,
-            onTap: (i) => onChanged(DashboardTab.fromIndex(i)),
+            currentIndex: order.indexOf(current),
+            onTap: (i) => onChanged(order[i]),
             backgroundColor: colors.surface,
             selectedItemColor: colors.primaryDark,
             unselectedItemColor: colors.textPrimary,
@@ -80,7 +89,7 @@ class DashboardNavigationBar extends StatelessWidget {
             iconSize: 24,
             showUnselectedLabels: true,
             items: [
-              for (final tab in DashboardTab.values)
+              for (final tab in order)
                 BottomNavigationBarItem(
                   // A small "soon" pip on the icon keeps the label clean so
                   // the slot doesn't overflow into its neighbours (SIRATI-95).

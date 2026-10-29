@@ -4737,6 +4737,91 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get jobsRemoteChip =>
       remote.text('jobsRemoteChip') ?? _base.jobsRemoteChip;
 
+  @override
+  String get homeProfileSubtitle =>
+      remote.text('homeProfileSubtitle') ?? _base.homeProfileSubtitle;
+
+  @override
+  String get homeProfileOpen =>
+      remote.text('homeProfileOpen') ?? _base.homeProfileOpen;
+
+  @override
+  String get homeStartCreateTitle =>
+      remote.text('homeStartCreateTitle') ?? _base.homeStartCreateTitle;
+
+  @override
+  String get homeStartCreateBody =>
+      remote.text('homeStartCreateBody') ?? _base.homeStartCreateBody;
+
+  @override
+  String get homeStartAtsTitle =>
+      remote.text('homeStartAtsTitle') ?? _base.homeStartAtsTitle;
+
+  @override
+  String get homeStartAtsBody =>
+      remote.text('homeStartAtsBody') ?? _base.homeStartAtsBody;
+
+  @override
+  String get homeServiceUpload =>
+      remote.text('homeServiceUpload') ?? _base.homeServiceUpload;
+
+  @override
+  String get homeServiceTarget =>
+      remote.text('homeServiceTarget') ?? _base.homeServiceTarget;
+
+  @override
+  String get homeServiceEducation =>
+      remote.text('homeServiceEducation') ?? _base.homeServiceEducation;
+
+  @override
+  String get homeSoon => remote.text('homeSoon') ?? _base.homeSoon;
+
+  @override
+  String homeServiceSoonA11y(String service) =>
+      remote.format(
+        'homeServiceSoonA11y',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'service': service},
+        ),
+      ) ??
+      _base.homeServiceSoonA11y(service);
+
+  @override
+  String get homeMyCvTitle =>
+      remote.text('homeMyCvTitle') ?? _base.homeMyCvTitle;
+
+  @override
+  String homeMyCvEdited(String time) =>
+      remote.format(
+        'homeMyCvEdited',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'time': time},
+        ),
+      ) ??
+      _base.homeMyCvEdited(time);
+
+  @override
+  String get homeMyCvEdit => remote.text('homeMyCvEdit') ?? _base.homeMyCvEdit;
+
+  @override
+  String get homeMyCvCheck =>
+      remote.text('homeMyCvCheck') ?? _base.homeMyCvCheck;
+
+  @override
+  String get homeMyCvEmptyTitle =>
+      remote.text('homeMyCvEmptyTitle') ?? _base.homeMyCvEmptyTitle;
+
+  @override
+  String get homeMyCvEmptyBody =>
+      remote.text('homeMyCvEmptyBody') ?? _base.homeMyCvEmptyBody;
+
+  @override
+  String get homeHonesty => remote.text('homeHonesty') ?? _base.homeHonesty;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -5782,6 +5867,24 @@ class RemoteAppLocalizations extends AppLocalizations {
     'jobsViewSourcePost': [],
     'jobsShare': [],
     'jobsRemoteChip': [],
+    'homeProfileSubtitle': [],
+    'homeProfileOpen': [],
+    'homeStartCreateTitle': [],
+    'homeStartCreateBody': [],
+    'homeStartAtsTitle': [],
+    'homeStartAtsBody': [],
+    'homeServiceUpload': [],
+    'homeServiceTarget': [],
+    'homeServiceEducation': [],
+    'homeSoon': [],
+    'homeServiceSoonA11y': ['String'],
+    'homeMyCvTitle': [],
+    'homeMyCvEdited': ['String'],
+    'homeMyCvEdit': [],
+    'homeMyCvCheck': [],
+    'homeMyCvEmptyTitle': [],
+    'homeMyCvEmptyBody': [],
+    'homeHonesty': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -6885,6 +6988,24 @@ class RemoteAppLocalizations extends AppLocalizations {
         'jobsViewSourcePost' => l.jobsViewSourcePost,
         'jobsShare' => l.jobsShare,
         'jobsRemoteChip' => l.jobsRemoteChip,
+        'homeProfileSubtitle' => l.homeProfileSubtitle,
+        'homeProfileOpen' => l.homeProfileOpen,
+        'homeStartCreateTitle' => l.homeStartCreateTitle,
+        'homeStartCreateBody' => l.homeStartCreateBody,
+        'homeStartAtsTitle' => l.homeStartAtsTitle,
+        'homeStartAtsBody' => l.homeStartAtsBody,
+        'homeServiceUpload' => l.homeServiceUpload,
+        'homeServiceTarget' => l.homeServiceTarget,
+        'homeServiceEducation' => l.homeServiceEducation,
+        'homeSoon' => l.homeSoon,
+        'homeServiceSoonA11y' => l.homeServiceSoonA11y(a[0] as String),
+        'homeMyCvTitle' => l.homeMyCvTitle,
+        'homeMyCvEdited' => l.homeMyCvEdited(a[0] as String),
+        'homeMyCvEdit' => l.homeMyCvEdit,
+        'homeMyCvCheck' => l.homeMyCvCheck,
+        'homeMyCvEmptyTitle' => l.homeMyCvEmptyTitle,
+        'homeMyCvEmptyBody' => l.homeMyCvEmptyBody,
+        'homeHonesty' => l.homeHonesty,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

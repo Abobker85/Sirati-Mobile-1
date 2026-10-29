@@ -49,6 +49,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     required this.brandSurface,
     required this.brandSurfaceDeep,
     required this.onBrandSurface,
+    required this.inkSurface,
     required this.onWhitePill,
     required this.softShadow,
   });
@@ -108,6 +109,10 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   final Color brandSurface;
   final Color brandSurfaceDeep;
   final Color onBrandSurface;
+
+  /// Deep navy fill for the second hero card (the ATS check on Home). Holds
+  /// AA for [onBrandSurface] in both themes.
+  final Color inkSurface;
 
   /// Dark ink for text and icons on white pills in either theme.
   final Color onWhitePill;
@@ -183,6 +188,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     brandSurface: Color(0xFF006A60),
     brandSurfaceDeep: Color(0xFF004A43),
     onBrandSurface: Color(0xFFFFFFFF),
+    inkSurface: Color(0xFF14243A),
     onWhitePill: Color(0xFF006A60),
     softShadow: [
       BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 4)),
@@ -234,6 +240,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     brandSurface: Color(0xFF0F5C54),
     brandSurfaceDeep: Color(0xFF0A3D38),
     onBrandSurface: Color(0xFFFFFFFF),
+    inkSurface: Color(0xFF1B2B40),
     onWhitePill: Color(0xFF006A60),
     softShadow: [
       BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 2)),
@@ -285,6 +292,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     Color? brandSurface,
     Color? brandSurfaceDeep,
     Color? onBrandSurface,
+    Color? inkSurface,
     Color? onWhitePill,
     List<BoxShadow>? softShadow,
   }) {
@@ -332,6 +340,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       brandSurface: brandSurface ?? this.brandSurface,
       brandSurfaceDeep: brandSurfaceDeep ?? this.brandSurfaceDeep,
       onBrandSurface: onBrandSurface ?? this.onBrandSurface,
+      inkSurface: inkSurface ?? this.inkSurface,
       onWhitePill: onWhitePill ?? this.onWhitePill,
       softShadow: softShadow ?? this.softShadow,
     );
@@ -385,6 +394,7 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       brandSurface: l(brandSurface, other.brandSurface),
       brandSurfaceDeep: l(brandSurfaceDeep, other.brandSurfaceDeep),
       onBrandSurface: l(onBrandSurface, other.onBrandSurface),
+      inkSurface: l(inkSurface, other.inkSurface),
       onWhitePill: l(onWhitePill, other.onWhitePill),
       softShadow: t < 0.5 ? softShadow : other.softShadow,
     );

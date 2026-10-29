@@ -10,12 +10,11 @@ import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
 import 'package:sirati/features/dashboard/application/dashboard_controller.dart';
 import 'package:sirati/features/dashboard/application/history_controllers.dart';
 import 'package:sirati/features/dashboard/domain/dashboard_summary.dart';
-import 'package:sirati/features/dashboard/presentation/history_screen.dart';
-import 'package:sirati/features/dashboard/presentation/home/dashboard_cv_hero.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_header.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_jobs_section.dart';
-import 'package:sirati/features/dashboard/presentation/home/dashboard_recent_activity.dart';
-import 'package:sirati/features/dashboard/presentation/home/dashboard_tool_card.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_latest_cv_section.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_service_tile.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_start_card.dart';
 import 'package:sirati/features/jobs/application/job_news_controllers.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
@@ -29,9 +28,9 @@ import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
 
-/// Home tab, as agreed in Salem's review (2026-10-24): brand header, the CV
-/// hero in its empty or returning state, two tools, jobs for you and the
-/// latest activity.
+/// Home tab, as on the approved board (option 3 with its changes): profile
+/// row, the create and ATS start cards, three services, latest jobs, and the
+/// latest CV with the honesty line.
 class DashboardHomeTab extends ConsumerWidget {
   const DashboardHomeTab({super.key, required this.onNavigate});
 
@@ -97,7 +96,7 @@ class DashboardHomeTab extends ConsumerWidget {
   }
 }
 
-class _DashboardList extends ConsumerWidget {
+class _DashboardList extends StatelessWidget {
   const _DashboardList({
     required this.summary,
     required this.english,
@@ -112,9 +111,6 @@ class _DashboardList extends ConsumerWidget {
   final Future<void> Function() onRefresh;
   final ValueChanged<DashboardTab> onNavigate;
 
-  /// How far the hero card reaches up into the brand band.
-  static const _heroOverlap = 56.0;
-
   void _push(BuildContext context, Widget screen) {
     unawaited(
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen)),
@@ -122,42 +118,36 @@ class _DashboardList extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
-    final hasCv = ref.watch(latestDashboardCvProvider(english)).value != null;
-    final textButtonStyle = TextButton.styleFrom(
-      minimumSize: const Size(48, 48),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      tapTargetSize: MaterialTapTargetSize.padded,
-    );
     final gutter = EdgeInsets.symmetric(horizontal: horizontalPadding);
 
-    final tools = [
-      if (hasCv)
-        DashboardToolCard(
-          key: const ValueKey('home-tool-create'),
-          tone: DashboardToolTone.create,
-          title: l.homeToolCreateTitle,
-          subtitle: l.homeToolCreateBody,
-          icon: Icons.note_add_outlined,
-          onTap: () =>
-              unawaited(Navigator.pushNamed(context, AppRoutes.createCv)),
-        )
-      else
-        DashboardToolCard(
-          key: const ValueKey('home-tool-ats'),
-          title: l.homeToolAtsTitle,
-          subtitle: l.homeToolAtsBody,
-          icon: Icons.document_scanner_outlined,
-          onTap: () => _push(context, const CvAnalysisScreen()),
+    final services = [
+      HomeServiceTile(
+        inkKey: const ValueKey('home-service-upload'),
+        icon: Icons.upload_file_outlined,
+        label: l.homeServiceUpload,
+        onTap: () => _push(
+          context,
+          const CvAnalysisScreen(initialSource: AnalysisCvSource.upload),
         ),
-      DashboardToolCard(
-        key: const ValueKey('home-tool-education'),
-        tone: DashboardToolTone.education,
-        title: l.homeToolEducationTitle,
-        subtitle: l.homeToolEducationBody,
+      ),
+      HomeServiceTile(
+        inkKey: const ValueKey('home-service-target'),
+        icon: Icons.track_changes_rounded,
+        label: l.homeServiceTarget,
+        onTap: () async {
+          await Navigator.pushNamed(context, AppRoutes.jobMatch);
+          // Job match can create a tailored CV.
+          if (context.mounted) await onRefresh();
+        },
+      ),
+      HomeServiceTile(
+        inkKey: const ValueKey('home-service-education'),
         icon: Icons.school_outlined,
+        label: l.homeServiceEducation,
+        comingSoon: true,
         onTap: () => onNavigate(DashboardTab.education),
       ),
     ];
@@ -173,11 +163,7 @@ class _DashboardList extends ConsumerWidget {
             order: 0,
             child: DashboardHomeHeader(
               name: summary.name,
-              subtitle: summary.status.isNotEmpty
-                  ? summary.status
-                  : hasCv
-                      ? l.homeHeaderSubtitleReturning
-                      : l.homeHeaderSubtitleNew,
+              subtitle: l.homeProfileSubtitle,
               unreadCount: summary.unreadNotifications ??
                   SessionCache.instance.unreadCount,
               onNotifications: () async {
@@ -192,59 +178,73 @@ class _DashboardList extends ConsumerWidget {
               onAvatarTap: () => _push(context, const SettingsScreen()),
             ),
           ),
-          // The hero sits half on the brand band, as in the agreed design.
-          Stack(
-            children: [
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: _heroOverlap,
-                child: DecoratedBox(
-                  decoration: DashboardHomeHeader.brandBand(
-                    context,
-                    radius: 28,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: gutter,
-                child: MotionReveal(
-                  order: 1,
-                  child: DashboardCvHero(onReturnFromJobMatch: onRefresh),
-                ),
-              ),
-            ],
-          ),
           if (summary.offline)
             Padding(
               padding: gutter.copyWith(top: AppSpacing.sm),
               child: OfflineCacheBanner(english: english, surface: 'dashboard'),
             ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Padding(
             padding: gutter,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                if (MediaQuery.textScalerOf(context).scale(1) >= 1.5 ||
-                    constraints.maxWidth < 340) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [tools[0], const SizedBox(height: 12), tools[1]],
-                  );
-                }
-                // Side by side, both cards take the taller one's height.
-                return IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(child: tools[0]),
-                      const SizedBox(width: 12),
-                      Expanded(child: tools[1]),
-                    ],
+            child: MotionReveal(
+              order: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  HomeStartCard(
+                    inkKey: const ValueKey('home-start-create'),
+                    tone: HomeStartTone.create,
+                    title: l.homeStartCreateTitle,
+                    body: l.homeStartCreateBody,
+                    onTap: () => unawaited(
+                      Navigator.pushNamed(context, AppRoutes.createCv),
+                    ),
                   ),
-                );
-              },
+                  const SizedBox(height: 12),
+                  HomeStartCard(
+                    inkKey: const ValueKey('home-start-ats'),
+                    tone: HomeStartTone.ats,
+                    title: l.homeStartAtsTitle,
+                    body: l.homeStartAtsBody,
+                    onTap: () => _push(context, const CvAnalysisScreen()),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: gutter,
+            child: MotionReveal(
+              order: 2,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (MediaQuery.textScalerOf(context).scale(1) >= 1.5 ||
+                      constraints.maxWidth < 300) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final (i, tile) in services.indexed) ...[
+                          if (i > 0) const SizedBox(height: 10),
+                          tile,
+                        ],
+                      ],
+                    );
+                  }
+                  // Side by side, all three take the tallest one's height.
+                  return IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final (i, tile) in services.indexed) ...[
+                          if (i > 0) const SizedBox(width: 10),
+                          Expanded(child: tile),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -257,42 +257,14 @@ class _DashboardList extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Padding(
             padding: gutter,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  l.homeActivityTitle,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: c.textPrimary,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () => _push(context, const HistoryScreen()),
-                  icon: const Icon(Icons.history_rounded, size: 16),
-                  label: Text(AppLocalizations.of(context).dashboardHistory),
-                  style: textButtonStyle,
-                ),
-                TextButton(
-                  onPressed: () => onNavigate(DashboardTab.myCvs),
-                  style: textButtonStyle,
-                  child: Text(AppLocalizations.of(context).dashboardViewAll),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: gutter,
-            child: const MotionReveal(
+            child: MotionReveal(
               order: 4,
-              child: DashboardRecentActivity(),
+              child: HomeLatestCvSection(
+                onViewAll: () => onNavigate(DashboardTab.myCvs),
+              ),
             ),
           ),
         ],

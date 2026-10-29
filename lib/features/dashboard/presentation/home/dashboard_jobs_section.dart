@@ -2,14 +2,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_latest_cv_section.dart';
 import 'package:sirati/features/jobs/application/job_news_controllers.dart';
 import 'package:sirati/features/jobs/presentation/job_news_detail_screen.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_card.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
-/// "Jobs for you" on Home (Salem review, element 8): the first few jobs of
-/// the feed, with a way to the full Jobs tab.
+/// "Latest jobs" on Home (approved board): the first few jobs of the feed as
+/// compact cards, with a way to the full Jobs tab.
 class DashboardJobsSection extends ConsumerWidget {
   const DashboardJobsSection({super.key, required this.onViewAll});
 
@@ -43,12 +44,7 @@ class DashboardJobsSection extends ConsumerWidget {
                 ),
               ),
             ),
-            TextButton(
-              key: viewAllKey,
-              onPressed: onViewAll,
-              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-              child: Text(l.homeJobsViewAll),
-            ),
+            HomeViewAllButton(key: viewAllKey, onPressed: onViewAll),
           ],
         ),
         const SizedBox(height: 8),
@@ -64,10 +60,11 @@ class DashboardJobsSection extends ConsumerWidget {
         else
           for (final item in items.take(limit))
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 10),
               child: JobNewsCard(
                 item: item,
                 english: english,
+                compact: true,
                 onTap: () => unawaited(
                   Navigator.of(context).push(
                     MaterialPageRoute(
