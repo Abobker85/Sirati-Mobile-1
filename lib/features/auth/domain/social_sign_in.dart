@@ -16,13 +16,22 @@ const appleSignInEnabled =
     bool.fromEnvironment('SIRATI_APPLE_SIGN_IN', defaultValue: kDebugMode);
 const socialSignInEnabled = googleSignInEnabled || appleSignInEnabled;
 
-/// The Google OAuth **web** client id. Android needs it as the server client
-/// id to receive an ID token; the API accepts it as the token audience.
-const googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+/// The Google OAuth **web** client id (project sirati-98cef). Android needs
+/// it as the server client id to receive an ID token; the API accepts it as
+/// the token audience. Client ids are public, not secrets.
+const googleServerClientId = String.fromEnvironment(
+  'GOOGLE_SERVER_CLIENT_ID',
+  defaultValue:
+      '723811480072-j8rsac3g417452bamo4bn0eoddvvupb2.apps.googleusercontent.com',
+);
 
-/// The Google OAuth iOS client id (its reversed form is the URL scheme in
-/// ios/Runner/Info.plist). Empty = taken from GoogleService-Info.plist.
-const googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
+/// The Google OAuth iOS client id. Its reversed form is the URL scheme in
+/// ios/Runner/Info.plist; change both together.
+const googleIosClientId = String.fromEnvironment(
+  'GOOGLE_IOS_CLIENT_ID',
+  defaultValue:
+      '723811480072-3msig0tm47r7n0hohvtmv5r7rm74mmd7.apps.googleusercontent.com',
+);
 
 /// The Apple **Services ID** used by Sign in with Apple's web flow on
 /// Android. iOS signs in natively with the bundle id and doesn't need it.
