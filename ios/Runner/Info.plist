@@ -70,6 +70,15 @@
 				<string>sirati</string>
 			</array>
 		</dict>
+		<dict>
+			<!-- Google Sign-In: the reversed iOS OAuth client id (googleIosClientId) -->
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.723811480072-3msig0tm47r7n0hohvtmv5r7rm74mmd7</string>
+			</array>
+		</dict>
 	</array>
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
