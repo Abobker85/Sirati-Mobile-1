@@ -4,6 +4,7 @@ import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/core/l10n/remote_l10n_repository.dart';
 import 'package:sirati/core/l10n/remote_localizations_delegate.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/jobs/domain/apply_destination.dart';
 import 'package:sirati/features/jobs/presentation/widgets/featured_job_card.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_filters_bar.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -98,7 +99,8 @@ void main() {
           code,
           FeaturedJobCard(item: job, english: code == 'en', onTap: () {}),
         ));
-        expect(find.text('[$host] site'), findsOneWidget, reason: host);
+        expect(find.text('[${ltrIsolate(host)}] site'), findsOneWidget,
+            reason: host);
       }
     });
   }

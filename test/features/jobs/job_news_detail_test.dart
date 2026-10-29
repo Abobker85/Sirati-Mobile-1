@@ -129,6 +129,37 @@ void main() {
       });
     }
 
+    testWidgets('the description follows the post language in either app',
+        (tester) async {
+      const bodies = {
+        'en': 'Build APIs with Laravel and Flutter.',
+        'ar': 'مطلوب مطور تطبيقات Flutter للعمل في الرياض.',
+      };
+      for (final appLanguage in ['en', 'ar']) {
+        for (final MapEntry(key: postLanguage, value: body)
+            in bodies.entries) {
+          AppLocale.languageCode.value = appLanguage;
+          final job = JobNews.fromJson(
+              {'id': 3, 'title': 't', 'body': body, 'language': postLanguage});
+          await tester.pumpWidget(MaterialApp(
+            theme: AppTheme.lightFor(arabic: appLanguage == 'ar'),
+            locale: Locale(appLanguage),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: JobNewsDetailScreen(item: job),
+          ));
+          await tester.pumpAndSettle();
+          final text = tester.widget<Text>(find.byWidgetPredicate((w) =>
+              w is Text && (w.data ?? '').contains(body.split(' ').last)));
+          expect(
+              text.textDirection,
+              postLanguage == 'en' ? TextDirection.ltr : TextDirection.rtl,
+              reason: 'app=$appLanguage post=$postLanguage');
+        }
+      }
+      AppLocale.languageCode.value = 'en';
+    });
+
     testWidgets('an internal retirement date is never shown as a deadline',
         (tester) async {
       for (final (label, shown) in [

@@ -130,8 +130,15 @@ class JobNewsDetailScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Text(l.jobsDescriptionTitle, style: AppTextStyles.titleMd(c)),
             const SizedBox(height: 8),
+            // The server stores the language the post is written in;
+            // aggregated posts show in both apps, so the body follows the
+            // post, not the app.
             Text(
-              LocaleFormat.mixedBody(item.body, english: english),
+              LocaleFormat.mixedBody(item.body,
+                  english: item.language == 'en'),
+              textDirection: item.language == 'en'
+                  ? TextDirection.ltr
+                  : TextDirection.rtl,
               textAlign: TextAlign.start,
               style:
                   TextStyle(fontSize: 15.5, height: 1.8, color: c.textPrimary),
@@ -178,7 +185,7 @@ class _HowToApplyCard extends StatelessWidget {
       ApplyLink(:final displayHost) => (
           Icons.link_rounded,
           l.jobsApplyMethodLink,
-          l.jobsApplyOpensHost(displayHost),
+          l.jobsApplyOpensHost(ltrIsolate(displayHost)),
         ),
       ApplyEmail(:final address) => (
           Icons.mail_outline_rounded,
@@ -226,10 +233,11 @@ class _HowToApplyCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       detail,
-                      // Emails and hosts are Latin: keep them left-to-right
-                      // inside Arabic text.
+                      // A bare email is all Latin: lay it out left-to-right.
+                      // The host sentence mixes scripts and isolates the
+                      // host itself (ltrIsolate).
                       textDirection:
-                          destination is ApplyNone ? null : TextDirection.ltr,
+                          destination is ApplyEmail ? TextDirection.ltr : null,
                       textAlign: TextAlign.start,
                       style: TextStyle(
                           fontSize: 14,
@@ -363,9 +371,11 @@ class _ActionBar extends StatelessWidget {
         ),
     };
 
-    return Material(
-      color: c.surface,
-      elevation: 8,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: c.surface,
+        border: Border(top: BorderSide(color: c.border)),
+      ),
       child: SafeArea(
         top: false,
         child: Padding(

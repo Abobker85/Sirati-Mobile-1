@@ -127,7 +127,7 @@ class FeaturedJobCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        l.jobsApplyOpensHost(displayHost),
+                        l.jobsApplyOpensHost(ltrIsolate(displayHost)),
                         style: TextStyle(fontSize: 12.5, color: onHero),
                       ),
                     ],

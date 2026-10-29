@@ -31,6 +31,11 @@ final class ApplyLink extends ApplyDestination {
       uri.host.startsWith('www.') ? uri.host.substring(4) : uri.host;
 }
 
+/// Wraps Latin [text] (a host, an email) in a left-to-right isolate so it
+/// keeps its order inside an Arabic sentence.
+String ltrIsolate(String text) =>
+    '${String.fromCharCode(0x2066)}$text${String.fromCharCode(0x2069)}';
+
 final class ApplyEmail extends ApplyDestination {
   const ApplyEmail(this.address);
   final String address;
