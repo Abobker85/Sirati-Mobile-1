@@ -364,8 +364,9 @@ Future<void> _pumpSettings(WidgetTester tester, ScreenHarness h) => h.pumpApp(
       ],
     );
 
-CvAnalysis _sampleAnalysis(ScreenHarness h) => CvAnalysis.fromJson({
-      'keyword_source': 'category',
+CvAnalysis _sampleAnalysis(ScreenHarness h, {bool locked = false}) =>
+    CvAnalysis.fromJson({
+      'keyword_source': 'job_description',
       'id': 1,
       'target_job_title': h.sample('مطور واجهات خلفية', 'Backend Developer'),
       'score_total': 72,
@@ -394,6 +395,17 @@ CvAnalysis _sampleAnalysis(ScreenHarness h) => CvAnalysis.fromJson({
         {'label': h.sample('Keywords', 'Keywords'), 'score': 7, 'max': 10},
         {'label': h.sample('Impact', 'Impact'), 'score': 9, 'max': 10},
       ],
+      if (locked)
+        'access': {
+          'is_locked': true,
+          'hidden_total': 10,
+          'hidden': {
+            'strengths': 2,
+            'weaknesses': 3,
+            'keywords_missing': 4,
+            'quick_wins': 1,
+          },
+        },
     });
 
 final appScreens = <AppScreen>[
@@ -437,6 +449,18 @@ final appScreens = <AppScreen>[
   AppScreen('analysis_result', 'Analysis result', (tester, h) {
     return h.pumpApp(
         tester, AnalysisResultScreen(analysis: _sampleAnalysis(h)));
+  }),
+  AppScreen('analysis_result_locked', 'Analysis result (hidden items)',
+      (tester, h) {
+    return h.pumpApp(tester,
+        AnalysisResultScreen(analysis: _sampleAnalysis(h, locked: true)));
+  }),
+  AppScreen('analysis_result_locked_tips',
+      'Analysis result recommendations (hidden items)', (tester, h) async {
+    await h.pumpApp(tester,
+        AnalysisResultScreen(analysis: _sampleAnalysis(h, locked: true)));
+    await tester.tap(find.byType(Tab).at(1));
+    await settleScreen(tester);
   }),
   AppScreen('job_match', 'Job match', (tester, h) {
     final api = job_match.FakeJobMatchApi()

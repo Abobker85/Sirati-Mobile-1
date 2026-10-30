@@ -1,3 +1,4 @@
+import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 
 class CvAnalysis {
@@ -7,6 +8,9 @@ class CvAnalysis {
   final String inputMethod;
   final int scoreTotal;
   final bool hasScore;
+
+  /// True only when [jobMatch] was measured against a job description; the
+  /// server sends `job_match: null` otherwise (issue #16).
   final bool hasJobMatch;
   final bool hasKeywordSummary;
   final String grade;
@@ -30,6 +34,10 @@ class CvAnalysis {
   /// Drives the badge shown next to the category chip (SIRATI-90).
   final String keywordSource;
   final String? classificationWarning;
+
+  /// Items the server trimmed from each list (free tier); all zero when
+  /// nothing is hidden.
+  final AnalysisHiddenCounts hidden;
   final DateTime? createdAt;
 
   const CvAnalysis({
@@ -49,6 +57,7 @@ class CvAnalysis {
     this.isGeneralProfile = false,
     this.keywordSource = 'category',
     this.classificationWarning,
+    this.hidden = AnalysisHiddenCounts.none,
     required this.criteria,
     required this.strengths,
     required this.weaknesses,
@@ -62,6 +71,10 @@ class CvAnalysis {
   });
 
   factory CvAnalysis.fromJson(Map<String, dynamic> json) {
+    final keywordSource =
+        json['keyword_source']?.toString() == 'job_description'
+            ? 'job_description'
+            : 'category';
     return CvAnalysis(
       id: _asInt(json['id']),
       targetJobTitle: json['target_job_title']?.toString() ?? '',
@@ -69,7 +82,8 @@ class CvAnalysis {
       inputMethod: json['input_method']?.toString() ?? 'paste',
       scoreTotal: _asInt(json['score_total']),
       hasScore: _hasPercentage(json['score_total']),
-      hasJobMatch: _hasPercentage(json['job_match']),
+      hasJobMatch: keywordSource == 'job_description' &&
+          _hasPercentage(json['job_match']),
       hasKeywordSummary:
           json['keywords_found'] is List && json['keywords_missing'] is List,
       grade: json['grade']?.toString() ?? '-',
@@ -79,10 +93,9 @@ class CvAnalysis {
       categoryLabelEn: json['category_label_en']?.toString(),
       isGeneralProfile:
           json['is_general_profile'] == true || (json['category'] == 'general'),
-      keywordSource: json['keyword_source']?.toString() == 'job_description'
-          ? 'job_description'
-          : 'category',
+      keywordSource: keywordSource,
       classificationWarning: json['classification_warning']?.toString(),
+      hidden: AnalysisHiddenCounts.fromAccess(json['access']),
       criteria: _asList(json['criteria']).map(ScoreCriterion.fromJson).toList(),
       strengths: _asStringList(json['strengths']),
       weaknesses: _asList(
@@ -100,25 +113,49 @@ class CvAnalysis {
     );
   }
 
-  String displayCategoryLabel({required bool english}) {
-    if (english) {
-      return categoryLabelEn ??
-          (category == 'general'
-              ? 'General Profile (Transferable Skills)'
-              : (category ?? 'General'));
-    }
-    return categoryLabel ??
-        (category == 'general'
-            ? 'تقييم عام (مهارات مهنية مشتركة)'
-            : (category ?? 'عام'));
+  /// The scoring category in the content language: the server's label, the
+  /// catalog label for the general profile, or null when there is neither.
+  String? displayCategoryLabel(AppLocalizations l, {required bool english}) {
+    final label = (english ? categoryLabelEn : categoryLabel)?.trim();
+    if (label != null && label.isNotEmpty) return label;
+    if (category == null || category == 'general') return l.atsCategoryGeneral;
+    return null;
   }
+}
 
-  String get inputMethodLabel {
-    return switch (inputMethod) {
-      'upload' => 'ملف',
-      'mixed' => 'ملف ونص',
-      _ => 'لصق نص',
-    };
+/// Counts from the server's `access.hidden` block.
+class AnalysisHiddenCounts {
+  final int strengths;
+  final int weaknesses;
+  final int keywordsMissing;
+  final int quickWins;
+  final int aiFeedback;
+
+  const AnalysisHiddenCounts({
+    this.strengths = 0,
+    this.weaknesses = 0,
+    this.keywordsMissing = 0,
+    this.quickWins = 0,
+    this.aiFeedback = 0,
+  });
+
+  static const none = AnalysisHiddenCounts();
+
+  factory AnalysisHiddenCounts.fromAccess(Object? access) {
+    final hidden = access is Map ? access['hidden'] : null;
+    if (hidden is! Map) return none;
+    int count(String key) {
+      final value = _asInt(hidden[key]);
+      return value > 0 ? value : 0;
+    }
+
+    return AnalysisHiddenCounts(
+      strengths: count('strengths'),
+      weaknesses: count('weaknesses'),
+      keywordsMissing: count('keywords_missing'),
+      quickWins: count('quick_wins'),
+      aiFeedback: count('ai_feedback'),
+    );
   }
 }
 

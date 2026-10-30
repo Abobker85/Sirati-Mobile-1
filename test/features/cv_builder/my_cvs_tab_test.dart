@@ -9,6 +9,7 @@ import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.
 import 'package:sirati/features/cv_builder/presentation/my_cvs/my_cvs_tools.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/ats_grade.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -168,10 +169,10 @@ void main() {
           findsOneWidget,
         );
       }
-      // Only a score under the threshold carries the warning.
+      // Only a weak-band score carries the warning.
       expect(
         find.descendant(of: card, matching: find.text(l.cvCardNeedsWork)),
-        score != null && score < CvDocumentCard.lowScore
+        score != null && ScoreBand.of(score) == ScoreBand.weak
             ? findsOneWidget
             : findsNothing,
       );

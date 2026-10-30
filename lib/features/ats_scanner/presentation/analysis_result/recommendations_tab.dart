@@ -13,9 +13,13 @@ class RecommendationsTab extends StatelessWidget {
     required this.english,
     this.embedded = false,
     this.weaknesses = const [],
+    this.hidden = AnalysisHiddenCounts.none,
   });
 
   final List<AnalysisWeakness> weaknesses;
+
+  /// Items the server withheld from each list; shown as "N more".
+  final AnalysisHiddenCounts hidden;
   final List<String> strengths;
   final List<String> quickWins;
   final bool english;
@@ -33,6 +37,10 @@ class RecommendationsTab extends StatelessWidget {
           PrioritizedFixes(weaknesses: weaknesses),
           const SizedBox(height: 24),
         ],
+        if (hidden.weaknesses > 0) ...[
+          HiddenItemsNote(count: hidden.weaknesses),
+          const SizedBox(height: 24),
+        ],
         _SectionHeader(
           icon: Icons.thumb_up_alt_rounded,
           iconColor: c.tealDark,
@@ -42,6 +50,7 @@ class RecommendationsTab extends StatelessWidget {
         const SizedBox(height: 12),
         _ItemList(
           items: strengths,
+          hidden: hidden.strengths,
           emptyText: AppLocalizations.of(context).atsNoStrengths,
           markerBuilder: (context, _) => const _CheckMarker(),
         ),
@@ -55,6 +64,7 @@ class RecommendationsTab extends StatelessWidget {
         const SizedBox(height: 12),
         _ItemList(
           items: quickWins,
+          hidden: hidden.quickWins,
           emptyText: AppLocalizations.of(context).atsNoQuickWins,
           markerBuilder: (context, i) => _NumberMarker(number: i + 1),
         ),
@@ -68,11 +78,13 @@ class RecommendationsTab extends StatelessWidget {
 class _ItemList extends StatelessWidget {
   const _ItemList({
     required this.items,
+    this.hidden = 0,
     required this.emptyText,
     required this.markerBuilder,
   });
 
   final List<String> items;
+  final int hidden;
   final String emptyText;
   final Widget Function(BuildContext context, int index) markerBuilder;
 
@@ -81,7 +93,7 @@ class _ItemList extends StatelessWidget {
     final c = context.sirati;
     return AppCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: items.isEmpty
+      child: items.isEmpty && hidden == 0
           ? Padding(
               padding: const EdgeInsets.symmetric(vertical: 14),
               child: Text(
@@ -114,8 +126,41 @@ class _ItemList extends StatelessWidget {
                   ),
                   if (i < items.length - 1) const Divider(height: 1),
                 ],
+                if (hidden > 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    child: HiddenItemsNote(count: hidden),
+                  ),
               ],
             ),
+    );
+  }
+}
+
+/// "+N more hidden" under a list the server trimmed (free tier).
+class HiddenItemsNote extends StatelessWidget {
+  const HiddenItemsNote({super.key, required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return Row(
+      children: [
+        Icon(Icons.lock_outline_rounded, size: 16, color: c.textSecondary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            AppLocalizations.of(context).atsHiddenMore(count),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: c.textSecondary,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -77,6 +77,7 @@ class AnalysisResultScreen extends ConsumerWidget {
                 weaknesses: analysis.weaknesses,
                 strengths: analysis.strengths,
                 quickWins: analysis.quickWins,
+                hidden: analysis.hidden,
                 english: english,
               ),
             ],

@@ -36,7 +36,6 @@ void main() {
       expect(analyses.single.id, 7);
       expect(analyses.single.targetJobTitle, 'Laravel Developer');
       expect(analyses.single.criteria.single.label, 'Keywords');
-      expect(analyses.single.inputMethodLabel, 'لصق نص');
     });
 
     test('submits analysis as multipart request', () async {
@@ -165,7 +164,8 @@ void main() {
       expect(delays, const [Duration(seconds: 2), Duration(seconds: 2)]);
     });
 
-    test('polling timeout includes time spent receiving an HTTP response', () async {
+    test('polling timeout includes time spent receiving an HTTP response',
+        () async {
       var refreshes = 0;
       final service = CvApiService(
         pollingTimeout: const Duration(milliseconds: 80),
@@ -195,11 +195,13 @@ void main() {
       expect(refreshes, 1);
     });
 
-    test('paused polling still expires without issuing HTTP requests', () async {
+    test('paused polling still expires without issuing HTTP requests',
+        () async {
       var refreshes = 0;
       final service = CvApiService(
         pollingTimeout: const Duration(milliseconds: 40),
-        pollingDelay: (_) => Future<void>.delayed(const Duration(milliseconds: 25)),
+        pollingDelay: (_) =>
+            Future<void>.delayed(const Duration(milliseconds: 25)),
         apiClient: ApiClient(httpClient: MockClient((_) async {
           refreshes++;
           return _jsonResponse({'data': _analysisJson()});

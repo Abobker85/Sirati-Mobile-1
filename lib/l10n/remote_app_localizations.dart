@@ -4390,6 +4390,22 @@ class RemoteAppLocalizations extends AppLocalizations {
       _base.atsBenchmark(category);
 
   @override
+  String get atsCategoryGeneral =>
+      remote.text('atsCategoryGeneral') ?? _base.atsCategoryGeneral;
+
+  @override
+  String atsHiddenMore(int count) =>
+      remote.format(
+        'atsHiddenMore',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.atsHiddenMore(count);
+
+  @override
   String get myCvsHeaderSubtitle =>
       remote.text('myCvsHeaderSubtitle') ?? _base.myCvsHeaderSubtitle;
 
@@ -6002,6 +6018,8 @@ class RemoteAppLocalizations extends AppLocalizations {
     'atsBandFair': [],
     'atsBandWeak': [],
     'atsBenchmark': ['String'],
+    'atsCategoryGeneral': [],
+    'atsHiddenMore': ['int'],
     'myCvsHeaderSubtitle': [],
     'myCvsToolsTitle': [],
     'myCvsToolCreateTitle': [],
@@ -7145,6 +7163,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'atsBandFair' => l.atsBandFair,
         'atsBandWeak' => l.atsBandWeak,
         'atsBenchmark' => l.atsBenchmark(a[0] as String),
+        'atsCategoryGeneral' => l.atsCategoryGeneral,
+        'atsHiddenMore' => l.atsHiddenMore(a[0] as int),
         'myCvsHeaderSubtitle' => l.myCvsHeaderSubtitle,
         'myCvsToolsTitle' => l.myCvsToolsTitle,
         'myCvsToolCreateTitle' => l.myCvsToolCreateTitle,
