@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:sirati/core/l10n/remote_l10n.dart';
 import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 
 class ApiClient {
   ApiClient(
@@ -229,6 +230,8 @@ class ApiClient {
     final headers = <String, String>{
       'Accept': 'application/json',
       'X-Sirati-Async': '1',
+      // The server writes its messages in this language (#12).
+      'X-App-Language': AppLocale.languageCode.value,
     };
     if (contentType != null) {
       headers['Content-Type'] = contentType;
