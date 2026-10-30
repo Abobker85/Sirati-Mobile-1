@@ -1,45 +1,14 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/features/auth/data/apple_credential_source.dart';
 import 'package:sirati/features/auth/data/google_id_token_source.dart';
+import 'package:sirati/shared/services/provider_reauth.dart';
 
-/// A fresh provider ID token: how a Google/Apple-only account (no password)
-/// proves it's the account holder before a sensitive action.
-@immutable
-class ProviderProof {
-  const ProviderProof({
-    required this.provider,
-    required this.idToken,
-    this.nonce,
-  });
-
-  final String provider;
-  final String idToken;
-
-  /// Apple's raw nonce; the server checks the token carries its sha256.
-  final String? nonce;
-}
-
-/// This build has no client config for the provider.
-class ProviderNotConfigured implements Exception {
-  const ProviderNotConfigured(this.provider);
-  final String provider;
-}
-
-/// Display name of a provider id (`google` -> `Google`).
-String providerLabel(String provider) => switch (provider) {
-      'google' => 'Google',
-      'apple' => 'Apple',
-      _ => provider,
-    };
-
-final providerReauthProvider = Provider<ProviderReauth>(ProviderReauth.new);
-
-class ProviderReauth {
-  ProviderReauth(this._ref);
+/// [ProviderReauth] through the Google and Apple sign-in sources.
+class SocialProviderReauth implements ProviderReauth {
+  SocialProviderReauth(this._ref);
   final Ref _ref;
 
-  /// Signs in with [provider] again. Null = the user cancelled.
+  @override
   Future<ProviderProof?> prove(String provider) async {
     switch (provider) {
       case 'google':

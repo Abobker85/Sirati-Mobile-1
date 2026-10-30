@@ -8,12 +8,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/features/auth/application/provider_reauth.dart';
 import 'package:sirati/features/settings/presentation/delete_account_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
+import 'package:sirati/shared/services/provider_reauth.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 typedef _Delete = ({
@@ -58,8 +58,8 @@ class _ReauthScript {
   Object? error;
 }
 
-class _FakeReauth extends ProviderReauth {
-  _FakeReauth(super.ref, this.script);
+class _FakeReauth implements ProviderReauth {
+  _FakeReauth(this.script);
   final _ReauthScript script;
 
   @override
@@ -147,7 +147,7 @@ void main() {
           overrides: [
             authApiServiceProvider.overrideWithValue(auth),
             providerReauthProvider
-                .overrideWith((ref) => _FakeReauth(ref, reauth)),
+                .overrideWith((ref) => _FakeReauth(reauth)),
           ],
           child: MaterialApp(
             theme: AppTheme.lightFor(arabic: false),

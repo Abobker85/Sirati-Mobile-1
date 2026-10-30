@@ -20,6 +20,7 @@ import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/app/app_provider_overrides.dart';
 import 'package:sirati/features/app/sirati_route_table.dart';
 import 'package:sirati/features/auth/data/auth_session_guard.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -136,7 +137,10 @@ Future<void> startSiratiApp() async {
       // Always launch UI — Codemagic previews and devices without Firebase config
       // must still open SplashScreen instead of dying on a white/native shell.
       final initialRoute = AppRouter.resolveInitialRoute();
-      runApp(ProviderScope(child: SiratiApp(initialRoute: initialRoute)));
+      runApp(ProviderScope(
+        overrides: appProviderOverrides,
+        child: SiratiApp(initialRoute: initialRoute),
+      ));
       try {
         RemoteL10n.start();
       } catch (e, st) {

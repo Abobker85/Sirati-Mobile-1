@@ -5,12 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/features/auth/application/provider_reauth.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
+import 'package:sirati/shared/services/provider_reauth.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -111,7 +111,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   Future<void> _deleteWithProvider(String provider) async {
     if (_loading || _confirming) return;
     final l10n = AppLocalizations.of(context);
-    final label = providerLabel(provider);
+    final label = _providerName(provider, l10n);
     if (!await _confirm(l10n)) return;
 
     await _run(
@@ -237,7 +237,8 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 const SizedBox(height: AppSpacing.md),
                 SubmitButton(
                   label:
-                      l10n.settingsDeleteWithProvider(providerLabel(provider)),
+                      l10n.settingsDeleteWithProvider(
+                          _providerName(provider, l10n)),
                   loadingLabel: l10n.settingsDeleting,
                   isLoading: _loading,
                   icon: Icons.delete_forever_rounded,
@@ -287,3 +288,11 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     );
   }
 }
+
+/// Display name of a provider id, from the label catalog.
+String _providerName(String provider, AppLocalizations l10n) =>
+    switch (provider) {
+      'google' => l10n.authSocialGoogle,
+      'apple' => l10n.authSocialApple,
+      _ => provider,
+    };
