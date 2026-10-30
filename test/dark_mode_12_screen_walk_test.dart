@@ -163,30 +163,21 @@ void main() {
       );
     });
 
-    testWidgets('2. JobTitleDisplay renders bilingual titles with AA contrast',
+    testWidgets('2. JobTitleDisplay renders the title with AA contrast',
         (tester) async {
+      const title = 'مهندس برمجيات (Software Engineer)';
       await tester.pumpWidget(
         darkSubject(
-          const JobTitleDisplay(
-            title: 'مهندس برمجيات (Software Engineer)',
-          ),
+          const JobTitleDisplay(title: title, language: 'ar'),
         ),
       );
       await tester.pump();
 
-      final primaryText = tester.widget<Text>(find.text('مهندس برمجيات'));
-      final secondaryText = tester.widget<Text>(find.text('Software Engineer'));
-
-      expect(primaryText.style?.color, SiratiColors.dark.textPrimary);
-      expect(secondaryText.style?.color, SiratiColors.dark.textSecondary);
-
+      final text = tester.widget<Text>(find.text(title));
+      expect(text.style?.color, SiratiColors.dark.textPrimary);
       assertDarkAaContrast(
-        primaryText.style!.color!,
-        contextDescription: 'JobTitleDisplay primary title',
-      );
-      assertDarkAaContrast(
-        secondaryText.style!.color!,
-        contextDescription: 'JobTitleDisplay secondary title',
+        text.style!.color!,
+        contextDescription: 'JobTitleDisplay title',
       );
     });
 

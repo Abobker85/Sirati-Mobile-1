@@ -194,6 +194,7 @@ class AppRouter {
       case AppRoutes.jobNews:
       case AppRoutes.privacy:
       case AppRoutes.settings:
+      case AppRoutes.profile:
       case AppRoutes.notifications:
       case AppRoutes.gallery:
       case AppRoutes.jobMatch:

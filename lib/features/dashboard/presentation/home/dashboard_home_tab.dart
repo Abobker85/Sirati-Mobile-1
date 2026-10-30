@@ -84,7 +84,7 @@ class DashboardHomeTab extends ConsumerWidget {
                   ref.invalidate(latestDashboardCvProvider(english));
                   ref.invalidate(generatedCvsHistoryProvider);
                   ref.invalidate(analysesHistoryProvider);
-                  ref.invalidate(jobNewsFeedProvider(english));
+                  ref.invalidate(homeLatestJobsProvider(english));
                 },
                 onNavigate: onNavigate,
               ),
@@ -254,6 +254,7 @@ class _DashboardList extends StatelessWidget {
               order: 3,
               child: DashboardJobsSection(
                 onViewAll: () => onNavigate(DashboardTab.jobNews),
+                onOpenSaved: () => onNavigate(DashboardTab.myCvs),
               ),
             ),
           ),

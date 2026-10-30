@@ -38,14 +38,11 @@ class JobNewsProfileContext {
 /// Parsed `/mobile/job-news` payload.
 class JobNewsFeed {
   const JobNewsFeed({
-    required this.title,
     required this.items,
     this.profile,
     this.offline = false,
   });
 
-  /// Server title; empty when omitted (the screen shows its catalog label).
-  final String title;
   final List<JobNews> items;
   final JobNewsProfileContext? profile;
 
@@ -84,9 +81,7 @@ class JobNewsFeed {
   }) {
     final rawItems = data['items'];
     final rawProfile = data['profile_context'];
-    final title = data['title']?.toString().trim() ?? '';
     return JobNewsFeed(
-      title: title,
       // Skip malformed entries instead of rendering a blank id-0 job.
       items: rawItems is List
           ? rawItems
@@ -102,8 +97,7 @@ class JobNewsFeed {
   }
 
   /// Shown when the first load fails and nothing is cached.
-  factory JobNewsFeed.empty({required bool english}) =>
-      const JobNewsFeed(title: '', items: []);
+  const JobNewsFeed.empty() : this(items: const []);
 }
 
 /// Posts younger than this carry the "new" marker.

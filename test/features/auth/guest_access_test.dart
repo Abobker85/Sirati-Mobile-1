@@ -325,6 +325,7 @@ void main() {
       AppRoutes.jobNews,
       AppRoutes.privacy,
       AppRoutes.settings,
+      AppRoutes.profile,
       AppRoutes.notifications,
       AppRoutes.premium,
       AppRoutes.gallery,

@@ -37,22 +37,6 @@ void main() {
       }
     });
 
-    test('blank titles stay empty so the screen shows its catalog label',
-        () {
-      for (final english in [true, false]) {
-        for (final title in [null, '', '   ', '\n\t']) {
-          expect(
-              JobNewsFeed.fromPayload({'title': title}, english: english).title,
-              '');
-        }
-        expect(
-          JobNewsFeed.fromPayload({'title': 'Custom'}, english: english).title,
-          'Custom',
-        );
-        expect(JobNewsFeed.empty(english: english).title, '');
-      }
-    });
-
     test('offline flag follows the cache marker', () {
       expect(
         JobNewsFeed.fromPayload(
@@ -160,7 +144,7 @@ void main() {
                 age: const Duration(hours: 1),
                 applyUrl: i == eligibleAt ? 'https://jadarat.sa/x' : null),
         ];
-        final feed = JobNewsFeed(title: 't', items: items);
+        final feed = JobNewsFeed(items: items);
         final hero = feed.featuredAt(now);
         expect(hero?.id,
             eligibleAt < JobNewsFeed.heroWindow ? eligibleAt + 1 : null);
@@ -192,7 +176,7 @@ void main() {
       ];
       for (final (age, url, expectHero) in cases) {
         for (final count in [1, 2, 5]) {
-          final feed = JobNewsFeed(title: 't', items: [
+          final feed = JobNewsFeed(items: [
             job(1, age: age, applyUrl: url),
             for (var i = 2; i <= count; i++)
               job(i, age: const Duration(hours: 1)),
