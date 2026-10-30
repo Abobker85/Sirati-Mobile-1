@@ -698,3 +698,54 @@ Set<RenderObject> onstageRenderObjects(RenderObject root) {
   walk(root);
   return found;
 }
+
+final _letter = RegExp(r'\p{L}', unicode: true);
+
+/// Directional marks and isolates the app wraps around Latin runs in Arabic
+/// text (see `BidiText`): invisible, so ignored on both sides of a match.
+final _bidiControls = RegExp('[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]');
+
+/// Painted text under [root] that is neither a label nor data: each onstage
+/// RenderParagraph/RenderEditable's plain text with every [explained] string
+/// (recorded label values and sample data) removed, longest first, reported
+/// when any letter is left. Digits, punctuation and icon glyphs never count.
+/// Obscured (password) fields are skipped: they paint dots, not text.
+/// Directional controls are removed from both sides first.
+List<String> findUnexplainedText(
+  RenderObject root,
+  Iterable<String> explained,
+) {
+  final known = explained
+      .map((s) => s.replaceAll(_bidiControls, '').trim())
+      .where((s) => s.isNotEmpty)
+      .toSet()
+      .toList()
+    ..sort((a, b) => b.length.compareTo(a.length));
+  final found = <String>{};
+
+  void check(InlineSpan span) {
+    final text = span
+        .toPlainText(includeSemanticsLabels: false, includePlaceholders: false)
+        .replaceAll(_bidiControls, '');
+    var rest = text;
+    for (final value in known) {
+      if (rest.contains(value)) rest = rest.replaceAll(value, ' ');
+    }
+    if (_letter.hasMatch(rest)) {
+      found.add('"${text.trim()}" (left: "${rest.trim()}")');
+    }
+  }
+
+  void walk(RenderObject node) {
+    if (node is RenderParagraph) {
+      check(node.text);
+    } else if (node is RenderEditable && !node.obscureText) {
+      final text = node.text;
+      if (text != null) check(text);
+    }
+    node.visitChildrenForSemantics(walk);
+  }
+
+  walk(root);
+  return found.toList();
+}

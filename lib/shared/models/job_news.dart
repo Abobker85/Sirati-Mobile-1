@@ -9,8 +9,18 @@ class JobNews {
   final String body;
   final String category;
   final int? jobTitleId;
+  /// Where the post was found (e.g. the Telegram post). Shown only as a
+  /// labelled source, never as the apply destination.
   final String? url;
+  final String? sourceName;
+
+  /// How to apply: `url`, `email` or `none` (see [applyUrl] / [applyEmail]).
+  final String applyMethod;
   final String? applyUrl;
+  final String? applyEmail;
+
+  /// The post's own "how to apply" lines when there is no link or email.
+  final String? applyInstructions;
   final DateTime? validFrom;
   final DateTime? validUntil;
   final String? validUntilLabel;
@@ -26,10 +36,6 @@ class JobNews {
   final int? salaryMax;
   final String? salaryRange;
   final List<String> skillsRequired;
-  final int? matchScore;
-  final List<String> matchReasons;
-  final List<String> matchedSkills;
-  final List<String> missingSkills;
 
   const JobNews({
     required this.id,
@@ -43,7 +49,11 @@ class JobNews {
     required this.category,
     this.jobTitleId,
     required this.url,
+    this.sourceName,
+    this.applyMethod = 'none',
     required this.applyUrl,
+    this.applyEmail,
+    this.applyInstructions,
     required this.validFrom,
     required this.validUntil,
     required this.validUntilLabel,
@@ -59,17 +69,10 @@ class JobNews {
     this.salaryMax,
     this.salaryRange,
     this.skillsRequired = const [],
-    this.matchScore,
-    this.matchReasons = const [],
-    this.matchedSkills = const [],
-    this.missingSkills = const [],
   });
 
   factory JobNews.fromJson(Map<String, dynamic> json) {
     final rawSkills = json['skills_required'];
-    final rawReasons = json['match_reasons'];
-    final rawMatchedSkills = json['matched_skills'];
-    final rawMissingSkills = json['missing_skills'];
 
     return JobNews(
       id: _asInt(json['id']),
@@ -83,8 +86,14 @@ class JobNews {
       category: json['category']?.toString() ?? 'general',
       jobTitleId:
           json['job_title_id'] != null ? _asInt(json['job_title_id']) : null,
-      url: _nullable(json['url']),
+      url: _nullable(json['source_url']) ?? _nullable(json['url']),
+      sourceName: _nullable(json['source_name']),
+      // Payloads cached before apply_method existed have no method; the
+      // destination is then worked out from apply_url / apply_email.
+      applyMethod: _nullable(json['apply_method']) ?? '',
       applyUrl: _nullable(json['apply_url']),
+      applyEmail: _nullable(json['apply_email']),
+      applyInstructions: _nullable(json['apply_instructions']),
       validFrom: _date(json['valid_from']),
       validUntil: _date(json['valid_until']),
       validUntilLabel: _nullable(json['valid_until_label']),
@@ -102,30 +111,12 @@ class JobNews {
       skillsRequired: rawSkills is List
           ? rawSkills.map((e) => e.toString()).toList(growable: false)
           : const [],
-      matchScore:
-          json['match_score'] != null ? _asInt(json['match_score']) : null,
-      matchReasons: rawReasons is List
-          ? rawReasons.map((e) => e.toString()).toList(growable: false)
-          : const [],
-      matchedSkills: rawMatchedSkills is List
-          ? rawMatchedSkills.map((e) => e.toString()).toList(growable: false)
-          : const [],
-      missingSkills: rawMissingSkills is List
-          ? rawMissingSkills.map((e) => e.toString()).toList(growable: false)
-          : const [],
     );
-  }
-
-  String? get actionUrl {
-    if (applyUrl != null && applyUrl!.isNotEmpty) return applyUrl;
-    if (url != null && url!.isNotEmpty) return url;
-    return null;
   }
 
   bool get isGov => sourceType == 'gov';
   bool get isTamheer => sourceType == 'tamheer' || employmentType == 'tamheer';
   bool get isEnterprise => sourceType == 'enterprise';
-  bool get hasHighMatch => (matchScore ?? 0) >= 80;
 }
 
 int _asInt(dynamic value, {int fallback = 0}) {

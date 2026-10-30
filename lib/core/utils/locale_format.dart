@@ -1,5 +1,6 @@
 import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/bidi_text.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 
 /// Locale-aware copy helpers (plurals, mixed labels, sample data fixes).
 class LocaleFormat {
@@ -48,11 +49,14 @@ class LocaleFormat {
   }
 
   /// Display job / CV titles that may mix AR + EN; protect Latin runs in AR.
-  static String mixedTitle(String title, {required bool english}) {
+  /// Empty [title] shows [untitled] (a catalog label).
+  static String mixedTitle(
+    String title, {
+    required bool english,
+    String untitled = '',
+  }) {
     final cleaned = title.trim();
-    if (cleaned.isEmpty) {
-      return english ? 'Untitled' : 'بدون عنوان';
-    }
+    if (cleaned.isEmpty) return untitled;
     if (english) return cleaned;
     return BidiText.protectLatinTokens(cleaned);
   }
@@ -80,19 +84,14 @@ class LocaleFormat {
     return BidiText.protectLatinTokens(cleaned);
   }
 
-  /// Relative time for draft banners, e.g. "Saved 5 min ago" / "حُفظت قبل ٥ دقائق".
-  static String relativeSavedAt(DateTime savedAt,
-      {required bool english, DateTime? now}) {
-    final rel = AppFormat.relativeTime(savedAt, english: english, now: now);
-    if (english) {
-      if (rel == 'just now') return 'Saved just now';
-      return 'Saved $rel';
-    }
-    if (rel == 'الآن') return 'حُفظت للتو';
-    if (rel == 'أمس') return 'حُفظت أمس';
-    // "قبل …" or short date
-    if (rel.startsWith('قبل')) return 'حُفظت $rel';
-    return 'حُفظت $rel';
+  /// Relative time for draft banners, e.g. "Saved 5 min ago".
+  static String relativeSavedAt(
+    DateTime savedAt,
+    AppLocalizations l10n, {
+    DateTime? now,
+  }) {
+    final rel = AppFormat.relativeTime(savedAt, l10n, now: now);
+    return rel == l10n.timeJustNow ? l10n.savedJustNow : l10n.savedAgo(rel);
   }
 
   /// Western digits → Eastern Arabic digits (٠١٢…).

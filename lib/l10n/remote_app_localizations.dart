@@ -4091,22 +4091,6 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('jobsCityMedina') ?? _base.jobsCityMedina;
 
   @override
-  String get jobsPersonalizedTitle =>
-      remote.text('jobsPersonalizedTitle') ?? _base.jobsPersonalizedTitle;
-
-  @override
-  String get jobsPersonalizedFallback =>
-      remote.text('jobsPersonalizedFallback') ?? _base.jobsPersonalizedFallback;
-
-  @override
-  String get jobsMatchedActive =>
-      remote.text('jobsMatchedActive') ?? _base.jobsMatchedActive;
-
-  @override
-  String get jobsMatchToggle =>
-      remote.text('jobsMatchToggle') ?? _base.jobsMatchToggle;
-
-  @override
   String get jobsEmptyFeed =>
       remote.text('jobsEmptyFeed') ?? _base.jobsEmptyFeed;
 
@@ -4129,10 +4113,6 @@ class RemoteAppLocalizations extends AppLocalizations {
   @override
   String get jobsTamheerProgram =>
       remote.text('jobsTamheerProgram') ?? _base.jobsTamheerProgram;
-
-  @override
-  String get jobsCompatibilityTitle =>
-      remote.text('jobsCompatibilityTitle') ?? _base.jobsCompatibilityTitle;
 
   @override
   String get jobsSkillsRequired =>
@@ -4398,18 +4378,6 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get atsBandWeak => remote.text('atsBandWeak') ?? _base.atsBandWeak;
 
   @override
-  String jobsMatchScore(int score) =>
-      remote.format(
-        'jobsMatchScore',
-        (icuMessage, icuLocale) => IcuLite.format(
-          icuMessage,
-          locale: icuLocale,
-          args: {'score': score},
-        ),
-      ) ??
-      _base.jobsMatchScore(score);
-
-  @override
   String atsBenchmark(String category) =>
       remote.format(
         'atsBenchmark',
@@ -4658,6 +4626,366 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get authSignInRequiredBrowseJobs =>
       remote.text('authSignInRequiredBrowseJobs') ??
       _base.authSignInRequiredBrowseJobs;
+
+  @override
+  String get jobsRegionAll =>
+      remote.text('jobsRegionAll') ?? _base.jobsRegionAll;
+
+  @override
+  String get jobsRegionCentral =>
+      remote.text('jobsRegionCentral') ?? _base.jobsRegionCentral;
+
+  @override
+  String get jobsRegionEastern =>
+      remote.text('jobsRegionEastern') ?? _base.jobsRegionEastern;
+
+  @override
+  String get jobsRegionWestern =>
+      remote.text('jobsRegionWestern') ?? _base.jobsRegionWestern;
+
+  @override
+  String get jobsRegionNorthern =>
+      remote.text('jobsRegionNorthern') ?? _base.jobsRegionNorthern;
+
+  @override
+  String get jobsRegionSouthern =>
+      remote.text('jobsRegionSouthern') ?? _base.jobsRegionSouthern;
+
+  @override
+  String jobsEmptyRegionTitle(String region) =>
+      remote.format(
+        'jobsEmptyRegionTitle',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'region': region},
+        ),
+      ) ??
+      _base.jobsEmptyRegionTitle(region);
+
+  @override
+  String get jobsEmptyRegionBody =>
+      remote.text('jobsEmptyRegionBody') ?? _base.jobsEmptyRegionBody;
+
+  @override
+  String get jobsShowAllRegions =>
+      remote.text('jobsShowAllRegions') ?? _base.jobsShowAllRegions;
+
+  @override
+  String get jobsMatchedNeedsTitle =>
+      remote.text('jobsMatchedNeedsTitle') ?? _base.jobsMatchedNeedsTitle;
+
+  @override
+  String get jobsMatchedSetTitle =>
+      remote.text('jobsMatchedSetTitle') ?? _base.jobsMatchedSetTitle;
+
+  @override
+  String jobsMatchedBasedOn(String title) =>
+      remote.format(
+        'jobsMatchedBasedOn',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'title': title},
+        ),
+      ) ??
+      _base.jobsMatchedBasedOn(title);
+
+  @override
+  String get jobsHowToApply =>
+      remote.text('jobsHowToApply') ?? _base.jobsHowToApply;
+
+  @override
+  String jobsApplyOpensHost(String host) =>
+      remote.format(
+        'jobsApplyOpensHost',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'host': host},
+        ),
+      ) ??
+      _base.jobsApplyOpensHost(host);
+
+  @override
+  String get jobsApplyByEmail =>
+      remote.text('jobsApplyByEmail') ?? _base.jobsApplyByEmail;
+
+  @override
+  String get jobsApplyEmailHint =>
+      remote.text('jobsApplyEmailHint') ?? _base.jobsApplyEmailHint;
+
+  @override
+  String get jobsCopyEmail =>
+      remote.text('jobsCopyEmail') ?? _base.jobsCopyEmail;
+
+  @override
+  String get jobsEmailCopied =>
+      remote.text('jobsEmailCopied') ?? _base.jobsEmailCopied;
+
+  @override
+  String get jobsOpenEmailFailed =>
+      remote.text('jobsOpenEmailFailed') ?? _base.jobsOpenEmailFailed;
+
+  @override
+  String get jobsNoDirectApply =>
+      remote.text('jobsNoDirectApply') ?? _base.jobsNoDirectApply;
+
+  @override
+  String get jobsNoDirectApplyHint =>
+      remote.text('jobsNoDirectApplyHint') ?? _base.jobsNoDirectApplyHint;
+
+  @override
+  String get jobsApplyMethodLink =>
+      remote.text('jobsApplyMethodLink') ?? _base.jobsApplyMethodLink;
+
+  @override
+  String get jobsApplyMethodEmail =>
+      remote.text('jobsApplyMethodEmail') ?? _base.jobsApplyMethodEmail;
+
+  @override
+  String jobsSourceName(String source) =>
+      remote.format(
+        'jobsSourceName',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'source': source},
+        ),
+      ) ??
+      _base.jobsSourceName(source);
+
+  @override
+  String get jobsViewSourcePost =>
+      remote.text('jobsViewSourcePost') ?? _base.jobsViewSourcePost;
+
+  @override
+  String get jobsShare => remote.text('jobsShare') ?? _base.jobsShare;
+
+  @override
+  String get jobsRemoteChip =>
+      remote.text('jobsRemoteChip') ?? _base.jobsRemoteChip;
+
+  @override
+  String get homeProfileSubtitle =>
+      remote.text('homeProfileSubtitle') ?? _base.homeProfileSubtitle;
+
+  @override
+  String get homeProfileOpen =>
+      remote.text('homeProfileOpen') ?? _base.homeProfileOpen;
+
+  @override
+  String get homeStartCreateTitle =>
+      remote.text('homeStartCreateTitle') ?? _base.homeStartCreateTitle;
+
+  @override
+  String get homeStartCreateBody =>
+      remote.text('homeStartCreateBody') ?? _base.homeStartCreateBody;
+
+  @override
+  String get homeStartAtsTitle =>
+      remote.text('homeStartAtsTitle') ?? _base.homeStartAtsTitle;
+
+  @override
+  String get homeStartAtsBody =>
+      remote.text('homeStartAtsBody') ?? _base.homeStartAtsBody;
+
+  @override
+  String get homeServiceUpload =>
+      remote.text('homeServiceUpload') ?? _base.homeServiceUpload;
+
+  @override
+  String get homeServiceTarget =>
+      remote.text('homeServiceTarget') ?? _base.homeServiceTarget;
+
+  @override
+  String get homeServiceEducation =>
+      remote.text('homeServiceEducation') ?? _base.homeServiceEducation;
+
+  @override
+  String get homeSoon => remote.text('homeSoon') ?? _base.homeSoon;
+
+  @override
+  String homeServiceSoonA11y(String service) =>
+      remote.format(
+        'homeServiceSoonA11y',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'service': service},
+        ),
+      ) ??
+      _base.homeServiceSoonA11y(service);
+
+  @override
+  String get homeMyCvTitle =>
+      remote.text('homeMyCvTitle') ?? _base.homeMyCvTitle;
+
+  @override
+  String homeMyCvEdited(String time) =>
+      remote.format(
+        'homeMyCvEdited',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'time': time},
+        ),
+      ) ??
+      _base.homeMyCvEdited(time);
+
+  @override
+  String get homeMyCvEdit => remote.text('homeMyCvEdit') ?? _base.homeMyCvEdit;
+
+  @override
+  String get homeMyCvCheck =>
+      remote.text('homeMyCvCheck') ?? _base.homeMyCvCheck;
+
+  @override
+  String get homeMyCvEmptyTitle =>
+      remote.text('homeMyCvEmptyTitle') ?? _base.homeMyCvEmptyTitle;
+
+  @override
+  String get homeMyCvEmptyBody =>
+      remote.text('homeMyCvEmptyBody') ?? _base.homeMyCvEmptyBody;
+
+  @override
+  String get homeHonesty => remote.text('homeHonesty') ?? _base.homeHonesty;
+
+  @override
+  String get authEmailHint =>
+      remote.text('authEmailHint') ?? _base.authEmailHint;
+
+  @override
+  String get authPhoneHint =>
+      remote.text('authPhoneHint') ?? _base.authPhoneHint;
+
+  @override
+  String get cvPersonalEmailHint =>
+      remote.text('cvPersonalEmailHint') ?? _base.cvPersonalEmailHint;
+
+  @override
+  String get cvPersonalPhoneHint =>
+      remote.text('cvPersonalPhoneHint') ?? _base.cvPersonalPhoneHint;
+
+  @override
+  String get cvPersonalLinkedinHint =>
+      remote.text('cvPersonalLinkedinHint') ?? _base.cvPersonalLinkedinHint;
+
+  @override
+  String get authSocialGoogle =>
+      remote.text('authSocialGoogle') ?? _base.authSocialGoogle;
+
+  @override
+  String get authSocialApple =>
+      remote.text('authSocialApple') ?? _base.authSocialApple;
+
+  @override
+  String get authRegisterEmailHint =>
+      remote.text('authRegisterEmailHint') ?? _base.authRegisterEmailHint;
+
+  @override
+  String get timeJustNow => remote.text('timeJustNow') ?? _base.timeJustNow;
+
+  @override
+  String timeMinutesAgo(int count) =>
+      remote.format(
+        'timeMinutesAgo',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.timeMinutesAgo(count);
+
+  @override
+  String timeHoursAgo(int count) =>
+      remote.format(
+        'timeHoursAgo',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.timeHoursAgo(count);
+
+  @override
+  String get timeYesterday =>
+      remote.text('timeYesterday') ?? _base.timeYesterday;
+
+  @override
+  String get savedJustNow => remote.text('savedJustNow') ?? _base.savedJustNow;
+
+  @override
+  String savedAgo(String time) =>
+      remote.format(
+        'savedAgo',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'time': time},
+        ),
+      ) ??
+      _base.savedAgo(time);
+
+  @override
+  String get untitledTitle =>
+      remote.text('untitledTitle') ?? _base.untitledTitle;
+
+  @override
+  String get aiErrorTooLong =>
+      remote.text('aiErrorTooLong') ?? _base.aiErrorTooLong;
+
+  @override
+  String get aiErrorTryAgain =>
+      remote.text('aiErrorTryAgain') ?? _base.aiErrorTryAgain;
+
+  @override
+  String aiGenerationFailed(String detail) =>
+      remote.format(
+        'aiGenerationFailed',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'detail': detail},
+        ),
+      ) ??
+      _base.aiGenerationFailed(detail);
+
+  @override
+  String aiSuggestionsFailed(String detail) =>
+      remote.format(
+        'aiSuggestionsFailed',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'detail': detail},
+        ),
+      ) ??
+      _base.aiSuggestionsFailed(detail);
+
+  @override
+  String aiLocalFallback(String detail) =>
+      remote.format(
+        'aiLocalFallback',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'detail': detail},
+        ),
+      ) ??
+      _base.aiLocalFallback(detail);
+
+  @override
+  String get jobNewsTitle => remote.text('jobNewsTitle') ?? _base.jobNewsTitle;
+
+  @override
+  String get crashMessage => remote.text('crashMessage') ?? _base.crashMessage;
+
+  @override
+  String get avatarFallbackInitial =>
+      remote.text('avatarFallbackInitial') ?? _base.avatarFallbackInitial;
 
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
@@ -5572,17 +5900,12 @@ class RemoteAppLocalizations extends AppLocalizations {
     'jobsCityKhobar': [],
     'jobsCityMecca': [],
     'jobsCityMedina': [],
-    'jobsPersonalizedTitle': [],
-    'jobsPersonalizedFallback': [],
-    'jobsMatchedActive': [],
-    'jobsMatchToggle': [],
     'jobsEmptyFeed': [],
     'jobsLoadFailed': [],
     'jobsLatestPostings': [],
     'jobsDetailTitle': [],
     'jobsVerifiedSourceDetail': [],
     'jobsTamheerProgram': [],
-    'jobsCompatibilityTitle': [],
     'jobsSkillsRequired': [],
     'jobsDescriptionTitle': [],
     'jobsTailorCv': [],
@@ -5636,7 +5959,6 @@ class RemoteAppLocalizations extends AppLocalizations {
     'atsBandVeryGood': [],
     'atsBandFair': [],
     'atsBandWeak': [],
-    'jobsMatchScore': ['int'],
     'atsBenchmark': ['String'],
     'myCvsHeaderSubtitle': [],
     'myCvsToolsTitle': [],
@@ -5686,6 +6008,74 @@ class RemoteAppLocalizations extends AppLocalizations {
     'authSignInRequiredCardTitle': [],
     'authSignInRequiredBody': [],
     'authSignInRequiredBrowseJobs': [],
+    'jobsRegionAll': [],
+    'jobsRegionCentral': [],
+    'jobsRegionEastern': [],
+    'jobsRegionWestern': [],
+    'jobsRegionNorthern': [],
+    'jobsRegionSouthern': [],
+    'jobsEmptyRegionTitle': ['String'],
+    'jobsEmptyRegionBody': [],
+    'jobsShowAllRegions': [],
+    'jobsMatchedNeedsTitle': [],
+    'jobsMatchedSetTitle': [],
+    'jobsMatchedBasedOn': ['String'],
+    'jobsHowToApply': [],
+    'jobsApplyOpensHost': ['String'],
+    'jobsApplyByEmail': [],
+    'jobsApplyEmailHint': [],
+    'jobsCopyEmail': [],
+    'jobsEmailCopied': [],
+    'jobsOpenEmailFailed': [],
+    'jobsNoDirectApply': [],
+    'jobsNoDirectApplyHint': [],
+    'jobsApplyMethodLink': [],
+    'jobsApplyMethodEmail': [],
+    'jobsSourceName': ['String'],
+    'jobsViewSourcePost': [],
+    'jobsShare': [],
+    'jobsRemoteChip': [],
+    'homeProfileSubtitle': [],
+    'homeProfileOpen': [],
+    'homeStartCreateTitle': [],
+    'homeStartCreateBody': [],
+    'homeStartAtsTitle': [],
+    'homeStartAtsBody': [],
+    'homeServiceUpload': [],
+    'homeServiceTarget': [],
+    'homeServiceEducation': [],
+    'homeSoon': [],
+    'homeServiceSoonA11y': ['String'],
+    'homeMyCvTitle': [],
+    'homeMyCvEdited': ['String'],
+    'homeMyCvEdit': [],
+    'homeMyCvCheck': [],
+    'homeMyCvEmptyTitle': [],
+    'homeMyCvEmptyBody': [],
+    'homeHonesty': [],
+    'authEmailHint': [],
+    'authPhoneHint': [],
+    'cvPersonalEmailHint': [],
+    'cvPersonalPhoneHint': [],
+    'cvPersonalLinkedinHint': [],
+    'authSocialGoogle': [],
+    'authSocialApple': [],
+    'authRegisterEmailHint': [],
+    'timeJustNow': [],
+    'timeMinutesAgo': ['int'],
+    'timeHoursAgo': ['int'],
+    'timeYesterday': [],
+    'savedJustNow': [],
+    'savedAgo': ['String'],
+    'untitledTitle': [],
+    'aiErrorTooLong': [],
+    'aiErrorTryAgain': [],
+    'aiGenerationFailed': ['String'],
+    'aiSuggestionsFailed': ['String'],
+    'aiLocalFallback': ['String'],
+    'jobNewsTitle': [],
+    'crashMessage': [],
+    'avatarFallbackInitial': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -6645,17 +7035,12 @@ class RemoteAppLocalizations extends AppLocalizations {
         'jobsCityKhobar' => l.jobsCityKhobar,
         'jobsCityMecca' => l.jobsCityMecca,
         'jobsCityMedina' => l.jobsCityMedina,
-        'jobsPersonalizedTitle' => l.jobsPersonalizedTitle,
-        'jobsPersonalizedFallback' => l.jobsPersonalizedFallback,
-        'jobsMatchedActive' => l.jobsMatchedActive,
-        'jobsMatchToggle' => l.jobsMatchToggle,
         'jobsEmptyFeed' => l.jobsEmptyFeed,
         'jobsLoadFailed' => l.jobsLoadFailed,
         'jobsLatestPostings' => l.jobsLatestPostings,
         'jobsDetailTitle' => l.jobsDetailTitle,
         'jobsVerifiedSourceDetail' => l.jobsVerifiedSourceDetail,
         'jobsTamheerProgram' => l.jobsTamheerProgram,
-        'jobsCompatibilityTitle' => l.jobsCompatibilityTitle,
         'jobsSkillsRequired' => l.jobsSkillsRequired,
         'jobsDescriptionTitle' => l.jobsDescriptionTitle,
         'jobsTailorCv' => l.jobsTailorCv,
@@ -6709,7 +7094,6 @@ class RemoteAppLocalizations extends AppLocalizations {
         'atsBandVeryGood' => l.atsBandVeryGood,
         'atsBandFair' => l.atsBandFair,
         'atsBandWeak' => l.atsBandWeak,
-        'jobsMatchScore' => l.jobsMatchScore(a[0] as int),
         'atsBenchmark' => l.atsBenchmark(a[0] as String),
         'myCvsHeaderSubtitle' => l.myCvsHeaderSubtitle,
         'myCvsToolsTitle' => l.myCvsToolsTitle,
@@ -6774,6 +7158,74 @@ class RemoteAppLocalizations extends AppLocalizations {
         'authSignInRequiredCardTitle' => l.authSignInRequiredCardTitle,
         'authSignInRequiredBody' => l.authSignInRequiredBody,
         'authSignInRequiredBrowseJobs' => l.authSignInRequiredBrowseJobs,
+        'jobsRegionAll' => l.jobsRegionAll,
+        'jobsRegionCentral' => l.jobsRegionCentral,
+        'jobsRegionEastern' => l.jobsRegionEastern,
+        'jobsRegionWestern' => l.jobsRegionWestern,
+        'jobsRegionNorthern' => l.jobsRegionNorthern,
+        'jobsRegionSouthern' => l.jobsRegionSouthern,
+        'jobsEmptyRegionTitle' => l.jobsEmptyRegionTitle(a[0] as String),
+        'jobsEmptyRegionBody' => l.jobsEmptyRegionBody,
+        'jobsShowAllRegions' => l.jobsShowAllRegions,
+        'jobsMatchedNeedsTitle' => l.jobsMatchedNeedsTitle,
+        'jobsMatchedSetTitle' => l.jobsMatchedSetTitle,
+        'jobsMatchedBasedOn' => l.jobsMatchedBasedOn(a[0] as String),
+        'jobsHowToApply' => l.jobsHowToApply,
+        'jobsApplyOpensHost' => l.jobsApplyOpensHost(a[0] as String),
+        'jobsApplyByEmail' => l.jobsApplyByEmail,
+        'jobsApplyEmailHint' => l.jobsApplyEmailHint,
+        'jobsCopyEmail' => l.jobsCopyEmail,
+        'jobsEmailCopied' => l.jobsEmailCopied,
+        'jobsOpenEmailFailed' => l.jobsOpenEmailFailed,
+        'jobsNoDirectApply' => l.jobsNoDirectApply,
+        'jobsNoDirectApplyHint' => l.jobsNoDirectApplyHint,
+        'jobsApplyMethodLink' => l.jobsApplyMethodLink,
+        'jobsApplyMethodEmail' => l.jobsApplyMethodEmail,
+        'jobsSourceName' => l.jobsSourceName(a[0] as String),
+        'jobsViewSourcePost' => l.jobsViewSourcePost,
+        'jobsShare' => l.jobsShare,
+        'jobsRemoteChip' => l.jobsRemoteChip,
+        'homeProfileSubtitle' => l.homeProfileSubtitle,
+        'homeProfileOpen' => l.homeProfileOpen,
+        'homeStartCreateTitle' => l.homeStartCreateTitle,
+        'homeStartCreateBody' => l.homeStartCreateBody,
+        'homeStartAtsTitle' => l.homeStartAtsTitle,
+        'homeStartAtsBody' => l.homeStartAtsBody,
+        'homeServiceUpload' => l.homeServiceUpload,
+        'homeServiceTarget' => l.homeServiceTarget,
+        'homeServiceEducation' => l.homeServiceEducation,
+        'homeSoon' => l.homeSoon,
+        'homeServiceSoonA11y' => l.homeServiceSoonA11y(a[0] as String),
+        'homeMyCvTitle' => l.homeMyCvTitle,
+        'homeMyCvEdited' => l.homeMyCvEdited(a[0] as String),
+        'homeMyCvEdit' => l.homeMyCvEdit,
+        'homeMyCvCheck' => l.homeMyCvCheck,
+        'homeMyCvEmptyTitle' => l.homeMyCvEmptyTitle,
+        'homeMyCvEmptyBody' => l.homeMyCvEmptyBody,
+        'homeHonesty' => l.homeHonesty,
+        'authEmailHint' => l.authEmailHint,
+        'authPhoneHint' => l.authPhoneHint,
+        'cvPersonalEmailHint' => l.cvPersonalEmailHint,
+        'cvPersonalPhoneHint' => l.cvPersonalPhoneHint,
+        'cvPersonalLinkedinHint' => l.cvPersonalLinkedinHint,
+        'authSocialGoogle' => l.authSocialGoogle,
+        'authSocialApple' => l.authSocialApple,
+        'authRegisterEmailHint' => l.authRegisterEmailHint,
+        'timeJustNow' => l.timeJustNow,
+        'timeMinutesAgo' => l.timeMinutesAgo(a[0] as int),
+        'timeHoursAgo' => l.timeHoursAgo(a[0] as int),
+        'timeYesterday' => l.timeYesterday,
+        'savedJustNow' => l.savedJustNow,
+        'savedAgo' => l.savedAgo(a[0] as String),
+        'untitledTitle' => l.untitledTitle,
+        'aiErrorTooLong' => l.aiErrorTooLong,
+        'aiErrorTryAgain' => l.aiErrorTryAgain,
+        'aiGenerationFailed' => l.aiGenerationFailed(a[0] as String),
+        'aiSuggestionsFailed' => l.aiSuggestionsFailed(a[0] as String),
+        'aiLocalFallback' => l.aiLocalFallback(a[0] as String),
+        'jobNewsTitle' => l.jobNewsTitle,
+        'crashMessage' => l.crashMessage,
+        'avatarFallbackInitial' => l.avatarFallbackInitial,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

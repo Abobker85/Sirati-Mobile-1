@@ -7,9 +7,13 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 /// "Updated 3 days ago", or the server label when there's no timestamp.
-String cvUpdatedText(CvListItem item, {required bool english}) {
+String cvUpdatedText(
+  CvListItem item,
+  AppLocalizations l10n, {
+  required bool english,
+}) {
   final at = item.updatedAt;
-  if (at != null) return AppFormat.relativeTime(at, english: english);
+  if (at != null) return AppFormat.relativeTime(at, l10n);
   if (item.updatedLabel.isEmpty) return '';
   return AppFormat.digits(item.updatedLabel, english: english);
 }
@@ -46,7 +50,8 @@ class CvDocumentCard extends StatelessWidget {
     final english = AppLocale.isEnglish(context);
     final colors = context.sirati;
     final l = AppLocalizations.of(context);
-    final updated = cvUpdatedText(item, english: english);
+    final updated =
+        cvUpdatedText(item, AppLocalizations.of(context), english: english);
     final editable = item.id != null;
     final score = item.scoreTotal;
 

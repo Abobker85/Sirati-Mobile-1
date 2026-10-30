@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_ring.dart';
@@ -20,6 +19,7 @@ import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
+import '../support/contrast_probe.dart';
 import 'jobs/featured_job_card_font_weight_test.dart';
 
 /// Surfaces whose constructors can be pumped without providers.
@@ -43,10 +43,10 @@ void main() {
       'source_badge': 'Sirati',
       'is_verified': true,
       'is_tamheer': true,
-      'match_score': 88,
-      'match_reasons': ['skills'],
+      'apply_method': 'url',
+      'apply_url': 'https://careers.sirati.example/jobs/1',
+      'source_type': 'gov',
       'skills_required': ['Dart', 'إدارة المشاريع'],
-      'matched_skills': ['Dart'],
       'salary_range': '15k',
       'published_at': '2026-10-19T08:00:00Z',
     });
@@ -60,7 +60,6 @@ void main() {
       'job news card': JobNewsCard(
         item: job,
         english: true,
-        isNew: true,
         onTap: () {},
       ),
       'job detail': JobNewsDetailScreen(item: job),
@@ -71,16 +70,7 @@ void main() {
             selectedPreset: 'matched',
             onSelected: (_) {},
           ),
-          CategoryChips(
-            english: true,
-            selectedCategory: 'tech',
-            onSelected: (_) {},
-          ),
-          CityChips(
-            english: true,
-            selectedCity: 'riyadh',
-            onSelected: (_) {},
-          ),
+          RegionChips(selectedRegion: 'eastern', onSelected: (_) {}),
         ],
       ),
       'cv document card': Column(
@@ -195,9 +185,8 @@ void _expectShipped(String label) {
   final texts = find.byType(Text).evaluate();
   expect(texts, isNotEmpty, reason: label);
   for (final element in texts) {
-    final render = element.renderObject;
-    expect(render, isA<RenderParagraph>(), reason: label);
-    final style = (render! as RenderParagraph).text.style;
+    final paragraph = paragraphOf(element.renderObject!);
+    final style = paragraph.text.style;
     final weight = style?.fontWeight ?? FontWeight.w400;
     expect(
       shippedFontWeights,
@@ -209,7 +198,7 @@ void _expectShipped(String label) {
     expect(
       style?.fontFamily,
       'IBM Plex Sans Arabic',
-      reason: '$label rendered "${(render as RenderParagraph).text.toPlainText()}" '
+      reason: '$label rendered "${paragraph.text.toPlainText()}" '
           'in ${style?.fontFamily ?? 'the system font'}',
     );
   }

@@ -463,9 +463,13 @@ class NotificationGroupHeader extends StatelessWidget {
   };
 }
 
-String notificationTimeLabel(NotificationItem item, {required bool english}) {
+String notificationTimeLabel(
+  NotificationItem item,
+  AppLocalizations l10n, {
+  required bool english,
+}) {
   final at = item.createdAt;
-  if (at != null) return AppFormat.relativeTime(at, english: english);
+  if (at != null) return AppFormat.relativeTime(at, l10n);
   if (item.createdLabel.isEmpty) return '';
   return AppFormat.digits(item.createdLabel, english: english);
 }
@@ -481,7 +485,8 @@ class NotificationCard extends StatelessWidget {
     final english = AppLocale.isEnglish(context);
     final l10n = AppLocalizations.of(context);
     final c = context.sirati;
-    final time = notificationTimeLabel(item, english: english);
+    final time = notificationTimeLabel(item, AppLocalizations.of(context),
+        english: english);
     final tile = notificationTileStyle(item, c);
     final radius = BorderRadius.circular(16);
     final unread = !item.isRead;

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -12,11 +13,14 @@ import 'package:sirati/features/ats_scanner/domain/analysis_draft.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/prioritized_fixes.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
-import 'package:sirati/features/dashboard/presentation/home/dashboard_cv_hero.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_header.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_tab.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_jobs_section.dart';
-import 'package:sirati/features/dashboard/presentation/home/dashboard_tool_card.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_latest_cv_section.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_pressable_card.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_service_tile.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_start_card.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_card.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
@@ -28,7 +32,6 @@ import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
-import 'package:sirati/shared/widgets/submit_button.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -106,6 +109,7 @@ class Content extends MobileContentService {
     String? category,
     String? preset,
     String? city,
+    String? region,
     int? jobTitleId,
     bool? isRemote,
     bool? isVerified,
@@ -226,6 +230,10 @@ Widget app(
         AppRoutes.createCv: (_) =>
             const Scaffold(body: Text('CV builder destination')),
       },
+      onGenerateRoute: (settings) => MaterialPageRoute<void>(
+        settings: settings,
+        builder: (_) => Scaffold(body: Text('route ${settings.name}')),
+      ),
       home: home,
     ),
   );
@@ -359,15 +367,15 @@ void main() {
       }
     }
   }
-  testWidgets('tool cards share one width, and one height side by side', (
+  testWidgets('service tiles share one width, and one height side by side', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     var sideBySide = 0;
     for (final arabic in [true, false]) {
-      for (final width in [360.0, 375.0, 390.0, 430.0, 768.0]) {
-        for (final scale in [1.0, 1.3]) {
+      for (final width in [320.0, 360.0, 375.0, 390.0, 430.0, 768.0]) {
+        for (final scale in [1.0, 1.3, 2.0]) {
           final label = 'arabic=$arabic width=$width scale=$scale';
           tester.view.physicalSize = Size(width, 2400);
           await tester.pumpWidget(
@@ -379,28 +387,31 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          final cards = find.byType(DashboardToolCard);
+          final tiles = find.byType(HomeServiceTile);
           await tester.scrollUntilVisible(
-            cards.first,
+            tiles.last,
             300,
-            scrollable: find
-                .byWidgetPredicate(
-                  (w) =>
-                      w is Scrollable &&
-                      axisDirectionToAxis(w.axisDirection) == Axis.vertical,
-                )
-                .first,
+            scrollable: verticalScroll(),
           );
           await tester.pumpAndSettle();
-          final first = tester.getRect(cards.first);
-          final second = tester.getRect(cards.last);
-          expect(first.width, second.width, reason: label);
-          if (second.top < first.bottom) {
+          expect(tiles, findsNWidgets(3), reason: label);
+          final rects = [
+            for (final e in tiles.evaluate())
+              tester.getRect(find.byWidget(e.widget))
+          ];
+          for (final r in rects.skip(1)) {
+            expect(r.width, rects.first.width, reason: label);
+          }
+          if (rects[1].top < rects[0].bottom) {
             sideBySide++;
-            expect(first.top, second.top, reason: label);
-            expect(first.height, second.height, reason: label);
+            for (final r in rects.skip(1)) {
+              expect(r.top, rects.first.top, reason: label);
+              expect(r.height, rects.first.height, reason: label);
+            }
           } else {
-            expect(first.left, second.left, reason: label);
+            for (final r in rects.skip(1)) {
+              expect(r.left, rects.first.left, reason: label);
+            }
           }
           expect(tester.takeException(), isNull, reason: label);
           await tester.pumpWidget(const SizedBox());
@@ -683,22 +694,6 @@ void expectRenderedControls(WidgetTester tester, String label) {
     contrast(fill, boxes[1], background: track);
     contrast(fill, bar);
   }
-  for (final card in find.byType(DashboardToolCard).evaluate()) {
-    final material = find
-        .descendant(
-          of: find.byWidget(card.widget),
-          matching: find.byType(Material),
-        )
-        .evaluate()
-        .first;
-    final shape = (material.widget as Material).shape! as OutlinedBorder;
-    contrast(
-      shape.side.color,
-      material,
-      background: (material.widget as Material).color,
-    );
-    contrast(shape.side.color, material);
-  }
   for (final button in find.byType(OutlinedButton).evaluate()) {
     final material = find
         .descendant(
@@ -718,7 +713,7 @@ void expectRenderedControls(WidgetTester tester, String label) {
       .byWidgetPredicate(
         (w) =>
             w is ButtonStyleButton ||
-            w is DashboardToolCard ||
+            w is HomePressableCard ||
             w is ListTile && w.onTap != null ||
             w is Tab,
       )
@@ -782,7 +777,7 @@ void additionalTests() {
   for (final arabic in [false, true]) {
     for (final dark in [false, true]) {
       testWidgets(
-        'real latest selection, populated activity, restored home and stacked tools ar=$arabic dark=$dark at 2x',
+        'returning user home: latest CV, edit, ATS check, start cards and jobs ar=$arabic dark=$dark at 2x',
         (tester) async {
           tester.view.physicalSize = const Size(390, 900);
           tester.view.devicePixelRatio = 1;
@@ -801,59 +796,91 @@ void additionalTests() {
             ),
           );
           await tester.pumpAndSettle();
-          final hero = find.byType(DashboardCvHero);
-          final analyze = find.byKey(DashboardCvHero.primaryKey);
+          final l = AppLocalizations.of(
+            tester.element(find.byType(DashboardHomeTab)),
+          );
+
+          // Profile row: the server's name and the board's hint.
+          final header = find.byType(DashboardHomeHeader);
+          expect(
+            find.descendant(
+              of: header,
+              matching: find.textContaining('سارة Sara'),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(
+              of: header,
+              matching: find.text(l.homeProfileSubtitle),
+            ),
+            findsOneWidget,
+          );
+
+          // Latest CV: the newest by update time, with its edit time.
+          final section = find.byType(HomeLatestCvSection);
+          final check = find.byKey(HomeLatestCvSection.checkKey);
           await tester.scrollUntilVisible(
-            analyze,
-            250,
+            check,
+            300,
             scrollable: verticalScroll(),
           );
           await tester.pumpAndSettle();
-          await tester.ensureVisible(analyze);
+          expect(
+            find.descendant(
+              of: section,
+              matching: find.text(latest.targetJobTitle),
+            ),
+            findsOneWidget,
+          );
+          final edited = DateTime.parse('2026-10-19T12:00:00Z').toLocal();
+          expect(
+            find.descendant(
+              of: section,
+              matching: find.text(
+                l.homeMyCvEdited(
+                  AppFormat.relativeTime(edited, l),
+                ),
+              ),
+            ),
+            findsOneWidget,
+          );
+          expect(find.byKey(HomeLatestCvSection.createKey), findsNothing);
+          expect(
+            find.descendant(
+              of: section,
+              matching: find.text(l.homeMyCvEmptyTitle),
+            ),
+            findsNothing,
+          );
+
+          // Edit opens the editor on that CV; a saved edit reloads Home,
+          // leaving without saving does not.
+          for (final saved in [false, true]) {
+            await tester.ensureVisible(
+              find.byKey(HomeLatestCvSection.editKey),
+            );
+            await tester.pumpAndSettle();
+            final fetchesBefore = api.savedCvFetches;
+            await tester.tap(find.byKey(HomeLatestCvSection.editKey));
+            await tester.pumpAndSettle();
+            final editor = find.byType(CvGeneratorScreen);
+            expect(editor, findsOneWidget, reason: 'saved=$saved');
+            expect(tester.widget<CvGeneratorScreen>(editor).initialCv?.id,
+                latest.id);
+            Navigator.of(tester.element(editor)).pop(saved ? latest : null);
+            await tester.pumpAndSettle();
+            expect(
+              api.savedCvFetches > fetchesBefore,
+              saved,
+              reason: 'Home reloads only after a saved edit',
+            );
+          }
+
+          // ATS check preselects it and runs on its text.
+          await tester.ensureVisible(check);
           await tester.pumpAndSettle();
-          final heroContext = tester.element(hero);
-          final heroL = AppLocalizations.of(heroContext);
-          final expectedUpdated = DateTime.parse(
-            '2026-10-19T12:00:00Z',
-          ).toLocal();
-          final materialL = MaterialLocalizations.of(heroContext);
-          // 67 sits in the "very good" band.
-          expect(
-            find.descendant(
-              of: find.byKey(DashboardCvHero.scoreKey),
-              matching: find.text(
-                heroL.homeHeroScoreTitle(
-                  AppFormat.digits('67', english: !arabic),
-                ),
-              ),
-            ),
-            findsOneWidget,
-          );
-          expect(
-            find.descendant(
-              of: find.byKey(DashboardCvHero.scoreKey),
-              matching: find.text(heroL.homeHeroScoreVeryGood),
-            ),
-            findsOneWidget,
-          );
-          expect(
-            tester
-                .widget<SubmitButton>(find.byKey(DashboardCvHero.secondaryKey))
-                .label,
-            heroL.homeHeroTargetJob,
-          );
-          expect(
-            find.descendant(
-              of: hero,
-              matching: find.text(
-                heroL.homeHeroUpdatedAt(
-                  '${materialL.formatCompactDate(expectedUpdated)} ${materialL.formatTimeOfDay(TimeOfDay.fromDateTime(expectedUpdated))}',
-                ),
-              ),
-            ),
-            findsOneWidget,
-          );
-          await tester.tap(analyze);
+          await tester.tap(check);
           await tester.pumpAndSettle();
           expect(
             tester
@@ -901,43 +928,25 @@ void additionalTests() {
           await tester.pumpAndSettle();
           Navigator.of(tester.element(find.byType(CvAnalysisScreen))).pop();
           await tester.pumpAndSettle();
-          // Returning user: the header greets by the server's name with the
-          // "improve" hint, and the first tool creates another CV.
+
+          // Start cards: create first, then the ATS check.
           await tester.drag(verticalScroll(), const Offset(0, 4000));
           await tester.pumpAndSettle();
-          final homeL = AppLocalizations.of(
-            tester.element(find.byType(DashboardHomeTab)),
-          );
-          final header = find.byType(DashboardHomeHeader);
+          final starts = find.byType(HomeStartCard);
+          expect(starts, findsNWidgets(2));
           expect(
-            find.descendant(
-              of: header,
-              matching: find.textContaining('سارة Sara'),
-            ),
-            findsOneWidget,
+            tester.getRect(starts.last).top,
+            greaterThanOrEqualTo(tester.getRect(starts.first).bottom),
           );
-          expect(
-            find.descendant(
-              of: header,
-              matching: find.text(homeL.homeHeaderSubtitleReturning),
-            ),
-            findsOneWidget,
-          );
-          await tester.scrollUntilVisible(
-            find.byKey(const ValueKey('home-tool-create')),
-            300,
-            scrollable: verticalScroll(),
-          );
-          await tester.pumpAndSettle();
-          expect(find.byKey(const ValueKey('home-tool-ats')), findsNothing);
-          await tester.tap(find.byKey(const ValueKey('home-tool-create')));
+          await tester.tap(find.byKey(const ValueKey('home-start-create')));
           await tester.pumpAndSettle();
           expect(find.text('CV builder destination'), findsOneWidget);
           Navigator.of(
             tester.element(find.text('CV builder destination')),
           ).pop();
           await tester.pumpAndSettle();
-          // Jobs for you: the feed's first jobs, never more than the limit.
+
+          // Latest jobs: the feed's first jobs, compact, never more than the limit.
           await tester.scrollUntilVisible(
             find.byType(DashboardJobsSection),
             300,
@@ -951,66 +960,21 @@ void additionalTests() {
             ),
             findsNWidgets(DashboardJobsSection.limit),
           );
-          // In feed order; cards render bilingual titles on two lines, so
-          // compare the jobs they carry.
+          final cards =
+              tester.widgetList<JobNewsCard>(find.byType(JobNewsCard));
           expect(
-            tester
-                .widgetList<JobNewsCard>(find.byType(JobNewsCard))
-                .map((card) => card.item.title),
+            cards.map((card) => card.item.title),
             homeJobTitles.take(DashboardJobsSection.limit),
           );
-          // The tools sit above the jobs.
-          await tester.scrollUntilVisible(
-            find.byKey(const ValueKey('home-tool-education')),
-            -300,
-            scrollable: verticalScroll(),
-          );
-          await tester.pumpAndSettle();
-          final first = tester.getRect(find.byType(DashboardToolCard).first);
-          final second = tester.getRect(find.byType(DashboardToolCard).last);
-          expect(second.top, greaterThanOrEqualTo(first.bottom));
-          expect(second.width, first.width);
-          final icons = [
-            for (final card in find.byType(DashboardToolCard).evaluate())
-              tester
-                  .widget<Icon>(
-                    find
-                        .descendant(
-                          of: find.byWidget(card.widget),
-                          matching: find.byType(Icon),
-                        )
-                        .first,
-                  )
-                  .color,
-          ];
-          expect(icons[0], isNot(icons[1]));
+          expect(cards.every((card) => card.compact), isTrue);
           await checkScroll(tester, 'populated home $arabic $dark');
-          final tiles = tester
-              .widgetList<ListTile>(find.byType(ListTile))
-              .where((t) => t.onTap != null)
-              .toList();
-          expect(tiles.length, 3);
-          final subtitles =
-              tiles.map((t) => (t.subtitle! as Text).data!).toList();
-          final l = AppLocalizations.of(
-            tester.element(find.byType(DashboardHomeTab)),
-          );
-          expect(
-            subtitles.where((s) => s.startsWith(l.homeHeroLatestCv)),
-            hasLength(1),
-          );
-          expect(
-            subtitles.where((s) => s.startsWith(l.homeActivitySavedCv)),
-            hasLength(1),
-          );
           expect(tester.takeException(), isNull);
         },
       );
     }
   }
-  // A new user (no CV yet) gets the start state of the agreed design: start
-  // a CV or bring an old one, the ATS tool, and every Home exit lands where
-  // it says.
+  // A new user (no CV yet): the empty "my latest CV" state, and every Home
+  // exit lands where it says; Learning is not ready and does nothing.
   for (final arabic in [false, true]) {
     for (final dark in [false, true]) {
       testWidgets('new user home and its exits ar=$arabic dark=$dark', (
@@ -1032,68 +996,186 @@ void additionalTests() {
         final l = AppLocalizations.of(
           tester.element(find.byType(DashboardHomeTab)),
         );
-        final hero = find.byType(DashboardCvHero);
-        expect(
-          find.descendant(of: hero, matching: find.text(l.homeHeroStartTitle)),
-          findsOneWidget,
-        );
-        expect(find.byKey(DashboardCvHero.scoreKey), findsNothing);
+        await checkScroll(tester, 'new user ar=$arabic dark=$dark');
+        final section = find.byType(HomeLatestCvSection);
         expect(
           find.descendant(
-            of: find.byType(DashboardHomeHeader),
-            matching: find.text(l.homeHeaderSubtitleNew),
+            of: section,
+            matching: find.text(l.homeMyCvEmptyTitle),
           ),
           findsOneWidget,
         );
-        await checkScroll(tester, 'new user ar=$arabic dark=$dark');
-        await tester.drag(verticalScroll(), const Offset(0, 4000));
-        await tester.pumpAndSettle();
-        await tester.scrollUntilVisible(
-          find.byKey(const ValueKey('home-tool-ats')),
-          300,
-          scrollable: verticalScroll(),
+        expect(find.byKey(HomeLatestCvSection.editKey), findsNothing);
+        expect(find.byKey(HomeLatestCvSection.viewAllKey), findsNothing);
+        expect(
+          find.descendant(of: section, matching: find.text(l.homeHonesty)),
+          findsOneWidget,
         );
-        expect(find.byKey(const ValueKey('home-tool-create')), findsNothing);
-        await tester.drag(verticalScroll(), const Offset(0, 4000));
-        await tester.pumpAndSettle();
 
-        await tester.tap(find.byKey(DashboardCvHero.primaryKey));
+        await tester.tap(find.byKey(HomeLatestCvSection.createKey));
         await tester.pumpAndSettle();
         expect(find.text('CV builder destination'), findsOneWidget);
         Navigator.of(tester.element(find.text('CV builder destination'))).pop();
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byKey(DashboardCvHero.secondaryKey));
-        await tester.pumpAndSettle();
-        expect(
-          tester
-              .widget<CvAnalysisScreen>(find.byType(CvAnalysisScreen))
-              .initialCvId,
-          isNull,
-          reason: 'an old CV is uploaded, not picked from saved ones',
-        );
-        Navigator.of(tester.element(find.byType(CvAnalysisScreen))).pop();
-        await tester.pumpAndSettle();
-
-        for (final (finder, tab) in [
-          (find.byKey(const ValueKey('home-tool-education')),
-              DashboardTab.education),
-          (find.byKey(DashboardJobsSection.viewAllKey), DashboardTab.jobNews),
-        ]) {
+        // The ATS start card and "upload a CV" both upload, never preselect.
+        for (final key in const ['home-start-ats', 'home-service-upload']) {
+          final finder = find.byKey(ValueKey(key));
           await tester.scrollUntilVisible(
             finder,
-            300,
+            -300,
             scrollable: verticalScroll(),
           );
           await tester.pumpAndSettle();
           await tester.tap(finder);
           await tester.pumpAndSettle();
-          expect(navigated.last, tab);
+          final screen =
+              tester.widget<CvAnalysisScreen>(find.byType(CvAnalysisScreen));
+          expect(screen.initialCvId, isNull, reason: key);
+          if (key == 'home-service-upload') {
+            expect(screen.initialSource, AnalysisCvSource.upload);
+          }
+          Navigator.of(tester.element(find.byType(CvAnalysisScreen))).pop();
+          await tester.pumpAndSettle();
         }
+
+        // Target a job opens job match.
+        const jobMatchRoute = 'route ${AppRoutes.jobMatch}';
+        await tester.tap(find.byKey(const ValueKey('home-service-target')));
+        await tester.pumpAndSettle();
+        expect(find.text(jobMatchRoute), findsOneWidget);
+        Navigator.of(tester.element(find.text(jobMatchRoute))).pop();
+        await tester.pumpAndSettle();
+
+        // Learning is "soon": shown, labelled, not a button.
+        final education = find.byKey(const ValueKey('home-service-education'));
+        expect(tester.widget<InkWell>(education).onTap, isNull);
+        expect(
+          find.bySemanticsLabel(
+            l.homeServiceSoonA11y(l.homeServiceEducation),
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(education, warnIfMissed: false);
+        await tester.pumpAndSettle();
+        expect(navigated, isEmpty);
+
+        await tester.scrollUntilVisible(
+          find.byKey(DashboardJobsSection.viewAllKey),
+          300,
+          scrollable: verticalScroll(),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(DashboardJobsSection.viewAllKey));
+        await tester.pumpAndSettle();
+        expect(navigated.last, DashboardTab.jobNews);
         expect(tester.takeException(), isNull);
       });
     }
   }
+  testWidgets('latest CV shows the server label when the list has no timestamp',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    for (final label in ['آخر تحديث: قبل يومين', 'Last updated: 2 days ago']) {
+      final latest = cv(70, id: 71);
+      await tester.pumpWidget(
+        app(
+          Scaffold(body: DashboardHomeTab(onNavigate: (_) {})),
+          arabic: !label.startsWith('Last'),
+          dark: false,
+          scale: 1,
+          latest: latest,
+          content: Content(
+            latest: latest,
+            rows: [
+              {
+                'id': 71,
+                'title': latest.targetJobTitle,
+                'updated_label': label
+              },
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byType(HomeLatestCvSection),
+          matching: find.text(label),
+        ),
+        findsOneWidget,
+        reason: label,
+      );
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
+  testWidgets('the bell is a screen-reader button that opens notifications',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    for (final unread in [0, 3]) {
+      var opened = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightFor(arabic: true),
+          locale: const Locale('ar'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Scaffold(
+            body: DashboardHomeHeader(
+              name: 'سارة',
+              subtitle: 'x',
+              unreadCount: unread,
+              onNotifications: () => opened++,
+              onAvatarTap: () {},
+            ),
+          ),
+        ),
+      );
+      final l = AppLocalizations.of(
+        tester.element(find.byType(DashboardHomeHeader)),
+      );
+      final label = unread > 0
+          ? l.dashboardHeaderNotificationsUnread(unread)
+          : l.sharedNotifications;
+      final node = tester.getSemantics(find.bySemanticsLabel(label));
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      tester.semantics.tap(find.semantics.byLabel(label));
+      await tester.pumpAndSettle();
+      expect(opened, 1, reason: 'unread=$unread');
+    }
+    semantics.dispose();
+  });
+
+  testWidgets('Home cards do not animate presses when motion is reduced',
+      (tester) async {
+    for (final reduce in [false, true]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightFor(arabic: false),
+          home: MediaQuery(
+            data: MediaQueryData(disableAnimations: reduce),
+            child: Scaffold(
+              body: HomePressableCard(
+                onTap: () {},
+                child: const SizedBox(width: 120, height: 80),
+              ),
+            ),
+          ),
+        ),
+      );
+      final box = tester.widget<AnimatedContainer>(
+        find.descendant(
+          of: find.byType(HomePressableCard),
+          matching: find.byType(AnimatedContainer),
+        ),
+      );
+      expect(box.duration == Duration.zero, reduce, reason: 'reduce=$reduce');
+    }
+  });
+
   testWidgets(
     'unknown priorities remain unknown; empty fixes have no heading',
     (tester) async {

@@ -149,6 +149,7 @@ class MobileContentService {
     String? category,
     String? preset,
     String? city,
+    String? region,
     int? jobTitleId,
     bool? isRemote,
     bool? isVerified,
@@ -161,6 +162,7 @@ class MobileContentService {
     final cat = category ?? '';
     final pre = preset ?? '';
     final c = city ?? '';
+    final reg = region ?? '';
     final jt = jobTitleId?.toString() ?? '';
     final rem = isRemote == true ? '1' : '';
     final ver = isVerified == true ? '1' : '';
@@ -170,6 +172,7 @@ class MobileContentService {
     final isDefault = cat.isEmpty &&
         pre.isEmpty &&
         c.isEmpty &&
+        reg.isEmpty &&
         jt.isEmpty &&
         rem.isEmpty &&
         ver.isEmpty &&
@@ -178,7 +181,7 @@ class MobileContentService {
         q.isEmpty;
     final diskKey = isDefault ? DiskCache.newsKey(lang) : null;
     return _cached(
-      'job-news:$lang:$cat:$pre:$c:$jt:$rem:$ver:$src:$emp:$q',
+      'job-news:$lang:$cat:$pre:$c:$reg:$jt:$rem:$ver:$src:$emp:$q',
       force: force,
       diskKey: diskKey,
       ttl: q.isEmpty ? cacheTtl : const Duration(seconds: 30),
@@ -187,6 +190,7 @@ class MobileContentService {
         if (cat.isNotEmpty && cat != 'all') params['category'] = cat;
         if (pre.isNotEmpty && pre != 'all') params['preset'] = pre;
         if (c.isNotEmpty && c != 'all') params['city'] = c;
+        if (reg.isNotEmpty && reg != 'all') params['region'] = reg;
         if (jt.isNotEmpty) params['job_title_id'] = jt;
         if (rem.isNotEmpty) params['is_remote'] = '1';
         if (ver.isNotEmpty) params['is_verified'] = '1';

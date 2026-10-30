@@ -136,9 +136,11 @@ class _CvExportDialogState extends State<CvExportDialog> {
               ),
               const SizedBox(height: 6),
               SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'ar', label: Text('العربية')),
-                  ButtonSegment(value: 'en', label: Text('English')),
+                segments: [
+                  ButtonSegment(
+                      value: 'ar', label: Text(l10n.languageArabic)),
+                  ButtonSegment(
+                      value: 'en', label: Text(l10n.languageEnglish)),
                 ],
                 selected: {state.exportLanguage},
                 onSelectionChanged: (selected) {

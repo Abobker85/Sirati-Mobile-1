@@ -237,8 +237,8 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
             if (_cv.aiStatus == AiStatus.failed && aiError != null) ...[
               CvStatusBanner.warning(
                 margin: EdgeInsets.zero,
-                message:
-                    AiErrorMessage.localFallback(aiError, english: english),
+                message: AiErrorMessage.localFallback(
+                    aiError, AppLocalizations.of(context)),
               ),
               const SizedBox(height: AppSpacing.md),
             ],

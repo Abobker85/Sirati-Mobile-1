@@ -103,7 +103,7 @@ void expectAllTextAa(String label) {
     // Opacity 0 is not painted: hint placeholders kept for layout, and the
     // first frame of an entrance fade. Partial fades are still checked.
     if (ancestorOpacity == 0) continue;
-    final paragraph = element.findRenderObject()! as RenderParagraph;
+    final paragraph = paragraphOf(element.findRenderObject()!);
     final ink = paragraph.text.style!.color!;
     final color = ink.withValues(
       alpha: (ink.a * ancestorOpacity).clamp(0.0, 1.0),
@@ -162,4 +162,23 @@ void expectAllProgressIndicatorsAa(String label) {
       );
     }
   }
+}
+
+/// The paragraph a [Text] painted. Inside a `SelectionArea` the Text's own
+/// render object is a mouse region (text cursor) wrapping the paragraph, so
+/// test helpers must not cast the Text's render object directly.
+RenderParagraph paragraphOf(RenderObject root) {
+  if (root is RenderParagraph) return root;
+  RenderParagraph? found;
+  void visit(RenderObject child) {
+    if (found != null) return;
+    if (child is RenderParagraph) {
+      found = child;
+    } else {
+      child.visitChildren(visit);
+    }
+  }
+
+  root.visitChildren(visit);
+  return found ?? (throw StateError('no RenderParagraph under $root'));
 }

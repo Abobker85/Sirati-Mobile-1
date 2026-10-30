@@ -49,7 +49,7 @@ void handleLoginOutcome(
       AppSnackBar.error(
         context,
         l10n.authSocialSignInNotConfigured(
-            method == 'google' ? 'Google' : 'Apple'),
+            method == 'google' ? l10n.authSocialGoogle : l10n.authSocialApple),
       );
     case LoginIgnored():
       break;
@@ -115,7 +115,7 @@ class SocialSignInSection extends ConsumerWidget {
               Expanded(
                 child: _SocialButton(
                   mark: const _GoogleMark(size: 20),
-                  label: 'Google',
+                  label: l10n.authSocialGoogle,
                   onTap: () => unawaited(google()),
                 ),
               ),
@@ -125,7 +125,7 @@ class SocialSignInSection extends ConsumerWidget {
                 child: _SocialButton(
                   mark: Icon(Icons.apple,
                       size: 22, color: context.sirati.textPrimary),
-                  label: 'Apple',
+                  label: l10n.authSocialApple,
                   onTap: () => unawaited(apple()),
                 ),
               ),

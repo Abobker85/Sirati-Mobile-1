@@ -689,7 +689,7 @@
   "homeToolAtsBody": "تحليل سيرتك بنظام الفرز",
   "homeToolEducationTitle": "التعليم والتطوير المهني",
   "homeToolEducationBody": "قريباً",
-  "homeJobsTitle": "وظائف تناسبك",
+  "homeJobsTitle": "أحدث الوظائف",
   "homeJobsViewAll": "عرض الكل",
   "homeJobsEmpty": "لا توجد وظائف مناسبة الآن. سنعرض لك الجديد هنا.",
   "@homeHeroScoreTitle": {
@@ -2543,23 +2543,23 @@
   "@jobsFilterAll": {
     "description": "Job news filter chip that clears the preset or category filter."
   },
-  "jobsPresetMatched": "مناسبة لي 🎯",
+  "jobsPresetMatched": "مناسبة لي",
   "@jobsPresetMatched": {
     "description": "Job news preset chip: jobs matching the user profile."
   },
-  "jobsPresetGov": "جهات حكومية 🏛️",
+  "jobsPresetGov": "جهات حكومية",
   "@jobsPresetGov": {
     "description": "Job news preset chip: government employers."
   },
-  "jobsPresetEnterprise": "شركات كبرى 🏢",
+  "jobsPresetEnterprise": "شركات",
   "@jobsPresetEnterprise": {
     "description": "Job news preset chip: large companies."
   },
-  "jobsPresetTamheer": "تمهير وتدريب 🇸🇦",
+  "jobsPresetTamheer": "تمهير وتدريب",
   "@jobsPresetTamheer": {
     "description": "Job news preset chip: Tamheer training programme."
   },
-  "jobsFilterRemote": "عن بعد 🌐",
+  "jobsFilterRemote": "عن بُعد",
   "@jobsFilterRemote": {
     "description": "Job news preset and city chip: remote jobs."
   },
@@ -2607,22 +2607,6 @@
   "@jobsCityMedina": {
     "description": "Job news city chip."
   },
-  "jobsPersonalizedTitle": "فرص مهنية مخصصة لك",
-  "@jobsPersonalizedTitle": {
-    "description": "Title of the job news profile banner."
-  },
-  "jobsPersonalizedFallback": "عرض وظائف متوافقة مع مهاراتك وخبراتك.",
-  "@jobsPersonalizedFallback": {
-    "description": "Job news profile banner subtitle when the user has no career field."
-  },
-  "jobsMatchedActive": "المطابقة ✓",
-  "@jobsMatchedActive": {
-    "description": "Job news profile banner toggle while the matched filter is on."
-  },
-  "jobsMatchToggle": "المطابقة 🎯",
-  "@jobsMatchToggle": {
-    "description": "Job news profile banner toggle that turns the matched filter on."
-  },
   "jobsEmptyFeed": "لا توجد أخبار وظائف منشورة حالياً.",
   "@jobsEmptyFeed": {
     "description": "Empty state of the job news list when no filter is active."
@@ -2643,13 +2627,9 @@
   "@jobsVerifiedSourceDetail": {
     "description": "Fallback source badge on the job detail screen for a verified employer."
   },
-  "jobsTamheerProgram": "برنامج تمهير 🇸🇦",
+  "jobsTamheerProgram": "برنامج تمهير",
   "@jobsTamheerProgram": {
     "description": "Badge on the job detail screen for Tamheer programme jobs."
-  },
-  "jobsCompatibilityTitle": "توافق الوظيفة مع ملفك المهني",
-  "@jobsCompatibilityTitle": {
-    "description": "Title of the match card on the job detail screen."
   },
   "jobsSkillsRequired": "المهارات المطلوبة للوظيفة",
   "@jobsSkillsRequired": {
@@ -2659,7 +2639,7 @@
   "@jobsDescriptionTitle": {
     "description": "Section title of the posting text on the job detail screen."
   },
-  "jobsTailorCv": "تخصيص سيرتي الذاتية لهذه الوظيفة 🪄",
+  "jobsTailorCv": "جهّز سيرتي لهذه الوظيفة",
   "@jobsTailorCv": {
     "description": "Button that opens the CV generator targeted at this job."
   },
@@ -2675,7 +2655,7 @@
   "@jobsVerifiedSourceCard": {
     "description": "Fallback source badge on a job news card for a verified employer."
   },
-  "jobsTamheerBadge": "تمهير 🇸🇦",
+  "jobsTamheerBadge": "تمهير",
   "@jobsTamheerBadge": {
     "description": "Badge on a job news card for Tamheer programme jobs."
   },
@@ -2691,7 +2671,7 @@
   "@jobsVerifiedSourceFeatured": {
     "description": "Fallback source badge on the featured job card for a verified employer."
   },
-  "jobsTamheerBadgeFeatured": "تمهير 🇸🇦",
+  "jobsTamheerBadgeFeatured": "تمهير",
   "@jobsTamheerBadgeFeatured": {
     "description": "Badge on the featured job card for Tamheer programme jobs."
   },
@@ -2905,16 +2885,6 @@
   "@atsBandWeak": {
     "description": "ATS score band description: weak."
   },
-  "jobsMatchScore": "{score}% تطابق",
-  "@jobsMatchScore": {
-    "description": "Match score chip on job news cards.",
-    "placeholders": {
-      "score": {
-        "type": "int",
-        "example": "88"
-      }
-    }
-  },
   "atsBenchmark": "معيار التقييم: {category}",
   "@atsBenchmark": {
     "description": "ATS score benchmark line; category is the scoring category label.",
@@ -3070,5 +3040,232 @@
   "authSignInRequiredBrowseJobs": "تصفّح الوظائف",
   "@authSignInRequiredBrowseJobs": {
     "description": "Link back to the jobs tab from the sign-in required page"
-  }
+  },
+  "jobsRegionAll": "كل المناطق",
+  "@jobsRegionAll": {
+    "description": "Region chip: no region filter"
+  },
+  "jobsRegionCentral": "المنطقة الوسطى",
+  "@jobsRegionCentral": {
+    "description": "Region chip"
+  },
+  "jobsRegionEastern": "المنطقة الشرقية",
+  "@jobsRegionEastern": {
+    "description": "Region chip"
+  },
+  "jobsRegionWestern": "المنطقة الغربية",
+  "@jobsRegionWestern": {
+    "description": "Region chip"
+  },
+  "jobsRegionNorthern": "المنطقة الشمالية",
+  "@jobsRegionNorthern": {
+    "description": "Region chip"
+  },
+  "jobsRegionSouthern": "المنطقة الجنوبية",
+  "@jobsRegionSouthern": {
+    "description": "Region chip"
+  },
+  "jobsEmptyRegionTitle": "لا إعلانات في {region} الآن",
+  "@jobsEmptyRegionTitle": {
+    "description": "Empty state when a region filter has no jobs",
+    "placeholders": {
+      "region": {
+        "type": "String"
+      }
+    }
+  },
+  "jobsEmptyRegionBody": "لم تُنشر إعلانات في هذه المنطقة بعد، جرّب منطقة أخرى.",
+  "@jobsEmptyRegionBody": {
+    "description": "Empty state body for a region filter"
+  },
+  "jobsShowAllRegions": "عرض كل المناطق",
+  "@jobsShowAllRegions": {
+    "description": "Button that clears the region filter"
+  },
+  "jobsMatchedNeedsTitle": "أضف مسمّاك الوظيفي لنعرض لك الوظائف المناسبة لمجالك.",
+  "@jobsMatchedNeedsTitle": {
+    "description": "Shown on the 'in my field' filter when the profile has no job title"
+  },
+  "jobsMatchedSetTitle": "إضافة المسمى الوظيفي",
+  "@jobsMatchedSetTitle": {
+    "description": "Button opening settings to set a job title"
+  },
+  "jobsMatchedBasedOn": "وظائف في مجال: {title}",
+  "@jobsMatchedBasedOn": {
+    "description": "Note above the 'in my field' results",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "jobsHowToApply": "طريقة التقديم",
+  "@jobsHowToApply": {
+    "description": "Detail section title"
+  },
+  "jobsApplyOpensHost": "سيفتح موقع {host}",
+  "@jobsApplyOpensHost": {
+    "description": "Shows the apply link's website before leaving the app",
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "jobsApplyByEmail": "التقديم بالبريد",
+  "@jobsApplyByEmail": {
+    "description": "Primary button for email applications"
+  },
+  "jobsApplyEmailHint": "أرسل سيرتك الذاتية إلى البريد التالي:",
+  "@jobsApplyEmailHint": {
+    "description": "Text above the application email"
+  },
+  "jobsCopyEmail": "نسخ البريد",
+  "@jobsCopyEmail": {
+    "description": "Copy the application email"
+  },
+  "jobsEmailCopied": "تم نسخ البريد.",
+  "@jobsEmailCopied": {
+    "description": "Snackbar after copying the email"
+  },
+  "jobsOpenEmailFailed": "تعذر فتح تطبيق البريد، انسخ العنوان بدلاً من ذلك.",
+  "@jobsOpenEmailFailed": {
+    "description": "Error when no mail app opens"
+  },
+  "jobsNoDirectApply": "لا يوجد رابط تقديم مباشر في الإعلان",
+  "@jobsNoDirectApply": {
+    "description": "Shown when the post gives no link or email"
+  },
+  "jobsNoDirectApplyHint": "اتبع طريقة التقديم المذكورة في نص الإعلان.",
+  "@jobsNoDirectApplyHint": {
+    "description": "Hint under 'no direct application link'"
+  },
+  "jobsApplyMethodLink": "رابط تقديم",
+  "@jobsApplyMethodLink": {
+    "description": "Card chip: the job has an application link"
+  },
+  "jobsApplyMethodEmail": "تقديم بالبريد",
+  "@jobsApplyMethodEmail": {
+    "description": "Card chip: the job takes applications by email"
+  },
+  "jobsSourceName": "المصدر: {source}",
+  "@jobsSourceName": {
+    "description": "Where the posting was found",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "jobsViewSourcePost": "عرض الإعلان الأصلي",
+  "@jobsViewSourcePost": {
+    "description": "Opens the original post (e.g. on Telegram); not an application"
+  },
+  "jobsShare": "مشاركة",
+  "@jobsShare": {
+    "description": "Share a job"
+  },
+  "jobsRemoteChip": "عن بُعد",
+  "@jobsRemoteChip": {
+    "description": "Card chip for remote jobs"
+  },
+  "homeProfileSubtitle": "مشوارك المهني يبدأ من سيرتك",
+  "homeProfileOpen": "افتح ملفك الشخصي",
+  "homeStartCreateTitle": "إنشاء سيرة ذاتية متوافقة مع أنظمة الفرز الآلي",
+  "homeStartCreateBody": "قوالب احترافية بالعربية والإنجليزية، وتحميل PDF بضغطة",
+  "homeStartAtsTitle": "افحص سيرتك بنظام ATS",
+  "homeStartAtsBody": "اعرف ما يحتاج تحسين في سيرتك قبل التقديم",
+  "homeServiceUpload": "رفع سيرة جاهزة",
+  "homeServiceTarget": "استهداف وظيفة",
+  "homeServiceEducation": "التعليم",
+  "homeSoon": "قريباً",
+  "homeServiceSoonA11y": "{service}، قريباً",
+  "@homeServiceSoonA11y": {
+    "placeholders": {
+      "service": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMyCvTitle": "سيرتي الأخيرة",
+  "homeMyCvEdited": "آخر تعديل: {time}",
+  "@homeMyCvEdited": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMyCvEdit": "تعديل",
+  "homeMyCvCheck": "فحص ATS",
+  "homeMyCvEmptyTitle": "لا توجد سيرة بعد",
+  "homeMyCvEmptyBody": "أنشئ أول سيرة متوافقة مع ATS، أو ارفع سيرة خارجية لتعديلها.",
+  "homeHonesty": "سيرتك تعكس خبرتك الحقيقية، بلا مبالغة",
+  "authEmailHint": "name@example.com",
+  "authPhoneHint": "05XXXXXXXX",
+  "cvPersonalEmailHint": "salem@example.com",
+  "cvPersonalPhoneHint": "+966 5X XXX XXXX",
+  "cvPersonalLinkedinHint": "linkedin.com/in/username",
+  "authSocialGoogle": "Google",
+  "authSocialApple": "Apple",
+  "authRegisterEmailHint": "example@mail.com",
+  "timeJustNow": "الآن",
+  "timeMinutesAgo": "{count, plural, =1{قبل دقيقة} =2{قبل دقيقتين} few{قبل {count} دقائق} other{قبل {count} دقيقة}}",
+  "timeHoursAgo": "{count, plural, =1{قبل ساعة} =2{قبل ساعتين} few{قبل {count} ساعات} other{قبل {count} ساعة}}",
+  "timeYesterday": "أمس",
+  "savedJustNow": "حُفظت للتو",
+  "savedAgo": "حُفظت {time}",
+  "untitledTitle": "بدون عنوان",
+  "aiErrorTooLong": "السيرة أطول من أن تُولَّد في تمريرة واحدة. اختصر نص الخبرات أو التعليم أو المهارات ثم أعد المحاولة.",
+  "aiErrorTryAgain": "يرجى المحاولة مرة أخرى.",
+  "aiGenerationFailed": "تعذر إكمال توليد السيرة بالذكاء الاصطناعي: {detail}",
+  "aiSuggestionsFailed": "تعذر إكمال توصيات الذكاء الاصطناعي: {detail}",
+  "aiLocalFallback": "تم إنشاء نسخة محلية لأن الذكاء الاصطناعي لم يكتمل: {detail}",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "@savedAgo": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@aiGenerationFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "@aiSuggestionsFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "@aiLocalFallback": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "jobNewsTitle": "أخبار الوظائف",
+  "crashMessage": "حدث خطأ. بياناتك بأمان — حاول مرة أخرى.",
+  "avatarFallbackInitial": "س"
 }

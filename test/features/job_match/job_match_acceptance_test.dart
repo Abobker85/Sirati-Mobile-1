@@ -302,6 +302,7 @@ class _DashboardContent extends MobileContentService {
     String? category,
     String? preset,
     String? city,
+    String? region,
     int? jobTitleId,
     bool? isRemote,
     bool? isVerified,

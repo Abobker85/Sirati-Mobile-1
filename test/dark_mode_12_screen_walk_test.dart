@@ -15,7 +15,8 @@ import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/features/dashboard/presentation/education_detail_screen.dart';
 import 'package:sirati/features/dashboard/presentation/education_screen.dart';
 import 'package:sirati/features/dashboard/presentation/history_screen.dart';
-import 'package:sirati/features/dashboard/presentation/home/dashboard_tool_card.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_service_tile.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_start_card.dart';
 import 'package:sirati/features/dashboard/presentation/home_screen.dart';
 import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_title_display.dart';
@@ -368,7 +369,6 @@ void main() {
         jobTitleLabel.style!.color!,
         contextDescription: 'CvAnalysisScreen target job title label',
       );
-
     });
 
     http.Client createMockClient() {
@@ -708,7 +708,7 @@ void main() {
     });
 
     testWidgets(
-        '12. HomeScreen renders tool labels with AA contrast',
+        '12. HomeScreen renders start card and service labels with AA contrast',
         (tester) async {
       // A signed-in Home: guests see the sign-in invitation instead.
       AuthSessionGuard.resetForTest(store: MemoryAuthTokenStore('session'));
@@ -719,24 +719,35 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Home retains its server stats above the compact tools.
-        // Audit every label against its actual painted surface in both cards.
+        // Audit every label against its actual painted surface: the two
+        // start cards (white ink on the green and navy bands) and the three
+        // service tiles, including the muted "soon" one.
         await tester.scrollUntilVisible(
-          find.byWidgetPredicate((widget) => widget is DashboardToolCard &&
-              widget.tone == DashboardToolTone.ats),
+          find.byType(HomeServiceTile).last,
           250,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.byType(DashboardToolCard), findsNWidgets(2));
-        final labels = find.descendant(
-          of: find.byType(DashboardToolCard),
-          matching: find.byType(Text),
-        ).evaluate();
-        expect(labels, isNotEmpty);
+        expect(find.byType(HomeStartCard), findsNWidgets(2));
+        expect(find.byType(HomeServiceTile), findsNWidgets(3));
+        final labels = [
+          ...find
+              .descendant(
+                of: find.byType(HomeStartCard),
+                matching: find.byType(Text),
+              )
+              .evaluate(),
+          ...find
+              .descendant(
+                of: find.byType(HomeServiceTile),
+                matching: find.byType(Text),
+              )
+              .evaluate(),
+        ];
+        expect(labels.length, greaterThanOrEqualTo(4 + 4));
         for (final element in labels) {
           final text = element.widget as Text;
-          final color = text.style?.color ??
-              DefaultTextStyle.of(element).style.color!;
+          final color =
+              text.style?.color ?? DefaultTextStyle.of(element).style.color!;
           for (final background in paintedBackgroundsOf(element)) {
             assertDarkAaContrast(
               color,
@@ -745,7 +756,6 @@ void main() {
             );
           }
         }
-
       }, createMockClient);
     });
   });

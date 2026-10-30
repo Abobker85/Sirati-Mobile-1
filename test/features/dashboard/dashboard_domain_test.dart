@@ -248,33 +248,6 @@ void main() {
       );
     });
 
-    test('action cards fall back to product copy only when title is blank', () {
-      for (final english in [true, false]) {
-        for (final raw in <Object?>[
-          null,
-          'x',
-          {},
-          {'title': '  '}
-        ]) {
-          final s = DashboardSummary.fromPayload(
-            {'primary_action': raw, 'analysis_action': raw},
-            english: english,
-          );
-          final create = DashboardAction.createCv(english: english);
-          final analyze = DashboardAction.analyzeCv(english: english);
-          expect(s.primaryAction.title, create.title);
-          expect(s.primaryAction.buttonLabel, create.buttonLabel);
-          expect(s.analysisAction.title, analyze.title);
-          expect(s.analysisAction.buttonLabel, analyze.buttonLabel);
-        }
-        final s = DashboardSummary.fromPayload({
-          'primary_action': {'title': 'API title', 'button_label': 'Go'},
-        }, english: english);
-        expect(s.primaryAction.title, 'API title');
-        expect(s.primaryAction.buttonLabel, 'Go');
-      }
-    });
-
     test('malformed sections never throw', () {
       for (final payload in <Map<String, dynamic>>[
         {},

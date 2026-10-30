@@ -248,7 +248,8 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       } else if (aiFailed) {
         AppSnackBar.error(
           context,
-          AiErrorMessage.suggestionsFailed(analysis.aiError, english: english),
+          AiErrorMessage.suggestionsFailed(
+              analysis.aiError, AppLocalizations.of(context)),
           actionLabel: AppLocalizations.of(context).retry,
           onAction: () => unawaited(_submit()),
         );

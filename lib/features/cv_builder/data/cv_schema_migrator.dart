@@ -61,7 +61,13 @@ class MigrationFailureException implements Exception {
 /// keys is filled from [SkillStorageKeys.english] /
 /// [LanguageLevelStorageKeys.english]. That is a data repair, not a schema
 /// bump — unrecognised `ar` values and already-populated `en` are left alone.
+/// They also pass through [_dropPlaceholderTitle]: drafts saved before the
+/// default title became a catalog label stored it as text; it is removed so
+/// the editor shows the current label. Any other title is the user's own.
 class CvSchemaMigrator {
+  /// Default titles older builds wrote into new drafts.
+  static const legacyPlaceholderTitles = {'سيرة ذاتية جديدة', 'New CV'};
+
   static const int currentVersion = 1;
 
   /// Migrates [rawJson] forward to [currentVersion] if needed.
@@ -112,10 +118,11 @@ class CvSchemaMigrator {
 
       currentData['schema_version'] = currentVersion;
       final filled = _backfillProficiencyEnglish(currentData);
+      final untitled = _dropPlaceholderTitle(currentData);
 
       return MigrationResult(
         data: currentData,
-        wasMigrated: applied.isNotEmpty || filled,
+        wasMigrated: applied.isNotEmpty || filled || untitled,
         originalVersion: originalVersion,
         finalVersion: currentVersion,
         appliedMigrations: applied,
@@ -138,6 +145,13 @@ class CvSchemaMigrator {
         cause: e,
       );
     }
+  }
+
+  /// Removes a legacy default title (exact match). Idempotent.
+  static bool _dropPlaceholderTitle(Map<String, dynamic> data) {
+    if (!legacyPlaceholderTitles.contains(data['title'])) return false;
+    data.remove('title');
+    return true;
   }
 
   /// Fills empty `en` on known proficiency/category keys. Idempotent.

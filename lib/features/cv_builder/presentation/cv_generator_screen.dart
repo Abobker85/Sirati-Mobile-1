@@ -411,7 +411,8 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         if (aiFailed) {
           AppSnackBar.error(
             context,
-            AiErrorMessage.generationFailed(cv.aiError, english: english),
+            AiErrorMessage.generationFailed(
+                cv.aiError, AppLocalizations.of(context)),
             actionLabel: AppLocalizations.of(context).retry,
             onAction: _submit,
           );

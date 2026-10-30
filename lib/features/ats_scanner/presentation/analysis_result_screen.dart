@@ -131,7 +131,8 @@ class AnalysisResultScreen extends ConsumerWidget {
         } else if (aiFailed) {
           AppSnackBar.error(
             context,
-            AiErrorMessage.generationFailed(aiError, english: english),
+            AiErrorMessage.generationFailed(
+                aiError, AppLocalizations.of(context)),
             actionLabel: AppLocalizations.of(context).retry,
             onAction: () => _generate(context, ref),
           );

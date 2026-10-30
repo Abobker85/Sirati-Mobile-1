@@ -29,7 +29,9 @@ import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
-Map<String, dynamic> _jobJson(String content, {int? score = 92}) => {
+import '../support/contrast_probe.dart';
+
+Map<String, dynamic> _jobJson(String content) => {
   'id': 1,
   'title': content,
   'body': content,
@@ -39,10 +41,12 @@ Map<String, dynamic> _jobJson(String content, {int? score = 92}) => {
   'is_verified': true,
   // `isTamheer` reads employment_type / source_type, not a boolean flag.
   'employment_type': 'tamheer',
-  'match_score': score,
-  'match_reasons': [content],
+  'source_type': 'gov',
+  'apply_method': 'url',
+  'apply_url': 'https://careers.example.sa/jobs/1',
+  'source_url': 'https://t.me/jobs/1',
+  'source_name': content,
   'skills_required': [content, 'TypeScript', 'إدارة المشاريع'],
-  'matched_skills': [content],
   // Use the actual API field; `salary` is silently ignored by the model.
   'salary_range': content,
   'published_at': '2026-10-19T08:00:00Z',
@@ -111,7 +115,7 @@ List<Color> _backgrounds(Element element) {
 void _contrast(WidgetTester tester, Finder textFinder) {
   expect(textFinder, findsWidgets);
   for (final element in textFinder.evaluate()) {
-    final paragraph = element.findRenderObject()! as RenderParagraph;
+    final paragraph = paragraphOf(element.findRenderObject()!);
     final ink = paragraph.text.style!.color!;
     for (final background in _backgrounds(element)) {
       expect(AppContrast.ratio(Color.alphaBlend(ink, background), background),
@@ -134,11 +138,12 @@ class _Content extends MobileContentService {
   @override
   Future<Map<String, dynamic>> jobNews(bool english, {
     String? category, String? preset, String? city, int? jobTitleId,
+    String? region,
     bool? isRemote, bool? isVerified, String? sourceType,
     String? employmentType, String? query, bool force = false,
   }) async {
-    calls.add(JobNewsFilters(category: category ?? 'all', preset: preset ?? 'all',
-        city: city ?? 'all', query: query ?? ''));
+    calls.add(JobNewsFilters(preset: preset ?? 'all', region: region ?? 'all',
+        query: query ?? ''));
     return {'title': 'Jobs', 'items': items};
   }
 }
@@ -176,7 +181,7 @@ void main() {
             _narrow(tester);
             final job = JobNews.fromJson(_jobJson(content));
             final widget = switch (screen) {
-              'card' => JobNewsCard(item: job, english: lang == 'en', isNew: true, onTap: () {}),
+              'card' => JobNewsCard(item: job, english: lang == 'en', onTap: () {}),
               'featured' => FeaturedJobCard(item: job, english: lang == 'en', onTap: () {}),
               _ => JobNewsDetailScreen(item: job),
             };
@@ -192,21 +197,21 @@ void main() {
       }
 
       testWidgets('rendered featured text and warning badges meet AA: $variant', (tester) async {
-        final job = JobNews.fromJson(_jobJson('Engineering', score: 58));
+        final job = JobNews.fromJson(_jobJson('Engineering'));
         await tester.pumpWidget(_app(
           FeaturedJobCard(item: job, english: lang == 'en', onTap: () {}),
           lang: lang, dark: dark, scale: 1, scroll: true));
         await tester.pumpAndSettle();
         _contrast(tester, find.descendant(of: find.byType(FeaturedJobCard), matching: find.byType(Text)));
         for (final widget in [
-          JobNewsCard(item: job, english: lang == 'en', isNew: true, onTap: () {}),
+          JobNewsCard(item: job, english: lang == 'en', onTap: () {}),
           JobNewsDetailScreen(item: job),
         ]) {
           await tester.pumpWidget(_app(widget, lang: lang, dark: dark, scale: 1,
               scroll: widget is JobNewsCard));
           await tester.pumpAndSettle();
           final warning = find.byWidgetPredicate((w) => w is Text &&
-              (w.data?.contains(lang == 'en' ? 'Tamheer' : 'تمهير') ?? false));
+              (w.data?.contains(lang == 'en' ? 'Government' : 'جهات حكومية') ?? false));
           _contrast(tester, warning);
         }
       });
@@ -240,12 +245,11 @@ void main() {
       for (final filters in [
         const JobNewsFilters(),
         const JobNewsFilters(preset: 'gov'),
-        const JobNewsFilters(category: 'finance'),
-        const JobNewsFilters(city: 'jeddah'),
+        const JobNewsFilters(region: 'northern'),
         const JobNewsFilters(query: 'علم البيانات'),
-        const JobNewsFilters(preset: 'remote', category: 'tech', city: 'riyadh', query: 'platform'),
+        const JobNewsFilters(preset: 'remote', region: 'central', query: 'platform'),
       ]) {
-        testWidgets('real empty feed ${filters.preset}/${filters.category}/${filters.city}/${filters.query}: $variant', (tester) async {
+        testWidgets('real empty feed ${filters.preset}/${filters.region}/${filters.query}: $variant', (tester) async {
           _narrow(tester);
           final content = _Content();
           await tester.pumpWidget(ProviderScope(
@@ -257,12 +261,21 @@ void main() {
           ));
           await tester.pumpAndSettle();
           final l10n = await AppLocalizations.delegate.load(Locale(lang));
-          final clear = find.widgetWithText(TextButton, l10n.clearFilters);
-          expect(find.text(l10n.noMatchingJobs), filters.isActive ? findsOneWidget : findsNothing);
+          // Region alone gets its own empty state and offers all regions;
+          // any other filter offers to clear everything.
+          final regionOnly = filters.region != 'all' && filters.preset == 'all' && filters.query.isEmpty;
+          final clear = find.widgetWithText(FilledButton,
+              regionOnly ? l10n.jobsShowAllRegions : l10n.clearFilters);
+          expect(find.text(l10n.noMatchingJobs),
+              filters.isActive && !regionOnly ? findsOneWidget : findsNothing);
+          if (regionOnly) {
+            expect(find.text(l10n.jobsEmptyRegionTitle(jobRegionLabel(l10n, filters.region))), findsOneWidget);
+          }
           if (filters.isActive) {
             // A pending debounce must not reapply a search after clearing.
-            await tester.enterText(find.byType(TextField), 'pending search');
+            if (!regionOnly) await tester.enterText(find.byType(TextField), 'pending search');
             await tester.ensureVisible(clear);
+            await tester.pumpAndSettle();
             _target(tester, clear);
             await tester.tap(clear);
             await tester.pumpAndSettle();
@@ -276,14 +289,19 @@ void main() {
         });
       }
 
-      testWidgets('a featured-only real feed is not empty: $variant', (tester) async {
+      testWidgets('a single-item real feed shows that job once: $variant', (tester) async {
         _narrow(tester);
-        await tester.pumpWidget(ProviderScope(overrides: [
-          mobileContentServiceProvider.overrideWithValue(_Content(items: [_jobJson('Data engineer')])),
-        ], child: _app(const JobNewsScreen(), lang: lang, dark: dark)));
-        await tester.pumpAndSettle();
-        expect(find.byType(FeaturedJobCard), findsOneWidget);
-        expect(find.byType(EmptyJobNews), findsNothing);
+        for (final published in [DateTime.now().toUtc(), DateTime.utc(2026, 1, 1)]) {
+          await tester.pumpWidget(ProviderScope(overrides: [
+            mobileContentServiceProvider.overrideWithValue(_Content(items: [
+              {..._jobJson('Data engineer'), 'published_at': published.toIso8601String()},
+            ])),
+          ], child: _app(const JobNewsScreen(), lang: lang, dark: dark)));
+          await tester.pumpAndSettle();
+          // Fresh with a link -> hero; older -> plain card. Never both, never empty.
+          expect(find.byType(FeaturedJobCard).evaluate().length + find.byType(JobNewsCard).evaluate().length, 1);
+          expect(find.byType(EmptyJobNews), findsNothing);
+        }
         expect(tester.takeException(), isNull);
       });
 
@@ -292,11 +310,12 @@ void main() {
         final selected = <String>[];
         await tester.pumpWidget(_app(Column(children: [
           PresetChips(english: lang == 'en', selectedPreset: 'all', onSelected: selected.add),
-          CategoryChips(english: lang == 'en', selectedCategory: 'all', onSelected: selected.add),
-          CityChips(english: lang == 'en', selectedCity: 'all', onSelected: selected.add),
+          RegionChips(selectedRegion: 'all', onSelected: selected.add),
         ]), lang: lang, dark: dark, scale: 1, scroll: true));
         await tester.pumpAndSettle();
-        final chips = find.byWidgetPredicate((w) => w is ChoiceChip || w is FilterChip);
+        final chips = find.descendant(
+            of: find.byWidgetPredicate((w) => w is PresetChips || w is RegionChips),
+            matching: find.byType(InkWell));
         expect(chips, findsWidgets);
         for (final element in chips.evaluate().toList()) {
           final chip = find.byElementPredicate((e) => e == element);
@@ -306,6 +325,7 @@ void main() {
           await tester.pumpAndSettle();
         }
         expect(selected.length, chips.evaluate().length);
+        expect(selected.toSet(), {...JobNewsFilters.presets, ...JobNewsFilters.regions});
       });
 
       testWidgets('education registers interest with a 48dp action: $variant', (tester) async {

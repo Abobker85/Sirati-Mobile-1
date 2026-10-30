@@ -231,7 +231,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 onFieldSubmitted: (_) {
                   if (!_codeSent) unawaited(_sendCode());
                 },
-                hintText: 'name@example.com',
+                hintText: l10n.authEmailHint,
                 prefixIcon: const Icon(Icons.email_outlined),
                 validator: (value) {
                   if (_codeSent) return null;

@@ -78,7 +78,7 @@ class CvList {
     final raw = data['items'];
     final title = _text(data['title']);
     return CvList(
-      title: title.isNotEmpty ? title : _defaultTitle(english),
+      title: title,
       // Non-object rows are dropped rather than shown as blank cards.
       items: raw is List
           ? [
@@ -91,12 +91,13 @@ class CvList {
   }
 
   /// Shell shown when the list can't be loaded — never invents rows.
-  factory CvList.empty({required bool english}) => CvList(
-        title: _defaultTitle(english),
-        items: const [],
+  factory CvList.empty({required bool english}) => const CvList(
+        title: '',
+        items: [],
         offline: false,
       );
 
+  /// Server title; empty when omitted (the screen shows its catalog label).
   final String title;
   final List<CvListItem> items;
   final bool offline;
@@ -122,8 +123,6 @@ String withTemplateParam(String url, String? templateSlug) {
     'template': templateSlug,
   }).toString();
 }
-
-String _defaultTitle(bool english) => english ? 'My CVs' : 'سيرتي الذاتية';
 
 String _text(Object? value) => value?.toString().trim() ?? '';
 

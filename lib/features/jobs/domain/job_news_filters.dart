@@ -3,39 +3,54 @@
 class JobNewsFilters {
   const JobNewsFilters({
     this.preset = all,
-    this.category = all,
-    this.city = all,
+    this.region = all,
     this.query = '',
   });
 
   static const all = 'all';
 
-  /// Preset and city both expose a "remote" option; either one means the
-  /// API's is_remote filter.
+  /// The "remote" preset maps to the API's is_remote filter.
   static const remote = 'remote';
 
+  /// Presets in chip order: all, in my field, government, companies,
+  /// Tamheer & training, remote.
+  static const presets = [
+    all,
+    'matched',
+    'gov',
+    'enterprise',
+    'tamheer',
+    remote
+  ];
+
+  /// Saudi regions accepted by the API's `region` parameter.
+  static const regions = [
+    all,
+    'central',
+    'eastern',
+    'western',
+    'northern',
+    'southern'
+  ];
+
   final String preset;
-  final String category;
-  final String city;
+  final String region;
   final String query;
 
   String? get presetParam => preset == all ? null : preset;
-  String? get categoryParam => category == all ? null : category;
-  String? get cityParam => city == all ? null : city;
-  bool get isRemote => city == remote || preset == remote;
+  String? get regionParam => region == all ? null : region;
+  bool get isRemote => preset == remote;
   bool get isActive =>
-      preset != all || category != all || city != all || query.trim().isNotEmpty;
+      preset != all || region != all || query.trim().isNotEmpty;
 
   JobNewsFilters copyWith({
     String? preset,
-    String? category,
-    String? city,
+    String? region,
     String? query,
   }) =>
       JobNewsFilters(
         preset: preset ?? this.preset,
-        category: category ?? this.category,
-        city: city ?? this.city,
+        region: region ?? this.region,
         query: query ?? this.query,
       );
 
@@ -43,10 +58,9 @@ class JobNewsFilters {
   bool operator ==(Object other) =>
       other is JobNewsFilters &&
       other.preset == preset &&
-      other.category == category &&
-      other.city == city &&
+      other.region == region &&
       other.query == query;
 
   @override
-  int get hashCode => Object.hash(preset, category, city, query);
+  int get hashCode => Object.hash(preset, region, query);
 }

@@ -30,24 +30,9 @@ class BidiText {
     return '$lrm$lre$text$pdf';
   }
 
-  /// Prefer a stable Arabic greeting when [name] is Latin or Arabic.
-  ///
-  /// Empty [name] → neutral greeting with no invented identity.
-  /// Example AR: `أهلاً، aboboer` keeps the Latin name as a single LTR run.
-  static String greeting(String name, {required bool english}) {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) {
-      return english ? 'Welcome' : 'مرحباً';
-    }
-    if (english) {
-      return 'Hello, $trimmed';
-    }
-    final display = looksLatin(trimmed) ? isolateLtr(trimmed) : trimmed;
-    return 'أهلاً، $display$rlm';
-  }
-
-  /// First character suitable for avatar badges (skips greeting prefixes).
-  static String avatarInitial(String name, {String fallback = 'S'}) {
+  /// First character suitable for avatar badges; [fallback] (a catalog
+  /// label) when [name] is empty.
+  static String avatarInitial(String name, {required String fallback}) {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return fallback;
     return trimmed.substring(0, 1).toUpperCase();
