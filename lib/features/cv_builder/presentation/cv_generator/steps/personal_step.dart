@@ -165,8 +165,6 @@ class _JobDescriptionField extends StatelessWidget {
       children: [
         AiFieldLoadingOverlay(
           isLoading: isEnhancing,
-          statusMessages:
-              AiFieldLoadingOverlay.defaultStatusMessages(english: english),
           semanticsLabel: l10n.cvPersonalEnhancingJobDescription,
           child: AppTextFormField(
             controller: controller,

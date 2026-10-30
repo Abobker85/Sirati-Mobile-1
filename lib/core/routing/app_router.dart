@@ -26,6 +26,10 @@ class AppRouter {
   /// the session bootstrap `pushAndRemoveUntil`.
   static String? pendingLocation;
 
+  /// Debug-only routes (the component gallery) exist in debug builds only.
+  @visibleForTesting
+  static bool debugRoutesEnabled = kDebugMode;
+
   /// Listen for warm-start OS route pushes (`sirati://app/...`).
   static void install() {
     if (_bindingInstalled) return;
@@ -195,7 +199,6 @@ class AppRouter {
       case AppRoutes.privacy:
       case AppRoutes.settings:
       case AppRoutes.notifications:
-      case AppRoutes.gallery:
       case AppRoutes.jobMatch:
       case AppRoutes.atsScan:
       case AppRoutes.notFound:
@@ -232,6 +235,9 @@ class AppRouter {
       );
     }
 
+    if (path == AppRoutes.gallery && debugRoutesEnabled) {
+      return ParsedRoute(name: path);
+    }
     return ParsedRoute(name: path, unknown: true);
   }
 

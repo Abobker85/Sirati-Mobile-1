@@ -58,10 +58,11 @@ class ScreenHeader extends StatelessWidget {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 340;
 
+        // The title may be a greeting in any language: never parse a name
+        // out of it. Without a caller-given label the avatar shows an icon.
         final avatar = ProfileAvatar(
           icon: icon,
-          label:
-              avatarLabel ?? (icon == null ? _initialFromTitle(title) : null),
+          label: avatarLabel,
           onTap: onAvatarTap,
           english: english,
         );
@@ -122,20 +123,6 @@ class ScreenHeader extends StatelessWidget {
       },
     );
   }
-}
-
-String _initialFromTitle(String title) {
-  final trimmed = title.trim();
-  if (trimmed.isEmpty) {
-    return 'S';
-  }
-  // Strip greeting prefixes and BiDi marks before taking the initial.
-  final cleaned = trimmed
-      .replaceFirst(RegExp(r'^(أهلاً،\s*|Hello,\s*)'), '')
-      .replaceAll(RegExp(r'[\u200E\u200F\u202A-\u202E]'), '')
-      .trim();
-  final source = cleaned.isNotEmpty ? cleaned : trimmed;
-  return source.substring(0, 1).toUpperCase();
 }
 
 /// Circular notification button with an unread badge — actionable on every tab.
@@ -248,9 +235,10 @@ class ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget content;
-    if (icon != null) {
+    final text = label?.trim() ?? '';
+    if (icon != null || text.isEmpty) {
       content = Icon(
-        icon,
+        icon ?? Icons.person_rounded,
         size: size * 0.52,
         color: context.sirati.onBrandSurface,
       );
@@ -260,7 +248,7 @@ class ProfileAvatar extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(size * 0.12),
           child: Text(
-            label ?? 'S',
+            text,
             maxLines: 1,
             softWrap: false,
             // Initials share the fixed avatar face; keep scaling within it.

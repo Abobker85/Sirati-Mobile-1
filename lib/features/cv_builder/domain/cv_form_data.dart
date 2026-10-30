@@ -1,4 +1,5 @@
 import 'package:sirati/core/storage/preference_store.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 
 /// Immutable snapshot of everything the CV wizard collects.
@@ -75,7 +76,7 @@ class CvFormData {
       experience: read('experience_input'),
       education: read('education_input'),
       certifications: read('certifications_input'),
-      language: _normalizeLanguage(json['language']?.toString()),
+      language: _normalizeLanguage(json['language']),
     );
   }
 
@@ -152,6 +153,6 @@ class CvFormData {
     return trimmed.isEmpty ? null : trimmed;
   }
 
-  static String _normalizeLanguage(String? value) =>
-      value == 'en' ? 'en' : 'ar';
+  static String _normalizeLanguage(Object? value) =>
+      AppLocale.contentLanguageOf(value);
 }

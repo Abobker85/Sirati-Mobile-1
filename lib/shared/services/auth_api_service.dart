@@ -125,36 +125,30 @@ class AuthApiService {
     return user;
   }
 
-  Future<String> resendVerification() async {
-    final response = await _apiClient.postJson('/auth/email/resend', const {});
-    return response['message']?.toString() ??
-        'تم إرسال رمز التحقق إلى بريدك الإلكتروني.';
+  // Success calls return nothing: screens confirm with catalog text, as the
+  // server's message is not in the user's language.
+  Future<void> resendVerification() async {
+    await _apiClient.postJson('/auth/email/resend', const {});
   }
 
-  Future<String> forgotPassword({required String email}) async {
-    final response = await _publicClient.postJson('/auth/forgot-password', {
+  Future<void> forgotPassword({required String email}) async {
+    await _publicClient.postJson('/auth/forgot-password', {
       'email': email,
     });
-
-    return response['message']?.toString() ??
-        'تم إرسال رمز استعادة كلمة المرور إذا كان البريد مسجلاً لدينا.';
   }
 
-  Future<String> resetPassword({
+  Future<void> resetPassword({
     required String email,
     required String code,
     required String password,
     required String passwordConfirmation,
   }) async {
-    final response = await _publicClient.postJson('/auth/reset-password', {
+    await _publicClient.postJson('/auth/reset-password', {
       'email': email.trim(),
       'code': code.trim(),
       'password': password,
       'password_confirmation': passwordConfirmation,
     });
-
-    return response['message']?.toString() ??
-        'تم تعيين كلمة المرور الجديدة بنجاح. يمكنك تسجيل الدخول الآن.';
   }
 
   Future<void> logout() async {
@@ -194,17 +188,16 @@ class AuthApiService {
     return user;
   }
 
-  Future<String> changePassword({
+  Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
     required String confirmation,
   }) async {
-    final response = await _apiClient.postJson('/auth/change-password', {
+    await _apiClient.postJson('/auth/change-password', {
       'current_password': currentPassword,
       'password': newPassword,
       'password_confirmation': confirmation,
     });
-    return response['message']?.toString() ?? 'تم تغيير كلمة المرور بنجاح.';
   }
 
   /// Deletes the account after the server verifies [password].

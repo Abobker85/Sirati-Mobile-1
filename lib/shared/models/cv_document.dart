@@ -4,6 +4,8 @@
 /// PDF templates, and Flutter editors share one typed shape.
 library cv_document;
 
+import 'package:sirati/core/utils/app_locale.dart';
+
 class LocalizedText {
   final String ar;
   final String en;
@@ -12,7 +14,7 @@ class LocalizedText {
 
   factory LocalizedText.fromJson(dynamic json, {String? defaultLanguage}) {
     if (json is String) {
-      return defaultLanguage == 'en'
+      return defaultLanguage != null && AppLocale.isEnglishCode(defaultLanguage)
           ? LocalizedText(en: json)
           : LocalizedText(ar: json);
     }
@@ -25,10 +27,12 @@ class LocalizedText {
     return const LocalizedText();
   }
 
+  /// Text in [language]'s content language (see [AppLocale.baseLanguageOf]).
   String resolve(String language, {bool fallback = true}) {
-    final primary = language == 'en' ? en : ar;
+    final english = AppLocale.isEnglishCode(language);
+    final primary = english ? en : ar;
     if (primary.isNotEmpty || !fallback) return primary;
-    return language == 'en' ? ar : en;
+    return english ? ar : en;
   }
 
   bool get isEmpty => ar.isEmpty && en.isEmpty;
@@ -841,7 +845,7 @@ class CvDocument {
     String? linkedin,
     LocalizedText? location,
   }) {
-    final lang = json['export_language']?.toString() == 'en' ? 'en' : 'ar';
+    final lang = AppLocale.contentLanguageOf(json['export_language']);
     final personalMap = json['personal'] is Map<String, dynamic>
         ? json['personal'] as Map<String, dynamic>
         : <String, dynamic>{};

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/core/storage/storage_cleanup_exception.dart';
 
 /// Disk-backed JSON entry for offline last-known mobile content.
@@ -42,7 +43,7 @@ class DiskCache {
   static String dashboardKey(String lang) =>
       '${keyPrefix}dashboard_${_normLang(lang)}';
 
-  /// CVs list is language-scoped so AR/EN payloads never overwrite each other.
+  /// CVs list is language-scoped so payloads never overwrite each other.
   static String cvsKey(String lang) => '${keyPrefix}cvs_${_normLang(lang)}';
 
   static String newsKey(String lang) => '${keyPrefix}news_${_normLang(lang)}';
@@ -50,7 +51,8 @@ class DiskCache {
   /// Job title taxonomy is language-agnostic (payload includes AR + EN names).
   static String jobTitlesKey() => '${keyPrefix}job_titles';
 
-  static String _normLang(String lang) => lang == 'en' ? 'en' : 'ar';
+  /// One key per language code; an unreadable code gets its own `und` key.
+  static String _normLang(String lang) => normalizeLanguageCode(lang) ?? 'und';
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
 

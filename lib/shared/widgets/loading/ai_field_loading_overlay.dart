@@ -44,15 +44,6 @@ class AiFieldLoadingOverlay extends StatelessWidget {
   static List<String> localizedStatusMessages(BuildContext context) =>
       [AppLocalizations.of(context).sharedAiImprovingWording];
 
-  /// Bundled English / Arabic micro-copy for callers without the catalog.
-  /// Prefer [localizedStatusMessages].
-  static List<String> defaultStatusMessages({required bool english}) {
-    if (english) {
-      return const ['Improving wording…'];
-    }
-    return const ['جارٍ تحسين الصياغة…'];
-  }
-
   @override
   Widget build(BuildContext context) {
     if (!isLoading) return child;

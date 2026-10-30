@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' as intl;
 
 import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/core/network/analytics_service.dart';
@@ -152,13 +151,21 @@ class AppLocale {
     return current;
   }
 
+  /// True when [code]'s content is backed by English (see [baseLanguageOf]).
+  static bool isEnglishCode(String code) => baseLanguageOf(code) == 'en';
+
+  /// Bundled content language (`ar`/`en`) for a stored or served language
+  /// code; an unreadable code gives [orElse].
+  static String contentLanguageOf(Object? raw, {String orElse = 'ar'}) {
+    final code = normalizeLanguageCode(raw);
+    return code == null ? orElse : baseLanguageOf(code);
+  }
+
   /// Text direction of [code]: its language record's, else intl's RTL list.
   static TextDirection directionOf(String code) {
     final record = recordFor(code);
     if (record != null) return record.direction;
-    return intl.Bidi.isRtlLanguage(code)
-        ? TextDirection.rtl
-        : TextDirection.ltr;
+    return defaultDirectionOf(code);
   }
 
   /// `ar` or `en`: the content language for API calls and bilingual data.
@@ -172,7 +179,7 @@ class AppLocale {
   /// True when the ambient language is backed by English: English itself,
   /// or a remote language whose fallback chain ends at English.
   static bool isEnglish(BuildContext context) =>
-      baseLanguageOf(_codeOf(context)) == 'en';
+      isEnglishCode(_codeOf(context));
 
   static bool get isRtl => currentDirection == TextDirection.rtl;
 

@@ -6,26 +6,6 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 class LocaleFormat {
   LocaleFormat._();
 
-  /// Draft/completed CV count summary for My CVs header.
-  static String cvFilesSummary(int count, {required bool english}) {
-    if (english) {
-      if (count <= 0) return 'You have no CVs yet';
-      if (count == 1) return 'You have 1 draft or completed file';
-      return 'You have $count draft and completed files';
-    }
-
-    // Arabic pluralization (simplified, MSA-friendly):
-    // 0, 1, 2 special; 3–10: ملفات; 11+: ملف
-    if (count <= 0) return 'ليس لديك ملفات بعد';
-    if (count == 1) return 'لديك ملف مسودة أو مكتمل واحد';
-    if (count == 2) return 'لديك ملفان مسودة أو مكتملان';
-    final n = AppFormat.digits(count, english: false);
-    if (count >= 3 && count <= 10) {
-      return 'لديك $n ملفات مسودة ومكتملة';
-    }
-    return 'لديك $n ملف مسودة ومكتمل';
-  }
-
   /// Item count label e.g. analyses / CVs chips.
   static String countNoun({
     required int count,

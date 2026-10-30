@@ -47,8 +47,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   Future<void> _submit() async {
     // One request at a time (keyboard Done + button).
     if (_loading) return;
-    // Arabic keeps the server's own wording when it sends one.
-    final english = AppLocale.isEnglish(context);
     final l10n = AppLocalizations.of(context);
     setState(() {
       _submitted = true;
@@ -63,26 +61,21 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
     setState(() => _loading = true);
     try {
-      final message = await ref.read(authApiServiceProvider).changePassword(
+      await ref.read(authApiServiceProvider).changePassword(
             currentPassword: _currentCtrl.text,
             newPassword: _newCtrl.text,
             confirmation: _confirmCtrl.text,
           );
       if (!mounted) return;
       unawaited(HapticFeedback.lightImpact());
-      AppSnackBar.success(
-        context,
-        english || message.isEmpty ? l10n.settingsPasswordChanged : message,
-      );
+      AppSnackBar.success(context, l10n.settingsPasswordChanged);
       Navigator.of(context).pop();
     } on ApiException catch (e) {
       if (!mounted) return;
       final fieldErrors = e.errors['current_password'];
       if (fieldErrors != null && fieldErrors.isNotEmpty) {
         setState(() {
-          _currentFieldError = english
-              ? l10n.settingsCurrentPasswordIncorrect
-              : fieldErrors.first;
+          _currentFieldError = l10n.settingsCurrentPasswordIncorrect;
           _showBanner = true;
         });
         _formKey.currentState?.validate();
@@ -119,11 +112,15 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
           children: [
+            // Always one slot: inserting a child would shift the fields'
+            // positions and drop their state (and their error text).
             if (_showBanner)
               AppFormErrorBanner(
                 message: l10n.authFixHighlightedFields,
                 onDismiss: () => setState(() => _showBanner = false),
-              ),
+              )
+            else
+              const SizedBox.shrink(),
             _Label(l10n.settingsCurrentPasswordLabel),
             const SizedBox(height: 6),
             AppTextFormField(
