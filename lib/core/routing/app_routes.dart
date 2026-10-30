@@ -13,6 +13,7 @@ class AppRoutes {
   static const jobNews = '/job-news';
   static const privacy = '/privacy';
   static const settings = '/settings';
+  static const profile = '/profile';
   static const notifications = '/notifications';
   static const premium = '/premium';
   static const gallery = '/gallery';

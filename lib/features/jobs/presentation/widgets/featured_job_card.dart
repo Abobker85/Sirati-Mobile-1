@@ -76,16 +76,11 @@ class FeaturedJobCard extends StatelessWidget {
                       const SizedBox(height: 14),
                       JobTitleDisplay(
                         title: item.title,
-                        primaryStyle: TextStyle(
+                        language: item.language,
+                        style: TextStyle(
                           fontSize: 19,
                           height: 1.4,
                           fontWeight: FontWeight.w700,
-                          color: onHero,
-                        ),
-                        secondaryStyle: TextStyle(
-                          fontSize: 14,
-                          height: 1.35,
-                          fontWeight: FontWeight.w600,
                           color: onHero,
                         ),
                       ),

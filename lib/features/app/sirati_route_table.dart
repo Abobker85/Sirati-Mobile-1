@@ -24,13 +24,14 @@ import 'package:sirati/features/dashboard/presentation/not_found_screen.dart';
 import 'package:sirati/features/dashboard/presentation/premium_gate_screen.dart';
 import 'package:sirati/features/dashboard/presentation/splash_screen.dart';
 import 'package:sirati/features/job_match/presentation/job_match_screen.dart';
-import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
 import 'package:sirati/features/settings/presentation/deleted_account_cleanup_screen.dart';
 import 'package:sirati/features/settings/presentation/notifications_screen.dart';
 import 'package:sirati/features/settings/presentation/privacy_policy_screen.dart';
+import 'package:sirati/features/settings/presentation/profile_screen.dart';
 import 'package:sirati/features/settings/presentation/settings_screen.dart';
 import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
+import 'package:sirati/shared/navigation/dashboard_tab.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
 
 /// Composition root: maps route names onto feature screens.
@@ -117,7 +118,10 @@ Widget _widgetFor(ParsedRoute parsed) {
     case AppRoutes.education:
       return const EducationScreen();
     case AppRoutes.jobNews:
-      return const JobNewsScreen();
+      // Jobs is a Home tab: deep links land on it with the bottom nav.
+      return HomeScreen(initialIndex: DashboardTab.jobNews.index);
+    case AppRoutes.profile:
+      return const ProfileScreen();
     case AppRoutes.privacy:
       return const PrivacyPolicyScreen();
     case AppRoutes.settings:

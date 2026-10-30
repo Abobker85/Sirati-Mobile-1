@@ -39,8 +39,7 @@ class JobNewsCard extends StatelessWidget {
     final company = (item.company ?? '').trim();
     final where = [
       if ((item.location ?? '').trim().isNotEmpty) item.location!.trim(),
-      jobPublishedText(item, AppLocalizations.of(context),
-          english: english),
+      jobPublishedText(item, AppLocalizations.of(context), english: english),
     ].where((s) => s.isNotEmpty).join(' · ');
     final destination = ApplyDestination.of(item);
 
@@ -79,16 +78,12 @@ class JobNewsCard extends StatelessWidget {
               children: [
                 JobTitleDisplay(
                   title: item.title,
-                  primaryStyle: TextStyle(
+                  language: item.language,
+                  style: TextStyle(
                     fontSize: 15.5,
                     height: 1.4,
                     fontWeight: FontWeight.w700,
                     color: c.textPrimary,
-                  ),
-                  secondaryStyle: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: c.textSecondary,
                   ),
                 ),
                 if (company.isNotEmpty) ...[

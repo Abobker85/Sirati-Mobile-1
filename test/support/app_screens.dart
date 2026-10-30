@@ -19,6 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/errors/app_crash_view.dart';
 import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/core/network/api_config.dart';
+import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
@@ -34,6 +35,7 @@ import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/features/dashboard/presentation/education_screen.dart';
 import 'package:sirati/features/dashboard/presentation/history_screen.dart';
+import 'package:sirati/features/dashboard/presentation/home/dashboard_jobs_section.dart';
 import 'package:sirati/features/dashboard/presentation/home_screen.dart';
 import 'package:sirati/features/dashboard/presentation/not_found_screen.dart';
 import 'package:sirati/features/dashboard/presentation/premium_gate_screen.dart';
@@ -61,6 +63,7 @@ import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/job_titles_provider.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
+import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 import '../features/job_match/job_match_test_support.dart' as job_match;
@@ -299,6 +302,32 @@ Finder _fieldWithHint(String hint) => find.byWidgetPredicate(
       (w) => w is TextField && w.decoration?.hintText == hint,
     );
 
+/// Job news that always fails with [error].
+Override _failingJobs(ApiException error) =>
+    mobileContentServiceProvider.overrideWithValue(_FailingJobsContent(error));
+
+class _FailingJobsContent extends MobileContentService {
+  _FailingJobsContent(this.error);
+  final ApiException error;
+
+  @override
+  Future<Map<String, dynamic>> jobNews(
+    bool english, {
+    String? category,
+    String? preset,
+    String? city,
+    String? region,
+    int? jobTitleId,
+    bool? isRemote,
+    bool? isVerified,
+    String? sourceType,
+    String? employmentType,
+    String? query,
+    bool force = false,
+  }) async =>
+      throw error;
+}
+
 class _SettingsGateway extends NotificationPrefsGateway {
   @override
   Future<bool?> fetchServer() async => true;
@@ -424,6 +453,45 @@ final appScreens = <AppScreen>[
   }),
   AppScreen('jobs', 'Jobs',
       (tester, h) => h.pumpApp(tester, const JobNewsScreen(isActive: true))),
+  AppScreen('jobs_error', 'Jobs: load error', (tester, h) {
+    return h.pumpApp(tester, const JobNewsScreen(), overrides: [
+      _failingJobs(ApiException(
+          h.sample('تعذّر تحميل الوظائف من الخادم',
+              'The server could not load jobs'),
+          type: ApiErrorType.server)),
+    ]);
+  }),
+  AppScreen('jobs_offline', 'Jobs: offline', (tester, h) {
+    return h.pumpApp(tester, const JobNewsScreen(), overrides: [
+      _failingJobs(const ApiException('offline', type: ApiErrorType.network)),
+    ]);
+  }, fullHeight: false),
+  AppScreen('jobs_matched_no_title', 'Jobs: in my field, no job title',
+      (tester, h) async {
+    await h.pumpApp(tester, const JobNewsScreen());
+    // The tab has no Scaffold of its own.
+    final l10n =
+        AppLocalizations.of(tester.element(find.byType(JobNewsScreen)));
+    final matched = find.text(l10n.jobsPresetMatched);
+    await tester.ensureVisible(matched);
+    await tester.pump();
+    await tester.tap(matched);
+    await settleScreen(tester);
+  }),
+  AppScreen('home_jobs_offline', 'Home: latest jobs offline', (tester, h) {
+    return h.pumpApp(
+        tester,
+        Scaffold(
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: DashboardJobsSection(onViewAll: () {}, onOpenSaved: () {}),
+          ),
+        ),
+        overrides: [
+          _failingJobs(
+              const ApiException('offline', type: ApiErrorType.network)),
+        ]);
+  }, fullHeight: false),
   const AppScreen('settings', 'Settings', _pumpSettings),
   AppScreen('language_picker', 'Language picker', (tester, h) async {
     await _pumpSettings(tester, h);

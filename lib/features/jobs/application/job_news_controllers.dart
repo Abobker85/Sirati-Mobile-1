@@ -63,3 +63,30 @@ Future<void> refreshJobNews(WidgetRef ref, {required bool english}) async {
     await next;
   } catch (_) {}
 }
+
+/// Home's "Latest jobs": the unfiltered feed, independent of the Jobs tab's
+/// search and chips, keyed by UI language. Like the Jobs feed, only the
+/// first load may come from cache.
+final homeLatestJobsProvider = AsyncNotifierProvider.autoDispose
+    .family<HomeLatestJobsController, JobNewsFeed, bool>(
+  HomeLatestJobsController.new,
+  // Home shows its own Retry.
+  retry: (_, __) => null,
+);
+
+class HomeLatestJobsController extends AsyncNotifier<JobNewsFeed> {
+  HomeLatestJobsController(this.english);
+
+  final bool english;
+  bool _loadedOnce = false;
+
+  @override
+  Future<JobNewsFeed> build() async {
+    final force = _loadedOnce;
+    _loadedOnce = true;
+    final data = await ref
+        .read(mobileContentServiceProvider)
+        .jobNews(english, force: force);
+    return JobNewsFeed.fromPayload(data, english: english);
+  }
+}

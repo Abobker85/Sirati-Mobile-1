@@ -64,19 +64,13 @@ class JobNewsDetailScreen extends StatelessWidget {
             ],
             JobTitleDisplay(
               title: item.title,
-              primaryMaxLines: null,
-              secondaryMaxLines: null,
-              primaryStyle: TextStyle(
+              language: item.language,
+              maxLines: null,
+              style: TextStyle(
                 fontSize: 24,
                 height: 1.4,
                 fontWeight: FontWeight.w700,
                 color: c.textPrimary,
-              ),
-              secondaryStyle: TextStyle(
-                fontSize: 16,
-                height: 1.35,
-                fontWeight: FontWeight.w600,
-                color: c.textSecondary,
               ),
             ),
             const SizedBox(height: 14),
@@ -136,10 +130,8 @@ class JobNewsDetailScreen extends StatelessWidget {
             // post, not the app.
             Text(
               LocaleFormat.mixedBody(item.body,
-                  english: item.language == 'en'),
-              textDirection: item.language == 'en'
-                  ? TextDirection.ltr
-                  : TextDirection.rtl,
+                  english: AppLocale.baseLanguageOf(item.language) == 'en'),
+              textDirection: AppLocale.directionOf(item.language),
               textAlign: TextAlign.start,
               style:
                   TextStyle(fontSize: 15.5, height: 1.8, color: c.textPrimary),
