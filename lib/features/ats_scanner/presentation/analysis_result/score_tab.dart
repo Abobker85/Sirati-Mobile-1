@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/features/ats_scanner/domain/score_band.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/keyword_group.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/keyword_source_badge.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result/recommendations_tab.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_band_style.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_ring.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -53,6 +54,10 @@ class ScoreTab extends StatelessWidget {
             missing: analysis.keywordsMissing,
             english: english,
           ),
+        if (analysis.hidden.keywordsMissing > 0) ...[
+          const SizedBox(height: 8),
+          HiddenItemsNote(count: analysis.hidden.keywordsMissing),
+        ],
         if (trailing != null) trailing!,
       ],
     );
@@ -71,6 +76,10 @@ class _ScoreHero extends StatelessWidget {
     final band = ScoreBand.of(analysis.scoreTotal);
     final scoreColor = band.onContainer(c);
     final jobMatch = analysis.jobMatch.clamp(0, 100);
+    final category = analysis.displayCategoryLabel(
+      AppLocalizations.of(context),
+      english: english,
+    );
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
@@ -94,7 +103,8 @@ class _ScoreHero extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                AppLocalizations.of(context).atsGradeLabel(analysis.grade),
+                AppLocalizations.of(context)
+                    .atsGradeLabel(AtsGrade.of(analysis.scoreTotal).label),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -183,33 +193,34 @@ class _ScoreHero extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            decoration: BoxDecoration(
-              color: c.background,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: c.border),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.tune_rounded, size: 14, color: c.textSecondary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    AppLocalizations.of(context).atsBenchmark(
-                        analysis.displayCategoryLabel(english: english)),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: c.textSecondary,
+          if (category != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: c.background,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: c.border),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.tune_rounded, size: 14, color: c.textSecondary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context).atsBenchmark(category),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: c.textSecondary,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 8),
           KeywordSourceBadge(
             keywordSource: analysis.keywordSource,

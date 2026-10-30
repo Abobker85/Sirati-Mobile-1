@@ -15,16 +15,17 @@ String _dateLabel(DateTime? date, AppLocalizations l10n) =>
     date == null ? '-' : AppFormat.relativeTime(date, l10n);
 
 /// Score and grade in the band's container colours (AA in both themes).
+/// The grade comes from the score's [AtsGrade], so it always matches the band.
 class ScoreBadge extends StatelessWidget {
-  const ScoreBadge({super.key, required this.score, required this.grade});
+  const ScoreBadge({super.key, required this.score});
 
   final int score;
-  final String grade;
 
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
     final band = ScoreBand.of(score);
+    final grade = AtsGrade.of(score).label;
     final english = AppLocale.isEnglish(context);
     return Semantics(
       label: AppLocalizations.of(context).dashboardScoreBadgeSemantics(
@@ -46,12 +47,11 @@ class ScoreBadge extends StatelessWidget {
               style: AppTypography.of(context, AppTypography.titleLg,
                   color: band.onContainer(c)),
             ),
-            if (grade.trim().isNotEmpty && grade != '-')
-              Text(
-                grade,
-                style: AppTypography.of(context, AppTypography.labelLg,
-                    color: band.onContainer(c)),
-              ),
+            Text(
+              grade,
+              style: AppTypography.of(context, AppTypography.labelLg,
+                  color: band.onContainer(c)),
+            ),
           ],
         ),
       ),
@@ -163,7 +163,7 @@ class AnalysisHistoryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              ScoreBadge(score: analysis.scoreTotal, grade: analysis.grade),
+              ScoreBadge(score: analysis.scoreTotal),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -282,7 +282,7 @@ class GeneratedCvHistoryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          ScoreBadge(score: cv.scoreTotal, grade: cv.grade),
+          ScoreBadge(score: cv.scoreTotal),
         ],
       ),
     );

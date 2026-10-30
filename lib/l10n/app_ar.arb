@@ -2895,6 +2895,20 @@
       }
     }
   },
+  "atsCategoryGeneral": "تقييم عام (مهارات مهنية مشتركة)",
+  "@atsCategoryGeneral": {
+    "description": "Scoring category label for the general profile when the server sends no label."
+  },
+  "atsHiddenMore": "+{count} أخرى مخفية",
+  "@atsHiddenMore": {
+    "description": "Under an ATS result list: how many more items the server withheld (free tier).",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
   "myCvsHeaderSubtitle": "أنشئ سيرتك، وافحصها، وأدر نسخك من مكان واحد",
   "@myCvsHeaderSubtitle": {
     "description": "Subtitle under the My CVs header"

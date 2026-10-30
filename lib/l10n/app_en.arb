@@ -1197,6 +1197,8 @@
   "atsBandFair": "Fair - review and polish needed",
   "atsBandWeak": "Weak - needs restructuring",
   "atsBenchmark": "Benchmark: {category}",
+  "atsCategoryGeneral": "General profile (transferable skills)",
+  "atsHiddenMore": "+{count} more hidden",
   "myCvsHeaderSubtitle": "Create, scan and manage your CVs in one place",
   "myCvsToolsTitle": "Tools",
   "myCvsToolCreateTitle": "Create a CV",

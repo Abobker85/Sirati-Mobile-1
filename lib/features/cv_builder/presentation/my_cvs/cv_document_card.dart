@@ -3,6 +3,7 @@ import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/domain/cv_list.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/ats_grade.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -30,9 +31,6 @@ class CvDocumentCard extends StatelessWidget {
     required this.onDownload,
     required this.onScan,
   });
-
-  /// Below this the card shows the "needs important fixes" warning.
-  static const lowScore = 60;
 
   static ValueKey<String> menuKey(int? id) => ValueKey('cv-card-menu-$id');
   static ValueKey<String> openKey(int? id) => ValueKey('cv-card-open-$id');
@@ -185,7 +183,7 @@ class CvDocumentCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (score != null && score < lowScore) ...[
+            if (score != null && ScoreBand.of(score) == ScoreBand.weak) ...[
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsetsDirectional.only(end: 8),
@@ -295,11 +293,11 @@ class _ScoreRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.sirati;
-    final arc = score >= 70
-        ? colors.success
-        : score >= CvDocumentCard.lowScore
-            ? colors.warning
-            : colors.error;
+    final arc = switch (ScoreBand.of(score)) {
+      ScoreBand.excellent || ScoreBand.veryGood => colors.success,
+      ScoreBand.fair => colors.warning,
+      ScoreBand.weak => colors.error,
+    };
     return SizedBox.square(
       dimension: 44,
       child: Stack(

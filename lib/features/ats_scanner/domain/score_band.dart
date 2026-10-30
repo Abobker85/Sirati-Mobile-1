@@ -4,20 +4,7 @@
 /// UI only maps a band to colours and copy.
 library;
 
-/// Overall ATS score band (0-100).
-enum ScoreBand {
-  excellent,
-  veryGood,
-  fair,
-  weak;
-
-  static ScoreBand of(int score) {
-    if (score >= 80) return excellent;
-    if (score >= 65) return veryGood;
-    if (score >= 50) return fair;
-    return weak;
-  }
-}
+export 'package:sirati/shared/models/ats_grade.dart';
 
 /// Band for a single criterion row, from its score / max ratio.
 enum CriterionBand {
