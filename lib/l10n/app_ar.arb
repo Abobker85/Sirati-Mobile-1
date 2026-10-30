@@ -637,6 +637,8 @@
   "cvHubDownload": "تحميل السيرة الذاتية (PDF)",
   "cvHubPreparing": "جارٍ التجهيز...",
   "cvHubShare": "مشاركة",
+  "cvShareSubscriptionRequired": "مشاركة ملف PDF تتطلب اشتراكًا.",
+  "cvShareFailed": "تعذّر تجهيز ملف PDF للمشاركة. حاول مرة أخرى.",
   "cvHubNextSteps": "الخطوات التالية",
   "cvHubCheckAts": "فحص التوافق بالتفصيل (ATS)",
   "cvHubCheckAtsBody": "افحص توافق هذه السيرة مع أنظمة ATS مع تحديد نصها تلقائياً.",

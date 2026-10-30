@@ -7,16 +7,22 @@ import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/cv_template.dart';
+import 'package:sirati/shared/models/generated_cv.dart';
+import 'package:sirati/shared/services/cv_api_service.dart';
+import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 class _Content extends MobileContentService {
-  _Content(this.export);
+  _Content(this.export, {this.language});
   final Map<String, dynamic> export;
+  final String? language;
 
   @override
-  Future<Map<String, dynamic>> myCvs(bool english, {bool force = false}) async =>
+  Future<Map<String, dynamic>> myCvs(bool english,
+          {bool force = false}) async =>
       {
         'title': 'My CVs',
         'items': [
@@ -27,9 +33,30 @@ class _Content extends MobileContentService {
             'template_pdf_url': 'https://example.test/cvs/7.pdf?signature=x',
             'can_download': true,
             'export': export,
+            if (language != null) 'language': language,
           },
         ],
       };
+}
+
+class _Api extends CvApiService {
+  _Api(this.cvLanguage);
+  final String cvLanguage;
+  final templateLanguages = <String>[];
+
+  @override
+  Future<GeneratedCv> getGeneratedCv(int id) async => GeneratedCv.fromJson({
+        'id': id,
+        'full_name': 'Salem',
+        'language': cvLanguage,
+        'pdf_url': 'https://example.test/cvs/$id.pdf?signature=x',
+      });
+
+  @override
+  Future<List<CvTemplate>> listCvTemplates({required String language}) async {
+    templateLanguages.add(language);
+    return const [];
+  }
 }
 
 void main() {
@@ -98,6 +125,49 @@ void main() {
         expect(find.text(message), findsOneWidget);
         await tester.pump(const Duration(seconds: 5));
       });
+    }
+  }
+
+  // The design list is the CV's language, from the row when the server
+  // sends it and from the CV otherwise, never the app language.
+  for (final appLanguage in ['ar', 'en']) {
+    for (final cvLanguage in ['ar', 'en', 'fr']) {
+      for (final inRow in [true, false]) {
+        testWidgets(
+            '$appLanguage app, $cvLanguage CV (in row: $inRow): designs',
+            (tester) async {
+          AppLocale.languageCode.value = appLanguage;
+          tester.view.physicalSize = const Size(1080, 2400);
+          tester.view.devicePixelRatio = 3;
+          addTearDown(tester.view.reset);
+          final api = _Api(cvLanguage);
+          await tester.pumpWidget(ProviderScope(
+            overrides: [
+              mobileContentServiceProvider.overrideWithValue(_Content(
+                  {'ready': true},
+                  language: inRow ? cvLanguage : null)),
+              cvApiServiceProvider.overrideWithValue(api),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightFor(arabic: appLanguage == 'ar'),
+              locale: Locale(appLanguage),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: const Scaffold(body: MyCvsScreen()),
+            ),
+          ));
+          await tester.pumpAndSettle();
+          final menu = find.byKey(CvDocumentCard.menuKey(7));
+          await tester.ensureVisible(menu);
+          await tester.tap(menu);
+          await tester.pumpAndSettle();
+          await tester.tap(find.byIcon(Icons.download_rounded));
+          await tester.pumpAndSettle();
+          expect(api.templateLanguages, [cvLanguage]);
+          expect(launched, isNotNull);
+          await tester.pump(const Duration(seconds: 5));
+        });
+      }
     }
   }
 }

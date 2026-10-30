@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/storage/auth_token_store.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/models/cv_template.dart';
@@ -21,6 +22,9 @@ class CvApiService {
 
   final ApiClient _apiClient;
   final Future<void> Function(Duration) _pollingDelay;
+
+  /// The client behind this service, for controllers that stream files.
+  ApiClient get apiClient => _apiClient;
   final Duration pollingTimeout;
 
   Future<CvAnalysis> submitAnalysis({
@@ -291,12 +295,15 @@ class CvApiService {
     );
     return _dataMap(response);
   }
+
   /// Applies the selected suggestions to a NEW CV copy (the source CV is not
   /// modified) and returns it with the updated raw job match.
   Future<({GeneratedCv generatedCv, Map<String, dynamic> jobMatch})>
-      applyJobMatchSuggestions(int id, List<String> suggestionKeys, {
-        List<String> confirmedFactKeys = const [],
-      }) async {
+      applyJobMatchSuggestions(
+    int id,
+    List<String> suggestionKeys, {
+    List<String> confirmedFactKeys = const [],
+  }) async {
     final response = await _apiClient.postJson(
       '/job-matches/$id/apply-suggestions',
       {
@@ -335,9 +342,11 @@ class CvApiService {
     return int.tryParse(value?.toString() ?? '') ?? fallback;
   }
 
-  Future<List<CvTemplate>> listCvTemplates({required bool english}) async {
+  /// PDF designs for a CV written in [language] (the CV's own language,
+  /// not the app's).
+  Future<List<CvTemplate>> listCvTemplates({required String language}) async {
     final response = await _apiClient.getJson(
-      '/mobile/cv-templates?lang=${english ? 'en' : 'ar'}',
+      '/mobile/cv-templates?lang=${AppLocale.contentLanguageOf(language)}',
     );
     final data = response['data'];
     final items = data is Map<String, dynamic> ? data['items'] : null;

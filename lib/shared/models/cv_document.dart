@@ -740,6 +740,11 @@ class CustomSection {
 class CvDocument {
   static const schemaVersion = 1;
 
+  /// Written by the local repository on every save: this build never
+  /// writes a default title, so any stored title is the user's (see
+  /// CvSchemaMigrator). Not part of the document itself.
+  static const noDefaultTitleKey = 'no_default_title';
+
   final String? id;
   final String? title;
   final DateTime? createdAt;
@@ -918,6 +923,7 @@ class CvDocument {
       'custom_sections',
       'section_order',
       'missing_translations',
+      noDefaultTitleKey,
     };
     final extra = <String, dynamic>{};
     for (final entry in json.entries) {

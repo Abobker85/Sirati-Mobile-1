@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -5,15 +6,19 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/app/sirati_route_table.dart';
 import 'package:sirati/features/ats_scanner/application/saved_analysis_cvs.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
+import 'package:sirati/features/cv_builder/application/pdf_export_controller.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 import 'package:sirati/features/job_match/presentation/job_match_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
@@ -28,6 +33,7 @@ GeneratedCv _cv(
         String status = 'completed',
         String language = 'ar',
         String? markdown,
+        bool templateLink = false,
         Map<String, dynamic>? export}) =>
     GeneratedCv.fromJson({
       'id': id,
@@ -46,15 +52,60 @@ GeneratedCv _cv(
       'score_total': score,
       'grade': 'B',
       'pdf_url': 'https://example.test/cvs/$id.pdf?signature=fresh',
+      if (templateLink)
+        'template_pdf_url': 'https://example.test/cvs/$id.pdf?signature=fresh',
       if (export != null) 'export': export,
     });
 
+final _pdfBody = [...ascii.encode('%PDF-1.7\n'), 0, 255, 37, 80, 10];
+
 class _Api extends FakeJobMatchApi {
   int fetches = 0;
+  final templateLanguages = <String>[];
+  final pdfRequests = <Uri>[];
+
   @override
   Future<GeneratedCv> getGeneratedCv(int id) async {
     fetches++;
     return _cv(id: id);
+  }
+
+  @override
+  Future<List<CvTemplate>> listCvTemplates({required String language}) async {
+    templateLanguages.add(language);
+    return const [];
+  }
+
+  @override
+  ApiClient get apiClient => _PdfClient(pdfRequests);
+}
+
+/// Serves [_pdfBody] for every download without a transport.
+class _PdfClient extends ApiClient {
+  _PdfClient(this.requests);
+  final List<Uri> requests;
+
+  @override
+  Future<List<int>> getBytes(
+    String path, {
+    Duration receiveTimeout = const Duration(seconds: 45),
+    void Function(int received, int total)? onReceiveProgress,
+  }) async {
+    requests.add(Uri.parse(path));
+    return _pdfBody;
+  }
+}
+
+/// Files handed to the share sheet.
+final _sharedFiles = <List<int>>[];
+
+Future<void> _captureShare(List<XFile> files,
+    {required List<String> fileNameOverrides,
+    String? text,
+    String? subject,
+    Rect? sharePositionOrigin}) async {
+  for (final file in files) {
+    _sharedFiles.add(await file.readAsBytes());
   }
 }
 
@@ -67,6 +118,8 @@ Future<void> _pump(
   String status = 'completed',
   _Api? api,
   String? markdown,
+  String? cvLanguage,
+  bool templateLink = false,
   List<SavedAnalysisCv>? analysisCvs,
   Map<String, dynamic>? export,
 }) async {
@@ -76,6 +129,7 @@ Future<void> _pump(
     key: UniqueKey(),
     overrides: [
       cvApiServiceProvider.overrideWithValue(api ?? _Api()),
+      pdfShareProvider.overrideWithValue(_captureShare),
       if (analysisCvs != null)
         analysisSavedCvsProvider
             .overrideWith((ref, english) async => analysisCvs),
@@ -95,8 +149,9 @@ Future<void> _pump(
               id: id,
               score: score,
               status: status,
-              language: language,
+              language: cvLanguage ?? language,
               markdown: markdown,
+              templateLink: templateLink,
               export: export)),
     ),
   ));
@@ -119,6 +174,7 @@ void main() {
   setUp(() {
     _launched = null;
     _shared = null;
+    _sharedFiles.clear();
     SharedPreferences.setMockInitialValues({});
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -142,14 +198,20 @@ void main() {
   // a blocked CV never opens the PDF link, shows the server's reason instead
   // of "ready", and an allowed one downloads.
   for (final language in ['ar', 'en']) {
-    for (final status in ['completed', 'processing', 'failed', 'not_configured']) {
+    for (final status in [
+      'completed',
+      'processing',
+      'failed',
+      'not_configured'
+    ]) {
       for (final reason in [
         null,
         'generating',
         'missing_contact',
         'unstructured_experience',
       ]) {
-        testWidgets('$language/$status/export=${reason ?? 'ready'}: '
+        testWidgets(
+            '$language/$status/export=${reason ?? 'ready'}: '
             'server readiness decides', (tester) async {
           usePhoneViewAtTextScale(tester);
           final message = reason == null ? null : '$language message: $reason';
@@ -187,6 +249,16 @@ void main() {
                 reason: 'the tap explains what is missing');
           }
           await tester.pump(const Duration(seconds: 5));
+
+          // Share follows the same rule: the PDF leaves only when Download
+          // would have opened it, and the reason shows otherwise.
+          await _tap(tester, GeneratedCvScreen.shareKey);
+          expect(_sharedFiles, reason == null ? [_pdfBody] : isEmpty);
+          expect(api.pdfRequests, hasLength(reason == null ? 1 : 0));
+          if (reason != null) {
+            expect(find.text(message!), findsWidgets);
+          }
+          await tester.pump(const Duration(seconds: 5));
         });
       }
     }
@@ -217,41 +289,37 @@ void main() {
           expect(_launched, ready ? _cv().pdfUrl : isNull);
           await tester.pump(const Duration(seconds: 5));
           await _tap(tester, GeneratedCvScreen.shareKey);
-          for (var i = 0; i < 12; i++) {
-            expect(_shared,
-                contains('Experience $i: تحليل البيانات C++ and SQL.'));
+          expect(_sharedFiles, ready ? [_pdfBody] : isEmpty);
+          expect(_shared, isNull, reason: 'the PDF is shared, not text');
+          if (ready) {
+            expect(
+                api.pdfRequests.single.queryParameters['language'], language);
           }
-          expect(_shared, contains(_cv().fullName));
-          expect(_shared, isNot(contains('##')));
+          await tester.pump(const Duration(seconds: 5));
           await _tap(tester, GeneratedCvScreen.previewToggleKey);
           await inspectPhoneScreen(tester, '$language/$dark/$status expanded');
         });
       }
 
-      for (final (kind, blank) in [
-        ('empty', ''),
-        ('whitespace', ' \t\n'),
-        ('rules', '---\n***')
-      ]) {
-        testWidgets(
-            '$language/$dark: empty content keeps disabled Share legible ($kind)',
-            (tester) async {
-          usePhoneViewAtTextScale(tester);
-          await _pump(tester, language: language, dark: dark, markdown: blank);
-          await inspectPhoneScreen(tester, '$language/$dark empty content');
+      testWidgets('$language/$dark: Share and Download are enabled together',
+          (tester) async {
+        usePhoneViewAtTextScale(tester);
+        for (final markdown in ['', ' \t\n', '---\n***', null]) {
+          await _pump(tester,
+              language: language, dark: dark, markdown: markdown);
+          await revealPhoneWidget(
+              tester, find.byKey(GeneratedCvScreen.downloadKey));
+          final download = tester
+              .widget<ElevatedButton>(find.byKey(GeneratedCvScreen.downloadKey))
+              .enabled;
           await revealPhoneWidget(
               tester, find.byKey(GeneratedCvScreen.shareKey));
-          expect(
-              tester
-                  .widget<OutlinedButton>(
-                      find.byKey(GeneratedCvScreen.shareKey))
-                  .enabled,
-              isFalse);
-          await tester.tap(find.byKey(GeneratedCvScreen.shareKey));
-          await tester.pump();
-          expect(_shared, isNull);
-        });
-      }
+          final share = tester
+              .widget<OutlinedButton>(find.byKey(GeneratedCvScreen.shareKey))
+              .enabled;
+          expect(share, download);
+        }
+      });
 
       testWidgets(
           '$language/$dark: score text stays scaled inside its growing ring',
@@ -422,4 +490,44 @@ void main() {
       });
     }
   }
+
+  // The design list and the preview's direction come from the CV's
+  // declared language, whatever the app language or the text's script.
+  for (final appLanguage in ['ar', 'en']) {
+    for (final cvLanguage in ['ar', 'en', 'fr', 'ur']) {
+      testWidgets('$appLanguage app, $cvLanguage CV: designs and direction',
+          (tester) async {
+        usePhoneViewAtTextScale(tester);
+        final api = _Api();
+        await _pump(tester,
+            language: appLanguage,
+            cvLanguage: cvLanguage,
+            api: api,
+            templateLink: true);
+        final preview = find.descendant(
+            of: find.byKey(GeneratedCvScreen.previewKey),
+            matching: find.text('سارة أحمد Sara Ahmed'));
+        expect(Directionality.of(tester.element(preview)),
+            AppLocale.directionOf(cvLanguage));
+        await _tap(tester, GeneratedCvScreen.downloadKey);
+        expect(api.templateLanguages, [cvLanguage]);
+        await tester.pump(const Duration(seconds: 5));
+      });
+    }
+  }
+
+  test('reading direction ignores the script of the content', () {
+    final random = Random(13);
+    String text() => String.fromCharCodes(List.generate(
+        random.nextInt(40),
+        (_) => random.nextBool()
+            ? 0x41 + random.nextInt(26)
+            : 0x0621 + random.nextInt(0x3A)));
+    for (final language in ['ar', 'en', 'fr', 'he', 'fa', 'ur', 'de']) {
+      for (var i = 0; i < 30; i++) {
+        final cv = _cv(language: language, markdown: text());
+        expect(cvContentDirection(cv), AppLocale.directionOf(language));
+      }
+    }
+  });
 }

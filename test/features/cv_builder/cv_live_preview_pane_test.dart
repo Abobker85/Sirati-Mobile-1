@@ -28,7 +28,7 @@ class _FakeCvRepository implements CvRepository {
   Future<void> renameCv(String id, String newTitle) async {}
 
   @override
-  Future<void> deleteCv(String id) async {}
+  Future<void> deleteCv(String id, {bool confirmUnreadable = false}) async {}
 
   @override
   Future<void> restoreCv(String id) async {}

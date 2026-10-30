@@ -1,3 +1,4 @@
+import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/shared/models/cv_export_state.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 
@@ -15,6 +16,7 @@ class CvListItem {
     required this.updatedLabel,
     this.scoreTotal,
     this.export,
+    this.language,
   });
 
   factory CvListItem.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class CvListItem {
       updatedLabel: _text(json['updated_label']),
       scoreTotal: _score(json['score_total']),
       export: CvExportState.fromJson(json['export']),
+      language: _language(json['language']),
     );
   }
 
@@ -54,6 +57,9 @@ class CvListItem {
 
   /// Whether the server will export this CV; null from older servers.
   final CvExportState? export;
+
+  /// The CV's own language; null when the server does not send it.
+  final String? language;
 
   /// Stored link to use when the CV can't be re-fetched.
   String get storedPdfUrl =>
@@ -125,6 +131,8 @@ String withTemplateParam(String url, String? templateSlug) {
 }
 
 String _text(Object? value) => value?.toString().trim() ?? '';
+
+String? _language(Object? value) => normalizeLanguageCode(value);
 
 int? _id(Object? value) {
   final n = switch (value) {

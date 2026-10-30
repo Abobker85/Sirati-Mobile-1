@@ -7,6 +7,18 @@ import 'package:sirati/core/storage/user_scoped_storage.dart';
 import 'package:sirati/features/cv_builder/data/cv_schema_migrator.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 
+/// A stored CV that this build cannot open (corrupt, or saved by a newer
+/// app version). Its bytes are kept; deleting it needs the user's consent.
+class UnreadableCvException implements Exception {
+  const UnreadableCvException(this.id, this.cause);
+
+  final String id;
+  final Object cause;
+
+  @override
+  String toString() => 'UnreadableCvException($id): $cause';
+}
+
 /// Lightweight CV descriptor used for lists, summaries, and dashboard cards.
 class CvMetadata {
   final String id;
@@ -16,6 +28,9 @@ class CvMetadata {
   final DateTime createdAt;
   final bool hasTranslationGaps;
 
+  /// True for a stored CV this build cannot open; shown, never hidden.
+  final bool unreadable;
+
   const CvMetadata({
     required this.id,
     required this.title,
@@ -23,7 +38,21 @@ class CvMetadata {
     required this.updatedAt,
     required this.createdAt,
     this.hasTranslationGaps = false,
+    this.unreadable = false,
   });
+
+  /// Placeholder row for a CV that could not be read.
+  factory CvMetadata.unreadable(String id) {
+    final epoch = DateTime.fromMillisecondsSinceEpoch(0);
+    return CvMetadata(
+      id: id,
+      title: '',
+      exportLanguage: '',
+      updatedAt: epoch,
+      createdAt: epoch,
+      unreadable: true,
+    );
+  }
 
   factory CvMetadata.fromDocument(CvDocument doc) {
     final now = DateTime.now();
@@ -257,7 +286,10 @@ abstract class CvRepository {
   Future<void> saveCv(CvDocument document, {bool touchUpdatedAt = true});
   Future<CvDocument> duplicateCv(String id, {String? newTitle});
   Future<void> renameCv(String id, String newTitle);
-  Future<void> deleteCv(String id);
+
+  /// Deletes [id]. Throws [UnreadableCvException] for a CV that cannot be
+  /// read unless the user confirmed deleting it ([confirmUnreadable]).
+  Future<void> deleteCv(String id, {bool confirmUnreadable = false});
   Future<void> restoreCv(String id);
 }
 
@@ -280,13 +312,8 @@ class LocalCvRepository implements CvRepository {
         if (doc != null) {
           list.add(CvMetadata.fromDocument(doc));
         }
-      } catch (e) {
-        AppLog.event(
-          AppLogEvent.cvLoadFailed,
-          level: AppLogLevel.error,
-          data: {'cv_id': id, 'phase': 'metadata'},
-          error: e,
-        );
+      } on UnreadableCvException {
+        list.add(CvMetadata.unreadable(id));
       }
     }
 
@@ -302,7 +329,9 @@ class LocalCvRepository implements CvRepository {
 
     try {
       final decoded = jsonDecode(rawString);
-      if (decoded is! Map<String, dynamic>) return null;
+      if (decoded is! Map<String, dynamic>) {
+        throw FormatException('Stored CV is not a JSON object', rawString);
+      }
 
       // Automated forward migration (SIRATI-34) in memory without mutating disk
       final migrationResult = CvSchemaMigrator.migrate(decoded);
@@ -328,7 +357,7 @@ class LocalCvRepository implements CvRepository {
         error: e,
         stackTrace: stack,
       );
-      rethrow;
+      throw UnreadableCvException(id, e);
     }
   }
 
@@ -342,7 +371,10 @@ class LocalCvRepository implements CvRepository {
       createdAt: document.createdAt ?? now,
     );
 
-    final rawJson = jsonEncode(toSave.toJson());
+    final rawJson = jsonEncode({
+      ...toSave.toJson(),
+      CvDocument.noDefaultTitleKey: true,
+    });
     await _engine.writeAtomic(id, rawJson);
 
     // Remove from soft-deleted if re-saved
@@ -391,18 +423,19 @@ class LocalCvRepository implements CvRepository {
   }
 
   @override
-  Future<void> deleteCv(String id) async {
+  Future<void> deleteCv(String id, {bool confirmUnreadable = false}) async {
     try {
       final doc = await getCv(id);
       if (doc != null) {
         _softDeleted[id] = doc;
       }
-    } catch (e) {
+    } on UnreadableCvException catch (e) {
+      if (!confirmUnreadable) rethrow;
       AppLog.event(
         AppLogEvent.cvDeleteFailed,
         level: AppLogLevel.warn,
-        data: {'cv_id': id, 'phase': 'undo_cache'},
-        error: e,
+        data: {'cv_id': id, 'phase': 'unreadable_confirmed'},
+        error: e.cause,
       );
     }
     await _engine.delete(id);

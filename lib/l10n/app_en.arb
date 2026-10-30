@@ -630,6 +630,8 @@
   "cvHubDownload": "Download PDF",
   "cvHubPreparing": "Preparing...",
   "cvHubShare": "Share",
+  "cvShareSubscriptionRequired": "Sharing the PDF needs a subscription.",
+  "cvShareFailed": "Could not prepare the PDF to share. Try again.",
   "cvHubNextSteps": "Next steps",
   "cvHubCheckAts": "Check ATS in detail",
   "cvHubCheckAtsBody": "Check this CV's ATS compatibility with its text already selected.",
