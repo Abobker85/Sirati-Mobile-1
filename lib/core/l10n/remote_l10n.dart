@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sirati/core/l10n/remote_l10n_repository.dart';
 import 'package:sirati/core/l10n/remote_l10n_store.dart';
+import 'package:sirati/core/l10n/remote_localizations_delegate.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 
 /// App-wide remote labels: cache before the first frame, background
 /// refresh on launch, on resume (throttled) and on language change.
@@ -17,6 +19,12 @@ abstract final class RemoteL10n {
       RemoteL10nRepository(store: SharedPreferencesRemoteL10nStore());
 
   static ValueListenable<RemoteL10nState> get state => repository.state;
+
+  /// Labels of the selected language, for code with no [BuildContext]
+  /// (network errors, widgets outside the localized tree).
+  static AppLocalizations get current =>
+      RemoteLocalizationsDelegate.localizationsFor(
+          state.value, AppLocale.locale);
 
   /// Loads the disk cache (no network) and keeps [AppLocale.catalog] in
   /// sync with the languages list. Call before [AppLocale.bootstrap].

@@ -1,3 +1,4 @@
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 
 /// Locale-aware display formatting (relative time, digit shapes).
@@ -36,7 +37,7 @@ class AppFormat {
     final day = DateTime(local.year, local.month, local.day);
     if (today.difference(day).inDays == 1) return l10n.timeYesterday;
 
-    return shortDate(local, english: l10n.localeName != 'ar');
+    return shortDate(local, english: AppLocale.isEnglishCode(l10n.localeName));
   }
 
   /// Compact `d/M/yyyy` with locale-appropriate digits.

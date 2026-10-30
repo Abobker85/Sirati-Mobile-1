@@ -64,16 +64,22 @@ void main() {
     });
 
     testWidgets(
-        'falls back to initial when neither icon nor avatarLabel is passed',
-        (tester) async {
-      await tester.pumpWidget(buildSubject(
-        english: false,
-        title: 'أهلاً، محمد',
-      ));
-      await tester.pump();
+        'shows a person icon, never a letter guessed from the title, when '
+        'neither icon nor avatarLabel is passed', (tester) async {
+      for (final title in ['أهلاً، محمد', 'Hello, Sara', 'Merhaba Ayşe', '']) {
+        await tester.pumpWidget(buildSubject(english: false, title: title));
+        await tester.pump();
 
-      // Strips 'أهلاً، ' greeting and extracts 'M' / 'م'
-      expect(find.text('م'), findsOneWidget);
+        final avatar = find.byType(ProfileAvatar);
+        expect(find.descendant(of: avatar, matching: find.byType(Text)),
+            findsNothing,
+            reason: title);
+        expect(
+            find.descendant(
+                of: avatar, matching: find.byIcon(Icons.person_rounded)),
+            findsOneWidget,
+            reason: title);
+      }
     });
 
     testWidgets('triggers onAvatarTap when avatar circle is tapped',

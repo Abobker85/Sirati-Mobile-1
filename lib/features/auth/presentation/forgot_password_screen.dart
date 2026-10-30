@@ -101,7 +101,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
 
     try {
-      final message = await ref.read(authApiServiceProvider).forgotPassword(
+      await ref.read(authApiServiceProvider).forgotPassword(
             email: _emailController.text.trim(),
           );
       if (!mounted) return;
@@ -111,7 +111,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       });
       _startCooldown(60);
       unawaited(HapticFeedback.lightImpact());
-      AppSnackBar.success(context, message);
+      AppSnackBar.success(context, l10n.authForgotCodeSent);
     } on ApiException catch (exception) {
       if (mounted) {
         AppSnackBar.fromException(
@@ -149,7 +149,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final message = await ref.read(authApiServiceProvider).resetPassword(
+      await ref.read(authApiServiceProvider).resetPassword(
             email: _emailController.text.trim(),
             code: _codeController.text.trim(),
             password: _passwordController.text,
@@ -157,7 +157,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           );
       if (!mounted) return;
       unawaited(HapticFeedback.lightImpact());
-      AppSnackBar.success(context, message);
+      AppSnackBar.success(context, l10n.authForgotPasswordReset);
       Navigator.of(context).pop();
     } on ApiException catch (exception) {
       if (mounted) {

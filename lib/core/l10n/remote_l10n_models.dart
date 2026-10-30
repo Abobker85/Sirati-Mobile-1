@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart' as intl;
 
 /// Language codes the app ships ARB files for.
 const bundledLanguageCodes = {'ar', 'en'};
@@ -51,8 +52,7 @@ class RemoteLanguage {
       code: code,
       name: name,
       nativeName: _string(json['native_name']) ?? name,
-      direction: parseDirection(json['direction']) ??
-          (code == 'ar' ? TextDirection.rtl : TextDirection.ltr),
+      direction: parseDirection(json['direction']) ?? defaultDirectionOf(code),
       fallback: fallback == code ? 'en' : fallback,
       version: _int(json['version']) ?? 0,
     );
@@ -208,6 +208,10 @@ String? normalizeLanguageCode(Object? raw) {
   if (first < 0x61 || first > 0x7A) return null;
   return code;
 }
+
+/// Direction of [code] when the server names none: intl's RTL list.
+TextDirection defaultDirectionOf(String code) =>
+    intl.Bidi.isRtlLanguage(code) ? TextDirection.rtl : TextDirection.ltr;
 
 TextDirection? parseDirection(Object? raw) => switch (raw) {
       'rtl' => TextDirection.rtl,

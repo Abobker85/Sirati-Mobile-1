@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/core/l10n/remote_l10n_models.dart';
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/domain/cv_form_data.dart';
 
 /// Field setters by name so invariants can be checked for every field
@@ -88,12 +90,20 @@ void main() {
   });
 
   group('language', () {
-    test('anything other than "en" normalizes to "ar"', () {
-      for (final raw in ['ar', 'AR', 'En', '', 'fr', 'english', null, 0]) {
+    test('unreadable codes give "ar"; any code follows its fallback chain', () {
+      for (final raw in ['', '  ', '!!', '9x', null, 0, true]) {
         final data = CvFormData.fromDraftJson({'language': raw});
         expect(data.language, 'ar', reason: 'raw=$raw');
       }
-      expect(CvFormData.fromDraftJson({'language': 'en'}).language, 'en');
+      for (final raw in ['ar', 'AR', 'en', 'En', 'fr', 'pt_BR', 'english']) {
+        final data = CvFormData.fromDraftJson({'language': raw});
+        expect(
+          data.language,
+          AppLocale.baseLanguageOf(normalizeLanguageCode(raw)!),
+          reason: 'raw=$raw',
+        );
+        expect(bundledLanguageCodes, contains(data.language));
+      }
     });
   });
 

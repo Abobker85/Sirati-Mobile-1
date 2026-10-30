@@ -4987,6 +4987,48 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get avatarFallbackInitial =>
       remote.text('avatarFallbackInitial') ?? _base.avatarFallbackInitial;
 
+  @override
+  String get coreApiErrorBadResponse =>
+      remote.text('coreApiErrorBadResponse') ?? _base.coreApiErrorBadResponse;
+
+  @override
+  String get coreApiErrorEmptyResponse =>
+      remote.text('coreApiErrorEmptyResponse') ??
+      _base.coreApiErrorEmptyResponse;
+
+  @override
+  String get coreApiErrorUnexpected =>
+      remote.text('coreApiErrorUnexpected') ?? _base.coreApiErrorUnexpected;
+
+  @override
+  String get coreApiErrorRequestFailed =>
+      remote.text('coreApiErrorRequestFailed') ??
+      _base.coreApiErrorRequestFailed;
+
+  @override
+  String coreApiErrorStatus(int code) =>
+      remote.format(
+        'coreApiErrorStatus',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'code': code},
+        ),
+      ) ??
+      _base.coreApiErrorStatus(code);
+
+  @override
+  String get authVerifyCodeResent =>
+      remote.text('authVerifyCodeResent') ?? _base.authVerifyCodeResent;
+
+  @override
+  String get authForgotCodeSent =>
+      remote.text('authForgotCodeSent') ?? _base.authForgotCodeSent;
+
+  @override
+  String get authForgotPasswordReset =>
+      remote.text('authForgotPasswordReset') ?? _base.authForgotPasswordReset;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -6076,6 +6118,14 @@ class RemoteAppLocalizations extends AppLocalizations {
     'jobNewsTitle': [],
     'crashMessage': [],
     'avatarFallbackInitial': [],
+    'coreApiErrorBadResponse': [],
+    'coreApiErrorEmptyResponse': [],
+    'coreApiErrorUnexpected': [],
+    'coreApiErrorRequestFailed': [],
+    'coreApiErrorStatus': ['int'],
+    'authVerifyCodeResent': [],
+    'authForgotCodeSent': [],
+    'authForgotPasswordReset': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -7226,6 +7276,14 @@ class RemoteAppLocalizations extends AppLocalizations {
         'jobNewsTitle' => l.jobNewsTitle,
         'crashMessage' => l.crashMessage,
         'avatarFallbackInitial' => l.avatarFallbackInitial,
+        'coreApiErrorBadResponse' => l.coreApiErrorBadResponse,
+        'coreApiErrorEmptyResponse' => l.coreApiErrorEmptyResponse,
+        'coreApiErrorUnexpected' => l.coreApiErrorUnexpected,
+        'coreApiErrorRequestFailed' => l.coreApiErrorRequestFailed,
+        'coreApiErrorStatus' => l.coreApiErrorStatus(a[0] as int),
+        'authVerifyCodeResent' => l.authVerifyCodeResent,
+        'authForgotCodeSent' => l.authForgotCodeSent,
+        'authForgotPasswordReset' => l.authForgotPasswordReset,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

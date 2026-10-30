@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:sirati/core/l10n/remote_l10n.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -66,11 +67,10 @@ class AppButton extends StatelessWidget {
     final c = context.sirati;
     final enabled = onPressed != null && !isLoading;
     final style = AppTypography.of(context, AppTypography.labelLg);
-    final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
-    final loadingStatus = l10n?.sharedLoading ??
-        (Directionality.of(context) == TextDirection.rtl
-            ? 'جارٍ التحميل...'
-            : 'Loading...');
+    final l10n =
+        Localizations.of<AppLocalizations>(context, AppLocalizations) ??
+            RemoteL10n.current;
+    final loadingStatus = l10n.sharedLoading;
 
     final foreground =
         !enabled && !isLoading ? c.textSecondary : _foreground(c);

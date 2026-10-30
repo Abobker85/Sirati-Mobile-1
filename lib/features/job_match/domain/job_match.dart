@@ -1,3 +1,4 @@
+import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 
 /// A Job Match result (`JobMatchResource`).
@@ -55,7 +56,7 @@ class JobMatch {
       generatedCvId: _asInt(json['generated_cv_id']),
       appliedGeneratedCvId: _asNullableInt(json['applied_generated_cv_id']),
       targetJobTitle: json['target_job_title']?.toString() ?? '',
-      language: json['language']?.toString() == 'en' ? 'en' : 'ar',
+      language: AppLocale.contentLanguageOf(json['language']),
       scoreTotal: _asInt(json['score_total']).clamp(0, 100),
       grade: json['grade']?.toString() ?? '',
       coverage: _asNullableInt(json['job_match'])?.clamp(0, 100),

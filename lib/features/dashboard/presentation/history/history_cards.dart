@@ -230,8 +230,8 @@ class GeneratedCvHistoryCard extends StatelessWidget {
               child: ExcludeSemantics(
                 child: Text(
                   BidiText.avatarInitial(name,
-                      fallback: AppLocalizations.of(context)
-                          .avatarFallbackInitial),
+                      fallback:
+                          AppLocalizations.of(context).avatarFallbackInitial),
                   style: AppTypography.of(context, AppTypography.titleLg,
                       color: c.primaryInk),
                 ),
@@ -268,9 +268,9 @@ class GeneratedCvHistoryCard extends StatelessWidget {
                     // The CV's content language, named in the UI language
                     // (served from the label catalog).
                     _MetaChip(
-                        label: cv.language == 'ar'
-                            ? AppLocalizations.of(context).languageArabic
-                            : AppLocalizations.of(context).languageEnglish),
+                        label: AppLocale.isEnglishCode(cv.language)
+                            ? AppLocalizations.of(context).languageEnglish
+                            : AppLocalizations.of(context).languageArabic),
                     Text(
                       _dateLabel(cv.createdAt, AppLocalizations.of(context)),
                       style: AppTypography.of(context, AppTypography.bodySm,

@@ -124,11 +124,10 @@ class _EmailVerificationScreenState
     final l10n = AppLocalizations.of(context);
     setState(() => _isResending = true);
     try {
-      final message =
-          await ref.read(authApiServiceProvider).resendVerification();
+      await ref.read(authApiServiceProvider).resendVerification();
       if (!mounted) return;
       _startCooldown(60);
-      AppSnackBar.success(context, message);
+      AppSnackBar.success(context, l10n.authVerifyCodeResent);
     } on ApiException catch (exception) {
       if (mounted) {
         AppSnackBar.fromException(context, exception);

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'package:sirati/core/l10n/remote_l10n.dart';
 import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/core/network/api_exception.dart';
 
@@ -48,7 +49,8 @@ class ApiClient {
       () async {
         final request = http.Request('GET', ApiConfig.uri(path))
           ..headers.addAll(authorized.headers);
-        final streamed = await _httpClient.send(request).timeout(receiveTimeout);
+        final streamed =
+            await _httpClient.send(request).timeout(receiveTimeout);
         final bytes = <int>[];
         await for (final chunk in streamed.stream.timeout(receiveTimeout)) {
           bytes.addAll(chunk);
@@ -183,28 +185,25 @@ class ApiClient {
     } on ApiException {
       rethrow;
     } on TimeoutException {
-      throw const ApiException.timeout(
-          'انتهت مهلة الاتصال بالخادم. حاول مرة أخرى.');
+      throw ApiException.timeout(RemoteL10n.current.sharedErrorTimeoutSubtitle);
     } on FormatException {
-      throw const ApiException(
-        'تعذر قراءة استجابة الخادم.',
+      throw ApiException(
+        RemoteL10n.current.coreApiErrorBadResponse,
         type: ApiErrorType.unknown,
       );
     } on http.ClientException {
-      throw const ApiException.network(
-          'تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.');
+      throw ApiException.network(RemoteL10n.current.sharedErrorNetworkSubtitle);
     } catch (e) {
       if (e is ApiException) rethrow;
-      throw const ApiException.network(
-          'حدث خطأ غير متوقع أثناء الاتصال بالخادم.');
+      throw ApiException.network(RemoteL10n.current.coreApiErrorUnexpected);
     }
   }
 
   Map<String, dynamic> _decodeObject(http.Response response) {
     final body = utf8.decode(response.bodyBytes);
     if (body.trim().isEmpty) {
-      throw const ApiException(
-        'استجابة الخادم فارغة.',
+      throw ApiException(
+        RemoteL10n.current.coreApiErrorEmptyResponse,
         type: ApiErrorType.unknown,
       );
     }
@@ -215,13 +214,13 @@ class ApiClient {
         return decoded;
       }
     } on FormatException {
-      throw const ApiException(
-        'تعذر قراءة استجابة الخادم.',
+      throw ApiException(
+        RemoteL10n.current.coreApiErrorBadResponse,
         type: ApiErrorType.unknown,
       );
     }
 
-    throw const ApiException('استجابة الخادم غير متوقعة.',
+    throw ApiException(RemoteL10n.current.coreApiErrorBadResponse,
         type: ApiErrorType.unknown);
   }
 
@@ -246,8 +245,8 @@ class ApiClient {
   ApiException _exceptionFromResponse(http.Response response) {
     try {
       final decoded = _decodeObject(response);
-      final message =
-          decoded['message']?.toString() ?? 'فشل الطلب. حاول مرة أخرى.';
+      final message = decoded['message']?.toString() ??
+          RemoteL10n.current.coreApiErrorRequestFailed;
       final rawErrors = decoded['errors'];
       final errors = <String, List<String>>{};
 
@@ -268,13 +267,13 @@ class ApiClient {
     } on ApiException catch (exception) {
       if (exception.statusCode != null) rethrow;
       return ApiException(
-        'فشل الطلب برمز ${response.statusCode}.',
+        RemoteL10n.current.coreApiErrorStatus(response.statusCode),
         statusCode: response.statusCode,
         type: _typeFromStatus(response.statusCode),
       );
     } catch (_) {
       return ApiException(
-        'فشل الطلب برمز ${response.statusCode}.',
+        RemoteL10n.current.coreApiErrorStatus(response.statusCode),
         statusCode: response.statusCode,
         type: _typeFromStatus(response.statusCode),
       );
