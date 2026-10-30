@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:sirati/core/logging/app_log.dart';
 import 'package:sirati/features/cv_builder/data/skill_storage_keys.dart';
+import 'package:sirati/shared/models/cv_document.dart';
 
 /// Result of running schema migrations on a raw CV payload.
 class MigrationResult {
@@ -61,12 +62,21 @@ class MigrationFailureException implements Exception {
 /// keys is filled from [SkillStorageKeys.english] /
 /// [LanguageLevelStorageKeys.english]. That is a data repair, not a schema
 /// bump — unrecognised `ar` values and already-populated `en` are left alone.
-/// They also pass through [_dropPlaceholderTitle]: drafts saved before the
-/// default title became a catalog label stored it as text; it is removed so
-/// the editor shows the current label. Any other title is the user's own.
+/// They also pass through [_dropPlaceholderTitle]: builds before the
+/// default title became a catalog label wrote it into every new draft and
+/// had no way to type a title, so an exact default title in a document
+/// without [CvDocument.noDefaultTitleKey] can only be that default; it is
+/// removed so the editor shows the current label. Documents saved since
+/// carry the marker and keep every title.
+///
+/// The v0 migration is lossless: the original of every v0 key that does not
+/// survive unchanged is kept under [legacyKey].
 class CvSchemaMigrator {
   /// Default titles older builds wrote into new drafts.
   static const legacyPlaceholderTitles = {'سيرة ذاتية جديدة', 'New CV'};
+
+  /// Archive of v0 values the structured schema replaced or could not hold.
+  static const legacyKey = 'legacy_v0';
 
   static const int currentVersion = 1;
 
@@ -119,6 +129,7 @@ class CvSchemaMigrator {
       currentData['schema_version'] = currentVersion;
       final filled = _backfillProficiencyEnglish(currentData);
       final untitled = _dropPlaceholderTitle(currentData);
+      if (applied.contains(0)) _archiveV0(rawJson, currentData);
 
       return MigrationResult(
         data: currentData,
@@ -147,8 +158,27 @@ class CvSchemaMigrator {
     }
   }
 
-  /// Removes a legacy default title (exact match). Idempotent.
+  /// Keeps, under [legacyKey], the original of every [v0] key whose value
+  /// is not in [v1] unchanged.
+  static void _archiveV0(Map<String, dynamic> v0, Map<String, dynamic> v1) {
+    final archive = <String, dynamic>{
+      for (final entry in v0.entries)
+        if (entry.key == legacyKey ||
+            !v1.containsKey(entry.key) ||
+            jsonEncode(v1[entry.key]) != jsonEncode(entry.value))
+          entry.key: jsonDecode(jsonEncode(entry.value)),
+    };
+    if (archive.isEmpty) {
+      v1.remove(legacyKey);
+    } else {
+      v1[legacyKey] = archive;
+    }
+  }
+
+  /// Removes a legacy default title (exact match) from a document saved
+  /// before [CvDocument.noDefaultTitleKey] existed. Idempotent.
   static bool _dropPlaceholderTitle(Map<String, dynamic> data) {
+    if (data[CvDocument.noDefaultTitleKey] == true) return false;
     if (!legacyPlaceholderTitles.contains(data['title'])) return false;
     data.remove('title');
     return true;
@@ -338,16 +368,13 @@ class CvSchemaMigrator {
     v1['experience'] = experience;
     v1['education'] = education;
     v1['skills'] = skills;
-    v1['languages'] =
-        (v0['languages'] is List) ? v0['languages'] : <Map<String, dynamic>>[];
+    v1['languages'] = _maps(v0['languages']);
     v1['certifications'] = certifications;
-    v1['projects'] =
-        (v0['projects'] is List) ? v0['projects'] : <Map<String, dynamic>>[];
-    v1['custom_sections'] = (v0['custom_sections'] is List)
-        ? v0['custom_sections']
-        : <Map<String, dynamic>>[];
+    v1['projects'] = _maps(v0['projects']);
+    v1['custom_sections'] = _maps(v0['custom_sections']);
 
-    // Remove legacy flat keys that were transformed into structured sections
+    // Remove legacy flat keys that were transformed into structured sections;
+    // their originals are archived by [_archiveV0].
     v1.remove('full_name');
     v1.remove('candidate_name');
     v1.remove('headline');
@@ -365,4 +392,11 @@ class CvSchemaMigrator {
 
     return v1;
   }
+
+  /// The map items of [section]; anything else is left to the archive.
+  static List<Map<String, dynamic>> _maps(dynamic section) => [
+        if (section is List)
+          for (final item in section)
+            if (item is Map) Map<String, dynamic>.from(item),
+      ];
 }

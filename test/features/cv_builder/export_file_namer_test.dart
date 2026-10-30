@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/features/cv_export/export_file_namer.dart';
+import 'package:sirati/features/cv_builder/domain/export_file_namer.dart';
 
 void main() {
   group('ExportFileNamer', () {

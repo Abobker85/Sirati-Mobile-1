@@ -84,31 +84,6 @@ bool _looksLikeContact(String s) =>
     s.toLowerCase().contains('email:') ||
     s.toLowerCase().contains('phone:');
 
-/// Plain-text rendering for sharing: headings upper-cased in English, bullets
-/// as "•", no markdown syntax.
-String cvPlainText({
-  required String fullName,
-  required String headline,
-  required String markdown,
-}) {
-  final out = StringBuffer();
-  if (fullName.trim().isNotEmpty) out.writeln(fullName.trim());
-  if (headline.trim().isNotEmpty) out.writeln(headline.trim());
-  for (final block in parseCvMarkdown(markdown)) {
-    switch (block) {
-      case CvHeading(:final text):
-        out
-          ..writeln()
-          ..writeln(text);
-      case CvBullet(:final text):
-        out.writeln('• $text');
-      case CvStrongLine(:final text) || CvParagraph(:final text):
-        out.writeln(text);
-    }
-  }
-  return out.toString().trim();
-}
-
 /// English headlines are title-cased ("backend developer" → "Backend
 /// Developer"); other languages are shown as written.
 String displayHeadline(String raw, {required String language}) {

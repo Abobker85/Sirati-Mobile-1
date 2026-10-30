@@ -16,6 +16,7 @@ import 'package:sirati/features/cv_builder/presentation/my_cvs/my_cvs_tools.dart
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
+import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -123,8 +124,13 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     }
     final api = ref.read(cvApiServiceProvider);
     final String? slug;
-    if (item.offersTemplateChoice) {
-      final choice = await _chooseTemplate(english);
+    // Designs are offered in the CV's language; when it can't be learned
+    // the server's default design is used.
+    final language =
+        item.offersTemplateChoice ? await _cvLanguage(api, item) : null;
+    if (!mounted) return;
+    if (language != null) {
+      final choice = await _chooseTemplate(language);
       if (choice case _Cancelled()) return;
       slug = (choice as _Chosen).template?.slug;
     } else {
@@ -154,12 +160,25 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     }
   }
 
-  Future<_TemplateChoice> _chooseTemplate(bool english) async {
+  /// The CV's own language: from the list row, else from the CV itself.
+  Future<String?> _cvLanguage(CvApiService api, CvListItem item) async {
+    if (item.language != null) return item.language;
+    final id = item.id;
+    if (id == null) return null;
+    try {
+      return (await api.getGeneratedCv(id)).language;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<_TemplateChoice> _chooseTemplate(String language) async {
     final l10n = AppLocalizations.of(context);
+    final english = AppLocale.isEnglishCode(language);
     try {
       final templates = await ref
           .read(cvApiServiceProvider)
-          .listCvTemplates(english: english);
+          .listCvTemplates(language: language);
       if (!mounted) return const _Cancelled();
       if (templates.isEmpty) return const _Chosen(null);
 

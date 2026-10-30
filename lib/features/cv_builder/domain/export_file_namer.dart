@@ -1,3 +1,5 @@
+import 'package:sirati/core/utils/app_locale.dart';
+
 /// File naming utility for CV PDF exports.
 ///
 /// Satisfies SIRATI-48 acceptance criteria:
@@ -20,14 +22,14 @@ class ExportFileNamer {
 
   /// Generate a sanitized export filename for the given name and role.
   ///
-  /// [language] determines whether to format in Arabic ('ar') or Latin ('en').
+  /// A [language] backed by English content gives a Latin name.
   static String formatFilename({
     required String? fullName,
     required String? targetJobTitle,
     String language = 'ar',
     bool latinFallback = false,
   }) {
-    final useLatin = latinFallback || language == 'en';
+    final useLatin = latinFallback || AppLocale.isEnglishCode(language);
     final name = (fullName ?? '').trim();
     final role = (targetJobTitle ?? '').trim();
 

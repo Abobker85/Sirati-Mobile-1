@@ -117,9 +117,11 @@ class CvManageController extends ChangeNotifier {
     await load();
   }
 
-  /// Soft-deletes a CV and records it for undo.
-  Future<void> deleteCv(String id) async {
-    await _repository.deleteCv(id);
+  /// Soft-deletes a CV and records it for undo. A CV that cannot be read
+  /// throws [UnreadableCvException] so the user can be asked first; pass
+  /// [confirmUnreadable] once they agreed (it cannot be undone).
+  Future<void> deleteCv(String id, {bool confirmUnreadable = false}) async {
+    await _repository.deleteCv(id, confirmUnreadable: confirmUnreadable);
     _lastDeletedId = id;
     _undoTimer?.cancel();
     _undoTimer = Timer(const Duration(seconds: 15), () {

@@ -1850,6 +1850,15 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get cvHubShare => remote.text('cvHubShare') ?? _base.cvHubShare;
 
   @override
+  String get cvShareSubscriptionRequired =>
+      remote.text('cvShareSubscriptionRequired') ??
+      _base.cvShareSubscriptionRequired;
+
+  @override
+  String get cvShareFailed =>
+      remote.text('cvShareFailed') ?? _base.cvShareFailed;
+
+  @override
   String get cvHubNextSteps =>
       remote.text('cvHubNextSteps') ?? _base.cvHubNextSteps;
 
@@ -5449,6 +5458,8 @@ class RemoteAppLocalizations extends AppLocalizations {
     'cvHubDownload': [],
     'cvHubPreparing': [],
     'cvHubShare': [],
+    'cvShareSubscriptionRequired': [],
+    'cvShareFailed': [],
     'cvHubNextSteps': [],
     'cvHubCheckAts': [],
     'cvHubCheckAtsBody': [],
@@ -6562,6 +6573,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'cvHubDownload' => l.cvHubDownload,
         'cvHubPreparing' => l.cvHubPreparing,
         'cvHubShare' => l.cvHubShare,
+        'cvShareSubscriptionRequired' => l.cvShareSubscriptionRequired,
+        'cvShareFailed' => l.cvShareFailed,
         'cvHubNextSteps' => l.cvHubNextSteps,
         'cvHubCheckAts' => l.cvHubCheckAts,
         'cvHubCheckAtsBody' => l.cvHubCheckAtsBody,

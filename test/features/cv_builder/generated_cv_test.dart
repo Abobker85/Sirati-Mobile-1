@@ -89,21 +89,6 @@ void main() {
     });
   });
 
-  test('plain-text share has no markdown and keeps every line', () {
-    final text = cvPlainText(
-      fullName: 'Sara Ahmed',
-      headline: 'Backend Developer',
-      markdown: _sample,
-    );
-    expect(text, isNot(contains('**')));
-    expect(text, isNot(contains('#')));
-    expect(text, isNot(contains('---')));
-    for (final b in parseCvMarkdown(_sample)) {
-      expect(text, contains(b.text));
-    }
-    expect(text.split('\n').first, 'Sara Ahmed');
-  });
-
   test('displayHeadline title-cases English only', () {
     expect(displayHeadline('  backend  developer ', language: 'en'),
         'Backend Developer');
@@ -179,7 +164,7 @@ void main() {
       }
     }
 
-    testWidgets('Share is disabled when there is no content', (tester) async {
+    testWidgets('Share is enabled exactly when Download is', (tester) async {
       await tester.pumpWidget(
         app(_cv(markdown: '  '), AppTheme.lightFor(arabic: false)),
       );
@@ -187,15 +172,20 @@ void main() {
       await tester.scrollUntilVisible(
         find.byKey(GeneratedCvScreen.shareKey),
         200,
-        scrollable: find.descendant(
-          of: find.byType(ListView).first,
-          matching: find.byType(Scrollable),
-        ).first,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView).first,
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
       final share = tester.widget<OutlinedButton>(
         find.byKey(GeneratedCvScreen.shareKey),
       );
-      expect(share.onPressed, isNull);
+      final download = tester.widget<ElevatedButton>(
+        find.byKey(GeneratedCvScreen.downloadKey),
+      );
+      expect(share.enabled, download.enabled);
     });
 
     testWidgets('an edited CV replaces the one on screen', (tester) async {

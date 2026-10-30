@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +10,7 @@ import 'package:sirati/core/network/api_client.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/features/app/sirati_route_table.dart';
+import 'package:sirati/features/cv_builder/application/pdf_export_controller.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/my_cvs_tools.dart';
@@ -35,7 +35,8 @@ import 'job_match_test_support.dart';
 
 void main() {
   for (final language in ['en', 'ar']) {
-    testWidgets('$language: entry -> API -> apply -> preview -> shared artifact',
+    testWidgets(
+        '$language: entry -> API -> apply -> preview -> shared artifact',
         (tester) async {
       useTallView(tester);
       AppLocale.languageCode.value = language;
@@ -56,7 +57,10 @@ void main() {
         'export_language': language,
         'summary': {language: after},
         'skills': [
-          {'id': 'skill-1', 'name': {'en': 'C++', 'ar': 'C++'}},
+          {
+            'id': 'skill-1',
+            'name': {'en': 'C++', 'ar': 'C++'}
+          },
         ],
       };
       final source = <String, dynamic>{
@@ -74,7 +78,8 @@ void main() {
         'document': document,
       };
       final suggestion = {
-        ...suggestionJson('rewrite', before: before, after: after, needsUserFact: true),
+        ...suggestionJson('rewrite',
+            before: before, after: after, needsUserFact: true),
         'target': {'section': 'summary', 'field': 'text'},
       };
       final completed = matchJson(
@@ -86,13 +91,22 @@ void main() {
       var myCvsLoads = 0;
       var dashboardLoads = 0;
       final requests = <String>[];
+      // The server renders the applied copy; its PDF carries the new text.
+      final pdf = [...utf8.encode('%PDF-1.7\n$after C++ SQL\n'), 0, 255];
       final apiClient = ApiClient(httpClient: MockClient((request) async {
         final path = request.url.path;
         requests.add('${request.method} $path');
+        if (path == '/api/generated-cvs/83/download') {
+          expect(request.url.queryParameters['language'], language);
+          return http.Response.bytes(pdf, 200,
+              headers: {'content-type': 'application/pdf'});
+        }
         Object data;
         if (path == '/api/auth/me') {
           data = {
-            'id': 1, 'name': 'Samira', 'email': 'samira@example.test',
+            'id': 1,
+            'name': 'Samira',
+            'email': 'samira@example.test',
             'subscription': subscription(),
           };
         } else if (path == '/api/mobile/my-cvs') {
@@ -105,7 +119,9 @@ void main() {
           };
         } else if (path == '/api/mobile/dashboard') {
           dashboardLoads++;
-          data = {'stats': {'generated_cvs': applied ? 2 : 1}};
+          data = {
+            'stats': {'generated_cvs': applied ? 2 : 1}
+          };
         } else if (path == '/api/generated-cvs') {
           data = [source, if (applied) copy];
         } else if (path == '/api/job-matches') {
@@ -122,7 +138,10 @@ void main() {
           data = completed;
         } else if (path == '/api/job-matches/39/apply-suggestions') {
           expect(request.method, 'POST');
-          expect(jsonDecode(request.body), {'suggestion_keys': ['rewrite'], 'confirmed_fact_keys': ['rewrite']});
+          expect(jsonDecode(request.body), {
+            'suggestion_keys': ['rewrite'],
+            'confirmed_fact_keys': ['rewrite']
+          });
           applied = true;
           data = {
             'generated_cv': copy,
@@ -145,22 +164,24 @@ void main() {
       // Warm both caches to prove apply invalidates them within their TTL.
       await content.myCvs(!arabic);
       await content.dashboard(!arabic);
-      final messenger =
-          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-      const share = MethodChannel('dev.fluttercommunity.plus/share');
-      String? shared;
-      messenger.setMockMethodCallHandler(share, (call) async {
-        expect(call.method, 'share');
-        shared = (call.arguments as Map)['text'] as String;
-        return null;
-      });
-      addTearDown(() => messenger.setMockMethodCallHandler(share, null));
+      final shared = <List<int>>[];
 
       await tester.pumpWidget(ProviderScope(
         overrides: [
-          cvApiServiceProvider.overrideWithValue(CvApiService(apiClient: apiClient)),
-          authApiServiceProvider.overrideWithValue(AuthApiService(apiClient: apiClient)),
+          cvApiServiceProvider
+              .overrideWithValue(CvApiService(apiClient: apiClient)),
+          authApiServiceProvider
+              .overrideWithValue(AuthApiService(apiClient: apiClient)),
           mobileContentServiceProvider.overrideWithValue(content),
+          pdfShareProvider.overrideWithValue((files,
+              {required fileNameOverrides,
+              text,
+              subject,
+              sharePositionOrigin}) async {
+            for (final file in files) {
+              shared.add(await file.readAsBytes());
+            }
+          }),
           jobMatchPollScheduleProvider.overrideWithValue(
             const [Duration(milliseconds: 100)],
           ),
@@ -191,7 +212,8 @@ void main() {
       await tapVisible(tester, find.byKey(const ValueKey('jm-apply')));
       await settle(tester);
 
-      final preview = tester.widget<GeneratedCvScreen>(find.byType(GeneratedCvScreen));
+      final preview =
+          tester.widget<GeneratedCvScreen>(find.byType(GeneratedCvScreen));
       expect(preview.generatedCv.id, 83);
       expect(preview.generatedCv.document, document);
       expect(find.text(after), findsOneWidget);
@@ -200,18 +222,27 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
       await settle(tester);
       await tapVisible(tester, find.text(arabic ? 'مشاركة' : 'Share'));
+      // The PDF stream completes on the real event loop.
+      for (var i = 0; i < 100 && shared.isEmpty; i++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump();
+      }
       await settle(tester);
-      expect(shared, contains(after));
-      expect(shared, contains('C++'));
-      expect(shared, contains('SQL'));
-      expect(shared, isNot(contains(before)));
-      expect(shared, isNot(contains('##')));
-      expect(requests, containsAllInOrder([
-        'GET /api/auth/me',
-        'POST /api/job-matches',
-        'GET /api/job-matches/39',
-        'POST /api/job-matches/39/apply-suggestions',
-      ]));
+      // The shared artifact is the applied copy's PDF, byte for byte.
+      expect(shared, [pdf]);
+      final text = utf8.decode(shared.single, allowMalformed: true);
+      expect(text, contains(after));
+      expect(text, isNot(contains(before)));
+      expect(
+          requests,
+          containsAllInOrder([
+            'GET /api/auth/me',
+            'POST /api/job-matches',
+            'GET /api/job-matches/39',
+            'POST /api/job-matches/39/apply-suggestions',
+            'GET /api/generated-cvs/83/download',
+          ]));
 
       await content.myCvs(!arabic);
       await content.dashboard(!arabic);
@@ -232,7 +263,8 @@ void main() {
         find.descendant(
           of: tailoredCard,
           matching: find.byWidgetPredicate(
-            (widget) => widget is Text &&
+            (widget) =>
+                widget is Text &&
                 BidiTextUtils.sanitizeBidiControls(widget.data ?? '') ==
                     '$title — tailored',
           ),
@@ -254,7 +286,8 @@ void main() {
       overrides: [
         mobileContentServiceProvider.overrideWithValue(content),
         cvApiServiceProvider.overrideWithValue(_HomeCvApi()),
-        authApiServiceProvider.overrideWithValue(FakeAuth(subscription(subscribed: false))),
+        authApiServiceProvider
+            .overrideWithValue(FakeAuth(subscription(subscribed: false))),
       ],
       child: MaterialApp(
         theme: AppTheme.lightFor(arabic: false),
@@ -289,7 +322,8 @@ class _DashboardContent extends MobileContentService {
   bool forced = false;
 
   @override
-  Future<Map<String, dynamic>> myCvs(bool english, {bool force = false}) async =>
+  Future<Map<String, dynamic>> myCvs(bool english,
+          {bool force = false}) async =>
       {
         'items': [
           {'id': 1, 'title': 'Saved CV', 'updated_at': '2026-10-19T12:00:00Z'},
@@ -314,9 +348,12 @@ class _DashboardContent extends MobileContentService {
       {'items': const []};
 
   @override
-  Future<Map<String, dynamic>> dashboard(bool english, {bool force = false}) async {
+  Future<Map<String, dynamic>> dashboard(bool english,
+      {bool force = false}) async {
     loads++;
     forced = force;
-    return {'stats': {'generated_cvs': loads}};
+    return {
+      'stats': {'generated_cvs': loads}
+    };
   }
 }

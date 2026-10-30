@@ -2,13 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
-import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
+import 'package:sirati/features/cv_builder/application/pdf_export_controller.dart';
 import 'package:sirati/features/cv_builder/domain/cv_markdown.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/generated_cv/cv_document_view.dart';
@@ -23,15 +22,10 @@ import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
-/// Reading direction for a CV: its declared language, else detected.
-TextDirection cvContentDirection(GeneratedCv cv) => switch (cv.language) {
-      'en' => TextDirection.ltr,
-      'ar' => TextDirection.rtl,
-      _ => BidiTextUtils.detectBaseDirection(
-          cv.generatedMarkdown,
-          fallback: TextDirection.rtl,
-        ),
-    };
+/// Reading direction for a CV: its declared language's, never guessed
+/// from the text.
+TextDirection cvContentDirection(GeneratedCv cv) =>
+    AppLocale.directionOf(cv.language);
 
 /// Whether the CV can be handed to an employer. The server's export check
 /// decides (it also needs contact details and structured experience); the
@@ -72,6 +66,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
   late GeneratedCv _cv = widget.generatedCv;
   late List<CvBlock> _blocks = parseCvMarkdown(_cv.generatedMarkdown);
   bool _isDownloading = false;
+  bool _isSharing = false;
   bool _previewExpanded = false;
 
   @override
@@ -94,22 +89,26 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
     if (updated != null && mounted) setState(() => _show(updated));
   }
 
+  /// Download and Share both need a CV the server would export; otherwise
+  /// the user is told what is missing.
+  bool _readyOrExplain() {
+    if (isCvReadyToSend(_cv)) return true;
+    AppSnackBar.warning(
+        context,
+        cvNotReadyMessage(_cv, AppLocalizations.of(context),
+            english: AppLocale.isEnglish(context)));
+    return false;
+  }
+
   Future<void> _downloadPdf() async {
     if (_isDownloading) return;
-    final english = AppLocale.isEnglish(context);
-    if (!isCvReadyToSend(_cv)) {
-      AppSnackBar.warning(
-          context,
-          cvNotReadyMessage(_cv, AppLocalizations.of(context),
-              english: english));
-      return;
-    }
+    if (!_readyOrExplain()) return;
     final api = ref.read(cvApiServiceProvider);
     setState(() => _isDownloading = true);
     try {
       String? slug;
       if (_cv.templatePdfUrl?.isNotEmpty ?? false) {
-        final choice = await _chooseTemplate(english);
+        final choice = await _chooseTemplate();
         if (choice == null || !mounted) return; // cancelled
         slug = choice.template?.slug;
       }
@@ -146,19 +145,21 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
   }
 
   /// Null when the user dismissed the picker; a null template means "use
-  /// the default design".
-  Future<({CvTemplate? template})?> _chooseTemplate(bool english) async {
+  /// the default design". The designs are the CV language's.
+  Future<({CvTemplate? template})?> _chooseTemplate() async {
     try {
       final templates = await ref
           .read(cvApiServiceProvider)
-          .listCvTemplates(english: english);
+          .listCvTemplates(language: _cv.language);
       if (!mounted) return null;
       if (templates.isEmpty) return (template: null);
       final picked = await showModalBottomSheet<CvTemplate>(
         context: context,
         showDragHandle: true,
-        builder: (_) =>
-            CvTemplatePicker(templates: templates, english: english),
+        builder: (_) => CvTemplatePicker(
+          templates: templates,
+          english: AppLocale.isEnglishCode(_cv.language),
+        ),
       );
       return picked == null ? null : (template: picked);
     } catch (_) {
@@ -172,14 +173,33 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
     }
   }
 
-  void _share() {
-    final text = cvPlainText(
-      fullName: _cv.fullName,
-      headline: displayHeadline(_cv.targetJobTitle, language: _cv.language),
-      markdown: _cv.generatedMarkdown,
+  /// Shares the CV's PDF (default design, CV language).
+  Future<void> _share() async {
+    if (_isSharing) return;
+    if (!_readyOrExplain()) return;
+    final l = AppLocalizations.of(context);
+    final box = context.findRenderObject() as RenderBox?;
+    final origin =
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+    final controller = PdfExportController(
+      apiClient: ref.read(cvApiServiceProvider).apiClient,
+      cv: _cv,
+      share: ref.read(pdfShareProvider),
     );
-    if (text.isEmpty) return;
-    unawaited(Share.share(text));
+    setState(() => _isSharing = true);
+    try {
+      final shared = await controller.sharePdf(sharePositionOrigin: origin);
+      if (shared || !mounted) return;
+      AppSnackBar.warning(
+        context,
+        controller.state.status == ExportStatus.premiumLocked
+            ? l.cvShareSubscriptionRequired
+            : l.cvShareFailed,
+      );
+    } finally {
+      controller.dispose();
+      if (mounted) setState(() => _isSharing = false);
+    }
   }
 
   @override
@@ -281,8 +301,16 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
                   disabledForegroundColor: c.textSecondary,
                   side: BorderSide(color: c.textSecondary),
                 ),
-                onPressed: _blocks.isEmpty ? null : _share,
-                icon: const Icon(Icons.share_outlined, size: 20),
+                onPressed: _isSharing ? null : () => unawaited(_share()),
+                icon: _isSharing
+                    ? SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: c.textSecondary,
+                        ),
+                      )
+                    : const Icon(Icons.share_outlined, size: 20),
                 label: Text(l.cvHubShare),
               ),
             ),
