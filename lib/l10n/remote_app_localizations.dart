@@ -4822,6 +4822,142 @@ class RemoteAppLocalizations extends AppLocalizations {
   @override
   String get homeHonesty => remote.text('homeHonesty') ?? _base.homeHonesty;
 
+  @override
+  String get authEmailHint =>
+      remote.text('authEmailHint') ?? _base.authEmailHint;
+
+  @override
+  String get authPhoneHint =>
+      remote.text('authPhoneHint') ?? _base.authPhoneHint;
+
+  @override
+  String get cvPersonalEmailHint =>
+      remote.text('cvPersonalEmailHint') ?? _base.cvPersonalEmailHint;
+
+  @override
+  String get cvPersonalPhoneHint =>
+      remote.text('cvPersonalPhoneHint') ?? _base.cvPersonalPhoneHint;
+
+  @override
+  String get cvPersonalLinkedinHint =>
+      remote.text('cvPersonalLinkedinHint') ?? _base.cvPersonalLinkedinHint;
+
+  @override
+  String get authSocialGoogle =>
+      remote.text('authSocialGoogle') ?? _base.authSocialGoogle;
+
+  @override
+  String get authSocialApple =>
+      remote.text('authSocialApple') ?? _base.authSocialApple;
+
+  @override
+  String get authRegisterEmailHint =>
+      remote.text('authRegisterEmailHint') ?? _base.authRegisterEmailHint;
+
+  @override
+  String get timeJustNow => remote.text('timeJustNow') ?? _base.timeJustNow;
+
+  @override
+  String timeMinutesAgo(int count) =>
+      remote.format(
+        'timeMinutesAgo',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.timeMinutesAgo(count);
+
+  @override
+  String timeHoursAgo(int count) =>
+      remote.format(
+        'timeHoursAgo',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.timeHoursAgo(count);
+
+  @override
+  String get timeYesterday =>
+      remote.text('timeYesterday') ?? _base.timeYesterday;
+
+  @override
+  String get savedJustNow => remote.text('savedJustNow') ?? _base.savedJustNow;
+
+  @override
+  String savedAgo(String time) =>
+      remote.format(
+        'savedAgo',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'time': time},
+        ),
+      ) ??
+      _base.savedAgo(time);
+
+  @override
+  String get untitledTitle =>
+      remote.text('untitledTitle') ?? _base.untitledTitle;
+
+  @override
+  String get aiErrorTooLong =>
+      remote.text('aiErrorTooLong') ?? _base.aiErrorTooLong;
+
+  @override
+  String get aiErrorTryAgain =>
+      remote.text('aiErrorTryAgain') ?? _base.aiErrorTryAgain;
+
+  @override
+  String aiGenerationFailed(String detail) =>
+      remote.format(
+        'aiGenerationFailed',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'detail': detail},
+        ),
+      ) ??
+      _base.aiGenerationFailed(detail);
+
+  @override
+  String aiSuggestionsFailed(String detail) =>
+      remote.format(
+        'aiSuggestionsFailed',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'detail': detail},
+        ),
+      ) ??
+      _base.aiSuggestionsFailed(detail);
+
+  @override
+  String aiLocalFallback(String detail) =>
+      remote.format(
+        'aiLocalFallback',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'detail': detail},
+        ),
+      ) ??
+      _base.aiLocalFallback(detail);
+
+  @override
+  String get jobNewsTitle => remote.text('jobNewsTitle') ?? _base.jobNewsTitle;
+
+  @override
+  String get crashMessage => remote.text('crashMessage') ?? _base.crashMessage;
+
+  @override
+  String get avatarFallbackInitial =>
+      remote.text('avatarFallbackInitial') ?? _base.avatarFallbackInitial;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -5885,6 +6021,29 @@ class RemoteAppLocalizations extends AppLocalizations {
     'homeMyCvEmptyTitle': [],
     'homeMyCvEmptyBody': [],
     'homeHonesty': [],
+    'authEmailHint': [],
+    'authPhoneHint': [],
+    'cvPersonalEmailHint': [],
+    'cvPersonalPhoneHint': [],
+    'cvPersonalLinkedinHint': [],
+    'authSocialGoogle': [],
+    'authSocialApple': [],
+    'authRegisterEmailHint': [],
+    'timeJustNow': [],
+    'timeMinutesAgo': ['int'],
+    'timeHoursAgo': ['int'],
+    'timeYesterday': [],
+    'savedJustNow': [],
+    'savedAgo': ['String'],
+    'untitledTitle': [],
+    'aiErrorTooLong': [],
+    'aiErrorTryAgain': [],
+    'aiGenerationFailed': ['String'],
+    'aiSuggestionsFailed': ['String'],
+    'aiLocalFallback': ['String'],
+    'jobNewsTitle': [],
+    'crashMessage': [],
+    'avatarFallbackInitial': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -7006,6 +7165,29 @@ class RemoteAppLocalizations extends AppLocalizations {
         'homeMyCvEmptyTitle' => l.homeMyCvEmptyTitle,
         'homeMyCvEmptyBody' => l.homeMyCvEmptyBody,
         'homeHonesty' => l.homeHonesty,
+        'authEmailHint' => l.authEmailHint,
+        'authPhoneHint' => l.authPhoneHint,
+        'cvPersonalEmailHint' => l.cvPersonalEmailHint,
+        'cvPersonalPhoneHint' => l.cvPersonalPhoneHint,
+        'cvPersonalLinkedinHint' => l.cvPersonalLinkedinHint,
+        'authSocialGoogle' => l.authSocialGoogle,
+        'authSocialApple' => l.authSocialApple,
+        'authRegisterEmailHint' => l.authRegisterEmailHint,
+        'timeJustNow' => l.timeJustNow,
+        'timeMinutesAgo' => l.timeMinutesAgo(a[0] as int),
+        'timeHoursAgo' => l.timeHoursAgo(a[0] as int),
+        'timeYesterday' => l.timeYesterday,
+        'savedJustNow' => l.savedJustNow,
+        'savedAgo' => l.savedAgo(a[0] as String),
+        'untitledTitle' => l.untitledTitle,
+        'aiErrorTooLong' => l.aiErrorTooLong,
+        'aiErrorTryAgain' => l.aiErrorTryAgain,
+        'aiGenerationFailed' => l.aiGenerationFailed(a[0] as String),
+        'aiSuggestionsFailed' => l.aiSuggestionsFailed(a[0] as String),
+        'aiLocalFallback' => l.aiLocalFallback(a[0] as String),
+        'jobNewsTitle' => l.jobNewsTitle,
+        'crashMessage' => l.crashMessage,
+        'avatarFallbackInitial' => l.avatarFallbackInitial,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

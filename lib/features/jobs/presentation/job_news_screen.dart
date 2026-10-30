@@ -192,7 +192,9 @@ class _JobNewsList extends ConsumerWidget {
                 children: [
                   ScreenHeader(
                     english: english,
-                    title: feed.title,
+                    title: feed.title.isNotEmpty
+                        ? feed.title
+                        : AppLocalizations.of(context).jobNewsTitle,
                     icon: Icons.work_rounded,
                     unreadCount: SessionCache.instance.unreadCount,
                     onNotifications: () => Navigator.of(context)

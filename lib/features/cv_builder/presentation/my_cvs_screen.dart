@@ -290,7 +290,9 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               MyCvsHeader(
-                title: data.title,
+                title: data.title.isNotEmpty
+                    ? data.title
+                    : AppLocalizations.of(context).myCvsListTitle,
                 unreadCount: SessionCache.instance.unreadCount,
                 onNotifications: () =>
                     Navigator.of(context).pushNamed(AppRoutes.notifications),

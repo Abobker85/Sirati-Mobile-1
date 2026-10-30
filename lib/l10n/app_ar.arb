@@ -3178,5 +3178,72 @@
   "homeMyCvCheck": "فحص ATS",
   "homeMyCvEmptyTitle": "لا توجد سيرة بعد",
   "homeMyCvEmptyBody": "أنشئ أول سيرة متوافقة مع ATS، أو ارفع سيرة خارجية لتعديلها.",
-  "homeHonesty": "سيرتك تعكس خبرتك الحقيقية، بلا مبالغة"
+  "homeHonesty": "سيرتك تعكس خبرتك الحقيقية، بلا مبالغة",
+  "authEmailHint": "name@example.com",
+  "authPhoneHint": "05XXXXXXXX",
+  "cvPersonalEmailHint": "salem@example.com",
+  "cvPersonalPhoneHint": "+966 5X XXX XXXX",
+  "cvPersonalLinkedinHint": "linkedin.com/in/username",
+  "authSocialGoogle": "Google",
+  "authSocialApple": "Apple",
+  "authRegisterEmailHint": "example@mail.com",
+  "timeJustNow": "الآن",
+  "timeMinutesAgo": "{count, plural, =1{قبل دقيقة} =2{قبل دقيقتين} few{قبل {count} دقائق} other{قبل {count} دقيقة}}",
+  "timeHoursAgo": "{count, plural, =1{قبل ساعة} =2{قبل ساعتين} few{قبل {count} ساعات} other{قبل {count} ساعة}}",
+  "timeYesterday": "أمس",
+  "savedJustNow": "حُفظت للتو",
+  "savedAgo": "حُفظت {time}",
+  "untitledTitle": "بدون عنوان",
+  "aiErrorTooLong": "السيرة أطول من أن تُولَّد في تمريرة واحدة. اختصر نص الخبرات أو التعليم أو المهارات ثم أعد المحاولة.",
+  "aiErrorTryAgain": "يرجى المحاولة مرة أخرى.",
+  "aiGenerationFailed": "تعذر إكمال توليد السيرة بالذكاء الاصطناعي: {detail}",
+  "aiSuggestionsFailed": "تعذر إكمال توصيات الذكاء الاصطناعي: {detail}",
+  "aiLocalFallback": "تم إنشاء نسخة محلية لأن الذكاء الاصطناعي لم يكتمل: {detail}",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "@savedAgo": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@aiGenerationFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "@aiSuggestionsFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "@aiLocalFallback": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "jobNewsTitle": "أخبار الوظائف",
+  "crashMessage": "حدث خطأ. بياناتك بأمان — حاول مرة أخرى.",
+  "avatarFallbackInitial": "س"
 }

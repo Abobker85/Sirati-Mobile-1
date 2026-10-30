@@ -44,6 +44,7 @@ class JobNewsFeed {
     this.offline = false,
   });
 
+  /// Server title; empty when omitted (the screen shows its catalog label).
   final String title;
   final List<JobNews> items;
   final JobNewsProfileContext? profile;
@@ -85,7 +86,7 @@ class JobNewsFeed {
     final rawProfile = data['profile_context'];
     final title = data['title']?.toString().trim() ?? '';
     return JobNewsFeed(
-      title: title.isNotEmpty ? title : _defaultTitle(english),
+      title: title,
       // Skip malformed entries instead of rendering a blank id-0 job.
       items: rawItems is List
           ? rawItems
@@ -102,10 +103,7 @@ class JobNewsFeed {
 
   /// Shown when the first load fails and nothing is cached.
   factory JobNewsFeed.empty({required bool english}) =>
-      JobNewsFeed(title: _defaultTitle(english), items: const []);
-
-  static String _defaultTitle(bool english) =>
-      english ? 'Job News' : 'أخبار الوظائف';
+      const JobNewsFeed(title: '', items: []);
 }
 
 /// Posts younger than this carry the "new" marker.

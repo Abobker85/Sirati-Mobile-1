@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/features/cv_builder/presentation/widgets/skill_chips_selector.dart';
@@ -149,72 +151,94 @@ void main() {
     expect(find.text('Selected Skills (2)'), findsOneWidget);
   });
 
-  group('suggestions follow the target stack', () {
-    Future<Set<String>> suggestionsFor(WidgetTester tester, String title,
-        {bool english = true}) async {
-      final controller = TextEditingController();
+  group('suggestions come only from the server job-title taxonomy', () {
+    Future<List<String>> suggestionsFor(
+      WidgetTester tester,
+      String title,
+      List<JobTitle> titles, {
+      String selected = '',
+    }) async {
+      final controller = TextEditingController(text: selected);
       addTearDown(controller.dispose);
-      await tester.pumpWidget(_wrap(
-          english: english,
-          SkillChipsSelector(
-            controller: controller,
-            targetJobTitle: title,
-            english: english,
-          )));
+      await tester.pumpWidget(_wrap(SkillChipsSelector(
+        controller: controller,
+        targetJobTitle: title,
+        english: true,
+        allJobTitles: titles,
+      )));
       await tester.pumpAndSettle();
       return tester
           .widgetList<ActionChip>(find.byType(ActionChip))
           .map((c) => (c.key! as ValueKey<String>)
               .value
               .replaceFirst('suggested_skill_', ''))
-          .toSet();
+          .toList();
     }
 
-    const backendOnly = {'Laravel', 'PHP', 'Node.js', 'PostgreSQL', 'Redis'};
+    JobTitle title(int id, String ar, String en, List<String> keywords) =>
+        JobTitle(
+          id: id,
+          slug: 'title-$id',
+          nameAr: ar,
+          nameEn: en,
+          category: 'any',
+          keywords: keywords,
+          sortOrder: id,
+        );
 
-    for (final title in [
+    final random = Random(7);
+    String word() => String.fromCharCodes(
+        List.generate(3 + random.nextInt(6), (_) => 97 + random.nextInt(26)));
+
+    testWidgets('a matching title suggests exactly its server keywords',
+        (tester) async {
+      for (var i = 0; i < 12; i++) {
+        final keywords =
+            {for (var k = 0; k < 1 + random.nextInt(6); k++) word()}.toList();
+        final en = '${word()} ${word()}';
+        final got = await suggestionsFor(
+            tester, en, [title(1, 'مسمى ${word()}', en, keywords)]);
+        expect(got, keywords, reason: en);
+      }
+    });
+
+    for (final query in [
       'Senior Flutter Developer',
-      'flutter dev',
-      'Mobile Engineer',
-      'Android Developer',
-      'iOS Developer',
+      'Laravel Backend Developer',
       'مطور فلاتر',
-      'مطور تطبيقات جوال',
-      'مهندس موبايل أول',
+      'مدير مشاريع',
+      'Customer Support Agent',
     ]) {
-      testWidgets('mobile: $title', (tester) async {
-        final got = await suggestionsFor(tester, title,
-            english: !title.contains(RegExp('[؀-ۿ]')));
-        expect(got, contains('Flutter'), reason: title);
-        expect(got.intersection(backendOnly), isEmpty, reason: title);
+      testWidgets('no server match means no suggestions: $query',
+          (tester) async {
+        final got = await suggestionsFor(tester, query, [
+          title(1, 'محاسب', 'Accountant', ['IFRS'])
+        ]);
+        expect(got, isEmpty);
       });
     }
 
-    for (final title in [
-      'Laravel Backend Developer',
-      'Back-end Engineer',
-      'PHP Developer',
-      'مطور خلفي',
-    ]) {
-      testWidgets('backend: $title', (tester) async {
-        final got = await suggestionsFor(tester, title);
-        expect(got, contains('Laravel'), reason: title);
-        expect(got, isNot(contains('Flutter')), reason: title);
-      });
-    }
+    testWidgets('keywords of every matching title are merged, case-insensitive',
+        (tester) async {
+      final got = await suggestionsFor(tester, 'Data Analyst', [
+        title(1, 'محلل بيانات', 'Data Analyst', ['SQL', 'Python']),
+        title(2, 'محلل', 'Analyst', ['sql', 'Excel']),
+        title(3, 'مصمم', 'Designer', ['Figma']),
+      ]);
+      expect(got, ['SQL', 'Python', 'Excel']);
+    });
 
     testWidgets('selected skills are never suggested again', (tester) async {
-      final controller = TextEditingController(text: 'Flutter, dart');
-      addTearDown(controller.dispose);
-      await tester.pumpWidget(_wrap(SkillChipsSelector(
-        controller: controller,
-        targetJobTitle: 'Flutter Developer',
-        english: true,
-      )));
-      await tester.pumpAndSettle();
-      expect(
-          find.byKey(const ValueKey('suggested_skill_Flutter')), findsNothing);
-      expect(find.byKey(const ValueKey('suggested_skill_Dart')), findsNothing);
+      final got = await suggestionsFor(
+        tester,
+        'Flutter Developer',
+        [
+          title(
+              1, 'مطور فلاتر', 'Flutter Developer', ['Flutter', 'Dart', 'Bloc'])
+        ],
+        selected: 'Flutter, dart',
+      );
+      expect(got, ['Bloc']);
     });
   });
 
@@ -226,6 +250,17 @@ void main() {
       controller: controller,
       targetJobTitle: 'Flutter Developer',
       english: true,
+      allJobTitles: const [
+        JobTitle(
+          id: 1,
+          slug: 'flutter-developer',
+          nameAr: 'مطور فلاتر',
+          nameEn: 'Flutter Developer',
+          category: 'software',
+          keywords: ['Firebase'],
+          sortOrder: 1,
+        ),
+      ],
       onChanged: () => calls++,
     )));
     await tester.pumpAndSettle();

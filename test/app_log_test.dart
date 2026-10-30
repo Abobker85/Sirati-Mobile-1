@@ -68,12 +68,6 @@ void main() {
     expect(out.length, lessThan(blob.length));
   });
 
-  test('user-facing copy is localized and non-technical', () {
-    expect(AppLog.userMessage(english: true), isNot(contains('Exception')));
-    expect(AppLog.userMessage(english: true), isNot(contains('null')));
-    expect(AppLog.userMessage(english: false), contains('خطأ'));
-  });
-
   test(
       'preserves valid diagnostic strings and bullets without prose guessing corruption',
       () {

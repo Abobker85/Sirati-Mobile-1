@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:sirati/core/logging/app_log.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 
 /// Recoverable UI for uncaught Flutter errors (SIRATI-16).
 ///
@@ -11,12 +11,18 @@ const _crashBackground =
     Color(0xFFF4F7F6); // ignore: hardcoded_color -- no_theme
 const _crashAccent = Color(0xFFD8403A); // ignore: hardcoded_color -- no_theme
 
+/// Server labels when the app's localizations are up; the bundled copy of
+/// the same labels when the crash happened before they loaded.
+AppLocalizations _labels(BuildContext context) =>
+    Localizations.of<AppLocalizations>(context, AppLocalizations) ??
+    lookupAppLocalizations(Locale(AppLocale.baseLanguage));
+
 class AppCrashView extends StatelessWidget {
   const AppCrashView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.baseLanguage == 'en';
+    final l10n = _labels(context);
     return Directionality(
       textDirection: AppLocale.currentDirection,
       child: Material(
@@ -25,9 +31,9 @@ class AppCrashView extends StatelessWidget {
         color: _crashBackground,
         child: SafeArea(
           child: _CrashBody(
-            english: english,
-            title: english ? 'Something went wrong' : 'حدث خطأ',
-            message: AppLog.userMessage(english: english),
+            title: l10n.somethingWentWrong,
+            message: l10n.crashMessage,
+            retryLabel: l10n.retry,
           ),
         ),
       ),
@@ -41,13 +47,13 @@ class AppRecoverableError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final english = AppLocale.isEnglish(context);
+    final l10n = _labels(context);
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _CrashBody(
-        english: english,
-        title: english ? 'Something went wrong' : 'حدث خطأ',
-        message: AppLog.userMessage(english: english),
+        title: l10n.somethingWentWrong,
+        message: l10n.crashMessage,
+        retryLabel: l10n.retry,
         onRetry: () {
           Navigator.of(context).pushNamedAndRemoveUntil(
             AppRoutes.home,
@@ -61,15 +67,15 @@ class AppRecoverableError extends StatelessWidget {
 
 class _CrashBody extends StatelessWidget {
   const _CrashBody({
-    required this.english,
     required this.title,
     required this.message,
+    required this.retryLabel,
     this.onRetry,
   });
 
-  final bool english;
   final String title;
   final String message;
+  final String retryLabel;
   final VoidCallback? onRetry;
 
   @override
@@ -104,7 +110,7 @@ class _CrashBody extends StatelessWidget {
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: onRetry,
-                child: Text(english ? 'Retry' : 'إعادة المحاولة'),
+                child: Text(retryLabel),
               ),
             ],
           ],

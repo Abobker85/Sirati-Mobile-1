@@ -133,7 +133,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               textAlign: TextAlign.start,
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-              hintText: 'name@example.com',
+              hintText: l10n.authEmailHint,
               prefixIcon: const Icon(Icons.email_outlined),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) {

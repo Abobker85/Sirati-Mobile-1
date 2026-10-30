@@ -227,13 +227,6 @@ class AppLog {
     return value;
   }
 
-  /// Localized, non-technical copy for users. Never include [error] text.
-  static String userMessage({required bool english}) {
-    return english
-        ? 'Something went wrong. Your data is safe — try again.'
-        : 'حدث خطأ. بياناتك بأمان — حاول مرة أخرى.';
-  }
-
   /// Sanitizes an exception while preserving runtime exception types so
   /// Crashlytics and Sentry error grouping remains accurate (N5 & R4).
   static Object sanitizeError(Object error) {

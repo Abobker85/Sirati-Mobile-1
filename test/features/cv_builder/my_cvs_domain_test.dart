@@ -32,17 +32,15 @@ void main() {
       }
     });
 
-    test('blank titles fall back to the localized default', () {
-      for (final raw in [null, '', '   ', 5]) {
-        final title = raw == 5 ? '5' : null;
-        expect(
-          CvList.fromPayload({'title': raw}, english: true).title,
-          title ?? 'My CVs',
-        );
-        expect(
-          CvList.fromPayload({'title': raw}, english: false).title,
-          title ?? 'سيرتي الذاتية',
-        );
+    test('blank titles stay empty so the screen shows its catalog label',
+        () {
+      for (final english in [true, false]) {
+        for (final raw in [null, '', '   ', '\n\t']) {
+          expect(
+              CvList.fromPayload({'title': raw}, english: english).title, '');
+        }
+        expect(CvList.fromPayload({'title': 5}, english: english).title, '5');
+        expect(CvList.empty(english: english).title, '');
       }
     });
 

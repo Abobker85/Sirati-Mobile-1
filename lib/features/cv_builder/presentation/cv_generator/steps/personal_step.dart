@@ -62,7 +62,7 @@ class PersonalStep extends StatelessWidget {
             onFieldSubmitted: next,
             textDirection: TextDirection.ltr,
             textAlign: TextAlign.start,
-            hintText: 'salem@example.com',
+            hintText: l10n.cvPersonalEmailHint,
             prefixIcon: const Icon(Icons.email_outlined),
             validator: (value) {
               final email = value?.trim() ?? '';
@@ -86,7 +86,7 @@ class PersonalStep extends StatelessWidget {
             onFieldSubmitted: next,
             textDirection: TextDirection.ltr,
             textAlign: TextAlign.start,
-            hintText: '+966 5X XXX XXXX',
+            hintText: l10n.cvPersonalPhoneHint,
             prefixIcon: const Icon(Icons.phone_outlined),
             validator: (value) => (value?.trim().isEmpty ?? true)
                 ? l10n.cvPersonalPhoneRequired
@@ -103,7 +103,7 @@ class PersonalStep extends StatelessWidget {
             onFieldSubmitted: next,
             textDirection: TextDirection.ltr,
             textAlign: TextAlign.start,
-            hintText: 'linkedin.com/in/username',
+            hintText: l10n.cvPersonalLinkedinHint,
             prefixIcon: const Icon(Icons.link_rounded),
           ),
         ),
@@ -240,6 +240,7 @@ class _LanguagePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
         color: context.sirati.surface,
@@ -248,9 +249,9 @@ class _LanguagePicker extends StatelessWidget {
       ),
       child: Row(
         children: [
-          for (final (code, label) in const [
-            ('en', 'English'),
-            ('ar', 'العربية')
+          for (final (code, label) in [
+            ('en', l10n.languageEnglish),
+            ('ar', l10n.languageArabic),
           ])
             Expanded(
               child: _LanguageOption(

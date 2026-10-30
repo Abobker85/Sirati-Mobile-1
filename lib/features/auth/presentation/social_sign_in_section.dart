@@ -111,7 +111,7 @@ class SocialSignInSection extends ConsumerWidget {
               Expanded(
                 child: _SocialButton(
                   mark: const _GoogleMark(size: 20),
-                  label: 'Google',
+                  label: l10n.authSocialGoogle,
                   onTap: () => unawaited(google()),
                 ),
               ),
@@ -121,7 +121,7 @@ class SocialSignInSection extends ConsumerWidget {
                 child: _SocialButton(
                   mark: Icon(Icons.apple,
                       size: 22, color: context.sirati.textPrimary),
-                  label: 'Apple',
+                  label: l10n.authSocialApple,
                   onTap: apple,
                 ),
               ),

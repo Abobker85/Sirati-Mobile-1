@@ -1,4 +1,6 @@
-/// Maps machine-readable AI error codes onto bilingual user copy.
+import 'package:sirati/l10n/generated/app_localizations.dart';
+
+/// Maps machine-readable AI error codes onto catalog labels.
 ///
 /// Backend [AiTruncationException] prefixes the stored `ai_error` with
 /// [tooLongCode] so every surface can name CV length as the cause in the
@@ -9,45 +11,24 @@ class AiErrorMessage {
   static bool isTooLong(String? error) =>
       error != null && error.startsWith(tooLongCode);
 
-  static String describe(String? error, {required bool english}) {
-    if (isTooLong(error)) {
-      return english
-          ? 'The CV is too long to generate in one pass. Shorten the experience, education, or skills text and try again.'
-          : 'السيرة أطول من أن تُولَّد في تمريرة واحدة. اختصر نص الخبرات أو التعليم أو المهارات ثم أعد المحاولة.';
-    }
-    if (error == null || error.trim().isEmpty) {
-      return english ? 'Please try again.' : 'يرجى المحاولة مرة أخرى.';
-    }
+  static String describe(String? error, AppLocalizations l10n) {
+    if (isTooLong(error)) return l10n.aiErrorTooLong;
+    if (error == null || error.trim().isEmpty) return l10n.aiErrorTryAgain;
     return error;
   }
 
-  static String generationFailed(String? error, {required bool english}) {
-    if (isTooLong(error)) {
-      return describe(error, english: english);
-    }
-    final detail = describe(error, english: english);
-    return english
-        ? 'AI generation could not be completed: $detail'
-        : 'تعذر إكمال توليد السيرة بالذكاء الاصطناعي: $detail';
-  }
+  static String generationFailed(String? error, AppLocalizations l10n) =>
+      isTooLong(error)
+          ? l10n.aiErrorTooLong
+          : l10n.aiGenerationFailed(describe(error, l10n));
 
-  static String suggestionsFailed(String? error, {required bool english}) {
-    if (isTooLong(error)) {
-      return describe(error, english: english);
-    }
-    final detail = describe(error, english: english);
-    return english
-        ? 'AI suggestions could not be completed: $detail'
-        : 'تعذر إكمال توصيات الذكاء الاصطناعي: $detail';
-  }
+  static String suggestionsFailed(String? error, AppLocalizations l10n) =>
+      isTooLong(error)
+          ? l10n.aiErrorTooLong
+          : l10n.aiSuggestionsFailed(describe(error, l10n));
 
-  static String localFallback(String? error, {required bool english}) {
-    if (isTooLong(error)) {
-      return describe(error, english: english);
-    }
-    final detail = describe(error, english: english);
-    return english
-        ? 'A local version was created because AI generation did not complete: $detail'
-        : 'تم إنشاء نسخة محلية لأن الذكاء الاصطناعي لم يكتمل: $detail';
-  }
+  static String localFallback(String? error, AppLocalizations l10n) =>
+      isTooLong(error)
+          ? l10n.aiErrorTooLong
+          : l10n.aiLocalFallback(describe(error, l10n));
 }

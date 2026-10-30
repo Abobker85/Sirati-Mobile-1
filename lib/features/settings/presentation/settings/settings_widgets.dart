@@ -54,7 +54,8 @@ class ProfileSummaryCard extends StatelessWidget {
       child: Row(
         children: [
           ProfileAvatar(
-            label: BidiText.avatarInitial(name),
+            label: BidiText.avatarInitial(name,
+                fallback: AppLocalizations.of(context).avatarFallbackInitial),
             size: 64,
             english: english,
           ),

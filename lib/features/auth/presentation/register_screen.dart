@@ -235,7 +235,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 textAlign: TextAlign.start,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: next,
-                hintText: 'example@mail.com',
+                hintText: l10n.authRegisterEmailHint,
                 prefixIcon: const Icon(Icons.mail_outline_rounded),
                 validator: _validator(
                   RegistrationRules.email,
@@ -255,7 +255,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 textAlign: TextAlign.start,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: next,
-                hintText: '05XXXXXXXX',
+                hintText: l10n.authPhoneHint,
                 prefixIcon: const Icon(Icons.phone_iphone_outlined),
                 validator: _validator(
                   RegistrationRules.phone,

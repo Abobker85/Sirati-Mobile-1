@@ -174,7 +174,7 @@ class _CvCard extends ConsumerWidget {
     // timestamp; only a timestamp is formatted here.
     final edited = updatedAt != null
         ? l.homeMyCvEdited(
-            AppFormat.relativeTime(updatedAt.toLocal(), english: english),
+            AppFormat.relativeTime(updatedAt.toLocal(), l),
           )
         : savedRow?.updatedLabel.trim() ?? '';
     final buttonStyle = OutlinedButton.styleFrom(

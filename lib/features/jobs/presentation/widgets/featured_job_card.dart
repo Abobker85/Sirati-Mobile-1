@@ -32,7 +32,8 @@ class FeaturedJobCard extends StatelessWidget {
     final c = context.sirati;
     final destination = ApplyDestination.of(item);
     final meta = jobMetaLine(item, english: english);
-    final published = jobPublishedText(item, english: english);
+    final published =
+        jobPublishedText(item, AppLocalizations.of(context), english: english);
     final onHero = c.onBrandSurface;
 
     return PressScale(

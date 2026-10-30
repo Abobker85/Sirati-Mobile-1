@@ -39,7 +39,8 @@ class JobNewsCard extends StatelessWidget {
     final company = (item.company ?? '').trim();
     final where = [
       if ((item.location ?? '').trim().isNotEmpty) item.location!.trim(),
-      jobPublishedText(item, english: english),
+      jobPublishedText(item, AppLocalizations.of(context),
+          english: english),
     ].where((s) => s.isNotEmpty).join(' · ');
     final destination = ApplyDestination.of(item);
 

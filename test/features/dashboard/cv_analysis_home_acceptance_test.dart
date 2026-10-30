@@ -839,7 +839,7 @@ void additionalTests() {
               of: section,
               matching: find.text(
                 l.homeMyCvEdited(
-                  AppFormat.relativeTime(edited, english: !arabic),
+                  AppFormat.relativeTime(edited, l),
                 ),
               ),
             ),

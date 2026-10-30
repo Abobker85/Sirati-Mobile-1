@@ -25,7 +25,7 @@ class DraftRestoreBanner extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final at = savedAt;
     final relative = at != null
-        ? LocaleFormat.relativeSavedAt(at, english: english)
+        ? LocaleFormat.relativeSavedAt(at, l10n)
         : l10n.cvDraftAvailable;
 
     return Material(

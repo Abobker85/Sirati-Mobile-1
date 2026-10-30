@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/utils/async_state.dart';
@@ -262,6 +263,45 @@ void main() {
         () => CvSchemaMigrator.migrate(futureDoc),
         throwsA(isA<UnsupportedSchemaVersionException>()),
       );
+    });
+  });
+
+  group('Legacy placeholder titles', () {
+    test('only an exact legacy default title is removed, idempotently', () {
+      final random = Random(5);
+      String title() => String.fromCharCodes(List.generate(
+          1 + random.nextInt(30),
+          (_) => random.nextBool()
+              ? 0x20 + random.nextInt(0x5E)
+              : 0x0621 + random.nextInt(0x3A)));
+      final titles = [
+        for (var i = 0; i < 200; i++) title(),
+        for (final t in CvSchemaMigrator.legacyPlaceholderTitles) ...[
+          ' $t',
+          '$t ',
+          '${t}x',
+        ],
+      ];
+      for (final t in titles) {
+        if (CvSchemaMigrator.legacyPlaceholderTitles.contains(t)) continue;
+        final doc = CvDocument.createEmpty(id: 'k', title: t).toJson();
+        expect(CvSchemaMigrator.migrate(doc).data['title'], t);
+      }
+      for (final t in CvSchemaMigrator.legacyPlaceholderTitles) {
+        final doc = CvDocument.createEmpty(id: 'k', title: t).toJson();
+        final once = CvSchemaMigrator.migrate(doc);
+        expect(once.data.containsKey('title'), isFalse);
+        expect(once.wasMigrated, isTrue);
+        final twice = CvSchemaMigrator.migrate(once.data);
+        expect(twice.data, once.data);
+      }
+    });
+
+    test('a new draft has no stored title', () {
+      for (final language in ['ar', 'en']) {
+        final doc = CvDocument.createEmpty(exportLanguage: language);
+        expect(doc.title, isNull);
+      }
     });
   });
 

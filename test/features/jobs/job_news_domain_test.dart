@@ -37,21 +37,20 @@ void main() {
       }
     });
 
-    test('blank titles fall back to the localized default', () {
-      for (final title in [null, '', '   ']) {
+    test('blank titles stay empty so the screen shows its catalog label',
+        () {
+      for (final english in [true, false]) {
+        for (final title in [null, '', '   ', '\n\t']) {
+          expect(
+              JobNewsFeed.fromPayload({'title': title}, english: english).title,
+              '');
+        }
         expect(
-          JobNewsFeed.fromPayload({'title': title}, english: true).title,
-          'Job News',
+          JobNewsFeed.fromPayload({'title': 'Custom'}, english: english).title,
+          'Custom',
         );
-        expect(
-          JobNewsFeed.fromPayload({'title': title}, english: false).title,
-          'أخبار الوظائف',
-        );
+        expect(JobNewsFeed.empty(english: english).title, '');
       }
-      expect(
-        JobNewsFeed.fromPayload({'title': 'Custom'}, english: true).title,
-        'Custom',
-      );
     });
 
     test('offline flag follows the cache marker', () {

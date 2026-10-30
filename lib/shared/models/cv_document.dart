@@ -806,7 +806,8 @@ class CvDocument {
     final now = DateTime.now();
     return CvDocument(
       id: id ?? generateId(),
-      title: title ?? (exportLanguage == 'ar' ? 'سيرة ذاتية جديدة' : 'New CV'),
+      // No title until the user names it: the editor shows a catalog label.
+      title: title,
       createdAt: now,
       updatedAt: now,
       exportLanguage: exportLanguage,

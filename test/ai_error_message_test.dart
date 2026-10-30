@@ -1,34 +1,48 @@
+import 'dart:math';
+
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/utils/ai_error_message.dart';
+import 'package:sirati/l10n/generated/app_localizations.dart';
 
 void main() {
-  test('truncation code names CV length in English and Arabic', () {
-    const error =
-        'cv_too_long: The CV is too long to generate in one pass. / السيرة أطول';
+  final random = Random(11);
+  String detail() => String.fromCharCodes(List.generate(
+      1 + random.nextInt(40), (_) => 0x20 + random.nextInt(0x5E)));
 
-    expect(AiErrorMessage.isTooLong(error), isTrue);
-    expect(
-      AiErrorMessage.generationFailed(error, english: true),
-      contains('too long to generate in one pass'),
-    );
-    expect(
-      AiErrorMessage.generationFailed(error, english: false),
-      contains('أطول من أن تُولَّد'),
-    );
-    expect(
-      AiErrorMessage.generationFailed(error, english: true),
-      isNot(contains('cv_too_long')),
-    );
-  });
+  for (final code in ['ar', 'en']) {
+    final l10n = lookupAppLocalizations(Locale(code));
 
-  test('unknown errors keep the server detail and a localized wrapper', () {
-    expect(
-      AiErrorMessage.generationFailed('provider down', english: true),
-      'AI generation could not be completed: provider down',
-    );
-    expect(
-      AiErrorMessage.generationFailed(null, english: false),
-      'تعذر إكمال توليد السيرة بالذكاء الاصطناعي: يرجى المحاولة مرة أخرى.',
-    );
-  });
+    test('$code: a truncation code always names CV length, never the code', () {
+      for (var i = 0; i < 50; i++) {
+        final error = '${AiErrorMessage.tooLongCode}${detail()}';
+        for (final message in [
+          AiErrorMessage.generationFailed(error, l10n),
+          AiErrorMessage.suggestionsFailed(error, l10n),
+          AiErrorMessage.localFallback(error, l10n),
+        ]) {
+          expect(message, l10n.aiErrorTooLong);
+        }
+      }
+    });
+
+    test('$code: other errors keep the server detail inside the label', () {
+      for (var i = 0; i < 50; i++) {
+        final error = 'x${detail()}';
+        expect(AiErrorMessage.generationFailed(error, l10n),
+            l10n.aiGenerationFailed(error));
+        expect(AiErrorMessage.suggestionsFailed(error, l10n),
+            l10n.aiSuggestionsFailed(error));
+        expect(AiErrorMessage.localFallback(error, l10n),
+            l10n.aiLocalFallback(error));
+      }
+    });
+
+    test('$code: a missing detail asks to try again', () {
+      for (final error in [null, '', '   ', '\n\t']) {
+        expect(AiErrorMessage.generationFailed(error, l10n),
+            l10n.aiGenerationFailed(l10n.aiErrorTryAgain));
+      }
+    });
+  }
 }

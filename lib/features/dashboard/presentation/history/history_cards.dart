@@ -11,8 +11,8 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
-String _dateLabel(DateTime? date, {required bool english}) =>
-    date == null ? '-' : AppFormat.relativeTime(date, english: english);
+String _dateLabel(DateTime? date, AppLocalizations l10n) =>
+    date == null ? '-' : AppFormat.relativeTime(date, l10n);
 
 /// Score and grade in the band's container colours (AA in both themes).
 class ScoreBadge extends StatelessWidget {
@@ -187,7 +187,7 @@ class AnalysisHistoryCard extends StatelessWidget {
                 ),
               ),
               Text(
-                _dateLabel(analysis.createdAt, english: english),
+                _dateLabel(analysis.createdAt, AppLocalizations.of(context)),
                 style: AppTypography.of(context, AppTypography.bodySm,
                     color: c.textSecondary),
               ),
@@ -229,7 +229,9 @@ class GeneratedCvHistoryCard extends StatelessWidget {
             child: Center(
               child: ExcludeSemantics(
                 child: Text(
-                  name.isEmpty ? 'س' : BidiText.avatarInitial(name),
+                  BidiText.avatarInitial(name,
+                      fallback: AppLocalizations.of(context)
+                          .avatarFallbackInitial),
                   style: AppTypography.of(context, AppTypography.titleLg,
                       color: c.primaryInk),
                 ),
@@ -263,11 +265,14 @@ class GeneratedCvHistoryCard extends StatelessWidget {
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    // Endonyms of the CV's content language, shown as-is in
-                    // every UI language (not catalog copy).
-                    _MetaChip(label: cv.language == 'ar' ? 'عربي' : 'English'),
+                    // The CV's content language, named in the UI language
+                    // (served from the label catalog).
+                    _MetaChip(
+                        label: cv.language == 'ar'
+                            ? AppLocalizations.of(context).languageArabic
+                            : AppLocalizations.of(context).languageEnglish),
                     Text(
-                      _dateLabel(cv.createdAt, english: english),
+                      _dateLabel(cv.createdAt, AppLocalizations.of(context)),
                       style: AppTypography.of(context, AppTypography.bodySm,
                           color: c.textSecondary),
                     ),

@@ -31,7 +31,8 @@ class JobNewsDetailScreen extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
     final destination = ApplyDestination.of(item);
-    final published = jobPublishedText(item, english: english);
+    final published =
+        jobPublishedText(item, AppLocalizations.of(context), english: english);
     final deadline = jobValidUntilText(item, english: english);
 
     return Scaffold(
