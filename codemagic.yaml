@@ -92,7 +92,9 @@ workflows:
         script: |
           cd ios
           if [ -f Podfile.lock ]; then
-            pod install --deployment
+            # A new plugin (e.g. purchases_flutter) is missing from the lock
+            # until it is regenerated on macOS; fall back to a resolving install.
+            pod install --deployment || pod install --repo-update
           else
             echo "Podfile.lock is missing; commit it after the next macOS pod install."
             pod install
@@ -123,7 +125,8 @@ workflows:
           flutter build ipa --release \
             --export-options-plist=/Users/builder/export_options.plist \
             --build-number=$BUILD_NUM \
-            --dart-define=SIRATI_API_BASE_URL=$SIRATI_API_BASE_URL
+            --dart-define=SIRATI_API_BASE_URL=$SIRATI_API_BASE_URL \
+            --dart-define=REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:

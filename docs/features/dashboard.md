@@ -15,7 +15,8 @@ The authenticated heart of the app: launch/session bootstrap, the splash and wel
 - **Education tab:** "coming soon" page, not a content list — hero, three upcoming-feature cards, `Notify Me on Launch` → `Interest Registered` (device-only flag + analytics event; honestly promises no push pipeline), CV cross-sell card → generator.
 - **Education detail:** opens only with an id (today: from a push notification) or preloaded fallback data. Shows badge/role/duration chips, title, body; skeleton while loading, list-card fallback when the API fails but fallback data exists, error state with retry otherwise.
 - **History:** two independent tabs (Analyses, Generated CVs). Each: skeleton → list with count header (analyses), pull-to-refresh, `Load more` pagination with failure-retry footer, empty state with a creation shortcut, tap → result/detail screen. One tab failing never hides the other.
-- **Support screens:** `PremiumGateScreen` (deep link to a gated route without premium → back home), `NotFoundScreen` (bad link → back home), `ComponentGalleryScreen` (debug-only widget/token catalogue with theme and locale toggles).
+- **Paywall:** `PremiumGateScreen` (`/premium`, also opened on HTTP 402). When the build can sell (`StorePurchases.isAvailable`: iOS and `--dart-define=REVENUECAT_IOS_KEY=appl_...`), it shows the server plans the App Store sells as radio cards (server default preselected, App Store price), the free-trial line, Start free trial / Subscribe, Apple's auto-renew notice, and Restore purchases · Terms of Use · Privacy. Purchase states: purchasing (spinner, plans locked), cancelled (silent), pending (Ask to Buy notice), failed (retryable notice), success (polls `/auth/me` up to 4 times for the webhook; says so if the account lags). Without a store key it stays informational (plans + "refresh access").
+- **Support screens:** `NotFoundScreen` (bad link → back home), `NotFoundScreen` (bad link → back home), `ComponentGalleryScreen` (debug-only widget/token catalogue with theme and locale toggles).
 
 ## Entry points
 
@@ -50,7 +51,9 @@ The authenticated heart of the app: launch/session bootstrap, the splash and wel
 | `lib/features/dashboard/application/history_controllers.dart` | Independent paged controllers with generation-guarded `loadMore` |
 | `lib/features/dashboard/domain/history_page.dart` | Page model: deduping `append`, `inputMethodLabel` |
 | `lib/features/dashboard/presentation/gallery_screen.dart` | Debug component gallery (`/gallery`, SIRATI-23) |
-| `lib/features/dashboard/presentation/premium_gate_screen.dart` | Placeholder for entitlement-gated deep links |
+| `lib/features/dashboard/presentation/premium_gate_screen.dart` | Paywall: plans, App Store purchase, restore, success |
+| `lib/shared/services/purchases/store_purchases.dart` | `StorePurchases` port + `storePurchasesProvider` |
+| `lib/shared/services/purchases/revenuecat_store_purchases.dart` | RevenueCat adapter; store user id = Siratie user id |
 | `lib/features/dashboard/presentation/not_found_screen.dart` | Invalid-link screen with go-home action |
 
 ## State and data

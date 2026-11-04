@@ -1901,6 +1901,94 @@ class RemoteAppLocalizations extends AppLocalizations {
       _base.premiumGateAvailabilityNote;
 
   @override
+  String get premiumGateChoosePlan =>
+      remote.text('premiumGateChoosePlan') ?? _base.premiumGateChoosePlan;
+
+  @override
+  String premiumGateTrial(int days) =>
+      remote.format(
+        'premiumGateTrial',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'days': days},
+        ),
+      ) ??
+      _base.premiumGateTrial(days);
+
+  @override
+  String get premiumGateStartTrial =>
+      remote.text('premiumGateStartTrial') ?? _base.premiumGateStartTrial;
+
+  @override
+  String get premiumGateSubscribe =>
+      remote.text('premiumGateSubscribe') ?? _base.premiumGateSubscribe;
+
+  @override
+  String get premiumGatePurchasing =>
+      remote.text('premiumGatePurchasing') ?? _base.premiumGatePurchasing;
+
+  @override
+  String premiumGateRenewNotice(String price, String period) =>
+      remote.format(
+        'premiumGateRenewNotice',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'price': price, 'period': period},
+        ),
+      ) ??
+      _base.premiumGateRenewNotice(price, period);
+
+  @override
+  String premiumGateRenewNoticeTrial(String price, String period) =>
+      remote.format(
+        'premiumGateRenewNoticeTrial',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'price': price, 'period': period},
+        ),
+      ) ??
+      _base.premiumGateRenewNoticeTrial(price, period);
+
+  @override
+  String get premiumGateRestore =>
+      remote.text('premiumGateRestore') ?? _base.premiumGateRestore;
+
+  @override
+  String get premiumGateTerms =>
+      remote.text('premiumGateTerms') ?? _base.premiumGateTerms;
+
+  @override
+  String get premiumGatePurchaseFailed =>
+      remote.text('premiumGatePurchaseFailed') ??
+      _base.premiumGatePurchaseFailed;
+
+  @override
+  String get premiumGatePurchasePending =>
+      remote.text('premiumGatePurchasePending') ??
+      _base.premiumGatePurchasePending;
+
+  @override
+  String get premiumGateStorePricesFailed =>
+      remote.text('premiumGateStorePricesFailed') ??
+      _base.premiumGateStorePricesFailed;
+
+  @override
+  String get premiumGateSuccessTitle =>
+      remote.text('premiumGateSuccessTitle') ?? _base.premiumGateSuccessTitle;
+
+  @override
+  String get premiumGateSuccessBody =>
+      remote.text('premiumGateSuccessBody') ?? _base.premiumGateSuccessBody;
+
+  @override
+  String get premiumGateSuccessSyncing =>
+      remote.text('premiumGateSuccessSyncing') ??
+      _base.premiumGateSuccessSyncing;
+
+  @override
   String get registerInterest =>
       remote.text('registerInterest') ?? _base.registerInterest;
 
@@ -6866,6 +6954,21 @@ class RemoteAppLocalizations extends AppLocalizations {
     'cvHubAppBar': [],
     'cvHubRecommended': [],
     'premiumGateAvailabilityNote': [],
+    'premiumGateChoosePlan': [],
+    'premiumGateTrial': ['int'],
+    'premiumGateStartTrial': [],
+    'premiumGateSubscribe': [],
+    'premiumGatePurchasing': [],
+    'premiumGateRenewNotice': ['String', 'String'],
+    'premiumGateRenewNoticeTrial': ['String', 'String'],
+    'premiumGateRestore': [],
+    'premiumGateTerms': [],
+    'premiumGatePurchaseFailed': [],
+    'premiumGatePurchasePending': [],
+    'premiumGateStorePricesFailed': [],
+    'premiumGateSuccessTitle': [],
+    'premiumGateSuccessBody': [],
+    'premiumGateSuccessSyncing': [],
     'registerInterest': [],
     'noMatchingJobs': [],
     'clearFilters': [],
@@ -8191,6 +8294,23 @@ class RemoteAppLocalizations extends AppLocalizations {
         'cvHubAppBar' => l.cvHubAppBar,
         'cvHubRecommended' => l.cvHubRecommended,
         'premiumGateAvailabilityNote' => l.premiumGateAvailabilityNote,
+        'premiumGateChoosePlan' => l.premiumGateChoosePlan,
+        'premiumGateTrial' => l.premiumGateTrial(a[0] as int),
+        'premiumGateStartTrial' => l.premiumGateStartTrial,
+        'premiumGateSubscribe' => l.premiumGateSubscribe,
+        'premiumGatePurchasing' => l.premiumGatePurchasing,
+        'premiumGateRenewNotice' =>
+          l.premiumGateRenewNotice(a[0] as String, a[1] as String),
+        'premiumGateRenewNoticeTrial' =>
+          l.premiumGateRenewNoticeTrial(a[0] as String, a[1] as String),
+        'premiumGateRestore' => l.premiumGateRestore,
+        'premiumGateTerms' => l.premiumGateTerms,
+        'premiumGatePurchaseFailed' => l.premiumGatePurchaseFailed,
+        'premiumGatePurchasePending' => l.premiumGatePurchasePending,
+        'premiumGateStorePricesFailed' => l.premiumGateStorePricesFailed,
+        'premiumGateSuccessTitle' => l.premiumGateSuccessTitle,
+        'premiumGateSuccessBody' => l.premiumGateSuccessBody,
+        'premiumGateSuccessSyncing' => l.premiumGateSuccessSyncing,
         'registerInterest' => l.registerInterest,
         'noMatchingJobs' => l.noMatchingJobs,
         'clearFilters' => l.clearFilters,

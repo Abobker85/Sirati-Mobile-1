@@ -15,6 +15,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
+import 'package:sirati/shared/services/purchases/store_purchases.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 import '../../support/non_text_contrast.dart';
@@ -109,6 +110,79 @@ class _FakeAuth extends AuthApiService {
   }
 }
 
+/// Store fake: offers per plan key, a scripted purchase outcome (or error),
+/// and a record of what was bought for which account.
+class _FakeStore implements StorePurchases {
+  _FakeStore({
+    Map<String, StoreOffer>? offers,
+    this.outcome = const StorePurchaseCompleted(),
+    this.restoreActive = false,
+  }) : offers = offers ?? _storeOffers();
+
+  Map<String, StoreOffer> offers;
+  Object outcome;
+  Object restoreActive;
+  Object? offersError;
+  Completer<StorePurchaseOutcome>? pendingPurchase;
+  final purchases = <(int, String)>[];
+  final offerRequests = <(int, Map<String, int>)>[];
+  int restores = 0;
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  Future<Map<String, StoreOffer>> offersFor({
+    required int userId,
+    required Map<String, int> planMonths,
+  }) async {
+    offerRequests.add((userId, planMonths));
+    if (offersError != null) throw offersError!;
+    return offers;
+  }
+
+  @override
+  Future<StorePurchaseOutcome> purchase({
+    required int userId,
+    required String planKey,
+  }) async {
+    purchases.add((userId, planKey));
+    if (pendingPurchase != null) return pendingPurchase!.future;
+    final next = outcome;
+    if (next is StorePurchaseOutcome) return next;
+    throw next;
+  }
+
+  @override
+  Future<bool> restore({required int userId}) async {
+    restores++;
+    final next = restoreActive;
+    if (next is bool) return next;
+    throw next;
+  }
+}
+
+Map<String, StoreOffer> _storeOffers({
+  Iterable<String> keys = const ['monthly', 'semiannual', 'annual'],
+  int? trialDays = 3,
+}) =>
+    {
+      for (final key in keys)
+        key: StoreOffer(
+          planKey: key,
+          priceString: 'SAR $key.price',
+          freeTrialDays: trialDays,
+        ),
+    };
+
+const _fastScreen = PremiumGateScreen(
+  confirmDelay: Duration.zero,
+  confirmAttempts: 3,
+);
+
+ButtonStyleButton _button(WidgetTester tester, Key key) =>
+    tester.widget<ButtonStyleButton>(find.byKey(key));
+
 class _Routes {
   final opened = <String>[];
 
@@ -130,6 +204,8 @@ Future<void> _pump(
   _Routes? routes,
   bool pushed = false,
   bool keepView = false,
+  StorePurchases store = const UnavailableStorePurchases(),
+  Widget screen = const PremiumGateScreen(),
 }) async {
   if (!keepView) {
     usePhoneViewAtTextScale(tester);
@@ -141,6 +217,7 @@ Future<void> _pump(
     overrides: [
       subscriptionPlansRepositoryProvider.overrideWithValue(plans),
       authApiServiceProvider.overrideWithValue(auth ?? _FakeAuth()),
+      storePurchasesProvider.overrideWithValue(store),
     ],
     child: MaterialApp(
       builder: (_, child) => RepaintBoundary(key: phonePaintKey, child: child!),
@@ -155,14 +232,14 @@ Future<void> _pump(
                 body: TextButton(
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => const PremiumGateScreen(),
+                      builder: (_) => screen,
                     ),
                   ),
                   child: const Text('open'),
                 ),
               ),
             )
-          : const PremiumGateScreen(),
+          : screen,
     ),
   ));
   await tester.pump();
@@ -511,6 +588,228 @@ void main() {
       await tester.pumpAndSettle();
       await _tap(tester, find.byKey(PremiumGateScreen.notNowKey));
       expect(routes.opened.last, AppRoutes.home);
+    });
+  });
+
+  group('PremiumGateScreen selling through the store', () {
+    for (final language in ['en', 'ar']) {
+      for (final dark in [false, true]) {
+        final arabic = language == 'ar';
+        final theme = dark
+            ? AppTheme.darkFor(arabic: arabic)
+            : AppTheme.lightFor(arabic: arabic);
+        final label = '$language/${dark ? 'dark' : 'light'}';
+
+        testWidgets('$label: store plans, purchase states and contrast',
+            (tester) async {
+          final store = _FakeStore()
+            ..pendingPurchase = Completer<StorePurchaseOutcome>();
+          final auth = _FakeAuth();
+          await _pump(tester,
+              plans: _FakePlans([offerJson()]),
+              auth: auth,
+              store: store,
+              language: language,
+              theme: theme,
+              screen: _fastScreen);
+          final l = _l(tester);
+          expect(store.offerRequests.single.$1, 1,
+              reason: 'Store user is the signed-in account');
+          // Informational copy is gone once the build can sell.
+          expect(
+              find.textContaining(l.premiumGateAvailabilityNote), findsNothing);
+          expect(find.byKey(PremiumGateScreen.refreshKey), findsNothing);
+          for (final key in ['monthly', 'semiannual', 'annual']) {
+            await revealPhoneWidget(
+                tester, find.byKey(PremiumGateScreen.planKey(key)));
+            expect(
+                find.descendant(
+                    of: find.byKey(PremiumGateScreen.planKey(key)),
+                    matching: find.textContaining('SAR $key.price')),
+                findsOneWidget);
+          }
+          await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+          expect(find.text(l.premiumGateStartTrial), findsOneWidget);
+          expect(find.text(l.premiumGateTrial(3)), findsOneWidget);
+          await revealPhoneWidget(
+              tester, find.byKey(PremiumGateScreen.termsKey));
+          expect(find.byKey(PremiumGateScreen.restoreKey), findsOneWidget);
+          expect(find.byKey(PremiumGateScreen.privacyKey), findsOneWidget);
+          await inspectPhoneScreen(tester, '$label store');
+
+          // The spinner never settles while the store sheet is open.
+          await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(PremiumGateScreen.buyKey));
+          await tester.pump();
+          expect(find.text(l.premiumGatePurchasing), findsOneWidget);
+          expect(_button(tester, PremiumGateScreen.buyKey).enabled, isFalse);
+          await tester.tap(find.byKey(PremiumGateScreen.buyKey));
+          await tester.pump();
+          expect(store.purchases, hasLength(1), reason: 'No double purchase');
+          await inspectPhoneScreen(tester, '$label purchasing');
+
+          auth.subscription = const {'is_subscribed': true};
+          store.pendingPurchase!.complete(const StorePurchaseCompleted());
+          await tester.pumpAndSettle();
+          await revealPhoneWidget(
+              tester, find.byKey(PremiumGateScreen.successKey));
+          expect(find.text(l.premiumGateSuccessTitle), findsOneWidget);
+          expect(find.text(l.premiumGateSuccessSyncing), findsNothing);
+          await inspectPhoneScreen(tester, '$label success');
+        });
+      }
+    }
+
+    testWidgets('buys exactly the chosen plan for the signed-in account',
+        (tester) async {
+      for (final key in ['monthly', 'semiannual', 'annual']) {
+        final store = _FakeStore(outcome: const StorePurchaseCancelled());
+        await _pump(tester,
+            plans: _FakePlans([offerJson()]),
+            store: store,
+            screen: _fastScreen);
+        await _tap(tester, find.byKey(PremiumGateScreen.planKey(key)));
+        await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+        expect(store.purchases, [(1, key)]);
+      }
+    });
+
+    testWidgets('default selection is the flagged plan the store sells',
+        (tester) async {
+      // semiannual is flagged default; when the store lacks it, the first
+      // plan the store sells is preselected instead.
+      for (final (keys, expected) in [
+        (['monthly', 'semiannual', 'annual'], 'semiannual'),
+        (['monthly', 'annual'], 'monthly'),
+        (['annual'], 'annual'),
+      ]) {
+        final store = _FakeStore(
+            offers: _storeOffers(keys: keys),
+            outcome: const StorePurchaseCancelled());
+        await _pump(tester,
+            plans: _FakePlans([offerJson()]),
+            store: store,
+            screen: _fastScreen);
+        // All plan cards share one list item with the buy button.
+        await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+        for (final key in ['monthly', 'semiannual', 'annual']) {
+          expect(
+              find.byKey(PremiumGateScreen.planKey(key), skipOffstage: false),
+              keys.contains(key) ? findsOneWidget : findsNothing,
+              reason: 'Only plans the store sells are choices');
+        }
+        await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+        expect(store.purchases.single.$2, expected);
+      }
+    });
+
+    testWidgets('without a free trial the button and notice say so',
+        (tester) async {
+      await _pump(tester,
+          plans: _FakePlans([offerJson()]),
+          store: _FakeStore(offers: _storeOffers(trialDays: null)),
+          screen: _fastScreen);
+      final l = _l(tester);
+      await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+      expect(find.text(l.premiumGateSubscribe), findsOneWidget);
+      expect(find.text(l.premiumGateStartTrial), findsNothing);
+      expect(find.textContaining(l.premiumGateTrial(3)), findsNothing);
+    });
+
+    for (final (name, outcome, expectedNotice) in [
+      ('cancelled', const StorePurchaseCancelled() as Object, null),
+      ('pending', const StorePurchasePending(), 'pending'),
+      ('failed', const StorePurchaseFailed(), 'failed'),
+      ('thrown', Exception('store down'), 'failed'),
+    ]) {
+      testWidgets('$name purchase stays locked and can be retried',
+          (tester) async {
+        final store = _FakeStore(outcome: outcome);
+        await _pump(tester,
+            plans: _FakePlans([offerJson()]),
+            store: store,
+            screen: _fastScreen);
+        final l = _l(tester);
+        await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+        expect(find.byKey(PremiumGateScreen.successKey), findsNothing);
+        final message = switch (expectedNotice) {
+          'pending' => l.premiumGatePurchasePending,
+          'failed' => l.premiumGatePurchaseFailed,
+          _ => null,
+        };
+        expect(find.byKey(PremiumGateScreen.noticeKey),
+            message == null ? findsNothing : findsOneWidget);
+        if (message != null) expect(find.text(message), findsOneWidget);
+        expect(_button(tester, PremiumGateScreen.buyKey).enabled, isTrue);
+        await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+        expect(store.purchases, hasLength(2));
+      });
+    }
+
+    testWidgets('a purchase the server has not seen yet says so',
+        (tester) async {
+      final auth = _FakeAuth();
+      await _pump(tester,
+          plans: _FakePlans([offerJson()]),
+          auth: auth,
+          store: _FakeStore(),
+          screen: _fastScreen);
+      final callsBefore = auth.calls;
+      await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+      expect(auth.calls - callsBefore, _fastScreen.confirmAttempts);
+      await revealPhoneWidget(
+          tester, find.text(_l(tester).premiumGateSuccessSyncing));
+      expect(find.byKey(PremiumGateScreen.successKey), findsOneWidget);
+    });
+
+    for (final (name, restored, success, message) in [
+      ('active', true as Object, true, null),
+      ('nothing to restore', false, false, 'notFound'),
+      ('restore error', Exception('offline'), false, 'refreshFailed'),
+    ]) {
+      testWidgets('restore: $name', (tester) async {
+        final store = _FakeStore(restoreActive: restored);
+        await _pump(tester,
+            plans: _FakePlans([offerJson()]),
+            auth: _FakeAuth(const {'is_subscribed': false}),
+            store: store,
+            screen: _fastScreen);
+        final l = _l(tester);
+        await _tap(tester, find.byKey(PremiumGateScreen.restoreKey));
+        expect(store.restores, 1);
+        expect(find.byKey(PremiumGateScreen.successKey),
+            success ? findsOneWidget : findsNothing);
+        if (message != null) {
+          await revealPhoneWidget(
+              tester,
+              find.text(message == 'notFound'
+                  ? l.premiumGateNotFound
+                  : l.premiumGateRefreshFailed));
+        }
+      });
+    }
+
+    testWidgets('store prices that fail to load offer Retry, never a buy',
+        (tester) async {
+      for (final broken in [
+        (_FakeStore()..offersError = Exception('offline')),
+        _FakeStore(offers: const {}),
+      ]) {
+        await _pump(tester,
+            plans: _FakePlans([offerJson()]),
+            store: broken,
+            screen: _fastScreen);
+        final l = _l(tester);
+        await revealPhoneWidget(
+            tester, find.text(l.premiumGateStorePricesFailed));
+        expect(find.byKey(PremiumGateScreen.buyKey), findsNothing);
+        broken
+          ..offersError = null
+          ..offers = _storeOffers();
+        await _tap(tester, find.byKey(PremiumGateScreen.storeRetryKey));
+        await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+      }
     });
   });
 }

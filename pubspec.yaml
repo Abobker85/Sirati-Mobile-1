@@ -60,6 +60,7 @@ dependencies:
   # Profile photo from the gallery or camera (official flutter.dev plugin;
   # file_picker has no camera). Cropping is done in-app with dart:ui.
   image_picker: ^1.2.4
+  purchases_flutter: ^11.0.0
 
 dev_dependencies:
   flutter_test:
