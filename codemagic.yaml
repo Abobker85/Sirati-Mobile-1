@@ -92,11 +92,13 @@ workflows:
         script: |
           cd ios
           if [ -f Podfile.lock ]; then
-            # A new plugin (e.g. purchases_flutter) is missing from the lock
-            # until it is regenerated on macOS; fall back to a resolving install.
-            pod install --deployment || pod install --repo-update
+            # Release gate: a lock that disagrees with the Podfile fails the
+            # build instead of silently resolving different pod versions.
+            pod install --deployment
           else
-            echo "Podfile.lock is missing; commit it after the next macOS pod install."
+            # No lock committed yet: resolve once and publish ios/Podfile.lock
+            # as a build artifact so it can be committed (no Mac needed).
+            echo "Podfile.lock is missing; commit the ios/Podfile.lock artifact from this build."
             pod install
           fi
           cd ..
@@ -129,6 +131,7 @@ workflows:
             --dart-define=REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY
     artifacts:
       - build/ios/ipa/*.ipa
+      - ios/Podfile.lock
     publishing:
       app_store_connect:
         auth: integration

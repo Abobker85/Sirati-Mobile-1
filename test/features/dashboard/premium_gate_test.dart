@@ -96,13 +96,16 @@ class _FakeAuth extends AuthApiService {
   Future<AuthUser?>? pending;
   int calls = 0;
 
+  /// The account signed in right now; tests switch it mid-screen.
+  int id = 1;
+
   @override
   Future<AuthUser?> me() async {
     calls++;
     if (pending != null) return pending!;
     if (error != null) throw error!;
     return AuthUser(
-      id: 1,
+      id: id,
       name: 'Sara',
       email: 'sara@x.io',
       subscription: subscription,
@@ -116,17 +119,17 @@ class _FakeStore implements StorePurchases {
   _FakeStore({
     Map<String, StoreOffer>? offers,
     this.outcome = const StorePurchaseCompleted(),
-    this.restoreActive = false,
+    this.restoreOutcome = StoreRestoreOutcome.none,
   }) : offers = offers ?? _storeOffers();
 
   Map<String, StoreOffer> offers;
   Object outcome;
-  Object restoreActive;
+  Object restoreOutcome;
   Object? offersError;
   Completer<StorePurchaseOutcome>? pendingPurchase;
   final purchases = <(int, String)>[];
   final offerRequests = <(int, Map<String, int>)>[];
-  int restores = 0;
+  final restores = <int>[];
 
   @override
   bool get isAvailable => true;
@@ -154,26 +157,29 @@ class _FakeStore implements StorePurchases {
   }
 
   @override
-  Future<bool> restore({required int userId}) async {
-    restores++;
-    final next = restoreActive;
-    if (next is bool) return next;
+  Future<StoreRestoreOutcome> restore({required int userId}) async {
+    restores.add(userId);
+    final next = restoreOutcome;
+    if (next is StoreRestoreOutcome) return next;
     throw next;
   }
 }
 
 Map<String, StoreOffer> _storeOffers({
   Iterable<String> keys = const ['monthly', 'semiannual', 'annual'],
-  int? trialDays = 3,
+  bool withTrial = true,
+  StoreTrial trial = _threeDays,
 }) =>
     {
       for (final key in keys)
         key: StoreOffer(
           planKey: key,
           priceString: 'SAR $key.price',
-          freeTrialDays: trialDays,
+          trial: withTrial ? trial : null,
         ),
     };
+
+const _threeDays = StoreTrial(unit: StoreTrialUnit.day, count: 3);
 
 const _fastScreen = PremiumGateScreen(
   confirmDelay: Duration.zero,
@@ -630,7 +636,8 @@ void main() {
           }
           await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
           expect(find.text(l.premiumGateStartTrial), findsOneWidget);
-          expect(find.text(l.premiumGateTrial(3)), findsOneWidget);
+          expect(find.text(l.premiumGateTrial(l.premiumGateTrialDays(3))),
+              findsOneWidget);
           await revealPhoneWidget(
               tester, find.byKey(PremiumGateScreen.termsKey));
           expect(find.byKey(PremiumGateScreen.restoreKey), findsOneWidget);
@@ -708,13 +715,90 @@ void main() {
         (tester) async {
       await _pump(tester,
           plans: _FakePlans([offerJson()]),
-          store: _FakeStore(offers: _storeOffers(trialDays: null)),
+          store: _FakeStore(offers: _storeOffers(withTrial: false)),
           screen: _fastScreen);
       final l = _l(tester);
       await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
       expect(find.text(l.premiumGateSubscribe), findsOneWidget);
       expect(find.text(l.premiumGateStartTrial), findsNothing);
-      expect(find.textContaining(l.premiumGateTrial(3)), findsNothing);
+      expect(find.text(l.premiumGateTrial(l.premiumGateTrialDays(3))),
+          findsNothing);
+    });
+
+    // Literal copy (not recomputed from the code): the store's own unit is
+    // shown, so a one-month trial never reads as "30 days".
+    for (final (trial, english) in [
+      (_threeDays, 'Free trial for 3 days, then renews automatically'),
+      (
+        const StoreTrial(unit: StoreTrialUnit.day, count: 1),
+        'Free trial for 1 day, then renews automatically'
+      ),
+      (
+        const StoreTrial(unit: StoreTrialUnit.week, count: 2),
+        'Free trial for 2 weeks, then renews automatically'
+      ),
+      (
+        const StoreTrial(unit: StoreTrialUnit.month, count: 1),
+        'Free trial for 1 month, then renews automatically'
+      ),
+      (
+        const StoreTrial(unit: StoreTrialUnit.year, count: 1),
+        'Free trial for 1 year, then renews automatically'
+      ),
+    ]) {
+      testWidgets('trial wording keeps the store unit: $english',
+          (tester) async {
+        await _pump(tester,
+            plans: _FakePlans([offerJson()]),
+            store: _FakeStore(offers: _storeOffers(trial: trial)),
+            screen: _fastScreen);
+        await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+        expect(find.text(english), findsOneWidget);
+      });
+    }
+
+    for (final (trial, arabic) in [
+      (
+        const StoreTrial(unit: StoreTrialUnit.month, count: 1),
+        'تجربة مجانية لمدة شهر واحد، ثم يتجدد تلقائياً'
+      ),
+      (
+        const StoreTrial(unit: StoreTrialUnit.week, count: 2),
+        'تجربة مجانية لمدة أسبوعين، ثم يتجدد تلقائياً'
+      ),
+      (_threeDays, 'تجربة مجانية لمدة 3 أيام، ثم يتجدد تلقائياً'),
+    ]) {
+      testWidgets('Arabic trial wording keeps the store unit: $arabic',
+          (tester) async {
+        await _pump(tester,
+            plans: _FakePlans([offerJson()]),
+            store: _FakeStore(offers: _storeOffers(trial: trial)),
+            language: 'ar',
+            screen: _fastScreen);
+        await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+        expect(find.text(arabic), findsOneWidget);
+      });
+    }
+
+    testWidgets('an account switched while the gate is open never buys',
+        (tester) async {
+      final auth = _FakeAuth();
+      final store = _FakeStore();
+      await _pump(tester,
+          plans: _FakePlans([offerJson()]),
+          auth: auth,
+          store: store,
+          screen: _fastScreen);
+      expect(store.offerRequests.last.$1, 1);
+      auth.id = 2;
+      await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+      expect(store.purchases, isEmpty,
+          reason: 'Prices were loaded for account 1');
+      await tester.pumpAndSettle();
+      expect(store.offerRequests.last.$1, 2,
+          reason: 'The catalogue reloads for the signed-in account');
+      await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+      expect(store.purchases, [(2, 'semiannual')]);
     });
 
     for (final (name, outcome, expectedNotice) in [
@@ -722,6 +806,7 @@ void main() {
       ('pending', const StorePurchasePending(), 'pending'),
       ('failed', const StorePurchaseFailed(), 'failed'),
       ('thrown', Exception('store down'), 'failed'),
+      ('other account', const StorePurchaseOtherAccount(), 'otherAccount'),
     ]) {
       testWidgets('$name purchase stays locked and can be retried',
           (tester) async {
@@ -736,6 +821,7 @@ void main() {
         final message = switch (expectedNotice) {
           'pending' => l.premiumGatePurchasePending,
           'failed' => l.premiumGatePurchaseFailed,
+          'otherAccount' => l.premiumGateOtherAccount,
           _ => null,
         };
         expect(find.byKey(PremiumGateScreen.noticeKey),
@@ -755,21 +841,42 @@ void main() {
           auth: auth,
           store: _FakeStore(),
           screen: _fastScreen);
+      final l = _l(tester);
       final callsBefore = auth.calls;
       await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
-      expect(auth.calls - callsBefore, _fastScreen.confirmAttempts);
-      await revealPhoneWidget(
-          tester, find.text(_l(tester).premiumGateSuccessSyncing));
+      // One account check before buying, then the server polls.
+      expect(auth.calls - callsBefore, 1 + _fastScreen.confirmAttempts);
+      await revealPhoneWidget(tester, find.text(l.premiumGateSuccessSyncing));
       expect(find.byKey(PremiumGateScreen.successKey), findsOneWidget);
+      // Never claims access the server has not confirmed.
+      expect(find.text(l.premiumGateSyncingTitle), findsOneWidget);
+      expect(find.text(l.premiumGateSuccessTitle), findsNothing);
+      expect(find.text(l.premiumGateSuccessBody), findsNothing);
+
+      // Still lagging: the re-check stays honest.
+      await _tap(tester, find.byKey(PremiumGateScreen.checkAgainKey));
+      expect(find.text(l.premiumGateSuccessTitle), findsNothing);
+
+      auth.subscription = const {'is_subscribed': true};
+      await _tap(tester, find.byKey(PremiumGateScreen.checkAgainKey));
+      expect(find.text(l.premiumGateSuccessTitle), findsOneWidget);
+      expect(find.byKey(PremiumGateScreen.checkAgainKey), findsNothing);
+      await _tap(tester, find.byKey(PremiumGateScreen.continueKey));
     });
 
     for (final (name, restored, success, message) in [
-      ('active', true as Object, true, null),
-      ('nothing to restore', false, false, 'notFound'),
+      ('active', StoreRestoreOutcome.active as Object, true, null),
+      ('nothing to restore', StoreRestoreOutcome.none, false, 'notFound'),
       ('restore error', Exception('offline'), false, 'refreshFailed'),
+      (
+        'belongs to another account',
+        StoreRestoreOutcome.otherAccount,
+        false,
+        'otherAccount'
+      ),
     ]) {
       testWidgets('restore: $name', (tester) async {
-        final store = _FakeStore(restoreActive: restored);
+        final store = _FakeStore(restoreOutcome: restored);
         await _pump(tester,
             plans: _FakePlans([offerJson()]),
             auth: _FakeAuth(const {'is_subscribed': false}),
@@ -777,18 +884,56 @@ void main() {
             screen: _fastScreen);
         final l = _l(tester);
         await _tap(tester, find.byKey(PremiumGateScreen.restoreKey));
-        expect(store.restores, 1);
+        expect(store.restores, [1]);
         expect(find.byKey(PremiumGateScreen.successKey),
             success ? findsOneWidget : findsNothing);
         if (message != null) {
           await revealPhoneWidget(
               tester,
-              find.text(message == 'notFound'
-                  ? l.premiumGateNotFound
-                  : l.premiumGateRefreshFailed));
+              find.text(switch (message) {
+                'notFound' => l.premiumGateNotFound,
+                'otherAccount' => l.premiumGateOtherAccount,
+                _ => l.premiumGateRefreshFailed,
+              }));
         }
       });
     }
+
+    testWidgets('restore works while store prices fail to load',
+        (tester) async {
+      for (final broken in [
+        (_FakeStore(restoreOutcome: StoreRestoreOutcome.active)
+          ..offersError = Exception('offline')),
+        _FakeStore(
+            offers: const {}, restoreOutcome: StoreRestoreOutcome.active),
+      ]) {
+        final auth = _FakeAuth(const {'is_subscribed': false});
+        await _pump(tester,
+            plans: _FakePlans([offerJson()]),
+            auth: auth,
+            store: broken,
+            screen: _fastScreen);
+        await revealPhoneWidget(
+            tester, find.text(_l(tester).premiumGateStorePricesFailed));
+        auth.subscription = const {'is_subscribed': true};
+        await _tap(tester, find.byKey(PremiumGateScreen.restoreKey));
+        expect(broken.restores, [1]);
+        expect(find.text(_l(tester).premiumGateSuccessTitle), findsOneWidget);
+      }
+    });
+
+    testWidgets('restore uses the account signed in now', (tester) async {
+      final auth = _FakeAuth();
+      final store = _FakeStore();
+      await _pump(tester,
+          plans: _FakePlans([offerJson()]),
+          auth: auth,
+          store: store,
+          screen: _fastScreen);
+      auth.id = 7;
+      await _tap(tester, find.byKey(PremiumGateScreen.restoreKey));
+      expect(store.restores, [7]);
+    });
 
     testWidgets('store prices that fail to load offer Retry, never a buy',
         (tester) async {

@@ -3,6 +3,7 @@ import 'package:sirati/features/dashboard/data/subscription_plans_repository.dar
 import 'package:sirati/features/dashboard/domain/subscription_offer.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/purchases/store_purchases.dart';
+import 'package:sirati/shared/services/session_user_provider.dart';
 
 /// Single injection point for [SubscriptionPlansRepository]; tests override it.
 final subscriptionPlansRepositoryProvider =
@@ -27,10 +28,13 @@ class StoreCatalog {
 
 /// Null when this build cannot sell (the gate stays informational). Throws
 /// when the store or the account could not be read, so the gate shows Retry.
+/// Reloads when the signed-in account changes; the gate still re-checks the
+/// account before buying.
 final storeCatalogProvider = FutureProvider.autoDispose<StoreCatalog?>(
   (ref) async {
     final store = ref.watch(storePurchasesProvider);
     if (!store.isAvailable) return null;
+    ref.watch(sessionUserIdProvider);
     final offer = await ref.watch(subscriptionOfferProvider.future);
     final user = await ref.read(authApiServiceProvider).me();
     if (user == null) throw StateError('No signed-in account');

@@ -1,12 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/shared/services/purchases/revenuecat_store_purchases.dart';
 
+/// Calendar unit of a store free trial, as the store states it (a one-month
+/// trial is a calendar month, never "30 days").
+enum StoreTrialUnit { day, week, month, year }
+
+/// A free trial the signed-in customer is confirmed eligible for.
+class StoreTrial {
+  const StoreTrial({required this.unit, required this.count});
+
+  final StoreTrialUnit unit;
+  final int count;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StoreTrial && other.unit == unit && other.count == count;
+
+  @override
+  int get hashCode => Object.hash(unit, count);
+}
+
 /// What the App Store sells for one server plan (matched by period).
 class StoreOffer {
   const StoreOffer({
     required this.planKey,
     required this.priceString,
-    this.freeTrialDays,
+    this.trial,
   });
 
   final String planKey;
@@ -15,8 +34,9 @@ class StoreOffer {
   /// rather than our own catalogue price.
   final String priceString;
 
-  /// Set only when the store product starts with a free trial.
-  final int? freeTrialDays;
+  /// Set only when the product starts with a free trial AND the store
+  /// confirmed this customer is eligible; never assumed.
+  final StoreTrial? trial;
 }
 
 sealed class StorePurchaseOutcome {
@@ -38,8 +58,26 @@ final class StorePurchasePending extends StorePurchaseOutcome {
   const StorePurchasePending();
 }
 
+/// The Apple ID's subscription belongs to another Siratie account. Policy:
+/// a subscription stays with the account that bought it (RevenueCat restore
+/// behaviour "Keep with original App User ID"); it is never transferred.
+final class StorePurchaseOtherAccount extends StorePurchaseOutcome {
+  const StorePurchaseOtherAccount();
+}
+
 final class StorePurchaseFailed extends StorePurchaseOutcome {
   const StorePurchaseFailed();
+}
+
+enum StoreRestoreOutcome {
+  /// The store reports an active entitlement for this account.
+  active,
+
+  /// Nothing to restore for this Apple ID.
+  none,
+
+  /// The Apple ID's subscription belongs to another Siratie account.
+  otherAccount,
 }
 
 /// In-app subscription store. The store user id is always the Siratie user
@@ -55,13 +93,16 @@ abstract interface class StorePurchases {
     required Map<String, int> planMonths,
   });
 
+  /// Buys [planKey] for [userId]. Fails when the offers were last loaded for
+  /// another account, so a purchase can never use a stale identity.
   Future<StorePurchaseOutcome> purchase({
     required int userId,
     required String planKey,
   });
 
-  /// True when the store reports an active entitlement after restoring.
-  Future<bool> restore({required int userId});
+  /// Works without loaded offers, so a subscriber can recover access even
+  /// when the sales catalogue is unavailable.
+  Future<StoreRestoreOutcome> restore({required int userId});
 }
 
 class UnavailableStorePurchases implements StorePurchases {
@@ -85,7 +126,8 @@ class UnavailableStorePurchases implements StorePurchases {
       const StorePurchaseFailed();
 
   @override
-  Future<bool> restore({required int userId}) async => false;
+  Future<StoreRestoreOutcome> restore({required int userId}) async =>
+      StoreRestoreOutcome.none;
 }
 
 /// Single injection point; tests override it with a fake.

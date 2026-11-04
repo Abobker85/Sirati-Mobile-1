@@ -41,6 +41,7 @@ class PremiumGateScreen extends ConsumerStatefulWidget {
   static const successKey = ValueKey('premium-success');
   static const retryKey = ValueKey('premium-plans-retry');
   static const continueKey = ValueKey('premium-continue');
+  static const checkAgainKey = ValueKey('premium-check-again');
   static const noticeKey = ValueKey('premium-notice');
   static Key planKey(String key) => ValueKey('premium-plan-$key');
 
@@ -48,7 +49,13 @@ class PremiumGateScreen extends ConsumerStatefulWidget {
   ConsumerState<PremiumGateScreen> createState() => _PremiumGateScreenState();
 }
 
-enum _GateNotice { notFound, refreshFailed, purchaseFailed, purchasePending }
+enum _GateNotice {
+  notFound,
+  refreshFailed,
+  purchaseFailed,
+  purchasePending,
+  otherAccount,
+}
 
 class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
   bool _refreshing = false;
@@ -111,6 +118,17 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     });
   }
 
+  /// Re-runs the server check from the "payment received" view.
+  Future<void> _checkAgain() async {
+    if (_busy) return;
+    setState(() => _refreshing = true);
+    await _showSuccess();
+  }
+
+  /// The account signed in right now, read from the server (null if none).
+  Future<int?> _currentUserId() async =>
+      (await ref.read(authApiServiceProvider).me())?.id;
+
   Future<void> _buy(StoreCatalog catalog, String planKey) async {
     if (_busy) return;
     setState(() {
@@ -119,9 +137,17 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     });
     StorePurchaseOutcome outcome;
     try {
-      outcome = await ref
-          .read(storePurchasesProvider)
-          .purchase(userId: catalog.userId, planKey: planKey);
+      // The catalogue may have been loaded for an account that has since
+      // signed out: buy only for the account signed in now.
+      final userId = await _currentUserId();
+      if (userId != catalog.userId) {
+        ref.invalidate(storeCatalogProvider);
+        outcome = const StorePurchaseFailed();
+      } else {
+        outcome = await ref
+            .read(storePurchasesProvider)
+            .purchase(userId: userId!, planKey: planKey);
+      }
     } catch (_) {
       outcome = const StorePurchaseFailed();
     }
@@ -131,36 +157,40 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       _purchasing = false;
       _notice = switch (outcome) {
         StorePurchasePending() => _GateNotice.purchasePending,
+        StorePurchaseOtherAccount() => _GateNotice.otherAccount,
         StorePurchaseFailed() => _GateNotice.purchaseFailed,
         _ => null,
       };
     });
   }
 
-  Future<void> _restore(StoreCatalog catalog) async {
+  /// Needs only the signed-in account, not the sales catalogue, so a
+  /// subscriber can recover access while prices fail to load.
+  Future<void> _restore() async {
     if (_busy) return;
     setState(() {
       _refreshing = true;
       _notice = null;
     });
-    bool active;
+    StoreRestoreOutcome? outcome;
     try {
-      active = await ref
-          .read(storePurchasesProvider)
-          .restore(userId: catalog.userId);
+      final userId = await _currentUserId();
+      if (userId != null) {
+        outcome =
+            await ref.read(storePurchasesProvider).restore(userId: userId);
+      }
     } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _refreshing = false;
-        _notice = _GateNotice.refreshFailed;
-      });
-      return;
+      outcome = null;
     }
     if (!mounted) return;
-    if (active) return _showSuccess();
+    if (outcome == StoreRestoreOutcome.active) return _showSuccess();
     setState(() {
       _refreshing = false;
-      _notice = _GateNotice.notFound;
+      _notice = switch (outcome) {
+        StoreRestoreOutcome.none => _GateNotice.notFound,
+        StoreRestoreOutcome.otherAccount => _GateNotice.otherAccount,
+        _ => _GateNotice.refreshFailed,
+      };
     });
   }
 
@@ -193,6 +223,8 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
         _SuccessView(
           key: PremiumGateScreen.successKey,
           confirmed: _successConfirmed!,
+          checking: _refreshing,
+          onCheckAgain: _checkAgain,
           onContinue: _leave,
         ),
       ];
@@ -277,7 +309,6 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
   ) {
     final l = AppLocalizations.of(context);
     final catalog = ref.watch(storeCatalogProvider);
-    final catalogValue = catalog.value;
     final offerValue = offer.value;
     return [
       const _Hero(),
@@ -311,8 +342,7 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       _Footer(
         onPrivacy: () => Navigator.of(context).pushNamed(AppRoutes.privacy),
         onTerms: () => launchSafeExternalUrl(appleStandardEulaUrl),
-        onRestore:
-            catalogValue == null || _busy ? null : () => _restore(catalogValue),
+        onRestore: _busy ? null : _restore,
       ),
     ];
   }
@@ -372,7 +402,7 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
         keyOr(_selectedPlan, keyOr(offer.defaultPlan?.key, plans.first.key));
     final selectedPlan = plans.firstWhere((p) => p.key == selectedKey);
     final selectedOffer = data.offers[selectedKey]!;
-    final trialDays = selectedOffer.freeTrialDays ?? 0;
+    final trial = selectedOffer.trial;
     final period = _periodLabel(l, selectedPlan.periodMonths);
 
     return Column(
@@ -396,10 +426,10 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
-        if (trialDays > 0) ...[
+        if (trial != null) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
-            l.premiumGateTrial(trialDays),
+            l.premiumGateTrial(_trialDuration(l, trial)),
             textAlign: TextAlign.center,
             style: AppTypography.of(context, AppTypography.titleSm,
                 color: c.primaryInk),
@@ -417,7 +447,7 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
           child: _purchasing
               ? _BusyLabel(l.premiumGatePurchasing)
               : Text(
-                  trialDays > 0
+                  trial != null
                       ? l.premiumGateStartTrial
                       : l.premiumGateSubscribe,
                   textAlign: TextAlign.center,
@@ -425,7 +455,7 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          trialDays > 0
+          trial != null
               ? l.premiumGateRenewNoticeTrial(selectedOffer.priceString, period)
               : l.premiumGateRenewNotice(selectedOffer.priceString, period),
           textAlign: TextAlign.center,
@@ -526,6 +556,10 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
             tone: _Tone.warning,
             message: l.premiumGatePurchasePending,
           ),
+        _GateNotice.otherAccount => _Notice(
+            tone: _Tone.warning,
+            message: l.premiumGateOtherAccount,
+          ),
       },
     );
   }
@@ -544,6 +578,15 @@ String _currencyLabel(AppLocalizations l, String code) =>
 
 String _periodLabel(AppLocalizations l, int months) =>
     months == 12 ? l.premiumGatePeriodYear : l.premiumGatePeriod(months);
+
+/// The trial length in the store's own unit (a month is never "30 days").
+String _trialDuration(AppLocalizations l, StoreTrial trial) =>
+    switch (trial.unit) {
+      StoreTrialUnit.day => l.premiumGateTrialDays(trial.count),
+      StoreTrialUnit.week => l.premiumGateTrialWeeks(trial.count),
+      StoreTrialUnit.month => l.premiumGateTrialMonths(trial.count),
+      StoreTrialUnit.year => l.premiumGateTrialYears(trial.count),
+    };
 
 class _Hero extends StatelessWidget {
   const _Hero();
@@ -958,16 +1001,22 @@ class _BusyLabel extends StatelessWidget {
   }
 }
 
-/// Shown after the store completed a purchase or restored one.
+/// Shown after the store completed a purchase or restored one. Claims access
+/// only once the server confirmed it; until then it says the payment was
+/// received and offers a server re-check.
 class _SuccessView extends StatelessWidget {
   const _SuccessView({
     super.key,
     required this.confirmed,
+    required this.checking,
+    required this.onCheckAgain,
     required this.onContinue,
   });
 
   /// False when the server has not seen the webhook yet.
   final bool confirmed;
+  final bool checking;
+  final VoidCallback onCheckAgain;
   final VoidCallback onContinue;
 
   @override
@@ -986,33 +1035,57 @@ class _SuccessView extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Icon(Icons.check_rounded, size: 48, color: c.primaryInk),
+              child: Icon(
+                confirmed ? Icons.check_rounded : Icons.hourglass_top_rounded,
+                size: 48,
+                color: c.primaryInk,
+              ),
             ),
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
         Text(
-          l.premiumGateSuccessTitle,
+          confirmed ? l.premiumGateSuccessTitle : l.premiumGateSyncingTitle,
           textAlign: TextAlign.center,
           style: AppTypography.of(context, AppTypography.titleLg),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          l.premiumGateSuccessBody,
+          confirmed ? l.premiumGateSuccessBody : l.premiumGateSuccessSyncing,
           textAlign: TextAlign.center,
           style: AppTypography.of(context, AppTypography.bodyMd,
               color: c.textSecondary),
         ),
-        if (!confirmed) ...[
-          const SizedBox(height: AppSpacing.md),
-          _Notice(tone: _Tone.info, message: l.premiumGateSuccessSyncing),
-        ],
         const SizedBox(height: AppSpacing.xl),
-        ElevatedButton(
-          key: PremiumGateScreen.continueKey,
-          onPressed: onContinue,
-          child: Text(l.premiumGateContinue),
-        ),
+        if (confirmed)
+          ElevatedButton(
+            key: PremiumGateScreen.continueKey,
+            onPressed: onContinue,
+            child: Text(l.premiumGateContinue),
+          )
+        else ...[
+          ElevatedButton(
+            key: PremiumGateScreen.checkAgainKey,
+            style: ElevatedButton.styleFrom(
+              animationDuration: Duration.zero,
+              disabledBackgroundColor: c.surface,
+              disabledForegroundColor: c.textSecondary,
+            ),
+            onPressed: checking ? null : onCheckAgain,
+            child: checking
+                ? _BusyLabel(l.premiumGateRefreshing)
+                : Text(l.premiumGateCheckAgain),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Center(
+            child: TextButton(
+              key: PremiumGateScreen.continueKey,
+              style: _footerButtonStyle(context),
+              onPressed: checking ? null : onContinue,
+              child: Text(l.premiumGateContinue),
+            ),
+          ),
+        ],
       ],
     );
   }

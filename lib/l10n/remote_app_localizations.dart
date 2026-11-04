@@ -1905,16 +1905,81 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('premiumGateChoosePlan') ?? _base.premiumGateChoosePlan;
 
   @override
-  String premiumGateTrial(int days) =>
+  String premiumGateTrial(String duration) =>
       remote.format(
         'premiumGateTrial',
         (icuMessage, icuLocale) => IcuLite.format(
           icuMessage,
           locale: icuLocale,
-          args: {'days': days},
+          args: {'duration': duration},
         ),
       ) ??
-      _base.premiumGateTrial(days);
+      _base.premiumGateTrial(duration);
+
+  @override
+  String premiumGateTrialDays(int count) =>
+      remote.format(
+        'premiumGateTrialDays',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.premiumGateTrialDays(count);
+
+  @override
+  String premiumGateTrialWeeks(int count) =>
+      remote.format(
+        'premiumGateTrialWeeks',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.premiumGateTrialWeeks(count);
+
+  @override
+  String premiumGateTrialMonths(int count) =>
+      remote.format(
+        'premiumGateTrialMonths',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.premiumGateTrialMonths(count);
+
+  @override
+  String premiumGateTrialYears(int count) =>
+      remote.format(
+        'premiumGateTrialYears',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'count': count},
+        ),
+      ) ??
+      _base.premiumGateTrialYears(count);
+
+  @override
+  String get premiumGateOtherAccount =>
+      remote.text('premiumGateOtherAccount') ?? _base.premiumGateOtherAccount;
+
+  @override
+  String get premiumGateSyncingTitle =>
+      remote.text('premiumGateSyncingTitle') ?? _base.premiumGateSyncingTitle;
+
+  @override
+  String get premiumGateSuccessSyncing =>
+      remote.text('premiumGateSuccessSyncing') ??
+      _base.premiumGateSuccessSyncing;
+
+  @override
+  String get premiumGateCheckAgain =>
+      remote.text('premiumGateCheckAgain') ?? _base.premiumGateCheckAgain;
 
   @override
   String get premiumGateStartTrial =>
@@ -1982,11 +2047,6 @@ class RemoteAppLocalizations extends AppLocalizations {
   @override
   String get premiumGateSuccessBody =>
       remote.text('premiumGateSuccessBody') ?? _base.premiumGateSuccessBody;
-
-  @override
-  String get premiumGateSuccessSyncing =>
-      remote.text('premiumGateSuccessSyncing') ??
-      _base.premiumGateSuccessSyncing;
 
   @override
   String get registerInterest =>
@@ -6955,7 +7015,15 @@ class RemoteAppLocalizations extends AppLocalizations {
     'cvHubRecommended': [],
     'premiumGateAvailabilityNote': [],
     'premiumGateChoosePlan': [],
-    'premiumGateTrial': ['int'],
+    'premiumGateTrial': ['String'],
+    'premiumGateTrialDays': ['int'],
+    'premiumGateTrialWeeks': ['int'],
+    'premiumGateTrialMonths': ['int'],
+    'premiumGateTrialYears': ['int'],
+    'premiumGateOtherAccount': [],
+    'premiumGateSyncingTitle': [],
+    'premiumGateSuccessSyncing': [],
+    'premiumGateCheckAgain': [],
     'premiumGateStartTrial': [],
     'premiumGateSubscribe': [],
     'premiumGatePurchasing': [],
@@ -6968,7 +7036,6 @@ class RemoteAppLocalizations extends AppLocalizations {
     'premiumGateStorePricesFailed': [],
     'premiumGateSuccessTitle': [],
     'premiumGateSuccessBody': [],
-    'premiumGateSuccessSyncing': [],
     'registerInterest': [],
     'noMatchingJobs': [],
     'clearFilters': [],
@@ -8295,7 +8362,15 @@ class RemoteAppLocalizations extends AppLocalizations {
         'cvHubRecommended' => l.cvHubRecommended,
         'premiumGateAvailabilityNote' => l.premiumGateAvailabilityNote,
         'premiumGateChoosePlan' => l.premiumGateChoosePlan,
-        'premiumGateTrial' => l.premiumGateTrial(a[0] as int),
+        'premiumGateTrial' => l.premiumGateTrial(a[0] as String),
+        'premiumGateTrialDays' => l.premiumGateTrialDays(a[0] as int),
+        'premiumGateTrialWeeks' => l.premiumGateTrialWeeks(a[0] as int),
+        'premiumGateTrialMonths' => l.premiumGateTrialMonths(a[0] as int),
+        'premiumGateTrialYears' => l.premiumGateTrialYears(a[0] as int),
+        'premiumGateOtherAccount' => l.premiumGateOtherAccount,
+        'premiumGateSyncingTitle' => l.premiumGateSyncingTitle,
+        'premiumGateSuccessSyncing' => l.premiumGateSuccessSyncing,
+        'premiumGateCheckAgain' => l.premiumGateCheckAgain,
         'premiumGateStartTrial' => l.premiumGateStartTrial,
         'premiumGateSubscribe' => l.premiumGateSubscribe,
         'premiumGatePurchasing' => l.premiumGatePurchasing,
@@ -8310,7 +8385,6 @@ class RemoteAppLocalizations extends AppLocalizations {
         'premiumGateStorePricesFailed' => l.premiumGateStorePricesFailed,
         'premiumGateSuccessTitle' => l.premiumGateSuccessTitle,
         'premiumGateSuccessBody' => l.premiumGateSuccessBody,
-        'premiumGateSuccessSyncing' => l.premiumGateSuccessSyncing,
         'registerInterest' => l.registerInterest,
         'noMatchingJobs' => l.noMatchingJobs,
         'clearFilters' => l.clearFilters,
