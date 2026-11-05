@@ -78,27 +78,45 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
 
   bool get _busy => _refreshing || _purchasing;
 
+  /// Re-reads access for the account signed in now. A reply that arrives
+  /// after the session changed belongs to another account and is dropped.
   Future<void> _refresh() async {
     if (_busy) return;
+    final askedFor = SessionCache.instance.user.value?.id;
     setState(() {
       _refreshing = true;
       _notice = null;
     });
     _GateNotice? notice;
     var active = false;
+    var stale = false;
     try {
       final user = await ref.read(authApiServiceProvider).me();
+      stale = !_refreshStillCurrent(askedFor, user?.id);
       active = isSubscriptionActive(user?.subscription);
       if (!active) notice = _GateNotice.notFound;
     } catch (_) {
+      stale = !_refreshStillCurrent(askedFor, null);
       notice = _GateNotice.refreshFailed;
     }
     if (!mounted) return;
     setState(() {
       _refreshing = false;
+      if (stale) return;
       _activated = active;
       _notice = notice;
     });
+  }
+
+  /// Whether a refresh answer may be shown: the session has not moved to
+  /// another account (or signed out) since [askedFor] asked, and the answer
+  /// is not for an account other than the one signed in now. A session that
+  /// was not known yet when the refresh started does not count as a change.
+  bool _refreshStillCurrent(int? askedFor, int? answeredFor) {
+    final now = SessionCache.instance.user.value?.id;
+    if (askedFor != null && now != askedFor) return false;
+    if (answeredFor != null && now != null && now != answeredFor) return false;
+    return true;
   }
 
   /// True while [userId] is still the account signed in on this device.
@@ -274,7 +292,12 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
   Widget build(BuildContext context) {
     ref.listen<int?>(sessionUserIdProvider, (previous, next) {
       final flowUser = _flowUser;
-      if (flowUser != null && next != flowUser) _resetFlow();
+      if (flowUser != null) {
+        if (next != flowUser) _resetFlow();
+      } else if (next != previous && (_activated != null || _notice != null)) {
+        // A refresh result shown for the previous account is not this one's.
+        _resetFlow();
+      }
     });
     final l = AppLocalizations.of(context);
     final c = context.sirati;

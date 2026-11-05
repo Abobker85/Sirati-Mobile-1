@@ -658,6 +658,52 @@ void main() {
           tester, find.byKey(PremiumGateScreen.continueKey));
     });
 
+    testWidgets('a late refresh reply for the previous account is never shown',
+        (tester) async {
+      // Subscribed or not, that answer is another account's: no active card,
+      // no notice, and the next refresh answers for the account signed in now.
+      for (final late in <Map<String, dynamic>>[
+        const {'is_subscribed': true},
+        const {'is_subscribed': false},
+      ]) {
+        SessionCache.instance
+            .setUser(const AuthUser(id: 1, name: 'Sara', email: 'sara@x.io'));
+        final auth = _FakeAuth();
+        await _pump(tester, plans: _FakePlans([offerJson()]), auth: auth);
+        final reply = Completer<AuthUser?>();
+        auth.pending = reply.future;
+        await revealPhoneWidget(
+            tester, find.byKey(PremiumGateScreen.refreshKey));
+        await tester.tap(find.byKey(PremiumGateScreen.refreshKey));
+        await tester.pump();
+        auth.pending = null;
+        auth.signIn(2);
+        reply.complete(AuthUser(
+            id: 1, name: 'Sara', email: 'sara@x.io', subscription: late));
+        await tester.pumpAndSettle();
+
+        // The active card sits at the top of a lazily built list: go there and
+        // count off-screen widgets too.
+        tester
+            .state<ScrollableState>(find.byType(Scrollable).first)
+            .position
+            .jumpTo(0);
+        await tester.pumpAndSettle();
+        expect(find.byKey(PremiumGateScreen.continueKey, skipOffstage: false),
+            findsNothing,
+            reason: 'late reply $late');
+        await revealPhoneWidget(
+            tester, find.byKey(PremiumGateScreen.refreshKey));
+        expect(find.byKey(PremiumGateScreen.noticeKey), findsNothing,
+            reason: 'late reply $late');
+
+        auth.subscription = const {'is_subscribed': true};
+        await _tap(tester, find.byKey(PremiumGateScreen.refreshKey));
+        await revealPhoneWidget(
+            tester, find.byKey(PremiumGateScreen.continueKey));
+      }
+    });
+
     testWidgets('empty plans, Privacy and Not now remain reachable',
         (tester) async {
       final routes = _Routes();
