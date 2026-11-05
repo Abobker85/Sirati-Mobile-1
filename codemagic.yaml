@@ -66,6 +66,32 @@ workflows:
     artifacts:
       - build/ios/iphonesimulator/Runner.app
 
+  # Run by hand whenever pubspec plugins change: resolves the iOS pods on
+  # macOS and publishes ios/Podfile.lock to commit. Builds nothing.
+  ios-pod-lock:
+    name: iOS Podfile.lock
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: stable
+      xcode: 26
+      cocoapods: default
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+          flutter gen-l10n
+      - name: Analyze
+        script: flutter analyze
+      - name: Run tests
+        script: flutter test --exclude-tags golden
+      - name: Resolve pods
+        script: |
+          cd ios
+          pod install --repo-update
+    artifacts:
+      - ios/Podfile.lock
+
   ios-testflight:
     name: iOS TestFlight Release
     instance_type: mac_mini_m2
@@ -88,15 +114,24 @@ workflows:
         script: |
           flutter pub get
           flutter gen-l10n
+      - name: Check release configuration
+        script: |
+          # A release must sell through the App Store: without the public
+          # RevenueCat iOS key the paywall would silently stay informational.
+          case "$REVENUECAT_IOS_KEY" in
+            appl_*) ;;
+            *) echo "REVENUECAT_IOS_KEY (appl_...) is missing from the sirati_ios group."; exit 1 ;;
+          esac
       - name: Install CocoaPods
         script: |
           cd ios
-          if [ -f Podfile.lock ]; then
-            pod install --deployment
-          else
-            echo "Podfile.lock is missing; commit it after the next macOS pod install."
-            pod install
+          # Release gate: pods come only from the committed lock. Run the
+          # "iOS Podfile.lock" workflow once and commit its artifact first.
+          if [ ! -f Podfile.lock ]; then
+            echo "ios/Podfile.lock is not committed; run the ios-pod-lock workflow and commit its artifact."
+            exit 1
           fi
+          pod install --deployment
           cd ..
       - name: Analyze
         script: flutter analyze
@@ -123,7 +158,8 @@ workflows:
           flutter build ipa --release \
             --export-options-plist=/Users/builder/export_options.plist \
             --build-number=$BUILD_NUM \
-            --dart-define=SIRATI_API_BASE_URL=$SIRATI_API_BASE_URL
+            --dart-define=SIRATI_API_BASE_URL=$SIRATI_API_BASE_URL \
+            --dart-define=REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:

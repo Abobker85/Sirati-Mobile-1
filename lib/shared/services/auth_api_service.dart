@@ -178,11 +178,17 @@ class AuthApiService {
     } catch (_) {}
   }
 
+  /// The account behind the current token. The session cache is written only
+  /// when no other session write (sign-in, sign-out, profile) happened while
+  /// the request was in flight, so a late reply for a previous account never
+  /// replaces the account signed in now.
   Future<AuthUser?> me() async {
+    final generation = SessionCache.instance.generation;
     final response = await _apiClient.getJson('/auth/me');
     final data = response['data'];
     if (data is! Map<String, dynamic>) return null;
     final user = AuthUser.fromJson(data);
+    if (SessionCache.instance.generation != generation) return user;
     SessionCache.instance.setUser(user);
     await _bindAnalyticsUser(user);
     return user;
