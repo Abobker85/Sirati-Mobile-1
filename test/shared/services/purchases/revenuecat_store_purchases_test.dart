@@ -80,6 +80,8 @@ class _FakeClient implements RevenueCatClient {
 
 const _plans = {'monthly': 1, 'semiannual': 6, 'annual': 12};
 
+bool _always() => true;
+
 void main() {
   late _FakeClient client;
   late RevenueCatStorePurchases store;
@@ -92,9 +94,11 @@ void main() {
   test('without a key or off iOS nothing reaches the SDK', () async {
     final off = RevenueCatStorePurchases(available: false, client: client);
     expect(await off.offersFor(userId: 1, planMonths: _plans), isEmpty);
-    expect(await off.purchase(userId: 1, planKey: 'monthly'),
+    expect(
+        await off.purchase(userId: 1, planKey: 'monthly', isCurrent: _always),
         isA<StorePurchaseFailed>());
-    expect(await off.restore(userId: 1), StoreRestoreOutcome.none);
+    expect(await off.restore(userId: 1, isCurrent: _always),
+        StoreRestoreOutcome.none);
     expect(client.log, isEmpty);
   });
 
@@ -161,11 +165,13 @@ void main() {
     test('buys only for the account the offers were loaded for', () async {
       await store.offersFor(userId: 1, planMonths: _plans);
       await store.offersFor(userId: 2, planMonths: _plans);
-      final stale = await store.purchase(userId: 1, planKey: 'monthly');
+      final stale = await store.purchase(
+          userId: 1, planKey: 'monthly', isCurrent: _always);
       expect(stale, isA<StorePurchaseFailed>());
       expect(client.log.where((e) => e.startsWith('purchase')), isEmpty);
 
-      final ok = await store.purchase(userId: 2, planKey: 'annual');
+      final ok = await store.purchase(
+          userId: 2, planKey: 'annual', isCurrent: _always);
       expect(ok, isA<StorePurchaseCompleted>());
       expect(client.log.last, 'purchase pro.year as 2');
     });
@@ -174,7 +180,8 @@ void main() {
       await store.offersFor(userId: 1, planMonths: _plans);
       client.gate = Completer<void>();
       final reload = store.offersFor(userId: 2, planMonths: _plans);
-      final buy = store.purchase(userId: 1, planKey: 'monthly');
+      final buy =
+          store.purchase(userId: 1, planKey: 'monthly', isCurrent: _always);
       client.gate!.complete();
       await reload;
       expect(await buy, isA<StorePurchaseFailed>());
@@ -183,10 +190,14 @@ void main() {
 
     test('a purchase before any offers, or for an unknown plan, fails',
         () async {
-      expect(await store.purchase(userId: 1, planKey: 'monthly'),
+      expect(
+          await store.purchase(
+              userId: 1, planKey: 'monthly', isCurrent: _always),
           isA<StorePurchaseFailed>());
       await store.offersFor(userId: 1, planMonths: _plans);
-      expect(await store.purchase(userId: 1, planKey: 'lifetime'),
+      expect(
+          await store.purchase(
+              userId: 1, planKey: 'lifetime', isCurrent: _always),
           isA<StorePurchaseFailed>());
       expect(client.log.where((e) => e.startsWith('purchase')), isEmpty);
     });
@@ -200,25 +211,72 @@ void main() {
         StorePurchaseOtherAccount(),
       ]) {
         client.purchaseOutcome = outcome;
-        expect(await store.purchase(userId: 1, planKey: 'monthly'), outcome);
+        expect(
+            await store.purchase(
+                userId: 1, planKey: 'monthly', isCurrent: _always),
+            outcome);
       }
       client.identifyError = Exception('sdk');
-      expect(await store.purchase(userId: 1, planKey: 'monthly'),
+      expect(
+          await store.purchase(
+              userId: 1, planKey: 'monthly', isCurrent: _always),
           isA<StorePurchaseFailed>());
     });
 
     test('restore needs no offers and runs as the given account', () async {
       for (final outcome in StoreRestoreOutcome.values) {
         client.restoreOutcome = outcome;
-        expect(await store.restore(userId: 9), outcome);
+        expect(await store.restore(userId: 9, isCurrent: _always), outcome);
         expect(client.log.last, 'restore as 9');
       }
+    });
+
+    test('a session that ended before the store call never buys or restores',
+        () async {
+      await store.offersFor(userId: 1, planMonths: _plans);
+      final calls = client.log.length;
+      expect(
+          await store.purchase(
+              userId: 1, planKey: 'monthly', isCurrent: () => false),
+          isA<StorePurchaseFailed>());
+      await expectLater(store.restore(userId: 1, isCurrent: () => false),
+          throwsA(isA<StoreAccountChanged>()));
+      expect(client.log.length, calls, reason: 'The SDK is never asked');
+    });
+
+    test('a session that ends while queued or identifying never buys',
+        () async {
+      await store.offersFor(userId: 1, planMonths: _plans);
+      var signedIn = true;
+      // Queued behind a slow reload of the same account.
+      final gate = client.gate = Completer<void>();
+      final reload = store.offersFor(userId: 1, planMonths: _plans);
+      final queued = store.purchase(
+          userId: 1, planKey: 'monthly', isCurrent: () => signedIn);
+      signedIn = false;
+      gate.complete();
+      await reload;
+      expect(await queued, isA<StorePurchaseFailed>());
+
+      // Ends during the async identify step, right before the sheet.
+      var calls = 0;
+      final ending = store.purchase(
+          userId: 1, planKey: 'monthly', isCurrent: () => ++calls == 1);
+      expect(await ending, isA<StorePurchaseFailed>());
+      expect(client.log.where((e) => e.startsWith('purchase')), isEmpty);
+    });
+
+    test('restore checks the session again after identifying', () async {
+      var calls = 0;
+      await expectLater(store.restore(userId: 1, isCurrent: () => ++calls == 1),
+          throwsA(isA<StoreAccountChanged>()));
+      expect(client.log.where((e) => e.startsWith('restore')), isEmpty);
     });
 
     test('a failed call does not block the calls queued after it', () async {
       client.identifyError = Exception('offline');
       final failing = store.offersFor(userId: 1, planMonths: _plans);
-      final next = store.restore(userId: 1);
+      final next = store.restore(userId: 1, isCurrent: _always);
       await expectLater(failing, throwsException);
       expect(await next, StoreRestoreOutcome.none);
     });

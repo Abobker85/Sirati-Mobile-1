@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/safe_url.dart';
@@ -8,6 +9,8 @@ import 'package:sirati/features/dashboard/domain/subscription_offer.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/purchases/store_purchases.dart';
+import 'package:sirati/shared/services/session_cache.dart';
+import 'package:sirati/shared/services/session_user_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Apple's standard licence agreement, linked as the paywall's Terms of Use.
@@ -42,6 +45,7 @@ class PremiumGateScreen extends ConsumerStatefulWidget {
   static const retryKey = ValueKey('premium-plans-retry');
   static const continueKey = ValueKey('premium-continue');
   static const checkAgainKey = ValueKey('premium-check-again');
+  static const supportKey = ValueKey('premium-support');
   static const noticeKey = ValueKey('premium-notice');
   static Key planKey(String key) => ValueKey('premium-plan-$key');
 
@@ -66,6 +70,11 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
 
   /// Set after a completed purchase or restore; true once the server agrees.
   bool? _successConfirmed;
+
+  /// The account a purchase, restore or confirmation runs for. Every result
+  /// is applied only while that account is still the one signed in; a
+  /// session change resets the flow.
+  int? _flowUser;
 
   bool get _busy => _refreshing || _purchasing;
 
@@ -92,25 +101,60 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     });
   }
 
-  /// Polls the server a few times: the store has charged the user, but
-  /// access opens only when the webhook has reached the backend.
-  Future<bool> _serverConfirms() async {
+  /// True while [userId] is still the account signed in on this device.
+  bool _stillSignedIn(int userId) =>
+      mounted && SessionCache.instance.user.value?.id == userId;
+
+  /// Results of a flow for an account that is no longer current are dropped.
+  bool _flowIsCurrent(int userId) =>
+      _flowUser == userId && _stillSignedIn(userId);
+
+  /// The signed-in account, confirmed by the server and by the session the
+  /// app holds now (a reply for a previous account does not count).
+  Future<int?> _confirmedUserId() async {
+    final id = (await ref.read(authApiServiceProvider).me())?.id;
+    return id != null && _stillSignedIn(id) ? id : null;
+  }
+
+  void _resetFlow() {
+    setState(() {
+      _flowUser = null;
+      _successConfirmed = null;
+      _purchasing = false;
+      _refreshing = false;
+      _activated = null;
+      _notice = null;
+    });
+  }
+
+  /// Asks the server to re-read [userId] from RevenueCat (repairs a lost
+  /// webhook), then polls until the server reports access for that same
+  /// account. Any other account's answer never confirms this flow.
+  Future<bool> _serverConfirms(int userId) async {
+    if (_flowIsCurrent(userId)) {
+      try {
+        await ref.read(subscriptionPlansRepositoryProvider).syncWithStore();
+      } catch (_) {
+        // Polling below still sees a webhook that arrives on its own.
+      }
+    }
     for (var attempt = 0; attempt < widget.confirmAttempts; attempt++) {
       if (attempt > 0) await Future<void>.delayed(widget.confirmDelay);
-      if (!mounted) return false;
+      if (!_flowIsCurrent(userId)) return false;
       try {
         final user = await ref.read(authApiServiceProvider).me();
+        if (user?.id != userId || !_flowIsCurrent(userId)) return false;
         if (isSubscriptionActive(user?.subscription)) return true;
       } catch (_) {
-        // Keep polling; the success view says when the account lags.
+        // Keep polling; the view says when the account lags.
       }
     }
     return false;
   }
 
-  Future<void> _showSuccess() async {
-    final confirmed = await _serverConfirms();
-    if (!mounted) return;
+  Future<void> _showSuccess(int userId) async {
+    final confirmed = await _serverConfirms(userId);
+    if (!mounted || !_flowIsCurrent(userId)) return;
     setState(() {
       _purchasing = false;
       _refreshing = false;
@@ -120,14 +164,11 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
 
   /// Re-runs the server check from the "payment received" view.
   Future<void> _checkAgain() async {
-    if (_busy) return;
+    final userId = _flowUser;
+    if (_busy || userId == null) return;
     setState(() => _refreshing = true);
-    await _showSuccess();
+    await _showSuccess(userId);
   }
-
-  /// The account signed in right now, read from the server (null if none).
-  Future<int?> _currentUserId() async =>
-      (await ref.read(authApiServiceProvider).me())?.id;
 
   Future<void> _buy(StoreCatalog catalog, String planKey) async {
     if (_busy) return;
@@ -136,25 +177,38 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       _notice = null;
     });
     StorePurchaseOutcome outcome;
+    int? userId;
     try {
-      // The catalogue may have been loaded for an account that has since
-      // signed out: buy only for the account signed in now.
-      final userId = await _currentUserId();
-      if (userId != catalog.userId) {
+      // The catalogue may belong to an account that has since signed out:
+      // buy only for the account signed in now, and only while it stays so.
+      userId = await _confirmedUserId();
+      if (userId == null || userId != catalog.userId) {
         ref.invalidate(storeCatalogProvider);
         outcome = const StorePurchaseFailed();
       } else {
-        outcome = await ref
-            .read(storePurchasesProvider)
-            .purchase(userId: userId!, planKey: planKey);
+        final buyer = userId;
+        _flowUser = buyer;
+        outcome = await ref.read(storePurchasesProvider).purchase(
+              userId: buyer,
+              planKey: planKey,
+              isCurrent: () => _flowIsCurrent(buyer),
+            );
       }
     } catch (_) {
       outcome = const StorePurchaseFailed();
     }
     if (!mounted) return;
-    if (outcome is StorePurchaseCompleted) return _showSuccess();
+    if (userId != null && !_stillSignedIn(userId)) {
+      // The session changed meanwhile: drop this account's result.
+      _resetFlow();
+      return;
+    }
+    if (outcome is StorePurchaseCompleted && userId != null) {
+      return _showSuccess(userId);
+    }
     setState(() {
       _purchasing = false;
+      _flowUser = null;
       _notice = switch (outcome) {
         StorePurchasePending() => _GateNotice.purchasePending,
         StorePurchaseOtherAccount() => _GateNotice.otherAccount,
@@ -173,19 +227,32 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       _notice = null;
     });
     StoreRestoreOutcome? outcome;
+    int? userId;
     try {
-      final userId = await _currentUserId();
+      userId = await _confirmedUserId();
       if (userId != null) {
-        outcome =
-            await ref.read(storePurchasesProvider).restore(userId: userId);
+        final owner = userId;
+        _flowUser = owner;
+        outcome = await ref.read(storePurchasesProvider).restore(
+              userId: owner,
+              isCurrent: () => _flowIsCurrent(owner),
+            );
       }
     } catch (_) {
       outcome = null;
     }
     if (!mounted) return;
-    if (outcome == StoreRestoreOutcome.active) return _showSuccess();
+    if (userId != null && !_stillSignedIn(userId)) {
+      // The session changed meanwhile: drop this account's result.
+      _resetFlow();
+      return;
+    }
+    if (outcome == StoreRestoreOutcome.active && userId != null) {
+      return _showSuccess(userId);
+    }
     setState(() {
       _refreshing = false;
+      _flowUser = null;
       _notice = switch (outcome) {
         StoreRestoreOutcome.none => _GateNotice.notFound,
         StoreRestoreOutcome.otherAccount => _GateNotice.otherAccount,
@@ -205,6 +272,10 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int?>(sessionUserIdProvider, (previous, next) {
+      final flowUser = _flowUser;
+      if (flowUser != null && next != flowUser) _resetFlow();
+    });
     final l = AppLocalizations.of(context);
     final c = context.sirati;
     final offer = ref.watch(subscriptionOfferProvider);
@@ -324,10 +395,12 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
           _plans(context, offer)
         else
           _storePlans(context, offerValue, catalog),
-        if (_notice != null) ...[
-          const SizedBox(height: AppSpacing.md),
-          _noticeFor(context, _notice!),
-        ],
+      ],
+      // Outside the plans: Restore stays available to an active account,
+      // and its result must be visible there too.
+      if (_notice != null) ...[
+        const SizedBox(height: AppSpacing.md),
+        _noticeFor(context, _notice!),
       ],
       const SizedBox(height: AppSpacing.xs),
       Center(
@@ -558,7 +631,17 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
           ),
         _GateNotice.otherAccount => _Notice(
             tone: _Tone.warning,
-            message: l.premiumGateOtherAccount,
+            message: l.premiumGateOtherAccount(ApiConfig.supportEmail),
+            action: TextButton(
+              key: PremiumGateScreen.supportKey,
+              style: TextButton.styleFrom(
+                  foregroundColor: context.sirati.onWarningContainer),
+              onPressed: () => launchMailto(
+                ApiConfig.supportEmail,
+                subject: l.premiumGateSupportSubject,
+              ),
+              child: Text(l.premiumGateContactSupport),
+            ),
           ),
       },
     );

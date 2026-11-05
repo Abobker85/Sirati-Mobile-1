@@ -66,6 +66,32 @@ workflows:
     artifacts:
       - build/ios/iphonesimulator/Runner.app
 
+  # Run by hand whenever pubspec plugins change: resolves the iOS pods on
+  # macOS and publishes ios/Podfile.lock to commit. Builds nothing.
+  ios-pod-lock:
+    name: iOS Podfile.lock
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: stable
+      xcode: 26
+      cocoapods: default
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+          flutter gen-l10n
+      - name: Analyze
+        script: flutter analyze
+      - name: Run tests
+        script: flutter test --exclude-tags golden
+      - name: Resolve pods
+        script: |
+          cd ios
+          pod install --repo-update
+    artifacts:
+      - ios/Podfile.lock
+
   ios-testflight:
     name: iOS TestFlight Release
     instance_type: mac_mini_m2
@@ -88,19 +114,24 @@ workflows:
         script: |
           flutter pub get
           flutter gen-l10n
+      - name: Check release configuration
+        script: |
+          # A release must sell through the App Store: without the public
+          # RevenueCat iOS key the paywall would silently stay informational.
+          case "$REVENUECAT_IOS_KEY" in
+            appl_*) ;;
+            *) echo "REVENUECAT_IOS_KEY (appl_...) is missing from the sirati_ios group."; exit 1 ;;
+          esac
       - name: Install CocoaPods
         script: |
           cd ios
-          if [ -f Podfile.lock ]; then
-            # Release gate: a lock that disagrees with the Podfile fails the
-            # build instead of silently resolving different pod versions.
-            pod install --deployment
-          else
-            # No lock committed yet: resolve once and publish ios/Podfile.lock
-            # as a build artifact so it can be committed (no Mac needed).
-            echo "Podfile.lock is missing; commit the ios/Podfile.lock artifact from this build."
-            pod install
+          # Release gate: pods come only from the committed lock. Run the
+          # "iOS Podfile.lock" workflow once and commit its artifact first.
+          if [ ! -f Podfile.lock ]; then
+            echo "ios/Podfile.lock is not committed; run the ios-pod-lock workflow and commit its artifact."
+            exit 1
           fi
+          pod install --deployment
           cd ..
       - name: Analyze
         script: flutter analyze
@@ -131,7 +162,6 @@ workflows:
             --dart-define=REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY
     artifacts:
       - build/ios/ipa/*.ipa
-      - ios/Podfile.lock
     publishing:
       app_store_connect:
         auth: integration

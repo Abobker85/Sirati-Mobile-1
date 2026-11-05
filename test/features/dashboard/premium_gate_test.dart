@@ -6,6 +6,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/core/network/api_client.dart';
+import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/features/dashboard/application/premium_gate_controller.dart';
 import 'package:sirati/features/dashboard/data/subscription_plans_repository.dart';
@@ -16,6 +18,7 @@ import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/purchases/store_purchases.dart';
+import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 import '../../support/non_text_contrast.dart';
@@ -77,6 +80,18 @@ class _FakePlans extends SubscriptionPlansRepository {
   /// or an error to throw.
   final List<Object> responses;
   int loads = 0;
+  int syncs = 0;
+
+  /// Runs on each server sync (e.g. the server repairs access).
+  void Function()? onSync;
+  Object? syncError;
+
+  @override
+  Future<void> syncWithStore() async {
+    syncs++;
+    onSync?.call();
+    if (syncError != null) throw syncError!;
+  }
 
   @override
   Future<SubscriptionOffer> load() async {
@@ -88,28 +103,70 @@ class _FakePlans extends SubscriptionPlansRepository {
   }
 }
 
-class _FakeAuth extends AuthApiService {
-  _FakeAuth([this.subscription]);
-
+/// Scripted `/auth/me`. Each reply is for the account the token belonged to
+/// when the request started, like the real server.
+class _MeApi extends ApiClient {
   Map<String, dynamic>? subscription;
   Object? error;
   Future<AuthUser?>? pending;
   int calls = 0;
-
-  /// The account signed in right now; tests switch it mid-screen.
   int id = 1;
 
   @override
-  Future<AuthUser?> me() async {
+  Future<Map<String, dynamic>> getJson(String path) async {
     calls++;
-    if (pending != null) return pending!;
+    final askedFor = id;
+    final wait = pending;
+    if (wait != null) {
+      final user = await wait;
+      return {
+        'data': {
+          'id': user?.id ?? askedFor,
+          'name': user?.name ?? 'Sara',
+          'email': user?.email ?? 'sara@x.io',
+          if (user?.subscription != null) 'subscription': user!.subscription,
+        },
+      };
+    }
     if (error != null) throw error!;
-    return AuthUser(
-      id: id,
-      name: 'Sara',
-      email: 'sara@x.io',
-      subscription: subscription,
-    );
+    return {
+      'data': {
+        'id': askedFor,
+        'name': 'Sara',
+        'email': 'sara@x.io',
+        if (subscription != null) 'subscription': subscription,
+      },
+    };
+  }
+}
+
+/// The real [AuthApiService.me] over [_MeApi], so the session cache behaves
+/// as in the app: a late reply never replaces a newer session.
+class _FakeAuth extends AuthApiService {
+  _FakeAuth._(this.api) : super(apiClient: api);
+
+  factory _FakeAuth([Map<String, dynamic>? subscription]) =>
+      _FakeAuth._(_MeApi()..subscription = subscription);
+
+  final _MeApi api;
+
+  Map<String, dynamic>? get subscription => api.subscription;
+  set subscription(Map<String, dynamic>? value) => api.subscription = value;
+  Object? get error => api.error;
+  set error(Object? value) => api.error = value;
+  Future<AuthUser?>? get pending => api.pending;
+  set pending(Future<AuthUser?>? value) => api.pending = value;
+  int get calls => api.calls;
+
+  /// The account the server answers for (the token's account).
+  int get id => api.id;
+  set id(int value) => api.id = value;
+
+  /// Another account signs in on this device, as after a real sign-in.
+  void signIn(int userId) {
+    api.id = userId;
+    SessionCache.instance
+        .setUser(AuthUser(id: userId, name: 'Other', email: 'other@x.io'));
   }
 }
 
@@ -128,6 +185,12 @@ class _FakeStore implements StorePurchases {
   Object? offersError;
   Completer<StorePurchaseOutcome>? pendingPurchase;
   final purchases = <(int, String)>[];
+
+  /// The "still this account" check the gate passed with the last call.
+  bool Function()? lastIsCurrent;
+
+  /// Runs when a purchase starts (e.g. the server's account changes).
+  void Function()? onPurchase;
   final offerRequests = <(int, Map<String, int>)>[];
   final restores = <int>[];
 
@@ -148,8 +211,12 @@ class _FakeStore implements StorePurchases {
   Future<StorePurchaseOutcome> purchase({
     required int userId,
     required String planKey,
+    required bool Function() isCurrent,
   }) async {
+    lastIsCurrent = isCurrent;
+    expect(isCurrent(), isTrue, reason: 'Gate only buys for the session');
     purchases.add((userId, planKey));
+    onPurchase?.call();
     if (pendingPurchase != null) return pendingPurchase!.future;
     final next = outcome;
     if (next is StorePurchaseOutcome) return next;
@@ -157,7 +224,12 @@ class _FakeStore implements StorePurchases {
   }
 
   @override
-  Future<StoreRestoreOutcome> restore({required int userId}) async {
+  Future<StoreRestoreOutcome> restore({
+    required int userId,
+    required bool Function() isCurrent,
+  }) async {
+    lastIsCurrent = isCurrent;
+    expect(isCurrent(), isTrue, reason: 'Gate only restores for the session');
     restores.add(userId);
     final next = restoreOutcome;
     if (next is StoreRestoreOutcome) return next;
@@ -266,6 +338,10 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  // As in the app, startup has already put the signed-in account (1) in the
+  // session cache before the gate opens.
+  setUp(() => SessionCache.instance
+      .setUser(const AuthUser(id: 1, name: 'Sara', email: 'sara@x.io')));
   test('Screen catalogues preserve translations and the same message keys', () {
     final catalogues = [
       for (final language in ['ar', 'en'])
@@ -821,7 +897,7 @@ void main() {
         final message = switch (expectedNotice) {
           'pending' => l.premiumGatePurchasePending,
           'failed' => l.premiumGatePurchaseFailed,
-          'otherAccount' => l.premiumGateOtherAccount,
+          'otherAccount' => l.premiumGateOtherAccount(ApiConfig.supportEmail),
           _ => null,
         };
         expect(find.byKey(PremiumGateScreen.noticeKey),
@@ -892,7 +968,8 @@ void main() {
               tester,
               find.text(switch (message) {
                 'notFound' => l.premiumGateNotFound,
-                'otherAccount' => l.premiumGateOtherAccount,
+                'otherAccount' =>
+                  l.premiumGateOtherAccount(ApiConfig.supportEmail),
                 _ => l.premiumGateRefreshFailed,
               }));
         }
@@ -934,6 +1011,181 @@ void main() {
       await _tap(tester, find.byKey(PremiumGateScreen.restoreKey));
       expect(store.restores, [7]);
     });
+
+    group('one account per flow', () {
+      testWidgets('a sign-in while the account check is in flight never buys',
+          (tester) async {
+        final auth = _FakeAuth();
+        final store = _FakeStore();
+        await _pump(tester,
+            plans: _FakePlans([offerJson()]),
+            auth: auth,
+            store: store,
+            screen: _fastScreen);
+        final reply = Completer<AuthUser?>();
+        auth.pending = reply.future;
+        await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+        await tester.tap(find.byKey(PremiumGateScreen.buyKey));
+        await tester.pump();
+        auth.pending = null;
+        auth.signIn(2);
+        // The late reply is for account 1, which is no longer signed in.
+        reply.complete(const AuthUser(id: 1, name: 'Sara', email: 's@x.io'));
+        await tester.pumpAndSettle();
+        expect(store.purchases, isEmpty);
+        expect(SessionCache.instance.user.value?.id, 2,
+            reason: 'A late reply never replaces the newer session');
+        expect(store.offerRequests.last.$1, 2);
+      });
+
+      testWidgets('a session change while the store sheet is open drops it',
+          (tester) async {
+        final auth = _FakeAuth();
+        final plans = _FakePlans([offerJson()]);
+        final store = _FakeStore()
+          ..pendingPurchase = Completer<StorePurchaseOutcome>();
+        await _pump(tester,
+            plans: plans, auth: auth, store: store, screen: _fastScreen);
+        await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+        await tester.tap(find.byKey(PremiumGateScreen.buyKey));
+        await tester.pump();
+        await tester.pump();
+        expect(store.purchases, [(1, 'semiannual')]);
+        expect(store.lastIsCurrent!(), isTrue);
+
+        auth.signIn(2);
+        await tester.pump();
+        expect(store.lastIsCurrent!(), isFalse,
+            reason: 'A queued store call sees the account is gone');
+
+        auth.subscription = const {'is_subscribed': true};
+        store.pendingPurchase!.complete(const StorePurchaseCompleted());
+        await tester.pumpAndSettle();
+        expect(find.byKey(PremiumGateScreen.successKey), findsNothing);
+        expect(plans.syncs, 0, reason: 'Never syncs a different account');
+        expect(store.offerRequests.last.$1, 2);
+      });
+
+      testWidgets('only the buying account confirms a purchase',
+          (tester) async {
+        final auth = _FakeAuth();
+        final plans = _FakePlans([offerJson()]);
+        // After the charge the token answers for another, subscribed account.
+        final store = _FakeStore()
+          ..onPurchase = () {
+            auth.id = 2;
+            auth.subscription = const {'is_subscribed': true};
+          };
+        await _pump(tester,
+            plans: plans, auth: auth, store: store, screen: _fastScreen);
+        final l = _l(tester);
+        await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+        expect(store.purchases, [(1, 'semiannual')]);
+        expect(find.text(l.premiumGateSuccessTitle), findsNothing);
+        expect(find.byKey(PremiumGateScreen.successKey), findsNothing);
+      });
+    });
+
+    group('server sync', () {
+      testWidgets('a completed purchase asks the server to re-read the store',
+          (tester) async {
+        final auth = _FakeAuth();
+        final plans = _FakePlans([offerJson()])
+          ..onSync = () => auth.subscription = const {'is_subscribed': true};
+        await _pump(tester,
+            plans: plans, auth: auth, store: _FakeStore(), screen: _fastScreen);
+        await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+        expect(plans.syncs, 1);
+        expect(find.text(_l(tester).premiumGateSuccessTitle), findsOneWidget);
+      });
+
+      testWidgets('restore repairs access the webhook never granted',
+          (tester) async {
+        final auth = _FakeAuth(const {'is_subscribed': false});
+        final plans = _FakePlans([offerJson()])
+          ..onSync = () => auth.subscription = const {'is_subscribed': true};
+        final store = _FakeStore(restoreOutcome: StoreRestoreOutcome.active);
+        await _pump(tester,
+            plans: plans, auth: auth, store: store, screen: _fastScreen);
+        await _tap(tester, find.byKey(PremiumGateScreen.restoreKey));
+        expect(plans.syncs, 1);
+        expect(find.text(_l(tester).premiumGateSuccessTitle), findsOneWidget);
+
+        // Check again syncs too, so a second try can still repair it.
+        await _tap(tester, find.byKey(PremiumGateScreen.continueKey));
+      });
+
+      testWidgets('a failed sync still waits for the webhook, then confirms',
+          (tester) async {
+        final auth = _FakeAuth();
+        final plans = _FakePlans([offerJson()])..syncError = Exception('503');
+        await _pump(tester,
+            plans: plans, auth: auth, store: _FakeStore(), screen: _fastScreen);
+        final l = _l(tester);
+        await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+        expect(find.text(l.premiumGateSyncingTitle), findsOneWidget);
+        plans
+          ..syncError = null
+          ..onSync = () => auth.subscription = const {'is_subscribed': true};
+        await _tap(tester, find.byKey(PremiumGateScreen.checkAgainKey));
+        expect(plans.syncs, 2);
+        expect(find.text(l.premiumGateSuccessTitle), findsOneWidget);
+      });
+    });
+
+    for (final (name, outcome, message) in [
+      ('nothing to restore', StoreRestoreOutcome.none, 'notFound'),
+      ('another account', StoreRestoreOutcome.otherAccount, 'otherAccount'),
+      ('restore error', Exception('offline') as Object, 'refreshFailed'),
+    ]) {
+      testWidgets('an active account sees the restore result: $name',
+          (tester) async {
+        final store = _FakeStore(restoreOutcome: outcome);
+        await _pump(tester,
+            plans: _FakePlans([
+              offerJson(access: const {'is_subscribed': true})
+            ]),
+            auth: _FakeAuth(const {'is_subscribed': true}),
+            store: store,
+            screen: _fastScreen);
+        final l = _l(tester);
+        await _tap(tester, find.byKey(PremiumGateScreen.restoreKey));
+        await revealPhoneWidget(
+            tester,
+            find.text(switch (message) {
+              'notFound' => l.premiumGateNotFound,
+              'otherAccount' =>
+                l.premiumGateOtherAccount(ApiConfig.supportEmail),
+              _ => l.premiumGateRefreshFailed,
+            }));
+      });
+    }
+
+    for (final language in ['en', 'ar']) {
+      for (final dark in [false, true]) {
+        final label = '$language/${dark ? 'dark' : 'light'}';
+        testWidgets('$label: another account offers support, legibly',
+            (tester) async {
+          final arabic = language == 'ar';
+          await _pump(tester,
+              plans: _FakePlans([offerJson()]),
+              store: _FakeStore(outcome: const StorePurchaseOtherAccount()),
+              language: language,
+              theme: dark
+                  ? AppTheme.darkFor(arabic: arabic)
+                  : AppTheme.lightFor(arabic: arabic),
+              screen: _fastScreen);
+          final l = _l(tester);
+          await _tap(tester, find.byKey(PremiumGateScreen.buyKey));
+          await revealPhoneWidget(
+              tester, find.byKey(PremiumGateScreen.supportKey));
+          expect(find.text(l.premiumGateOtherAccount(ApiConfig.supportEmail)),
+              findsOneWidget);
+          expect(find.text(l.premiumGateContactSupport), findsOneWidget);
+          await inspectPhoneScreen(tester, '$label other account');
+        });
+      }
+    }
 
     testWidgets('store prices that fail to load offer Retry, never a buy',
         (tester) async {

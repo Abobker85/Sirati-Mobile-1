@@ -94,15 +94,26 @@ abstract interface class StorePurchases {
   });
 
   /// Buys [planKey] for [userId]. Fails when the offers were last loaded for
-  /// another account, so a purchase can never use a stale identity.
+  /// another account, or when [isCurrent] (checked right before the store
+  /// sheet opens, after any queued call) says [userId] is no longer signed in.
   Future<StorePurchaseOutcome> purchase({
     required int userId,
     required String planKey,
+    required bool Function() isCurrent,
   });
 
   /// Works without loaded offers, so a subscriber can recover access even
-  /// when the sales catalogue is unavailable.
-  Future<StoreRestoreOutcome> restore({required int userId});
+  /// when the sales catalogue is unavailable. Throws [StoreAccountChanged]
+  /// when [isCurrent] turns false before the store is asked.
+  Future<StoreRestoreOutcome> restore({
+    required int userId,
+    required bool Function() isCurrent,
+  });
+}
+
+/// The signed-in account changed before the store call started.
+class StoreAccountChanged implements Exception {
+  const StoreAccountChanged();
 }
 
 class UnavailableStorePurchases implements StorePurchases {
@@ -122,11 +133,15 @@ class UnavailableStorePurchases implements StorePurchases {
   Future<StorePurchaseOutcome> purchase({
     required int userId,
     required String planKey,
+    required bool Function() isCurrent,
   }) async =>
       const StorePurchaseFailed();
 
   @override
-  Future<StoreRestoreOutcome> restore({required int userId}) async =>
+  Future<StoreRestoreOutcome> restore({
+    required int userId,
+    required bool Function() isCurrent,
+  }) async =>
       StoreRestoreOutcome.none;
 }
 

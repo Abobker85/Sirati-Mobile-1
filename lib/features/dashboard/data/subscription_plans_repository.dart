@@ -14,4 +14,10 @@ class SubscriptionPlansRepository {
   Future<SubscriptionOffer> load() async => SubscriptionOffer.fromJson(
         await _apiClient.getJson('/mobile/subscription-plans'),
       );
+
+  /// Asks the server to re-read the signed-in account from RevenueCat, which
+  /// repairs access when the purchase webhook was lost or late.
+  Future<void> syncWithStore() async {
+    await _apiClient.postJson('/subscriptions/restore', const {});
+  }
 }

@@ -1965,8 +1965,26 @@ class RemoteAppLocalizations extends AppLocalizations {
       _base.premiumGateTrialYears(count);
 
   @override
-  String get premiumGateOtherAccount =>
-      remote.text('premiumGateOtherAccount') ?? _base.premiumGateOtherAccount;
+  String premiumGateOtherAccount(String email) =>
+      remote.format(
+        'premiumGateOtherAccount',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'email': email},
+        ),
+      ) ??
+      _base.premiumGateOtherAccount(email);
+
+  @override
+  String get premiumGateContactSupport =>
+      remote.text('premiumGateContactSupport') ??
+      _base.premiumGateContactSupport;
+
+  @override
+  String get premiumGateSupportSubject =>
+      remote.text('premiumGateSupportSubject') ??
+      _base.premiumGateSupportSubject;
 
   @override
   String get premiumGateSyncingTitle =>
@@ -7020,7 +7038,9 @@ class RemoteAppLocalizations extends AppLocalizations {
     'premiumGateTrialWeeks': ['int'],
     'premiumGateTrialMonths': ['int'],
     'premiumGateTrialYears': ['int'],
-    'premiumGateOtherAccount': [],
+    'premiumGateOtherAccount': ['String'],
+    'premiumGateContactSupport': [],
+    'premiumGateSupportSubject': [],
     'premiumGateSyncingTitle': [],
     'premiumGateSuccessSyncing': [],
     'premiumGateCheckAgain': [],
@@ -8367,7 +8387,9 @@ class RemoteAppLocalizations extends AppLocalizations {
         'premiumGateTrialWeeks' => l.premiumGateTrialWeeks(a[0] as int),
         'premiumGateTrialMonths' => l.premiumGateTrialMonths(a[0] as int),
         'premiumGateTrialYears' => l.premiumGateTrialYears(a[0] as int),
-        'premiumGateOtherAccount' => l.premiumGateOtherAccount,
+        'premiumGateOtherAccount' => l.premiumGateOtherAccount(a[0] as String),
+        'premiumGateContactSupport' => l.premiumGateContactSupport,
+        'premiumGateSupportSubject' => l.premiumGateSupportSubject,
         'premiumGateSyncingTitle' => l.premiumGateSyncingTitle,
         'premiumGateSuccessSyncing' => l.premiumGateSuccessSyncing,
         'premiumGateCheckAgain' => l.premiumGateCheckAgain,

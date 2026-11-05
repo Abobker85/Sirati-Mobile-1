@@ -137,15 +137,18 @@ class RevenueCatStorePurchases implements StorePurchases {
   Future<StorePurchaseOutcome> purchase({
     required int userId,
     required String planKey,
+    required bool Function() isCurrent,
   }) {
     if (!isAvailable) return Future.value(const StorePurchaseFailed());
     return _serial(() async {
       final productId = _productByPlan[planKey];
-      if (_offersUser != userId || productId == null) {
+      if (_offersUser != userId || productId == null || !isCurrent()) {
         return const StorePurchaseFailed();
       }
       try {
         await _identify(userId);
+        // Identifying is async: check again right before the sheet opens.
+        if (!isCurrent()) return const StorePurchaseFailed();
         return await _client.purchase(productId);
       } catch (_) {
         return const StorePurchaseFailed();
@@ -154,10 +157,15 @@ class RevenueCatStorePurchases implements StorePurchases {
   }
 
   @override
-  Future<StoreRestoreOutcome> restore({required int userId}) {
+  Future<StoreRestoreOutcome> restore({
+    required int userId,
+    required bool Function() isCurrent,
+  }) {
     if (!isAvailable) return Future.value(StoreRestoreOutcome.none);
     return _serial(() async {
+      if (!isCurrent()) throw const StoreAccountChanged();
       await _identify(userId);
+      if (!isCurrent()) throw const StoreAccountChanged();
       return _client.restore();
     });
   }
