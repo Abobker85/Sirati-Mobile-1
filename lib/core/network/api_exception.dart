@@ -34,12 +34,20 @@ class ApiException implements Exception {
   final Map<String, List<String>> errors;
   final ApiErrorType type;
 
+  /// For HTTP 402 (`SubscriptionRequiredException`): which Premium feature
+  /// the server refused, e.g. `cv_download` or `daily_cv_quota`.
+  final String? feature;
+
   const ApiException(
     this.message, {
     this.statusCode,
     this.errors = const {},
     this.type = ApiErrorType.unknown,
+    this.feature,
   });
+
+  /// The server answered 402: this needs Siratie Premium.
+  bool get requiresSubscription => statusCode == 402;
 
   /// Builds an exception from an HTTP response, inferring [type] from
   /// [statusCode]. Keeps the previous [ApiException] shape intact so

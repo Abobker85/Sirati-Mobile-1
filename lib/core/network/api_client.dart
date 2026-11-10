@@ -263,10 +263,13 @@ class ApiClient {
         });
       }
 
+      final feature = decoded['feature'];
       return ApiException(message,
           statusCode: response.statusCode,
           errors: errors,
-          type: _typeFromStatus(response.statusCode));
+          type: _typeFromStatus(response.statusCode),
+          feature:
+              response.statusCode == 402 && feature is String ? feature : null);
     } on ApiException catch (exception) {
       if (exception.statusCode != null) rethrow;
       return ApiException(

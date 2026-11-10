@@ -27,6 +27,8 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/models/job_title.dart';
+import 'package:sirati/shared/premium/premium_feature.dart';
+import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/services/in_app_review_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
@@ -437,7 +439,15 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
   // ── AI enhancement ────────────────────────────────────────────────────────
 
+  /// AI writing is Premium: a free account is offered Premium first and
+  /// the rewrite runs if they come back subscribed.
+  Future<bool> _aiWritingAllowed() async {
+    if (!currentSubscription().aiWritingLocked) return true;
+    return PremiumPromptSheet.show(context, PremiumFeature.aiWriting);
+  }
+
   Future<void> _enhanceField(String field) async {
+    if (!await _aiWritingAllowed() || !mounted) return;
     final english = AppLocale.isEnglish(context);
     final controller = _fields.forEnhanceableField(field);
     final draft = controller.text;
@@ -495,6 +505,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
   }
 
   Future<void> _enhanceJobDescription() async {
+    if (!await _aiWritingAllowed() || !mounted) return;
     final english = AppLocale.isEnglish(context);
     final targetJobTitle = _fields.jobTitle.text.trim();
 

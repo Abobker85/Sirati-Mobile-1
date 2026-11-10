@@ -7,6 +7,7 @@ import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/features/dashboard/application/premium_gate_controller.dart';
 import 'package:sirati/features/dashboard/domain/subscription_offer.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/purchases/store_purchases.dart';
 import 'package:sirati/shared/services/session_cache.dart';
@@ -26,9 +27,14 @@ const appleStandardEulaUrl =
 class PremiumGateScreen extends ConsumerStatefulWidget {
   const PremiumGateScreen({
     super.key,
+    this.feature = PremiumFeature.general,
     this.confirmDelay = const Duration(seconds: 2),
     this.confirmAttempts = 4,
   });
+
+  /// What the user tapped to get here: it sets the headline and which
+  /// benefit is listed first.
+  final PremiumFeature feature;
 
   /// Pause between server checks after a purchase (the webhook is async).
   final Duration confirmDelay;
@@ -347,13 +353,13 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
     return [
-      const _Hero(),
+      _Hero(feature: widget.feature),
       const SizedBox(height: AppSpacing.lg),
       if (active) ...[
         _ActiveCard(onContinue: _leave),
         const SizedBox(height: AppSpacing.lg),
       ],
-      const _Benefits(),
+      _Benefits(feature: widget.feature),
       const SizedBox(height: AppSpacing.md),
       _Notice(
         tone: _Tone.info,
@@ -405,13 +411,13 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     final catalog = ref.watch(storeCatalogProvider);
     final offerValue = offer.value;
     return [
-      const _Hero(),
+      _Hero(feature: widget.feature),
       const SizedBox(height: AppSpacing.lg),
       if (active) ...[
         _ActiveCard(onContinue: _leave),
         const SizedBox(height: AppSpacing.lg),
       ],
-      const _Benefits(),
+      _Benefits(feature: widget.feature),
       if (!active) ...[
         const SizedBox(height: AppSpacing.lg),
         if (offer.hasError || (offerValue != null && offerValue.plans.isEmpty))
@@ -695,7 +701,9 @@ String _trialDuration(AppLocalizations l, StoreTrial trial) =>
     };
 
 class _Hero extends StatelessWidget {
-  const _Hero();
+  const _Hero({required this.feature});
+
+  final PremiumFeature feature;
 
   @override
   Widget build(BuildContext context) {
@@ -722,7 +730,7 @@ class _Hero extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              l.premiumGateHeroTitle,
+              feature.title(l),
               style: AppTypography.of(
                 context,
                 AppTypography.headlineLg,
@@ -731,7 +739,7 @@ class _Hero extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              l.premiumGateHeroBody,
+              feature.body(l),
               style: AppTypography.of(
                 context,
                 AppTypography.bodyMd,
@@ -746,7 +754,19 @@ class _Hero extends StatelessWidget {
 }
 
 class _Benefits extends StatelessWidget {
-  const _Benefits();
+  const _Benefits({required this.feature});
+
+  final PremiumFeature feature;
+
+  /// Index of the benefit that matches [feature], listed first.
+  int? get _leading => switch (feature) {
+        PremiumFeature.download => 0,
+        PremiumFeature.aiWriting => 1,
+        PremiumFeature.fullAnalysis => 2,
+        PremiumFeature.jobMatch => 3,
+        PremiumFeature.dailyCvLimit || PremiumFeature.dailyAnalysisLimit => 4,
+        PremiumFeature.general => null,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -778,6 +798,8 @@ class _Benefits extends StatelessWidget {
         l.premiumGateBenefitLimitsBody,
       ),
     ];
+    final lead = _leading;
+    if (lead != null) items.insert(0, items.removeAt(lead));
     return _Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -15,6 +15,7 @@ import 'package:sirati/features/dashboard/domain/subscription_offer.dart';
 import 'package:sirati/features/dashboard/presentation/premium_gate_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
+import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/purchases/store_purchases.dart';
@@ -1254,5 +1255,54 @@ void main() {
         await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
       }
     });
+  });
+
+  group('the Premium page matches the feature that opened it', () {
+    for (final language in ['en', 'ar']) {
+      for (final feature in PremiumFeature.values) {
+        testWidgets('$feature ($language)', (tester) async {
+          // Tall enough that the lazy list builds every benefit.
+          tester.view.physicalSize = const Size(1080, 8000);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          await _pump(
+            keepView: true,
+            tester,
+            plans: _FakePlans([offerJson()]),
+            language: language,
+            screen: PremiumGateScreen(feature: feature),
+          );
+          final l = _l(tester);
+          expect(find.text(feature.title(l)), findsOneWidget);
+          expect(find.text(feature.body(l)), findsOneWidget);
+
+          // The benefit for this feature is listed first; every benefit is
+          // still there exactly once.
+          final benefits = [
+            l.premiumGateBenefitPdf,
+            l.premiumGateBenefitAi,
+            l.premiumGateBenefitAts,
+            l.premiumGateBenefitJobMatch,
+            l.premiumGateBenefitLimits,
+          ];
+          final shown = benefits
+              .map((t) => (t, tester.getTopLeft(find.text(t)).dy))
+              .toList()
+            ..sort((a, b) => a.$2.compareTo(b.$2));
+          expect(shown.map((e) => e.$1).toSet(), benefits.toSet());
+          final expectedFirst = switch (feature) {
+            PremiumFeature.download => l.premiumGateBenefitPdf,
+            PremiumFeature.aiWriting => l.premiumGateBenefitAi,
+            PremiumFeature.fullAnalysis => l.premiumGateBenefitAts,
+            PremiumFeature.jobMatch => l.premiumGateBenefitJobMatch,
+            PremiumFeature.dailyCvLimit ||
+            PremiumFeature.dailyAnalysisLimit =>
+              l.premiumGateBenefitLimits,
+            PremiumFeature.general => l.premiumGateBenefitPdf,
+          };
+          expect(shown.first.$1, expectedFirst);
+        });
+      }
+    }
   });
 }

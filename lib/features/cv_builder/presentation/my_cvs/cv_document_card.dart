@@ -4,6 +4,7 @@ import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/domain/cv_list.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ats_grade.dart';
+import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -250,6 +251,7 @@ class _CardMenu extends StatelessWidget {
       String label, {
       required bool enabled,
       Color? color,
+      bool premium = false,
     }) =>
         PopupMenuItem(
           value: value,
@@ -258,7 +260,12 @@ class _CardMenu extends StatelessWidget {
             children: [
               Icon(icon, size: 20, color: color ?? colors.textPrimary),
               const SizedBox(width: 12),
-              Text(label, style: TextStyle(color: color)),
+              Flexible(child: Text(label, style: TextStyle(color: color))),
+              // Crown only: a menu row is too narrow for the full chip.
+              if (premium) ...[
+                const SizedBox(width: 8),
+                const PremiumChip(compact: true),
+              ],
             ],
           ),
         );
@@ -274,8 +281,9 @@ class _CardMenu extends StatelessWidget {
       itemBuilder: (_) => [
         entry(_CardAction.edit, Icons.edit_outlined, l.cvCardEdit,
             enabled: editable),
+        // Locked downloads stay tappable and open the Premium prompt.
         entry(_CardAction.download, Icons.download_rounded, l.cvCardDownload,
-            enabled: canDownload),
+            enabled: true, premium: !canDownload),
         entry(_CardAction.delete, Icons.delete_outline_rounded, l.deleteItem,
             enabled: editable, color: colors.error),
       ],

@@ -13,6 +13,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
+import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 
@@ -115,7 +116,8 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
   /// The plans screen never grants access locally; the server is re-asked
   /// when the user comes back.
   Future<void> _openPlans() async {
-    await Navigator.of(context).pushNamed(AppRoutes.premium);
+    await Navigator.of(context)
+        .pushNamed(AppRoutes.premium, arguments: PremiumFeature.jobMatch);
     if (mounted) _refreshEntitlement();
   }
 

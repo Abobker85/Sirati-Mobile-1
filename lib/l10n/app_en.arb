@@ -1644,5 +1644,24 @@
     }
   },
   "subscriptionManage": "Manage subscription",
-  "subscriptionManageHint": "Change plan or cancel in your Apple ID settings"
+  "subscriptionManageHint": "Change plan or cancel in your Apple ID settings",
+  "premiumChipLabel": "Premium",
+  "premiumFeatureLabel": "Premium feature",
+  "premiumFeatureDownloadTitle": "Download a clean PDF",
+  "premiumFeatureDownloadBody": "Premium removes the watermark, so your CV is ready to send to employers.",
+  "premiumFeatureAiTitle": "Let AI polish your CV",
+  "premiumFeatureAiBody": "Premium rewrites your summary and experience for the job you want.",
+  "premiumFeatureAnalysisTitle": "See every recommendation",
+  "premiumFeatureAnalysisBody": "Premium shows all the fixes, missing keywords and AI feedback from your analysis.",
+  "premiumFeatureJobMatchTitle": "Match your CV to any job",
+  "premiumFeatureJobMatchBody": "Premium compares your CV with a job ad and saves tailored edits to a new copy.",
+  "premiumFeatureCvLimitTitle": "You've used today's free CV",
+  "premiumFeatureCvLimitBody": "Premium has no daily limits. On the free plan you can create another CV tomorrow.",
+  "premiumFeatureAnalysisLimitTitle": "You've used today's free analyses",
+  "premiumFeatureAnalysisLimitBody": "Premium has no daily limits. On the free plan you can analyze again tomorrow.",
+  "premiumHomeTitle": "Get more with Siratie Premium",
+  "premiumHomeBody": "Clean PDFs, AI writing, full analysis and Job Match.",
+  "premiumHomeCvsToday": "{used} of {limit} free CVs today",
+  "premiumHomeAnalysesToday": "{used} of {limit} free analyses today",
+  "premiumUnlockAll": "Unlock the full analysis"
 }

@@ -16,6 +16,8 @@ import 'package:sirati/features/cv_builder/presentation/my_cvs/my_cvs_tools.dart
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
+import 'package:sirati/shared/premium/premium_feature.dart';
+import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
@@ -111,6 +113,12 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
 
   Future<void> _download(CvListItem item) async {
     final english = _english;
+    // Locked for a free account: offer Premium, then carry on if bought.
+    if (!item.canDownload) {
+      final premium =
+          await PremiumPromptSheet.show(context, PremiumFeature.download);
+      if (!premium || !mounted) return;
+    }
     // The PDF link opens in a browser; a CV the server refuses would land
     // on an error page there, so explain the gap here instead.
     final export = item.export;

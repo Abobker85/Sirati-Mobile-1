@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Semantic status of a snackbar / toast — drives icon, color, and copy.
@@ -86,6 +86,11 @@ class AppSnackBar {
     String retryLabel = 'Retry',
     VoidCallback? onRetry,
   }) {
+    // A Premium feature: offer Premium instead of an error, and finish the
+    // refused action if the user comes back subscribed.
+    if (PremiumPromptSheet.handle(context, exception, onUnlocked: onRetry)) {
+      return;
+    }
     show(
       context,
       message: exception.displayMessage,

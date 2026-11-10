@@ -13,6 +13,7 @@ import 'package:sirati/features/dashboard/domain/dashboard_summary.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_header.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_jobs_section.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_latest_cv_section.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_premium_card.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_service_tile.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_start_card.dart';
 import 'package:sirati/features/jobs/application/job_news_controllers.dart';
@@ -247,6 +248,8 @@ class _DashboardList extends StatelessWidget {
               ),
             ),
           ),
+          // Free accounts only; collapses to nothing for Premium.
+          HomePremiumCard(padding: gutter.copyWith(top: 12)),
           const SizedBox(height: 24),
           Padding(
             padding: gutter,
