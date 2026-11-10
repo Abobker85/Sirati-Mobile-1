@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_config.dart';
@@ -14,6 +15,7 @@ import 'package:sirati/features/settings/presentation/profile_screen.dart';
 import 'package:sirati/features/settings/presentation/settings/language_picker_sheet.dart';
 import 'package:sirati/features/settings/presentation/settings/settings_widgets.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/subscription_status.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/session_cache.dart';
@@ -28,12 +30,19 @@ import 'package:url_launcher/url_launcher.dart';
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
+  static const subscriptionKey = ValueKey('settings-subscription');
+  static const manageSubscriptionKey = ValueKey('settings-manage-subscription');
+
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _loggingOut = false;
+
+  /// Apple's own page for changing or cancelling App Store subscriptions.
+  static final manageSubscriptionsUrl =
+      Uri.parse('https://apps.apple.com/account/subscriptions');
 
   void _push(Widget screen) {
     unawaited(Navigator.of(context).push(
@@ -46,6 +55,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       MaterialPageRoute(builder: (_) => const ProfileScreen()),
     );
     if (mounted) ref.invalidate(settingsUserProvider);
+  }
+
+  /// Plans and restore, or the active subscription, on the Premium screen.
+  /// Re-reads the account afterwards so a purchase shows here at once.
+  Future<void> _openPremium() async {
+    await Navigator.of(context).pushNamed(AppRoutes.premium);
+    if (mounted) ref.invalidate(settingsUserProvider);
+  }
+
+  Future<void> _manageSubscription() async {
+    var launched = false;
+    try {
+      launched = await launchUrl(
+        manageSubscriptionsUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {}
+    if (!launched && mounted) {
+      AppSnackBar.warning(
+        context,
+        AppLocalizations.of(context).subscriptionManageHint,
+      );
+    }
+  }
+
+  /// What the subscription tile says under its title: plan and end date
+  /// for Premium, the way to the plans otherwise.
+  String _subscriptionSubtitle(SubscriptionStatus status) {
+    final l10n = AppLocalizations.of(context);
+    if (!status.isPremium) return l10n.premiumGateJobMatchSeePlans;
+    final plan = switch (status.plan) {
+      SubscriptionPlanKind.monthly => l10n.serverPlanMonthlyName,
+      SubscriptionPlanKind.semiannual => l10n.serverPlanSixMonthsName,
+      SubscriptionPlanKind.annual => l10n.serverPlanAnnualName,
+      null => null,
+    };
+    final expires = status.expiresAt;
+    final state = expires == null
+        ? l10n.subscriptionActive
+        : l10n.subscriptionActiveUntil(MaterialLocalizations.of(context)
+            .formatMediumDate(expires.toLocal()));
+    return plan == null ? state : '$plan · $state';
   }
 
   Future<void> _toggleNotifications(bool value) async {
@@ -170,11 +221,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
     } else {
       final user = userAsync.value ?? cachedUser;
+      final subscription =
+          user?.subscriptionStatus ?? const SubscriptionStatus.free();
+      final premium = subscription.isPremium;
       body = ListView(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
         children: [
           ProfileSummaryCard(user: user),
+          const SizedBox(height: AppSpacing.xl),
+          SettingsSectionLabel(l10n.subscriptionSection),
+          const SizedBox(height: AppSpacing.sm),
+          AppListTile(
+            key: SettingsScreen.subscriptionKey,
+            leadingIcon: Icons.workspace_premium_rounded,
+            leadingBackground: premium ? context.sirati.amberLight : null,
+            leadingIconColor:
+                premium ? context.sirati.onWarningContainer : null,
+            title: premium ? l10n.premiumGateAppBar : l10n.subscriptionFreePlan,
+            subtitle: _subscriptionSubtitle(subscription),
+            onTap: () => unawaited(_openPremium()),
+          ),
+          // Store subscriptions are changed and cancelled in Apple's settings.
+          if (premium && defaultTargetPlatform == TargetPlatform.iOS) ...[
+            const SizedBox(height: AppSpacing.sm),
+            AppListTile(
+              key: SettingsScreen.manageSubscriptionKey,
+              leadingIcon: Icons.manage_accounts_outlined,
+              title: l10n.subscriptionManage,
+              subtitle: l10n.subscriptionManageHint,
+              onTap: () => unawaited(_manageSubscription()),
+            ),
+          ],
           const SizedBox(height: AppSpacing.xl),
           SettingsSectionLabel(l10n.accountSection),
           const SizedBox(height: AppSpacing.sm),

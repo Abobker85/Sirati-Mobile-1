@@ -1630,5 +1630,19 @@
   "serverPlanFreeIncludesPreview": "CV preview before download",
   "serverPlanFreeIncludesDailyLimits": "{cvs} CV and {analyses} analyses per day",
   "serverPlanFreeExcludesRecommendations": "Full recommendations ({count} shown free)",
-  "serverCvDownloadLocked": "Preview is free — subscribe to download a watermark-free PDF."
+  "serverCvDownloadLocked": "Preview is free — subscribe to download a watermark-free PDF.",
+  "premiumBadgeLabel": "Premium member",
+  "subscriptionSection": "Subscription",
+  "subscriptionFreePlan": "Free plan",
+  "subscriptionActive": "Active",
+  "subscriptionActiveUntil": "Active until {date}",
+  "@subscriptionActiveUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionManage": "Manage subscription",
+  "subscriptionManageHint": "Change plan or cancel in your Apple ID settings"
 }

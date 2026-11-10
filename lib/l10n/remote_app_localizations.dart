@@ -6599,6 +6599,42 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get serverCvDownloadLocked =>
       remote.text('serverCvDownloadLocked') ?? _base.serverCvDownloadLocked;
 
+  @override
+  String get premiumBadgeLabel =>
+      remote.text('premiumBadgeLabel') ?? _base.premiumBadgeLabel;
+
+  @override
+  String get subscriptionSection =>
+      remote.text('subscriptionSection') ?? _base.subscriptionSection;
+
+  @override
+  String get subscriptionFreePlan =>
+      remote.text('subscriptionFreePlan') ?? _base.subscriptionFreePlan;
+
+  @override
+  String get subscriptionActive =>
+      remote.text('subscriptionActive') ?? _base.subscriptionActive;
+
+  @override
+  String subscriptionActiveUntil(String date) =>
+      remote.format(
+        'subscriptionActiveUntil',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'date': date},
+        ),
+      ) ??
+      _base.subscriptionActiveUntil(date);
+
+  @override
+  String get subscriptionManage =>
+      remote.text('subscriptionManage') ?? _base.subscriptionManage;
+
+  @override
+  String get subscriptionManageHint =>
+      remote.text('subscriptionManageHint') ?? _base.subscriptionManageHint;
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -7932,6 +7968,13 @@ class RemoteAppLocalizations extends AppLocalizations {
     'serverPlanFreeIncludesDailyLimits': ['int', 'int'],
     'serverPlanFreeExcludesRecommendations': ['int'],
     'serverCvDownloadLocked': [],
+    'premiumBadgeLabel': [],
+    'subscriptionSection': [],
+    'subscriptionFreePlan': [],
+    'subscriptionActive': [],
+    'subscriptionActiveUntil': ['String'],
+    'subscriptionManage': [],
+    'subscriptionManageHint': [],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -9376,6 +9419,13 @@ class RemoteAppLocalizations extends AppLocalizations {
         'serverPlanFreeExcludesRecommendations' =>
           l.serverPlanFreeExcludesRecommendations(a[0] as int),
         'serverCvDownloadLocked' => l.serverCvDownloadLocked,
+        'premiumBadgeLabel' => l.premiumBadgeLabel,
+        'subscriptionSection' => l.subscriptionSection,
+        'subscriptionFreePlan' => l.subscriptionFreePlan,
+        'subscriptionActive' => l.subscriptionActive,
+        'subscriptionActiveUntil' => l.subscriptionActiveUntil(a[0] as String),
+        'subscriptionManage' => l.subscriptionManage,
+        'subscriptionManageHint' => l.subscriptionManageHint,
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

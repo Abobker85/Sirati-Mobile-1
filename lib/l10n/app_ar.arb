@@ -4089,5 +4089,19 @@
       }
     }
   },
-  "serverCvDownloadLocked": "المعاينة مجانية — اشترك لتحميل نسخة PDF بدون علامة مائية."
+  "serverCvDownloadLocked": "المعاينة مجانية — اشترك لتحميل نسخة PDF بدون علامة مائية.",
+  "premiumBadgeLabel": "مشترك مميز",
+  "subscriptionSection": "الاشتراك",
+  "subscriptionFreePlan": "الخطة المجانية",
+  "subscriptionActive": "فعّال",
+  "subscriptionActiveUntil": "فعّال حتى {date}",
+  "@subscriptionActiveUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionManage": "إدارة الاشتراك",
+  "subscriptionManageHint": "غيّر الخطة أو ألغِ الاشتراك من إعدادات Apple ID"
 }

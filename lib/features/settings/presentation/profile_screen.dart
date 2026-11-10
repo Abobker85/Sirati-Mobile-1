@@ -187,7 +187,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    ProfilePhoto(url: url, name: _nameCtrl.text, size: 96),
+                    ProfilePhoto(
+                      url: url,
+                      name: _nameCtrl.text,
+                      size: 96,
+                      premium: (cached ?? user)?.subscriptionStatus.isPremium ??
+                          false,
+                    ),
                     if (_photoBusy)
                       const Positioned.fill(
                         child: Center(child: CircularProgressIndicator()),

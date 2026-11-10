@@ -72,6 +72,8 @@ class DashboardHomeHeader extends StatelessWidget {
                               url: user?.avatarUrl,
                               name: name,
                               size: 44,
+                              premium:
+                                  user?.subscriptionStatus.isPremium ?? false,
                               background: c.primaryLight,
                               foreground: c.primaryInk,
                             ),
