@@ -15,6 +15,7 @@ class SubscriptionStatus {
     this.cvUsed = 0,
     this.analysisLimit,
     this.analysisUsed = 0,
+    this.managedByStore = true,
   });
 
   const SubscriptionStatus.free()
@@ -28,7 +29,8 @@ class SubscriptionStatus {
         cvLimit = null,
         cvUsed = 0,
         analysisLimit = null,
-        analysisUsed = 0;
+        analysisUsed = 0,
+        managedByStore = true;
 
   factory SubscriptionStatus.fromSubscription(Map<String, dynamic>? state) {
     if (state == null) return const SubscriptionStatus.free();
@@ -51,6 +53,8 @@ class SubscriptionStatus {
       cvUsed: _used(cv),
       analysisLimit: _limit(analysis),
       analysisUsed: _used(analysis),
+      // Older servers don't send `source`: keep offering Apple's page.
+      managedByStore: state['source'] != 'admin',
     );
   }
 
@@ -82,6 +86,9 @@ class SubscriptionStatus {
   final int cvUsed;
   final int? analysisLimit;
   final int analysisUsed;
+
+  /// False for Premium given by an admin: Apple has nothing to manage.
+  final bool managedByStore;
 
   /// A free account the free-plan limits apply to: the one to offer Premium.
   bool get isFreeTier => enforced && !isPremium;

@@ -21,6 +21,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ai_cv_field.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -83,6 +84,14 @@ Widget _app(Widget home,
       onGenerateRoute: (routes ?? _Routes()).onGenerateRoute,
       home: Scaffold(body: home),
     );
+
+/// For screens with a never-ending animation (the AI progress overlay):
+/// let routes and sheets finish their transitions.
+Future<void> _settleBriefly(WidgetTester tester) async {
+  for (var i = 0; i < 10; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
 
 void _tallView(WidgetTester tester) {
   tester.view.physicalSize = const Size(1080, 2400);
@@ -416,7 +425,11 @@ void main() {
       _tallView(tester);
       _signIn(_state(cvUsed: 1));
       await tester.pumpWidget(_app(
-        const Column(children: [HomePremiumCard(), PremiumChip()]),
+        const Column(children: [
+          HomePremiumCard(),
+          PremiumChip(),
+          HiddenItemsNote(count: 3),
+        ]),
         theme: theme,
       ));
       expectAllTextAa('premium card $mode');
@@ -440,6 +453,167 @@ void main() {
                 icon.color!, (box.decoration! as BoxDecoration).color!),
             greaterThanOrEqualTo(3.0),
             reason: 'crown vs chip ($mode)');
+      }
+    });
+  }
+
+  group('resuming after the Premium page', () {
+    Future<bool> visit(WidgetTester tester, {VoidCallback? onPremium}) async {
+      late BuildContext ctx;
+      await tester.pumpWidget(_app(
+        Builder(builder: (c) {
+          ctx = c;
+          return const SizedBox();
+        }),
+        routes: _Routes(onPremium: onPremium),
+      ));
+      final result = openPremium(ctx);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('route ${AppRoutes.premium}'));
+      await tester.pumpAndSettle();
+      return result;
+    }
+
+    AuthUser user(int id, {required bool premium}) => AuthUser(
+        id: id,
+        name: 'U$id',
+        email: 'u$id@x.io',
+        subscription: _state(premium: premium));
+
+    testWidgets('only the same account going from free to Premium resumes',
+        (tester) async {
+      for (final (label, start, end, expected)
+          in <(String, AuthUser?, AuthUser?, bool)>[
+        ('bought', user(1, premium: false), user(1, premium: true), true),
+        (
+          'left without buying',
+          user(1, premium: false),
+          user(1, premium: false),
+          false
+        ),
+        (
+          'was already Premium (stale cache)',
+          user(1, premium: true),
+          user(1, premium: true),
+          false
+        ),
+        (
+          'switched to a Premium account',
+          user(1, premium: false),
+          user(2, premium: true),
+          false
+        ),
+        ('signed out meanwhile', user(1, premium: false), null, false),
+        ('signed out before', null, user(1, premium: true), false),
+      ]) {
+        SessionCache.instance.clear();
+        if (start != null) SessionCache.instance.setUser(start);
+        final resumed = await visit(tester, onPremium: () {
+          SessionCache.instance.clear();
+          if (end != null) SessionCache.instance.setUser(end);
+        });
+        expect(resumed, expected, reason: label);
+      }
+    });
+  });
+
+  testWidgets('a progress overlay closing later leaves the Premium prompt open',
+      (tester) async {
+    _tallView(tester);
+    _signIn(_state());
+    late BuildContext ctx;
+    await tester.pumpWidget(_app(Builder(builder: (c) {
+      ctx = c;
+      return TextButton(onPressed: () {}, child: const Text('base'));
+    })));
+
+    // The overlay closes after something opened above it, and when it is on
+    // top; either way only the overlay goes.
+    for (final promptAbove in [true, false]) {
+      final shown = AiProgressOverlay.show(ctx,
+          kind: AiProgressKind.analysis, english: true);
+      await _settleBriefly(tester);
+      final handle = await shown;
+      if (promptAbove) {
+        unawaited(
+            PremiumPromptSheet.show(ctx, PremiumFeature.dailyAnalysisLimit));
+        await _settleBriefly(tester);
+      }
+      final closing = handle.dismiss();
+      await _settleBriefly(tester);
+      await closing;
+      expect(find.byType(PremiumPromptSheet),
+          promptAbove ? findsOneWidget : findsNothing);
+      if (promptAbove) {
+        await tester.tap(find.byKey(PremiumPromptSheet.notNowKey));
+        await _settleBriefly(tester);
+      }
+      expect(find.text('base').hitTestable(), findsOneWidget,
+          reason:
+              'nothing left covering the screen (promptAbove=$promptAbove)');
+    }
+  });
+
+  testWidgets('My CVs: the account lock shows even when the CV says allowed',
+      (tester) async {
+    for (final (state, chip) in [
+      (_state(), true),
+      (_state(premium: true), false),
+      (_state(enforced: false), false),
+    ]) {
+      SessionCache.instance.clear();
+      _signIn(state);
+      await tester.pumpWidget(_app(CvDocumentCard(
+        item: CvListItem.fromJson(
+            {'id': 1, 'title': 'CV', 'is_draft': false, 'can_download': true}),
+        onOpen: () {},
+        onEdit: () {},
+        onDelete: () {},
+        onDownload: () {},
+        onScan: () {},
+      )));
+      final l = await AppLocalizations.delegate.load(const Locale('en'));
+      await tester.tap(find.byTooltip(l.cvCardMore));
+      await tester.pumpAndSettle();
+      expect(find.byType(PremiumChip), chip ? findsOneWidget : findsNothing,
+          reason: '$state');
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
+  for (final language in ['en', 'ar']) {
+    testWidgets('AI rewrite: the chip never covers the label ($language)',
+        (tester) async {
+      for (final (width, scale) in [(320.0, 1.0), (320.0, 1.6), (412.0, 2.0)]) {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        _signIn(_state());
+        final controller = TextEditingController(text: 'x' * 80);
+        addTearDown(controller.dispose);
+        await tester.pumpWidget(MediaQuery(
+          data: MediaQueryData(
+              size: Size(width, 900), textScaler: TextScaler.linear(scale)),
+          child: _app(
+            AiCvField(
+              field: 'summary',
+              controller: controller,
+              english: language == 'en',
+              isLoading: false,
+              helperText: 'h',
+              onEnhance: () {},
+              onDismissResult: () {},
+              child: AppTextFormField(controller: controller),
+            ),
+            language: language,
+          ),
+        ));
+        await tester.pump();
+        expect(tester.takeException(), isNull, reason: '$width x$scale');
+        final l = await AppLocalizations.delegate.load(Locale(language));
+        final label = tester.getRect(find.text(l.sharedAiEnhance));
+        final chip = tester.getRect(find.byType(PremiumChip));
+        expect(label.overlaps(chip), isFalse, reason: '$width x$scale');
       }
     });
   }

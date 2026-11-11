@@ -114,7 +114,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
   Future<void> _download(CvListItem item) async {
     final english = _english;
     // Locked for a free account: offer Premium, then carry on if bought.
-    if (!item.canDownload) {
+    if (!item.canDownload || currentSubscription().downloadLocked) {
       final premium =
           await PremiumPromptSheet.show(context, PremiumFeature.download);
       if (!premium || !mounted) return;

@@ -15,6 +15,7 @@ import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis/analysis_form_sections.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ai_status.dart';
+import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -228,6 +229,7 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       // The server has a result for this draft; an identical resubmit is
       // now a new analysis.
       _keys.consume();
+      refreshUsageIfFree(ref);
       unawaited(
         AnalyticsService.logAnalysisCompleted(
           // Bucketed by the service — never the exact score.
@@ -281,6 +283,8 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       unawaited(
         AnalyticsService.logAnalysisFailed(errorType: exception.type.name),
       );
+      // Close the overlay first so a Premium prompt opens above the form.
+      await progress.dismiss();
       if (mounted) AppSnackBar.fromException(context, exception);
     } catch (_) {
       if (progress.isCancelled || requestId != _aiRequestGen) return;

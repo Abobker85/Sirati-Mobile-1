@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/models/subscription_status.dart';
 import 'package:sirati/shared/premium/premium_feature.dart';
+import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
@@ -13,15 +17,31 @@ SubscriptionStatus currentSubscription() =>
     SessionCache.instance.user.value?.subscriptionStatus ??
     const SubscriptionStatus.free();
 
-/// Opens the Premium page for [feature]. Completes with whether the account
-/// is Premium when the user comes back, so the caller can finish what they
-/// were doing (e.g. start the download they asked for).
+/// After a free account used up part of a daily limit, re-reads `/auth/me`
+/// so the Home card's "used today" counts stay true. Premium: no-op.
+void refreshUsageIfFree(WidgetRef ref) {
+  if (!currentSubscription().isFreeTier) return;
+  unawaited(
+      ref.read(authApiServiceProvider).me().then((_) {}, onError: (_) {}));
+}
+
+/// Opens the Premium page for [feature]. Completes true only when the same
+/// account that opened it was free and is Premium on return, so the caller
+/// may finish what they were doing (e.g. start the download they asked
+/// for). A stale cache or a switch of account never resumes anything.
 Future<bool> openPremium(
   BuildContext context, {
   PremiumFeature feature = PremiumFeature.general,
 }) async {
+  final before = SessionCache.instance.user.value;
+  final wasPremium = before?.subscriptionStatus.isPremium ?? false;
   await Navigator.of(context).pushNamed(AppRoutes.premium, arguments: feature);
-  return currentSubscription().isPremium;
+  final after = SessionCache.instance.user.value;
+  return before != null &&
+      after != null &&
+      after.id == before.id &&
+      !wasPremium &&
+      after.subscriptionStatus.isPremium;
 }
 
 /// Bottom sheet for a Premium feature a free user tapped: what it does,

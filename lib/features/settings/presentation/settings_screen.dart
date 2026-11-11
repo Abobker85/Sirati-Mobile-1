@@ -243,7 +243,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => unawaited(_openPremium()),
           ),
           // Store subscriptions are changed and cancelled in Apple's settings.
-          if (premium && defaultTargetPlatform == TargetPlatform.iOS) ...[
+          if (premium &&
+              subscription.managedByStore &&
+              defaultTargetPlatform == TargetPlatform.iOS) ...[
             const SizedBox(height: AppSpacing.sm),
             AppListTile(
               key: SettingsScreen.manageSubscriptionKey,

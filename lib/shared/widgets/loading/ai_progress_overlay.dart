@@ -91,9 +91,16 @@ class AiProgressHandle {
     _dialogContext = null;
     if (ctx != null && ctx.mounted) {
       _pendingDismiss = false;
+      // Remove this overlay's own route. Popping the top route would close
+      // whatever opened above it meanwhile (e.g. the Premium prompt).
       final nav = Navigator.of(ctx, rootNavigator: true);
-      if (nav.canPop()) {
+      final route = ModalRoute.of(ctx);
+      if (route == null) {
+        if (nav.canPop()) nav.pop();
+      } else if (route.isCurrent) {
         nav.pop();
+      } else if (route.isActive) {
+        nav.removeRoute(route);
       }
     } else {
       _pendingDismiss = true;

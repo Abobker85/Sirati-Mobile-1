@@ -297,6 +297,29 @@ void main() {
       }
     }
 
+    testWidgets('Manage subscription only for App Store access',
+        (tester) async {
+      AppLocale.languageCode.value = 'en';
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      for (final (source, shown) in <(Object?, bool)>[
+        ('store', true),
+        ('admin', false),
+        (null, true), // older server: keep Apple's page
+      ]) {
+        SessionCache.instance.clear();
+        final state = {
+          ..._state(subscribed: true, planId: 'com.sirati.pro.monthly'),
+          'source': source,
+        };
+        await pump(tester, app(_Auth(_user(subscription: state))));
+        expect(find.byKey(SettingsScreen.manageSubscriptionKey),
+            shown ? findsOneWidget : findsNothing,
+            reason: 'source=$source');
+        await tester.pumpWidget(const SizedBox());
+      }
+      debugDefaultTargetPlatformOverride = null;
+    });
+
     testWidgets('the card shows the photo, newest upload first',
         (tester) async {
       AppLocale.languageCode.value = 'en';

@@ -217,8 +217,12 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
       final shared = await controller.sharePdf(sharePositionOrigin: origin);
       if (shared || !mounted) return;
       if (controller.state.status == ExportStatus.premiumLocked) {
-        // The server refused although the app thought it was allowed.
-        unawaited(PremiumPromptSheet.show(context, PremiumFeature.download));
+        // The server refused although the app thought it was allowed:
+        // offer Premium and share once the same account has it.
+        unawaited(PremiumPromptSheet.show(context, PremiumFeature.download)
+            .then((premium) {
+          if (premium && mounted) unawaited(_share());
+        }));
         return;
       }
       AppSnackBar.warning(context, l.cvShareFailed);

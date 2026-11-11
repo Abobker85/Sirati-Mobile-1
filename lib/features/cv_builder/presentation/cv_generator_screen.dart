@@ -378,6 +378,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         }
 
       case CvGenerated(:final cv, :final timedOut, :final aiFailed):
+        refreshUsageIfFree(ref);
         unawaited(AnalyticsService.logCvGenerated(
           templateId: 'default',
           durationMs: DateTime.now().difference(startedAt).inMilliseconds,

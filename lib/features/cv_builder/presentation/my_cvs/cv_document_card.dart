@@ -98,13 +98,16 @@ class CvDocumentCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                _CardMenu(
-                  key: menuKey(item.id),
-                  editable: editable,
-                  canDownload: item.canDownload,
-                  onEdit: onEdit,
-                  onDownload: onDownload,
-                  onDelete: onDelete,
+                // Locked if either the CV or the account says so.
+                SubscriptionBuilder(
+                  builder: (context, status) => _CardMenu(
+                    key: menuKey(item.id),
+                    editable: editable,
+                    canDownload: item.canDownload && !status.downloadLocked,
+                    onEdit: onEdit,
+                    onDownload: onDownload,
+                    onDelete: onDelete,
+                  ),
                 ),
               ],
             ),

@@ -135,24 +135,24 @@ class AiCvField extends StatelessWidget {
                 // AI writing is Premium: free accounts see the chip on the
                 // button before they tap it.
                 SubscriptionBuilder(
-                  builder: (context, status) => Stack(
-                    alignment: AlignmentDirectional.centerEnd,
+                  builder: (context, status) => Row(
                     children: [
-                      SubmitButton(
-                        key: Key('enhance_$field'),
-                        label: l10n.sharedAiEnhance,
-                        loadingLabel: l10n.sharedAiEnhancing,
-                        isLoading: isLoading,
-                        outlined: true,
-                        height: AppTouchTarget.min,
-                        icon: Icons.auto_fix_high_rounded,
-                        onPressed: enabled ? onEnhance : null,
-                      ),
-                      if (status.aiWritingLocked && !isLoading)
-                        const Padding(
-                          padding: EdgeInsetsDirectional.only(end: 12),
-                          child: IgnorePointer(child: PremiumChip()),
+                      Expanded(
+                        child: SubmitButton(
+                          key: Key('enhance_$field'),
+                          label: l10n.sharedAiEnhance,
+                          loadingLabel: l10n.sharedAiEnhancing,
+                          isLoading: isLoading,
+                          outlined: true,
+                          height: AppTouchTarget.min,
+                          icon: Icons.auto_fix_high_rounded,
+                          onPressed: enabled ? onEnhance : null,
                         ),
+                      ),
+                      if (status.aiWritingLocked) ...[
+                        const SizedBox(width: AppSpacing.xs),
+                        const PremiumChip(),
+                      ],
                     ],
                   ),
                 ),
