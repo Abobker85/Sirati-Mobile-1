@@ -289,14 +289,80 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
                 CvListSkeleton(horizontalPadding: horizontalPadding),
               ),
             ),
-            builder: (data) => RefreshIndicator(
-              color: context.sirati.primary,
-              onRefresh: _refresh,
-              child: _buildList(context, data, english, horizontalPadding,
-                  shell: shell),
+            builder: (data) => Stack(
+              children: [
+                NotificationListener<ScrollNotification>(
+                  onNotification: _onListScroll,
+                  child: RefreshIndicator(
+                    color: context.sirati.primary,
+                    onRefresh: _refresh,
+                    child: _buildList(context, data, english, horizontalPadding,
+                        shell: shell),
+                  ),
+                ),
+                PositionedDirectional(
+                  top: 0,
+                  start: 0,
+                  end: 0,
+                  child: _slimHeader(context, data),
+                ),
+              ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// Whether the band's top row has scrolled out, so the slim header shows.
+  final _slim = ValueNotifier<bool>(false);
+
+  @override
+  void dispose() {
+    _slim.dispose();
+    super.dispose();
+  }
+
+  bool _onListScroll(ScrollNotification notification) {
+    if (notification.depth == 0 &&
+        notification.metrics.axis == Axis.vertical) {
+      _slim.value = notification.metrics.pixels > MyCvsSlimHeader.showAfter;
+    }
+    return false;
+  }
+
+  String _title(BuildContext context, CvList data) => data.title.isNotEmpty
+      ? data.title
+      : AppLocalizations.of(context).myCvsListTitle;
+
+  /// Slides down over the band as its top row leaves, and back up at the top
+  /// of the list. Out of the tree while hidden, so the page has one title and
+  /// one bell at a time for screen readers.
+  Widget _slimHeader(BuildContext context, CvList data) {
+    final reduce = MotionSettings.reduce(context);
+    return ValueListenableBuilder<bool>(
+      valueListenable: _slim,
+      builder: (context, slim, _) => AnimatedSwitcher(
+        duration: reduce ? Duration.zero : MotionDurations.slow,
+        switchInCurve: MotionCurves.standard,
+        switchOutCurve: MotionCurves.standard.flipped,
+        transitionBuilder: (child, animation) => ClipRect(
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -1),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        ),
+        child: slim
+            ? MyCvsSlimHeader(
+                title: _title(context, data),
+                unreadCount: SessionCache.instance.unreadCount,
+                onNotifications: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.notifications),
+              )
+            : const SizedBox(width: double.infinity),
       ),
     );
   }
@@ -326,9 +392,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               MyCvsHeader(
-                title: data.title.isNotEmpty
-                    ? data.title
-                    : AppLocalizations.of(context).myCvsListTitle,
+                title: _title(context, data),
                 unreadCount: SessionCache.instance.unreadCount,
                 onNotifications: () =>
                     Navigator.of(context).pushNamed(AppRoutes.notifications),

@@ -98,11 +98,84 @@ class MyCvsHeader extends StatelessWidget {
   }
 }
 
+/// Slim copy of the brand band that stays at the top of My CVs once its top
+/// row scrolls out: the title and the notifications bell, nothing else.
+class MyCvsSlimHeader extends StatelessWidget {
+  const MyCvsSlimHeader({
+    super.key,
+    required this.title,
+    required this.unreadCount,
+    required this.onNotifications,
+  });
+
+  static const bellKey = ValueKey('my-cvs-slim-header-bell');
+
+  /// Height below the status bar.
+  static const barHeight = 56.0;
+
+  /// The band's top row (title and bell) starts to leave the screen once the
+  /// list has scrolled past the band's top padding; the slim header takes
+  /// over from there.
+  static const showAfter = AppSpacing.md;
+
+  final String title;
+  final int unreadCount;
+  final VoidCallback onNotifications;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return DecoratedBox(
+      decoration:
+          MyCvsHeader.brandBand(context).copyWith(boxShadow: c.softShadow),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: barHeight,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.of(
+                        context,
+                        AppTypography.titleLg,
+                        color: c.onBrandSurface,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _BandBell(
+                  bellKey: bellKey,
+                  unreadCount: unreadCount,
+                  onTap: onNotifications,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BandBell extends StatelessWidget {
-  const _BandBell({required this.unreadCount, required this.onTap});
+  const _BandBell({
+    required this.unreadCount,
+    required this.onTap,
+    this.bellKey = MyCvsHeader.bellKey,
+  });
 
   final int unreadCount;
   final VoidCallback onTap;
+  final Key bellKey;
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +192,7 @@ class _BandBell extends StatelessWidget {
         color: ink.withValues(alpha: .16),
         shape: const CircleBorder(),
         child: InkWell(
-          key: MyCvsHeader.bellKey,
+          key: bellKey,
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: SizedBox.square(
