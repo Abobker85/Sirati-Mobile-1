@@ -21,6 +21,7 @@ import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -178,9 +179,8 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
           .listCvTemplates(language: _cv.language);
       if (!mounted) return null;
       if (templates.isEmpty) return (template: null);
-      final picked = await showModalBottomSheet<CvTemplate>(
+      final picked = await showGlassBottomSheet<CvTemplate>(
         context: context,
-        showDragHandle: true,
         builder: (_) => CvTemplatePicker(
           templates: templates,
           english: AppLocale.isEnglishCode(_cv.language),

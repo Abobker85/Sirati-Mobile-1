@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 /// A Home card that is one tap target, with the board's states: pressed
@@ -69,7 +70,8 @@ class _HomePressableCardState extends State<HomePressableCard> {
           overlayColor: WidgetStatePropertyAll(c.surface.withValues(alpha: 0)),
           onHighlightChanged: (v) => setState(() => _pressed = v),
           onFocusChange: (v) => setState(() => _focused = v),
-          child: widget.child,
+          // Icons inside squish and bounce back with the card.
+          child: IconPressHost(pressed: _pressed, child: widget.child),
         ),
       ),
     );
@@ -96,6 +98,14 @@ class _HomePressableCardState extends State<HomePressableCard> {
             ),
           ),
       ],
+    );
+
+    // Type C press: the card dips to 0.97 while held (none with reduce motion).
+    card = AnimatedScale(
+      scale: _pressed && !MotionSettings.reduce(context) ? .97 : 1,
+      duration: MotionDurations.press,
+      curve: MotionCurves.standard,
+      child: card,
     );
 
     return Semantics(

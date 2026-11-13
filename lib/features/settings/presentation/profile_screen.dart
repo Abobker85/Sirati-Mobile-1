@@ -17,6 +17,7 @@ import 'package:sirati/shared/services/job_titles_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/job_title_picker_field.dart';
@@ -89,9 +90,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _changePhoto({required bool hasPhoto}) async {
     if (_photoBusy) return;
     final l10n = AppLocalizations.of(context);
-    final choice = await showModalBottomSheet<String>(
+    final choice = await showGlassBottomSheet<String>(
       context: context,
-      showDragHandle: true,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,

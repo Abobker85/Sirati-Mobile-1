@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/offline_view.dart';
 
 /// Centered empty-state panel with optional primary action.
@@ -53,8 +54,13 @@ class AppEmptyState extends StatelessWidget {
                 color: iconBackground ?? context.sirati.primaryLight,
                 borderRadius: BorderRadius.circular(22),
               ),
-              child: Icon(icon,
-                  size: 32, color: iconColor ?? context.sirati.primaryInk),
+              child: LivelyIcon(
+                icon,
+                size: 32,
+                color: iconColor ?? context.sirati.primaryInk,
+                life: IconLife.float,
+                plays: 3,
+              ),
             ),
             const SizedBox(height: AppSpacing.md + 2),
             Text(

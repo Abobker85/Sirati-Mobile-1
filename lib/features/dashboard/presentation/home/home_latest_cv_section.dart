@@ -11,6 +11,8 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
+import 'package:sirati/shared/widgets/score_ring.dart';
 
 /// Select by real update timestamps; a missing score is never shown as zero.
 final latestDashboardCvProvider =
@@ -34,6 +36,7 @@ class HomeLatestCvSection extends ConsumerWidget {
 
   static const editKey = ValueKey('home-cv-edit');
   static const checkKey = ValueKey('home-cv-check');
+  static const scoreKey = ValueKey('home-cv-score');
   static const createKey = ValueKey('home-cv-create');
   static const viewAllKey = ValueKey('home-cv-view-all');
 
@@ -170,6 +173,12 @@ class _CvCard extends ConsumerWidget {
     final rows = ref.watch(myCvsProvider(english)).value?.items;
     final savedRow = rows?.where((item) => item.id == cv.id).firstOrNull;
     final updatedAt = savedRow?.updatedAt;
+    // Same score as this CV's row in My CVs, so the two screens never
+    // disagree. A CV with no score shows no ring: a missing score is never
+    // drawn as zero.
+    final score = savedRow != null
+        ? savedRow.scoreTotal
+        : (cv.hasScore ? cv.scoreTotal : null);
     // The list endpoint sends a ready phrase ("Last updated: …") and no
     // timestamp; only a timestamp is formatted here.
     final edited = updatedAt != null
@@ -203,7 +212,7 @@ class _CvCard extends ConsumerWidget {
                   color: c.primaryLight,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
+                child: LivelyIcon(
                   Icons.description_outlined,
                   color: c.primaryInk,
                   size: 22,
@@ -232,6 +241,14 @@ class _CvCard extends ConsumerWidget {
                   ],
                 ),
               ),
+              if (score != null) ...[
+                const SizedBox(width: 12),
+                ScoreRing(
+                  key: HomeLatestCvSection.scoreKey,
+                  score: score,
+                  semanticLabel: l.cvCardScore(score),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 14),
@@ -296,8 +313,13 @@ class _EmptyCv extends StatelessWidget {
                 color: c.primaryLight,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child:
-                  Icon(Icons.post_add_rounded, color: c.primaryInk, size: 30),
+              child: LivelyIcon(
+                Icons.post_add_rounded,
+                color: c.primaryInk,
+                size: 30,
+                life: IconLife.float,
+                plays: 3,
+              ),
             ),
           ),
           const SizedBox(height: 12),

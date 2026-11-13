@@ -124,6 +124,30 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   Color get onSurfaceMuted => textHint;
   Color get outlineVariant => borderStrong;
 
+  /// How opaque glass surfaces are. Chosen so [textPrimary] and [primaryInk]
+  /// labels keep AA on glass whatever sits behind it, from pure black to pure
+  /// white, in both themes (checked in app_metrics_test).
+  static const glassOpacity = .88;
+
+  /// Frosted fill for floating bars, sheets and pinned headers.
+  Color get glassFill => surface.withValues(alpha: glassOpacity);
+
+  /// Thin light edge that makes glass read as a raised pane.
+  Color get glassEdge => onBrandSurface.withValues(
+        alpha: surface.computeLuminance() > .5 ? .7 : .1,
+      );
+
+  /// Soft lift under floating glass.
+  List<BoxShadow> get glassShadow => [
+        BoxShadow(
+          color: const Color(0xFF000000).withValues(
+            alpha: surface.computeLuminance() > .5 ? .12 : .4,
+          ),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+        ),
+      ];
+
   /// Text/icons sitting on [error] fills. Pick the ink with higher contrast.
   Color get onError {
     const darkInk = Color(0xFF1A0504);

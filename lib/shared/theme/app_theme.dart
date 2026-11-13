@@ -249,7 +249,15 @@ class AppTheme {
       fontFamily: 'IBM Plex Sans Arabic',
       textTheme: AppTypography.textTheme(c, arabic: arabic),
       appBarTheme: AppBarTheme(
-        backgroundColor: c.background,
+        // Clear at rest; once content scrolls under it the bar turns to the
+        // frosted glass tint (iOS scroll-edge style), without a shadow.
+        backgroundColor: WidgetStateColor.resolveWith(
+          (states) => states.contains(WidgetState.scrolledUnder)
+              ? Color.alphaBlend(c.glassFill, c.background)
+              : c.background,
+        ),
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
         foregroundColor: c.textPrimary,
         elevation: 0,
         centerTitle: true,
@@ -259,6 +267,17 @@ class AppTheme {
           color: c.textPrimary,
         ),
         iconTheme: IconThemeData(color: c.textSecondary, size: 22),
+      ),
+      // Menus open just under their button as rounded glass-edged cards.
+      popupMenuTheme: PopupMenuThemeData(
+        color: c.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: AppElevation.sheet,
+        position: PopupMenuPosition.under,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.lg),
+          side: BorderSide(color: c.glassEdge),
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

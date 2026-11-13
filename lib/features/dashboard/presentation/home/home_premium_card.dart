@@ -6,6 +6,7 @@ import 'package:sirati/shared/models/subscription_status.dart';
 import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 
 /// The one Premium card on Home, only for free accounts the limits apply
 /// to: what Premium adds and today's free usage, so a limit never comes as
@@ -66,8 +67,12 @@ class _Card extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(10),
-                  child: Icon(Icons.workspace_premium_rounded,
-                      size: 24, color: c.onWarningContainer),
+                  child: LivelyIcon(
+                    Icons.workspace_premium_rounded,
+                    size: 24,
+                    color: c.onWarningContainer,
+                    life: IconLife.twinkle,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),

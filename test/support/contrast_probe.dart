@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/shared/theme/app_contrast.dart';
+import 'package:sirati/shared/widgets/components/glass_surface.dart';
 
 /// Backgrounds resolved from the mounted paint widgets, compositing translucent
 /// layers before comparing ink. PhysicalModel/PhysicalShape carry Material's
 /// resolved button state (including disabled fills). Gradients check every stop.
+/// Glass panes are checked over both black and white.
 List<Color> paintedBackgroundsOf(Element element) {
   var layers = <Color>[];
   var opaque = false;
@@ -17,6 +19,10 @@ List<Color> paintedBackgroundsOf(Element element) {
       if (d is BoxDecoration) {
         candidates = d.gradient?.colors ?? [if (d.color != null) d.color!];
       }
+    } else if (widget is GlassSurface && !GlassSurface.solid(ancestor)) {
+      // Glass is see-through and anything can scroll under it, so check its
+      // tint over both extremes.
+      candidates = const [Color(0xFF000000), Color(0xFFFFFFFF)];
     } else if (widget is ColoredBox) {
       candidates = [widget.color];
     } else if (widget is PhysicalModel) {

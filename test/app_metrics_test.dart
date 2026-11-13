@@ -142,6 +142,18 @@ void main() {
     ('light', SiratiColors.light),
     ('dark', SiratiColors.dark),
   ]) {
+    test('labels on glass keep AA over anything behind it ($mode)', () {
+      // Glass is see-through: the worst case is pure black or pure white
+      // content scrolling under it.
+      for (final behind in const [Color(0xFF000000), Color(0xFFFFFFFF)]) {
+        final glass = Color.alphaBlend(c.glassFill, behind);
+        for (final ink in [c.textPrimary, c.primaryInk]) {
+          expect(AppContrast.ratio(ink, glass), greaterThanOrEqualTo(4.5),
+              reason: '$ink on glass over $behind ($mode)');
+        }
+      }
+    });
+
     test('filled buttons carry white labels at AA ($mode)', () {
       // Product decision: primary actions read white-on-teal. The fill is
       // tuned so that stays >= 4.5:1, not the other way round.

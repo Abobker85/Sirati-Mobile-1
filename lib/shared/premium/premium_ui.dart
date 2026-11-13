@@ -11,6 +11,7 @@ import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components/app_sheet.dart';
 
 /// The signed-in account's Premium status from the session cache.
 SubscriptionStatus currentSubscription() =>
@@ -56,9 +57,8 @@ class PremiumPromptSheet extends StatelessWidget {
   static const notNowKey = ValueKey('premium-prompt-not-now');
 
   static Future<bool> show(BuildContext context, PremiumFeature feature) async {
-    final seePlans = await showModalBottomSheet<bool>(
+    final seePlans = await showGlassBottomSheet<bool>(
       context: context,
-      showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => PremiumPromptSheet(feature: feature),
     );

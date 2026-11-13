@@ -7,6 +7,7 @@ import 'package:sirati/shared/models/ats_grade.dart';
 import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/score_ring.dart';
 
 /// "Updated 3 days ago", or the server label when there's no timestamp.
 String cvUpdatedText(
@@ -123,10 +124,9 @@ class CvDocumentCard extends StatelessWidget {
                     child: score != null
                         ? Row(
                             children: [
-                              // The line beside it already reads the score.
-                              ExcludeSemantics(
-                                child: _ScoreRing(score: score),
-                              ),
+                              // The line beside it already reads the score,
+                              // so the ring carries no label.
+                              ScoreRing(score: score),
                               const SizedBox(width: 10),
                               Flexible(
                                 child: Text(
@@ -275,6 +275,14 @@ class _CardMenu extends StatelessWidget {
 
     return PopupMenuButton<_CardAction>(
       tooltip: l.cvCardMore,
+      // Grows out of the button quickly instead of the slower default.
+      popUpAnimationStyle: MotionSettings.reduce(context)
+          ? AnimationStyle.noAnimation
+          : const AnimationStyle(
+              duration: MotionDurations.medium,
+              reverseDuration: MotionDurations.fast,
+              curve: MotionCurves.standard,
+            ),
       icon: Icon(Icons.more_horiz_rounded, color: colors.textSecondary),
       onSelected: (action) => switch (action) {
         _CardAction.edit => onEdit(),
@@ -290,48 +298,6 @@ class _CardMenu extends StatelessWidget {
         entry(_CardAction.delete, Icons.delete_outline_rounded, l.deleteItem,
             enabled: editable, color: colors.error),
       ],
-    );
-  }
-}
-
-/// Circular ATS score; the arc colour follows the score band, the number
-/// stays on body ink so it holds AA in both themes.
-class _ScoreRing extends StatelessWidget {
-  const _ScoreRing({required this.score});
-
-  final int score;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.sirati;
-    final arc = switch (ScoreBand.of(score)) {
-      ScoreBand.excellent || ScoreBand.veryGood => colors.success,
-      ScoreBand.fair => colors.warning,
-      ScoreBand.weak => colors.error,
-    };
-    return SizedBox.square(
-      dimension: 44,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          CircularProgressIndicator(
-            value: score / 100,
-            strokeWidth: 4,
-            strokeCap: StrokeCap.round,
-            color: arc,
-            backgroundColor: colors.surfaceLow,
-          ),
-          Center(
-            child: Text(
-              AppFormat.digits(
-                '$score',
-                english: AppLocale.isEnglish(context),
-              ),
-              style: AppTypography.of(context, AppTypography.labelLg),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_pressable_card.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 
 enum HomeStartTone { create, ats }
 
@@ -53,7 +54,7 @@ class HomeStartCard extends StatelessWidget {
                     color: ink.withValues(alpha: .16),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
+                  child: LivelyIcon(
                     tone == HomeStartTone.create
                         ? Icons.note_add_outlined
                         : Icons.document_scanner_outlined,
@@ -88,9 +89,11 @@ class HomeStartCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Icon(
+                // Points the way once the intro has played.
+                LivelyIcon(
                   Icons.chevron_right_rounded,
                   color: ink,
+                  life: IconLife.nudge,
                 ),
               ],
             ),
@@ -120,7 +123,13 @@ class _StartIllustration extends StatelessWidget {
             borderRadius: BorderRadius.circular(1),
           ),
         );
-    Widget sparkle() => Icon(Icons.auto_awesome, size: 16, color: c.primaryInk);
+    Widget sparkle() => LivelyIcon(
+          Icons.auto_awesome,
+          size: 16,
+          color: c.primaryInk,
+          life: IconLife.twinkle,
+          plays: 3,
+        );
 
     return ExcludeSemantics(
       child: Row(
@@ -139,10 +148,11 @@ class _StartIllustration extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                LivelyIcon(
                   create
                       ? Icons.check_box_rounded
                       : Icons.face_retouching_natural,
+                  life: create ? IconLife.twinkle : IconLife.float,
                   size: 18,
                   color: c.primaryInk,
                 ),

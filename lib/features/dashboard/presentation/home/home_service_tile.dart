@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_pressable_card.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 
 /// One of Home's three service tiles (approved board): a 48dp icon circle and
 /// a label on the card surface. A service that is not ready yet is muted, not
@@ -45,7 +46,14 @@ class HomeServiceTile extends StatelessWidget {
                 color: comingSoon ? c.surfaceContainer : c.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: ink, size: 22),
+              // Hops once as the tile appears, squishes when pressed.
+              child: LivelyIcon(
+                icon,
+                color: ink,
+                size: 22,
+                life: IconLife.float,
+                plays: 1,
+              ),
             ),
             const SizedBox(height: 10),
             Text(

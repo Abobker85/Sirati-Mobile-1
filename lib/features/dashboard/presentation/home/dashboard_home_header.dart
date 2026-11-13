@@ -5,6 +5,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/profile_photo.dart';
 
 /// Profile row at the top of Home (approved board, option 3): one card that
@@ -140,9 +141,13 @@ class DashboardHomeHeader extends StatelessWidget {
                       clipBehavior: Clip.none,
                       children: [
                         Center(
-                          child: Icon(
+                          // Rings when there is something new to read.
+                          child: LivelyIcon(
                             Icons.notifications_none_rounded,
                             color: c.textPrimary,
+                            life: IconLife.ring,
+                            plays: unreadCount > 0 ? 2 : 0,
+                            trigger: unreadCount,
                           ),
                         ),
                         if (unreadCount > 0)

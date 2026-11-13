@@ -2,11 +2,24 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 
 class MotionDurations {
   static const fast = Duration(milliseconds: 140);
   static const medium = Duration(milliseconds: 200);
   static const slow = Duration(milliseconds: 280);
+
+  /// Press feedback (scale down while a finger is on a card or button).
+  static const press = Duration(milliseconds: 150);
+
+  /// Bottom sheets sliding up (DGA design system: 300ms).
+  static const sheet = Duration(milliseconds: 300);
+
+  /// The bottom bar's selection pill sliding between tabs.
+  static const navIndicator = Duration(milliseconds: 280);
+
+  /// Home's one-time entrance after launch (header, start cards, services…).
+  static const homeIntro = Duration(milliseconds: 1400);
 
   /// Soft pulse for skeleton placeholders (single shared loop feel).
   static const skeleton = Duration(milliseconds: 1100);
@@ -21,6 +34,13 @@ class MotionCurves {
   static const state = Cubic(0.25, 1, 0.5, 1);
   static const exit = Curves.easeInCubic;
   static const skeleton = Curves.easeInOut;
+
+  /// Material standard curve, used by the Saudi DGA design system for
+  /// moving things that stay on screen (indicators, sheets, expanding cards).
+  static const standard = Cubic(0.4, 0, 0.2, 1);
+
+  /// Gentle overshoot for small elements popping in (Home service tiles).
+  static const pop = Cubic(0.3, 1.35, 0.5, 1);
 }
 
 class MotionSettings {
@@ -290,14 +310,24 @@ class MotionNavIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final glyph = LivelyIcon(selected ? selectedIcon : icon);
     return SizedBox(
       width: 44,
       height: 32,
       child: Center(
-        child: Icon(
-          selected ? selectedIcon : icon,
-          key: ValueKey(selected),
-        ),
+        child: selected && !MotionSettings.reduce(context)
+            // The newly selected icon settles in from 85% while the bar's
+            // pill slides under it.
+            ? TweenAnimationBuilder<double>(
+                key: const ValueKey('selected'),
+                tween: Tween(begin: .85, end: 1),
+                duration: MotionDurations.navIndicator,
+                curve: MotionCurves.pop,
+                builder: (context, scale, child) =>
+                    Transform.scale(scale: scale, child: child),
+                child: glyph,
+              )
+            : glyph,
       ),
     );
   }
@@ -410,7 +440,7 @@ class PressScale extends StatefulWidget {
     super.key,
     required this.child,
     this.enabled = true,
-    this.pressedScale = .975,
+    this.pressedScale = .97,
   });
 
   @override
@@ -435,9 +465,9 @@ class _PressScaleState extends State<PressScale> {
       onPointerCancel: (_) => _setPressed(false),
       child: AnimatedScale(
         scale: _pressed ? widget.pressedScale : 1,
-        duration: MotionDurations.fast,
-        curve: MotionCurves.state,
-        child: widget.child,
+        duration: MotionDurations.press,
+        curve: MotionCurves.standard,
+        child: IconPressHost(pressed: _pressed, child: widget.child),
       ),
     );
   }

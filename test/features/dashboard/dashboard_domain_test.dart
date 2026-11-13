@@ -83,8 +83,7 @@ void main() {
       for (final root in ['cv', 'my-cvs', 'mycvs', 'CV']) {
         for (final id in [1, 9, 40213]) {
           for (final form in ['$root/$id', '/$root/$id/', '$root/$id?x=1']) {
-            expect(resolveScreenRoute(form), OpenGeneratedCv(id),
-                reason: form);
+            expect(resolveScreenRoute(form), OpenGeneratedCv(id), reason: form);
           }
         }
         for (final bad in ['0', '-2', 'abc', '']) {
@@ -104,8 +103,7 @@ void main() {
         'analysis/4',
       ]) {
         for (final prefix in ['mobile/', '/mobile/', 'MOBILE/']) {
-          expect(resolveScreenRoute('$prefix$route'),
-              resolveScreenRoute(route),
+          expect(resolveScreenRoute('$prefix$route'), resolveScreenRoute(route),
               reason: '$prefix$route');
         }
       }

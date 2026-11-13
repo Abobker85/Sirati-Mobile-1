@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/routing/expand_page_route.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/domain/cv_list.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
@@ -128,6 +129,35 @@ void main() {
         expect((upload.upload, upload.cvId), (true, null));
       });
     }
+  }
+
+  for (final language in ['ar', 'en']) {
+    testWidgets('$language: opening a CV expands from that row\'s card',
+        (tester) async {
+      final ids = [11, 4, 907];
+      await pump(
+        tester,
+        [for (final id in ids) _cv(id, score: id == 4 ? 37 : null)],
+        language: language,
+      );
+
+      for (final id in ids) {
+        final open = find.byKey(CvDocumentCard.openKey(id));
+        await tester.ensureVisible(open);
+        await tester.pumpAndSettle();
+        final card = tester.getRect(find.ancestor(
+          of: open,
+          matching: find.byType(CvDocumentCard),
+        ));
+
+        pushed.clear();
+        await tapAndReturn(tester, open);
+
+        final from = pushed.single.arguments as ExpandFrom;
+        expect(from.origin.rect, card);
+        expect(from.arguments, isNull);
+      }
+    });
   }
 
   testWidgets('every row opens its own CV; unscored rows scan that CV',
