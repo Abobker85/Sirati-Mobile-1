@@ -2,10 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sirati/core/utils/bidi_text_utils.dart';
 
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
-import 'package:sirati/shared/widgets/sticky_text_direction.dart';
 
 /// Shared form chrome — soft error surfaces, professional borders, RTL-safe copy.
 class AppFormStyles {
@@ -418,8 +418,6 @@ class _AppTextFormFieldState extends FormFieldState<String> {
   bool _blurredOnce = false;
   bool _wasValid = false;
 
-  final _direction = StickyTextDirection();
-
   /// The valid tick has played (once per field) / is showing now.
   bool _ticked = false;
   bool _showTick = false;
@@ -664,12 +662,9 @@ class _AppTextFormFieldState extends FormFieldState<String> {
         minLines: minLines,
         maxLength: maxLength,
         textAlign: textAlign,
-        // Decided when typing starts, then kept while typing, so mixed
-        // Arabic and Latin text does not flip sides mid-word.
         textDirection: textDirection ??
-            _direction.resolve(
+            BidiTextUtils.detectBaseDirection(
               _effectiveController.text,
-              focused: _hasFocus,
               fallback: Directionality.of(context),
             ),
         // Room under the field so its error line and the next field stay

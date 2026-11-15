@@ -6,7 +6,6 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/motion.dart';
-import 'package:sirati/shared/widgets/sticky_text_direction.dart';
 
 Widget _app(Widget child, {bool reduce = false}) => MaterialApp(
       theme: AppTheme.lightFor(arabic: false),
@@ -132,48 +131,6 @@ void main() {
         await tester.pumpAndSettle();
       });
     }
-  });
-
-  group('sticky text direction', () {
-    const ambient = [TextDirection.ltr, TextDirection.rtl];
-    const typed = [
-      'Flutter مطور',
-      'مطور Flutter',
-      '123 مطور',
-      'React Native و Flutter',
-      '(مدير) Project',
-    ];
-    for (final fallback in ambient) {
-      for (final text in typed) {
-        test('${fallback.name}: "$text" typed letter by letter never flips',
-            () {
-          final sticky = StickyTextDirection();
-          sticky.resolve('', focused: true, fallback: fallback);
-          final dirs = <TextDirection>{};
-          for (var i = 1; i <= text.length; i++) {
-            dirs.add(sticky.resolve(text.substring(0, i),
-                focused: true, fallback: fallback));
-          }
-          expect(dirs, hasLength(1));
-        });
-      }
-    }
-
-    test('re-decided when not focused, or after clearing the field', () {
-      final sticky = StickyTextDirection();
-      const f = TextDirection.rtl;
-      expect(
-          sticky.resolve('abc', focused: true, fallback: f), TextDirection.ltr);
-      expect(sticky.resolve('abc مطور', focused: true, fallback: f),
-          TextDirection.ltr);
-      // Cleared and retyped: decided again from the new first letter.
-      sticky.resolve('', focused: true, fallback: f);
-      expect(
-          sticky.resolve('م', focused: true, fallback: f), TextDirection.rtl);
-      // Not focused (e.g. text set by AI or a draft): follows the text.
-      expect(sticky.resolve('Hello', focused: false, fallback: f),
-          TextDirection.ltr);
-    });
   });
 
   group('unread bell', () {

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/features/job_match/application/job_match_controller.dart';
 import 'package:sirati/features/job_match/domain/job_match_entitlement.dart';
 import 'package:sirati/features/job_match/domain/job_match_failure.dart';
@@ -18,7 +19,6 @@ import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
-import 'package:sirati/shared/widgets/sticky_text_direction.dart';
 
 /// Job Match entry: server-gated (paywall / quota / unavailable), then job
 /// details + CV choice → match → [JobMatchResultScreen].
@@ -585,25 +585,6 @@ class _BidiField extends StatefulWidget {
 }
 
 class _BidiFieldState extends State<_BidiField> {
-  final _focus = FocusNode();
-  final _direction = StickyTextDirection();
-
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(_onFocus);
-  }
-
-  void _onFocus() => setState(() {});
-
-  @override
-  void dispose() {
-    _focus
-      ..removeListener(_onFocus)
-      ..dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final ambient = Directionality.of(context);
@@ -613,12 +594,9 @@ class _BidiFieldState extends State<_BidiField> {
       builder: (context, value, _) => TextField(
         key: widget.fieldKey,
         controller: widget.controller,
-        focusNode: _focus,
         onChanged: widget.onChanged,
-        // Decided when typing starts, then kept while typing.
-        textDirection: _direction.resolve(
+        textDirection: BidiTextUtils.detectBaseDirection(
           value.text,
-          focused: _focus.hasFocus,
           fallback: ambient,
         ),
         scrollPadding: EdgeInsets.fromLTRB(
