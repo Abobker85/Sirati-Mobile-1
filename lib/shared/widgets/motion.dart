@@ -187,19 +187,28 @@ class SiratiPageTransitionsBuilder extends PageTransitionsBuilder {
               child: c,
             ),
           );
-    // As the page underneath, fade toward the app background (not to the
-    // black behind the navigator) and step back toward the start edge.
-    return ColoredBox(
-      color: background,
-      child: AnimatedBuilder(
-        animation: leave,
-        child: FadeTransition(
-          opacity: ReverseAnimation(fadeOut),
-          child: incoming,
-        ),
-        builder: (context, c) => Transform.translate(
-          offset: Offset(-end * distance * leave.value, 0),
-          child: c,
+    // As the page underneath: step back toward the start edge while a veil
+    // of the app background covers it. It looks like fading out, but the
+    // page is never inside an opacity layer, so glass blur on it (Home's
+    // header) is not re-rendered through one.
+    return AnimatedBuilder(
+      animation: leave,
+      child: incoming,
+      builder: (context, c) => Transform.translate(
+        offset: Offset(-end * distance * leave.value, 0),
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            c!,
+            if (fadeOut.value > 0)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ColoredBox(
+                    color: background.withValues(alpha: fadeOut.value),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

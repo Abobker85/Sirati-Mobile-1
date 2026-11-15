@@ -45,18 +45,6 @@ class AppRouter {
     return value ?? AppRoutes.home;
   }
 
-  /// The signed-in root, faded through (no slide: it is not a step deeper,
-  /// and Home plays its own intro).
-  static void _openRoot(BuildContext context, String name) {
-    Navigator.of(context).pushAndRemoveUntil(
-      FadeThroughPageRoute<void>(
-        settings: RouteSettings(name: name),
-        builder: (_) => _widgetFor(ParsedRoute(name: name)),
-      ),
-      (route) => false,
-    );
-  }
-
   /// After login / splash session restore: home under the stack, then deep link.
   static void openAfterAuth(BuildContext context) {
     // Signed in now: account-only routes open normally again.
@@ -66,14 +54,27 @@ class AppRouter {
     if (pending == null ||
         pending == AppRoutes.splash ||
         pending == AppRoutes.home) {
-      _openRoot(context, AppRoutes.home);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.home,
+        (route) => false,
+      );
       return;
     }
     if (pending == AppRoutes.myCvs) {
-      _openRoot(context, AppRoutes.myCvs);
+      // A new root: fade through, no slide.
+      Navigator.of(context).pushAndRemoveUntil(
+        FadeThroughPageRoute<void>(
+          settings: const RouteSettings(name: AppRoutes.myCvs),
+          builder: (_) => _widgetFor(const ParsedRoute(name: AppRoutes.myCvs)),
+        ),
+        (route) => false,
+      );
       return;
     }
-    _openRoot(context, AppRoutes.home);
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      AppRoutes.home,
+      (route) => false,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       siratiNavigatorKey.currentState?.pushNamed(pending);
     });
@@ -293,6 +294,14 @@ class AppRouter {
     if (origin != null) {
       return ExpandPageRoute<dynamic>(
         origin: origin,
+        settings: settings,
+        builder: (_) => child,
+      );
+    }
+    // Home is always the root (after sign-in, "go home"): it fades through
+    // rather than sliding in, and plays its own intro.
+    if (name == AppRoutes.home) {
+      return FadeThroughPageRoute<dynamic>(
         settings: settings,
         builder: (_) => child,
       );

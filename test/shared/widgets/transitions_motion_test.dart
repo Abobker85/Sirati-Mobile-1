@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,8 +58,8 @@ void main() {
           direction: direction,
         ));
         final end = direction == TextDirection.rtl ? -1.0 : 1.0;
-        Navigator.of(ctx)
-            .push(MaterialPageRoute<void>(builder: (_) => _page(_b)));
+        unawaited(Navigator.of(ctx)
+            .push(MaterialPageRoute<void>(builder: (_) => _page(_b))));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 60));
         expect(_x(tester, _b) * end, greaterThan(0),
@@ -98,8 +100,8 @@ void main() {
         }),
         reduce: true,
       ));
-      Navigator.of(ctx)
-          .push(MaterialPageRoute<void>(builder: (_) => _page(_b)));
+      unawaited(Navigator.of(ctx)
+          .push(MaterialPageRoute<void>(builder: (_) => _page(_b))));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
       expect(_x(tester, _b), 0);
@@ -125,10 +127,10 @@ void main() {
             direction: direction,
             platform: TargetPlatform.iOS,
           ));
-          Navigator.of(ctx).push(MaterialPageRoute<void>(
+          unawaited(Navigator.of(ctx).push(MaterialPageRoute<void>(
             builder: (_) =>
                 blocked ? PopScope(canPop: false, child: _page(_b)) : _page(_b),
-          ));
+          )));
           await tester.pumpAndSettle();
           final size = tester.getSize(find.byKey(_b));
           final rtl = direction == TextDirection.rtl;
@@ -156,8 +158,8 @@ void main() {
         return _page(_a);
       })));
       final centre = tester.getCenter(find.byKey(_a)).dx;
-      Navigator.of(ctx)
-          .push(FadeThroughPageRoute<void>(builder: (_) => _page(_b)));
+      unawaited(Navigator.of(ctx)
+          .push(FadeThroughPageRoute<void>(builder: (_) => _page(_b))));
       await tester.pump();
       const step = Duration(milliseconds: 20);
       final frames =
@@ -204,10 +206,10 @@ void main() {
           }),
           reduce: reduce,
         ));
-        showSiratiDialog<void>(
+        unawaited(showSiratiDialog<void>(
           context: ctx,
           builder: (_) => const AlertDialog(content: Text('hello')),
-        );
+        ));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 40));
         final scale = tester
