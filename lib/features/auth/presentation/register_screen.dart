@@ -25,6 +25,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_hero_page.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/job_title_picker_field.dart';
 import 'package:sirati/shared/widgets/password_strength_meter.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
@@ -80,7 +81,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _showFormBanner = false;
     });
 
-    final valid = _formKey.currentState!.validate();
+    final valid = validateAndReveal(_formKey);
     final otherError = RegistrationRules.jobTitleOther(
       _jobTitleOtherController.text,
       isOther: _isOther,

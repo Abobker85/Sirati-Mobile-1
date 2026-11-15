@@ -12,6 +12,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_hero_page.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -59,7 +60,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _submitted = true;
       _showFormBanner = false;
     });
-    if (!_formKey.currentState!.validate()) {
+    if (!validateAndReveal(_formKey)) {
       setState(() => _showFormBanner = true);
       unawaited(HapticFeedback.selectionClick());
       return;

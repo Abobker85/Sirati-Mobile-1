@@ -21,6 +21,7 @@ import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
@@ -159,7 +160,7 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
     if (_isLoading) return;
     final english = AppLocale.isEnglish(context);
     setState(() => _submitted = true);
-    if (!_formKey.currentState!.validate()) {
+    if (!validateAndReveal(_formKey)) {
       unawaited(HapticFeedback.selectionClick());
       return;
     }

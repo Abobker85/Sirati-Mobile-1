@@ -34,6 +34,7 @@ import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
 import 'package:sirati/shared/widgets/ai_cv_field.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -127,6 +128,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
   @override
   void dispose() {
+    _stepTimer?.cancel();
     for (final writer in _writeIns.values) {
       writer.cancel();
     }
@@ -230,8 +232,30 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
   // ── Navigation ────────────────────────────────────────────────────────────
 
+  /// Waits for the keyboard to close before a step changes.
+  Timer? _stepTimer;
+
+  /// How long the keyboard gets to close before the step slides.
+  static const keyboardCloseWait = Duration(milliseconds: 160);
+
   void _goToStep(int target) {
     if (target == _step || target < 0 || target >= _stepCount) return;
+    // One movement at a time: if the keyboard is open, close it first and
+    // let it go down, then slide the step (no three things moving at once).
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    FocusManager.instance.primaryFocus?.unfocus();
+    _stepTimer?.cancel();
+    if (keyboardOpen && !MotionSettings.reduce(context)) {
+      _stepTimer = Timer(keyboardCloseWait, () {
+        if (mounted) _showStep(target);
+      });
+    } else {
+      _showStep(target);
+    }
+  }
+
+  void _showStep(int target) {
+    if (target == _step) return;
     setState(() {
       _stepDirection = target < _step ? -1 : 1;
       _step = target;
@@ -245,7 +269,8 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       _stepSubmitted[_step] = true;
       _stepShowBanner[_step] = false;
     });
-    final ok = _stepFormKeys[_step].currentState?.validate() ?? true;
+    // Takes the user to the first field to fix (scroll + focus).
+    final ok = validateAndReveal(_stepFormKeys[_step]);
     if (!ok) {
       setState(() => _stepShowBanner[_step] = true);
       unawaited(HapticFeedback.selectionClick());
@@ -694,8 +719,10 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
                     ),
                   );
                 },
+                // PageStorageKey: going back to a step returns to where
+                // the user was on it, not to the top.
                 child: ListView(
-                  key: ValueKey('cv-step-$_step'),
+                  key: PageStorageKey('cv-step-$_step'),
                   padding: const EdgeInsets.all(20),
                   children: [_buildStep(english, enhancingField)],
                 ),

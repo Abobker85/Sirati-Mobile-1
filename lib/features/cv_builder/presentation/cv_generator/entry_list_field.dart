@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/features/cv_builder/domain/cv_entries.dart';
@@ -5,6 +7,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components/app_dialog.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 
 /// A list of entry cards that reads and writes one wizard text field
 /// (Salem review, issue 3: experience and education like a job application).
@@ -124,9 +127,21 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
     _write();
   }
 
+  /// One key per entry, to bring a newly added entry into view.
+  final Map<int, GlobalKey> _cardKeys = {};
+
+  GlobalKey _cardKey(int id) => _cardKeys.putIfAbsent(id, GlobalKey.new);
+
   void _add() {
-    setState(() => _entries = [..._entries, (_nextId++, widget.blank)]);
+    final id = _nextId++;
+    setState(() => _entries = [..._entries, (id, widget.blank)]);
     HapticFeedback.selectionClick();
+    // The new entry scrolls into view, ready to type in: adding is one tap,
+    // not tap, scroll, tap.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final card = _cardKeys[id]?.currentContext;
+      if (card != null) unawaited(revealField(card, alignment: .15));
+    });
   }
 
   void _remove(int id) {
@@ -137,6 +152,7 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
       ];
       if (_entries.isEmpty) _entries = [(_nextId++, widget.blank)];
     });
+    _cardKeys.remove(id);
     _write();
   }
 
@@ -184,13 +200,16 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
               onRemove: _entries.length > 1 || !widget.isBlank(entry)
                   ? () => _remove(id)
                   : null,
-              child: widget.cardBuilder(
-                context,
-                entry,
-                (next) => _update(id, next),
-                _showProblems && !widget.isBlank(entry)
-                    ? widget.problems(entry)
-                    : const {},
+              child: KeyedSubtree(
+                key: _cardKey(id),
+                child: widget.cardBuilder(
+                  context,
+                  entry,
+                  (next) => _update(id, next),
+                  _showProblems && !widget.isBlank(entry)
+                      ? widget.problems(entry)
+                      : const {},
+                ),
               ),
             ),
           ],

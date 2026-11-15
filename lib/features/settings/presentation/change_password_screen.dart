@@ -9,6 +9,7 @@ import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/password_strength_meter.dart';
 import 'package:sirati/shared/widgets/password_visibility_toggle.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
@@ -53,7 +54,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       _showBanner = false;
       _currentFieldError = null;
     });
-    if (!_formKey.currentState!.validate()) {
+    if (!validateAndReveal(_formKey)) {
       setState(() => _showBanner = true);
       unawaited(HapticFeedback.selectionClick());
       return;

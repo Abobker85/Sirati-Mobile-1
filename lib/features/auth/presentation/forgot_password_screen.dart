@@ -12,6 +12,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/password_strength_meter.dart';
@@ -84,7 +85,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
 
     if (!_codeSent) {
-      if (!_formKey.currentState!.validate()) {
+      if (!validateAndReveal(_formKey)) {
         unawaited(HapticFeedback.selectionClick());
         return;
       }
@@ -151,7 +152,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (_isLoading) return;
     final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
-    if (!_formKey.currentState!.validate()) {
+    if (!validateAndReveal(_formKey)) {
       unawaited(HapticFeedback.selectionClick());
       return;
     }

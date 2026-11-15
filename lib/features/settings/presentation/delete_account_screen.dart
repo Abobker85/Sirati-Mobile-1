@@ -16,6 +16,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/components/app_dialog.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/password_visibility_toggle.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
@@ -92,7 +93,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     if (_loading || _confirming) return;
     final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
-    if (!_formKey.currentState!.validate()) {
+    if (!validateAndReveal(_formKey)) {
       unawaited(HapticFeedback.selectionClick());
       return;
     }
@@ -237,9 +238,8 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
               for (final provider in providers) ...[
                 const SizedBox(height: AppSpacing.md),
                 SubmitButton(
-                  label:
-                      l10n.settingsDeleteWithProvider(
-                          _providerName(provider, l10n)),
+                  label: l10n.settingsDeleteWithProvider(
+                      _providerName(provider, l10n)),
                   loadingLabel: l10n.settingsDeleting,
                   isLoading: _loading,
                   icon: Icons.delete_forever_rounded,

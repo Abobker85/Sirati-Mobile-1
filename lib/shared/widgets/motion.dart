@@ -69,6 +69,15 @@ class MotionCurves {
   static const settle = Cubic(0.2, 0.9, 0.3, 1);
 }
 
+/// Haptic rules (sound-free feedback), so the phone's feel is predictable:
+///
+/// - `selectionClick`: a choice (tab, chip, plan, step dot, band crossing,
+///   reorder detent) and a blocked submit (once, with one field shaking).
+/// - `lightImpact`: something lands (pill, check, ring, chip) or a step is
+///   completed.
+/// - `mediumImpact`: a milestone (stamp, Premium unlocked).
+/// - Never: per keystroke, on blur, or from ambient (self-playing) motion.
+/// - With reduced motion, only success and error feedback remain.
 class MotionSettings {
   /// Accessibility only: OS "remove animations" / disableAnimations.
   ///

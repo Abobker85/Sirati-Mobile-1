@@ -20,6 +20,7 @@ import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/job_title_picker_field.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/profile_photo.dart';
@@ -241,7 +242,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (ref.read(profileSaveProvider)) return;
     final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
-    if (!_formKey.currentState!.validate()) {
+    if (!validateAndReveal(_formKey)) {
       unawaited(HapticFeedback.selectionClick());
       return;
     }
