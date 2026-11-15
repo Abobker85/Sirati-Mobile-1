@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/routing/entitlement_store.dart';
 import 'package:sirati/core/routing/expand_page_route.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/core/storage/guest_session.dart';
 
 /// Feature screens register themselves so `core/` never imports `features/`.
@@ -44,6 +45,18 @@ class AppRouter {
     return value ?? AppRoutes.home;
   }
 
+  /// The signed-in root, faded through (no slide: it is not a step deeper,
+  /// and Home plays its own intro).
+  static void _openRoot(BuildContext context, String name) {
+    Navigator.of(context).pushAndRemoveUntil(
+      FadeThroughPageRoute<void>(
+        settings: RouteSettings(name: name),
+        builder: (_) => _widgetFor(ParsedRoute(name: name)),
+      ),
+      (route) => false,
+    );
+  }
+
   /// After login / splash session restore: home under the stack, then deep link.
   static void openAfterAuth(BuildContext context) {
     // Signed in now: account-only routes open normally again.
@@ -53,26 +66,14 @@ class AppRouter {
     if (pending == null ||
         pending == AppRoutes.splash ||
         pending == AppRoutes.home) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.home,
-        (route) => false,
-      );
+      _openRoot(context, AppRoutes.home);
       return;
     }
     if (pending == AppRoutes.myCvs) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          settings: const RouteSettings(name: AppRoutes.myCvs),
-          builder: (_) => _widgetFor(const ParsedRoute(name: AppRoutes.myCvs)),
-        ),
-        (route) => false,
-      );
+      _openRoot(context, AppRoutes.myCvs);
       return;
     }
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRoutes.home,
-      (route) => false,
-    );
+    _openRoot(context, AppRoutes.home);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       siratiNavigatorKey.currentState?.pushNamed(pending);
     });

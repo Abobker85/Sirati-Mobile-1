@@ -24,6 +24,7 @@ import 'package:sirati/shared/theme/app_theme_controller.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/components/app_dialog.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -138,7 +139,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _logout() async {
     if (_loggingOut) return;
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSiratiDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.logOutConfirmTitle),

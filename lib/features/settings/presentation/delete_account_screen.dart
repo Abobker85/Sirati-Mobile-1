@@ -14,6 +14,7 @@ import 'package:sirati/shared/services/provider_reauth.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/components/app_dialog.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/password_visibility_toggle.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
@@ -63,7 +64,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   /// The second, explicit "delete forever" confirmation.
   Future<bool> _confirm(AppLocalizations l10n) async {
     _confirming = true;
-    final second = await showDialog<bool>(
+    final second = await showSiratiDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.settingsDeleteConfirmTitle),

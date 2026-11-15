@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/root_navigation.dart';
 import 'package:sirati/features/auth/application/register_controller.dart';
@@ -145,8 +146,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   void _goToLogin() {
+    // A peer, not a step deeper: fade through.
     unawaited(Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      FadeThroughPageRoute<void>(builder: (_) => const LoginScreen()),
     ));
   }
 

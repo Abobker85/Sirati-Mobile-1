@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/prioritized_fixes.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_loader_screen.dart';
@@ -158,7 +159,8 @@ class HiddenItemsNote extends StatelessWidget {
     final premium =
         await PremiumPromptSheet.show(context, PremiumFeature.fullAnalysis);
     if (!premium || !context.mounted || analysisId == null) return;
-    await Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
+    // The same analysis in full: fade through in place, no slide.
+    await Navigator.of(context).pushReplacement(FadeThroughPageRoute<void>(
       builder: (_) => CvAnalysisLoaderScreen(analysisId: analysisId),
     ));
   }

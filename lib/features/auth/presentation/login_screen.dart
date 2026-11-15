@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/features/auth/application/login_controller.dart';
 import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
 import 'package:sirati/features/auth/presentation/register_screen.dart';
@@ -78,8 +79,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _goToRegister() {
     final navigator = Navigator.of(context);
+    // A peer, not a step deeper: fade through.
     final route =
-        MaterialPageRoute<void>(builder: (_) => const RegisterScreen());
+        FadeThroughPageRoute<void>(builder: (_) => const RegisterScreen());
     // Replace when stacked (Login <-> Register ping-pong); push when Login is
     // the root so Back from Register returns here.
     unawaited(navigator.canPop()

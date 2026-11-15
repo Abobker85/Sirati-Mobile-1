@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/core/utils/app_locale.dart';
@@ -372,8 +373,9 @@ class AppTheme {
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: SiratiPageTransitionsBuilder(),
-          TargetPlatform.iOS: SiratiPageTransitionsBuilder(),
-          TargetPlatform.macOS: SiratiPageTransitionsBuilder(),
+          // Native transition, with the edge swipe back iOS users expect.
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.windows: SiratiPageTransitionsBuilder(),
           TargetPlatform.linux: SiratiPageTransitionsBuilder(),
         },

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:sirati/features/cv_builder/domain/cv_entries.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components/app_dialog.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 
 /// A list of entry cards that reads and writes one wizard text field
@@ -439,7 +440,7 @@ Future<YearMonth?> showMonthYearPicker(
   var year = initial?.year ?? now.year;
   var month = initial?.month ?? now.month;
   final years = [for (var y = now.year + 6; y >= 1960; y--) y];
-  return showDialog<YearMonth>(
+  return showSiratiDialog<YearMonth>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) {

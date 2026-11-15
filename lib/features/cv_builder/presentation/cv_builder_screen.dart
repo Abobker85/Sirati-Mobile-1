@@ -150,7 +150,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
   Future<void> _showRecoveryPrompt(CvDocument draft) {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
-    return showDialog<void>(
+    return showSiratiDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(

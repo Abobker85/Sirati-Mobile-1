@@ -111,8 +111,34 @@ class MotionAxis {
   }
 }
 
+/// Sirati's page transition (Android and other non-iOS platforms): a
+/// shared axis along the reading direction.
+///
+/// - The new page comes 24 dp from the end edge (the left in Arabic) and
+///   fades in after the old page has mostly faded, so two full layouts
+///   never sit on top of each other.
+/// - The page underneath moves 24 dp toward the start edge and fades out
+///   early, over the app background (never black).
+/// - Back plays the same in reverse, a little faster.
+///
+/// iOS uses the native Cupertino transition instead, for its edge swipe
+/// back. With reduced motion pages simply appear.
 class SiratiPageTransitionsBuilder extends PageTransitionsBuilder {
   const SiratiPageTransitionsBuilder();
+
+  /// How far pages travel.
+  static const distance = 24.0;
+
+  /// The incoming page starts fading in at this share of the push; the
+  /// outgoing one has faded out by [outgoingFadeEnd].
+  static const incomingFadeStart = .3;
+  static const outgoingFadeEnd = .3;
+
+  @override
+  Duration get transitionDuration => MotionDurations.step;
+
+  @override
+  Duration get reverseTransitionDuration => MotionDurations.medium;
 
   @override
   Widget buildTransitions<T>(
@@ -122,25 +148,59 @@ class SiratiPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    if (MotionSettings.reduce(context) || route.isFirst) return child;
+    if (MotionSettings.reduce(context)) return child;
+    final end = MotionAxis.endSign(context);
+    final background = Theme.of(context).scaffoldBackgroundColor;
 
-    final curved = CurvedAnimation(
+    final enter = CurvedAnimation(
       parent: animation,
       curve: MotionCurves.enter,
       reverseCurve: MotionCurves.exit,
     );
+    final fadeIn = CurvedAnimation(
+      parent: animation,
+      curve: const Interval(incomingFadeStart, 1, curve: MotionCurves.enter),
+      reverseCurve: const Interval(
+        incomingFadeStart,
+        1,
+        curve: MotionCurves.exit,
+      ),
+    );
+    final leave = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: MotionCurves.enter,
+      reverseCurve: MotionCurves.exit,
+    );
+    final fadeOut = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: const Interval(0, outgoingFadeEnd, curve: MotionCurves.exit),
+      reverseCurve: const Interval(0, outgoingFadeEnd),
+    );
 
-    // Forward push enters from the end edge (mirrors in RTL).
-    final begin = MotionAxis.slideIn(context: context, distance: 0.04);
-
-    return FadeTransition(
-      opacity: curved,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: begin,
-          end: Offset.zero,
-        ).animate(curved),
-        child: child,
+    final incoming = route.isFirst
+        ? child
+        : AnimatedBuilder(
+            animation: enter,
+            child: FadeTransition(opacity: fadeIn, child: child),
+            builder: (context, c) => Transform.translate(
+              offset: Offset(end * distance * (1 - enter.value), 0),
+              child: c,
+            ),
+          );
+    // As the page underneath, fade toward the app background (not to the
+    // black behind the navigator) and step back toward the start edge.
+    return ColoredBox(
+      color: background,
+      child: AnimatedBuilder(
+        animation: leave,
+        child: FadeTransition(
+          opacity: ReverseAnimation(fadeOut),
+          child: incoming,
+        ),
+        builder: (context, c) => Transform.translate(
+          offset: Offset(-end * distance * leave.value, 0),
+          child: c,
+        ),
       ),
     );
   }
