@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/settings/application/settings_controllers.dart';
@@ -16,6 +17,7 @@ import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -247,7 +249,10 @@ void main() {
                     : AppTheme.lightFor(arabic: language == 'ar')));
             await tester.pumpAndSettle();
             final l10n = await AppLocalizations.delegate.load(Locale(language));
-            await tester.scrollUntilVisible(find.byType(SwitchListTile), 200);
+            // The notifications switch (Settings has more than one).
+            final tile =
+                find.widgetWithText(SwitchListTile, l10n.pushNotifications);
+            await tester.scrollUntilVisible(tile, 200);
             final control = find.bySemanticsLabel(l10n.pushNotifications);
             expect(control, findsOneWidget);
             final node = tester.getSemantics(control);
@@ -255,14 +260,12 @@ void main() {
             expect(data.label, l10n.pushNotifications);
             expect(data.hasAction(ui.SemanticsAction.tap), isTrue);
             expect(data.flagsCollection.isToggled, ui.Tristate.isTrue);
-            final size = tester.getSize(find.byType(SwitchListTile));
+            final size = tester.getSize(tile);
             expect(size.width, greaterThanOrEqualTo(48));
             expect(size.height, greaterThanOrEqualTo(48));
             node.owner!.performAction(node.id, ui.SemanticsAction.tap);
             await tester.pumpAndSettle();
-            expect(
-                tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-                isFalse);
+            expect(tester.widget<SwitchListTile>(tile).value, isFalse);
             final off = tester.getSemantics(control).getSemanticsData();
             expect(off.label, l10n.pushNotifications);
             expect(off.flagsCollection.isToggled, ui.Tristate.isFalse);
@@ -376,6 +379,32 @@ void main() {
         expectAllTextAa('settings $mode');
       });
 
+      testWidgets(
+          'the Decorative motion switch turns ambient motion off and on '
+          '($mode)', (tester) async {
+        tester.view.physicalSize = const Size(1080, 4000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        SharedPreferences.setMockInitialValues({});
+        AmbientMotion.enabled.value = true;
+        addTearDown(() => AmbientMotion.enabled.value = false);
+        await tester.pumpWidget(app(_FakeAuth(), theme: theme));
+        await tester.pumpAndSettle();
+        final control = find.byKey(SettingsScreen.decorativeMotionKey);
+        await tester.scrollUntilVisible(control, 200);
+        expect(tester.widget<SwitchListTile>(control).value, isTrue);
+        await tester.tap(control);
+        await tester.pumpAndSettle();
+        expect(AmbientMotion.enabled.value, isFalse);
+        expect(tester.widget<SwitchListTile>(control).value, isFalse);
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool('ambient_motion.enabled'), isFalse);
+        await tester.tap(control);
+        await tester.pumpAndSettle();
+        expect(AmbientMotion.enabled.value, isTrue);
+        expect(tester.getSize(control).height, greaterThanOrEqualTo(48));
+      });
+
       testWidgets('an on switch shows its thumb against the track ($mode)',
           (tester) async {
         tester.view.physicalSize = const Size(1080, 4000);
@@ -384,7 +413,7 @@ void main() {
         await tester.pumpWidget(app(_FakeAuth(), theme: theme));
         await tester.pumpAndSettle();
         expect(find.byType(Switch), findsWidgets);
-        final context = tester.element(find.byType(Switch));
+        final context = tester.element(find.byType(Switch).first);
         final t = Theme.of(context);
         final cs = t.colorScheme;
         const on = {WidgetState.selected};

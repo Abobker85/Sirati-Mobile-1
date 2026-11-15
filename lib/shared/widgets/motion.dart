@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
 
 class MotionDurations {
@@ -20,6 +23,24 @@ class MotionDurations {
 
   /// Home's one-time entrance after launch (header, start cards, services…).
   static const homeIntro = Duration(milliseconds: 1400);
+
+  /// A result revealed as a moment (the ATS score climbing and landing).
+  static const reveal = Duration(milliseconds: 1500);
+
+  /// The "CV created" celebration, the first few times.
+  static const celebration = Duration(milliseconds: 1300);
+
+  /// The same celebration once the user has seen it a few times.
+  static const celebrationQuick = Duration(milliseconds: 750);
+
+  /// A short "no" shake on a field or form error.
+  static const shake = Duration(milliseconds: 360);
+
+  /// A control changing into its result (a button turning into a tick).
+  static const morph = Duration(milliseconds: 600);
+
+  /// Moving forward to the next step of a flow.
+  static const step = Duration(milliseconds: 280);
 
   /// Soft pulse for skeleton placeholders (single shared loop feel).
   static const skeleton = Duration(milliseconds: 1100);
@@ -130,6 +151,10 @@ class MotionTabStack extends StatefulWidget {
     required this.children,
   });
 
+  /// A tab left for at least this long has its content arrive again when it
+  /// is opened (fresh look); quicker switches keep it as it was.
+  static const staleAfter = Duration(minutes: 1);
+
   @override
   State<MotionTabStack> createState() => _MotionTabStackState();
 }
@@ -138,12 +163,30 @@ class _MotionTabStackState extends State<MotionTabStack> {
   late int _renderedIndex = widget.currentIndex;
   bool _animateTabChanges = false;
 
+  /// How many times each tab has been opened after being away for at
+  /// least [MotionTabStack.staleAfter]; content inside arrives again then.
+  /// Quick back-and-forth switches never replay anything.
+  late final List<int> _visits = List.filled(widget.children.length, 0);
+
+  /// When each tab was last left (frame time).
+  late final List<Duration?> _leftAt =
+      List.filled(widget.children.length, null);
+
   @override
   void didUpdateWidget(covariant MotionTabStack oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.currentIndex != widget.currentIndex) {
+      final now = SchedulerBinding.instance.currentSystemFrameTimeStamp;
+      if (oldWidget.currentIndex < _leftAt.length) {
+        _leftAt[oldWidget.currentIndex] = now;
+      }
       _renderedIndex = widget.currentIndex;
       _animateTabChanges = true;
+      final left =
+          _renderedIndex < _leftAt.length ? _leftAt[_renderedIndex] : null;
+      if (left != null && now - left >= MotionTabStack.staleAfter) {
+        _visits[_renderedIndex]++;
+      }
     }
   }
 
@@ -157,8 +200,19 @@ class _MotionTabStackState extends State<MotionTabStack> {
     // Each slot keeps a stable pane widget so form state survives tab changes.
     // The first painted Home frame is fully visible; enter motion runs only
     // when the user actually changes tabs.
+    // Hidden tabs keep their state but do not animate: their tickers are
+    // off until the tab is shown again.
     if (MotionSettings.reduce(context)) {
-      return IndexedStack(index: _renderedIndex, children: widget.children);
+      return IndexedStack(
+        index: _renderedIndex,
+        children: [
+          for (var index = 0; index < widget.children.length; index++)
+            TickerMode(
+              enabled: index == _renderedIndex,
+              child: widget.children[index],
+            ),
+        ],
+      );
     }
 
     final directionSign = MotionAxis.endSign(context);
@@ -172,7 +226,13 @@ class _MotionTabStackState extends State<MotionTabStack> {
             active: index == _renderedIndex,
             animateOnActivate: _animateTabChanges,
             directionSign: directionSign,
-            child: widget.children[index],
+            child: TickerMode(
+              enabled: index == _renderedIndex,
+              child: TabVisitScope(
+                visit: index < _visits.length ? _visits[index] : 0,
+                child: widget.children[index],
+              ),
+            ),
           ),
       ],
     );
@@ -247,8 +307,214 @@ class _TabEnterTransitionState extends State<_TabEnterTransition>
   }
 }
 
+/// Gives [child] a short "no" shake, with a light haptic, whenever a new
+/// error appears: [errorKey] going from null to a value, or to a different
+/// value (a different message). The same error staying put never shakes
+/// again. Reduced motion shows the error without the shake or the buzz.
+class ErrorShake extends StatefulWidget {
+  const ErrorShake({super.key, required this.errorKey, required this.child});
+
+  /// Null while there is no error; usually the error message.
+  final Object? errorKey;
+  final Widget child;
+
+  /// Widest sideways swing.
+  static const amplitude = 6.0;
+
+  @override
+  State<ErrorShake> createState() => ErrorShakeState();
+}
+
+@visibleForTesting
+class ErrorShakeState extends State<ErrorShake>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shake = AnimationController(
+    vsync: this,
+    duration: MotionDurations.shake,
+  );
+
+  /// Whether it is shaking now, for tests.
+  @visibleForTesting
+  bool get shaking => _shake.isAnimating;
+
+  @override
+  void didUpdateWidget(ErrorShake oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final error = widget.errorKey;
+    if (error == null || error == oldWidget.errorKey) return;
+    if (MotionSettings.reduce(context)) return;
+    unawaited(HapticFeedback.lightImpact());
+    _shake.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _shake.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _shake,
+        child: widget.child,
+        builder: (context, child) {
+          final t = _shake.value;
+          if (t == 0 || t == 1) return child!;
+          // Three swings, each smaller than the last.
+          final dx =
+              ErrorShake.amplitude * math.sin(3 * 2 * math.pi * t) * (1 - t);
+          return Transform.translate(offset: Offset(dx, 0), child: child);
+        },
+      );
+}
+
+/// Builds [builder] with `settled: false` while the page it is on is still
+/// coming in (and while it is first built off screen), then once more with
+/// `settled: true`. Count-ups and reveals start from there, so they are seen
+/// whole instead of under a half-faded page.
+class RouteSettled extends StatefulWidget {
+  const RouteSettled({super.key, required this.builder});
+
+  final Widget Function(BuildContext context, bool settled) builder;
+
+  @override
+  State<RouteSettled> createState() => _RouteSettledState();
+}
+
+class _RouteSettledState extends State<RouteSettled> {
+  ModalRoute<Object?>? _route;
+  Animation<double>? _animation;
+  bool _settled = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_settled) return;
+    final route = ModalRoute.of(context);
+    final animation = route?.animation;
+    if (route == null || animation == null) {
+      _settled = true;
+      return;
+    }
+    if (_animation != animation) {
+      _animation?.removeStatusListener(_onStatus);
+      _route = route;
+      _animation = animation..addStatusListener(_onStatus);
+    }
+    _onStatus(animation.status);
+  }
+
+  void _onStatus(AnimationStatus status) {
+    final route = _route;
+    if (_settled || route == null) return;
+    // A new page is first built offstage, where it already reads complete.
+    if (status != AnimationStatus.completed || route.offstage) return;
+    _animation?.removeStatusListener(_onStatus);
+    if (mounted) setState(() => _settled = true);
+  }
+
+  @override
+  void dispose() {
+    _animation?.removeStatusListener(_onStatus);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, _settled);
+}
+
 /// Smoothly replaces loading, error, empty, and data states without delaying
 /// interaction. The caller supplies a stable [stateKey] for each state.
+/// A control changing into its result (a button label turning into a
+/// confirmation, an icon into a tick): the old one fades out while the new
+/// one fades in and, with [pop], grows from 60% with a small overshoot.
+/// Reduced motion swaps at once.
+class MotionMorph extends StatelessWidget {
+  const MotionMorph({
+    super.key,
+    required this.morphKey,
+    required this.child,
+    this.pop = true,
+  });
+
+  /// Changes when the control changes state.
+  final Object morphKey;
+  final Widget child;
+  final bool pop;
+
+  @override
+  Widget build(BuildContext context) {
+    final keyed = KeyedSubtree(key: ValueKey(morphKey), child: child);
+    if (MotionSettings.reduce(context)) return keyed;
+    return AnimatedSwitcher(
+      duration: MotionDurations.morph,
+      reverseDuration: MotionDurations.fast,
+      switchInCurve: const Interval(.2, 1),
+      transitionBuilder: (child, animation) {
+        final faded = FadeTransition(opacity: animation, child: child);
+        if (!pop) return faded;
+        return ScaleTransition(
+          scale: Tween<double>(begin: .6, end: 1).animate(
+            CurvedAnimation(parent: animation, curve: MotionCurves.pop),
+          ),
+          child: faded,
+        );
+      },
+      child: keyed,
+    );
+  }
+}
+
+/// Swaps the content of a multi-step flow: the new step fades in while
+/// sliding a little from the reading end (left in Arabic, right in English),
+/// so "next" looks the same in every flow. Reduced motion swaps at once.
+class MotionStepSwitcher extends StatelessWidget {
+  const MotionStepSwitcher({
+    super.key,
+    required this.stepKey,
+    required this.child,
+  });
+
+  /// Changes when the step changes.
+  final Object stepKey;
+  final Widget child;
+
+  /// How far the new step slides in, as a share of its width.
+  static const slide = .05;
+
+  @override
+  Widget build(BuildContext context) {
+    final keyed = KeyedSubtree(key: ValueKey(stepKey), child: child);
+    if (MotionSettings.reduce(context)) return keyed;
+    final end = MotionAxis.endSign(context);
+    return AnimatedSwitcher(
+      duration: MotionDurations.step,
+      reverseDuration: MotionDurations.fast,
+      switchInCurve: MotionCurves.standard,
+      switchOutCurve: MotionCurves.exit,
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          // The step on its way out cannot be tapped (no double send).
+          for (final old in previous) IgnorePointer(child: old),
+          if (current != null) current,
+        ],
+      ),
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: Offset(end * slide, 0),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
+      ),
+      child: keyed,
+    );
+  }
+}
+
 class MotionStateSwitcher extends StatelessWidget {
   final Object stateKey;
   final Widget child;
@@ -294,40 +560,64 @@ class MotionStateSwitcher extends StatelessWidget {
 /// The capsule clarifies the active destination while the icon swap and
 /// slight scale acknowledge the tab change. Reduced motion keeps the same
 /// selected styling without interpolation.
-class MotionNavIcon extends StatelessWidget {
+class MotionNavIcon extends StatefulWidget {
   final IconData icon;
   final IconData selectedIcon;
   final bool selected;
-  final Color selectedBackgroundColor;
 
   const MotionNavIcon({
     super.key,
     required this.icon,
     required this.selectedIcon,
     required this.selected,
-    required this.selectedBackgroundColor,
   });
 
   @override
+  State<MotionNavIcon> createState() => _MotionNavIconState();
+}
+
+class _MotionNavIconState extends State<MotionNavIcon>
+    with SingleTickerProviderStateMixin {
+  /// 0 → 1 as a newly selected icon settles in from 85%.
+  late final AnimationController _settle = AnimationController(
+    vsync: this,
+    duration: MotionDurations.navIndicator,
+    value: 1,
+  );
+
+  @override
+  void didUpdateWidget(MotionNavIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selected &&
+        !oldWidget.selected &&
+        !MotionSettings.reduce(context)) {
+      _settle.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _settle.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final glyph = LivelyIcon(selected ? selectedIcon : icon);
+    // One icon for the whole life of the tab, so a press bounce that is
+    // still playing is not cut when the tab becomes selected.
     return SizedBox(
       width: 44,
       height: 32,
       child: Center(
-        child: selected && !MotionSettings.reduce(context)
-            // The newly selected icon settles in from 85% while the bar's
-            // pill slides under it.
-            ? TweenAnimationBuilder<double>(
-                key: const ValueKey('selected'),
-                tween: Tween(begin: .85, end: 1),
-                duration: MotionDurations.navIndicator,
-                curve: MotionCurves.pop,
-                builder: (context, scale, child) =>
-                    Transform.scale(scale: scale, child: child),
-                child: glyph,
-              )
-            : glyph,
+        child: AnimatedBuilder(
+          animation: _settle,
+          builder: (context, child) => Transform.scale(
+            scale: .85 + .15 * MotionCurves.pop.transform(_settle.value),
+            child: child,
+          ),
+          child:
+              LivelyIcon(widget.selected ? widget.selectedIcon : widget.icon),
+        ),
       ),
     );
   }
@@ -361,6 +651,7 @@ class _MotionRevealState extends State<MotionReveal>
   Animation<Offset>? _slide;
   Timer? _timer;
   bool _skipMotion = false;
+  int? _visit;
 
   @override
   void initState() {
@@ -389,6 +680,16 @@ class _MotionRevealState extends State<MotionReveal>
     if (MotionSettings.reduce(context)) {
       controller.value = 1;
       return;
+    }
+
+    // Opening the tab again: arrive again.
+    final visit = TabVisitScope.maybeOf(context);
+    final revisit = _visit != null && visit != _visit;
+    _visit = visit;
+    if (revisit && AmbientMotion.enabled.value) {
+      _timer?.cancel();
+      _timer = null;
+      controller.value = 0;
     }
 
     if (controller.status == AnimationStatus.dismissed && _timer == null) {

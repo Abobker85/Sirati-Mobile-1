@@ -583,12 +583,16 @@ class _AppTextFormFieldState extends FormFieldState<String> {
               if (suffixIcon != null) suffixIcon,
               Padding(
                 padding: const EdgeInsetsDirectional.only(end: 10),
-                child: Icon(
-                  showError
-                      ? Icons.error_outline_rounded
-                      : Icons.check_circle_rounded,
-                  size: 20,
-                  color: showError ? c.error : c.success,
+                // The error or success mark pops in as it appears.
+                child: MotionMorph(
+                  morphKey: showError,
+                  child: Icon(
+                    showError
+                        ? Icons.error_outline_rounded
+                        : Icons.check_circle_rounded,
+                    size: 20,
+                    color: showError ? c.error : c.success,
+                  ),
                 ),
               ),
             ],
@@ -599,73 +603,91 @@ class _AppTextFormFieldState extends FormFieldState<String> {
       borderSide: BorderSide(color: c.success, width: 1.4),
     );
 
-    return TextField(
-      controller: _effectiveController,
-      focusNode: _focusNode,
-      enabled: enabled,
-      readOnly: readOnly,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      textCapitalization: textCapitalization,
-      inputFormatters: inputFormatters,
-      autofillHints: widget.autofillHints,
-      maxLines: obscureText ? 1 : maxLines,
-      minLines: minLines,
-      maxLength: maxLength,
-      textAlign: textAlign,
-      textDirection: textDirection ??
-          BidiTextUtils.detectBaseDirection(
-            _effectiveController.text,
-            fallback: Directionality.of(context),
-          ),
-      style: AppTypography.of(context, AppTypography.bodyLg),
-      cursorColor: c.primaryInk,
-      onChanged: (value) {
-        didChange(value);
-        onChanged?.call(value);
-      },
-      onSubmitted: onFieldSubmitted,
-      decoration: InputDecoration(
-        hintText: hintText,
-        // An explicit text direction (phone, email) also governs the hint, so
-        // "+966 5X XXX XXXX" is not bidi-reordered inside an Arabic UI.
-        hintTextDirection: textDirection,
-        label: _tokenLabel(labelText),
-        prefixIcon: prefixIcon == null
-            ? null
-            : IconTheme(
-                data: IconThemeData(
-                  color: showError
-                      ? c.error
-                      : showSuccess
-                          ? c.success
-                          : _hasFocus
-                              ? c.primaryInk
-                              : c.textSecondary,
-                  size: 20,
+    // A new error shakes the field once (also when a submit finds it).
+    return ErrorShake(
+      errorKey: showError ? errorText : null,
+      child: TextField(
+        controller: _effectiveController,
+        focusNode: _focusNode,
+        enabled: enabled,
+        readOnly: readOnly,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        textCapitalization: textCapitalization,
+        inputFormatters: inputFormatters,
+        autofillHints: widget.autofillHints,
+        maxLines: obscureText ? 1 : maxLines,
+        minLines: minLines,
+        maxLength: maxLength,
+        textAlign: textAlign,
+        textDirection: textDirection ??
+            BidiTextUtils.detectBaseDirection(
+              _effectiveController.text,
+              fallback: Directionality.of(context),
+            ),
+        style: AppTypography.of(context, AppTypography.bodyLg),
+        cursorColor: c.primaryInk,
+        onChanged: (value) {
+          didChange(value);
+          onChanged?.call(value);
+        },
+        onSubmitted: onFieldSubmitted,
+        decoration: InputDecoration(
+          hintText: hintText,
+          // An explicit text direction (phone, email) also governs the hint, so
+          // "+966 5X XXX XXXX" is not bidi-reordered inside an Arabic UI.
+          hintTextDirection: textDirection,
+          label: _tokenLabel(labelText),
+          // The field's icon takes its state's colour smoothly and lifts a
+          // little while the field has focus.
+          prefixIcon: prefixIcon == null
+              ? null
+              : TweenAnimationBuilder<Color?>(
+                  tween: ColorTween(
+                    end: showError
+                        ? c.error
+                        : showSuccess
+                            ? c.success
+                            : _hasFocus
+                                ? c.primaryInk
+                                : c.textSecondary,
+                  ),
+                  duration: MotionSettings.reduce(context)
+                      ? Duration.zero
+                      : MotionDurations.medium,
+                  builder: (context, color, child) => IconTheme(
+                    data: IconThemeData(color: color, size: 20),
+                    child: child!,
+                  ),
+                  child: AnimatedScale(
+                    scale:
+                        _hasFocus && !MotionSettings.reduce(context) ? 1.1 : 1,
+                    duration: MotionDurations.medium,
+                    curve: MotionCurves.pop,
+                    child: prefixIcon,
+                  ),
                 ),
-                child: prefixIcon,
-              ),
-        suffixIcon: resolvedSuffix,
-        filled: filled,
-        fillColor: fill,
-        enabledBorder: showSuccess ? successBorder : null,
-        focusedBorder: showSuccess ? successBorder : null,
-        contentPadding: contentPadding ??
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        // Native errors are associated with the editable semantics node and
-        // announced by InputDecorator's live region, including on submit.
-        errorText: showError ? errorText : null,
-        errorMaxLines: 100,
-        helperText: showSuccess ? widget.successMessage : null,
-        helperMaxLines: 100,
-        helperStyle: AppTypography.of(
-          context,
-          AppTypography.bodySm,
-          color: c.onSuccessContainer,
+          suffixIcon: resolvedSuffix,
+          filled: filled,
+          fillColor: fill,
+          enabledBorder: showSuccess ? successBorder : null,
+          focusedBorder: showSuccess ? successBorder : null,
+          contentPadding: contentPadding ??
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          // Native errors are associated with the editable semantics node and
+          // announced by InputDecorator's live region, including on submit.
+          errorText: showError ? errorText : null,
+          errorMaxLines: 100,
+          helperText: showSuccess ? widget.successMessage : null,
+          helperMaxLines: 100,
+          helperStyle: AppTypography.of(
+            context,
+            AppTypography.bodySm,
+            color: c.onSuccessContainer,
+          ),
+          counterText: '',
         ),
-        counterText: '',
       ),
     );
   }

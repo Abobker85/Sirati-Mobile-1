@@ -285,7 +285,6 @@ void main() {
         icon: Icons.home_outlined,
         selectedIcon: Icons.home_rounded,
         selected: true,
-        selectedBackgroundColor: AppColors.primaryLight,
       ),
     ));
 

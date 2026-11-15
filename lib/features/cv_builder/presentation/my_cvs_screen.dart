@@ -31,6 +31,7 @@ import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
+import 'package:sirati/shared/widgets/sirati_refresh_indicator.dart';
 
 /// "My CVs" tab (design/cv-tab): tools to create, scan, upload or target a
 /// job, then saved CVs with open, edit, download (per template) and delete.
@@ -293,8 +294,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
               children: [
                 NotificationListener<ScrollNotification>(
                   onNotification: _onListScroll,
-                  child: RefreshIndicator(
-                    color: context.sirati.primary,
+                  child: SiratiRefreshIndicator(
                     onRefresh: _refresh,
                     child: _buildList(context, data, english, horizontalPadding,
                         shell: shell),
@@ -324,8 +324,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
   }
 
   bool _onListScroll(ScrollNotification notification) {
-    if (notification.depth == 0 &&
-        notification.metrics.axis == Axis.vertical) {
+    if (notification.depth == 0 && notification.metrics.axis == Axis.vertical) {
       _slim.value = notification.metrics.pixels > MyCvsSlimHeader.showAfter;
     }
     return false;

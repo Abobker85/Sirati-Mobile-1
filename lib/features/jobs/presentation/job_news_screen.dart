@@ -26,6 +26,7 @@ import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
+import 'package:sirati/shared/widgets/sirati_refresh_indicator.dart';
 
 /// Job-news tab: search, preset / category / city filters, a featured
 /// posting, then the rest of the list. Data comes from [jobNewsFeedProvider].
@@ -209,8 +210,7 @@ class _JobNewsList extends ConsumerWidget {
     final resultsKey = '${filters.hashCode}|${feed.items.length}|'
         '${featured?.id ?? 0}|$failed';
 
-    return RefreshIndicator(
-      color: context.sirati.primary,
+    return SiratiRefreshIndicator(
       onRefresh: onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),

@@ -225,6 +225,82 @@ void main() {
       expect(ExpandFrom.unwrap(null), isNull);
     });
   });
+  group('depth while growing', () {
+    double zoom(WidgetTester tester) => tester
+        .widget<Transform>(find.byKey(ExpandPageRoute.zoomKey))
+        .transform
+        .entry(0, 0);
+    bool lifted(WidgetTester tester) =>
+        tester
+            .widget<CustomPaint>(find
+                .ancestor(
+                  of: find.byKey(ExpandPageRoute.revealKey),
+                  matching: find.byType(CustomPaint),
+                )
+                .first)
+            .painter !=
+        null;
+
+    for (final origin in _origins) {
+      testWidgets(
+          '$origin: content zooms out of the card, lifted by a '
+          'shadow, and rests flat at full size', (tester) async {
+        final navigator = await _pumpHost(tester);
+        unawaited(navigator.push(_route(origin)));
+        await tester.pump();
+        await tester.pump();
+        expect(zoom(tester), closeTo(ExpandPageRoute.zoomFrom, .001));
+
+        var previous = zoom(tester);
+        const frames = 10;
+        for (var i = 0; i < frames - 1; i++) {
+          await tester.pump(ExpandPageRoute.duration ~/ frames);
+          final now = zoom(tester);
+          expect(now, greaterThanOrEqualTo(previous));
+          expect(now, lessThanOrEqualTo(1));
+          expect(lifted(tester), isTrue, reason: 'frame $i');
+          previous = now;
+        }
+        await tester.pumpAndSettle();
+        expect(zoom(tester), 1);
+        expect(lifted(tester), isFalse);
+
+        // Already full size before the reveal fills the screen.
+        navigator.pop();
+        await tester.pumpAndSettle();
+        unawaited(navigator.push(_route(origin)));
+        await tester.pump();
+        await tester.pump();
+        for (var i = 0; i < frames; i++) {
+          await tester.pump(ExpandPageRoute.duration ~/ frames);
+          final progress = ExpandPageRoute.curve
+              .transform(((i + 1) / frames).clamp(0.0, 1.0));
+          if (progress >= ExpandPageRoute.zoomEndsAt) {
+            expect(zoom(tester), 1, reason: 'frame $i');
+          }
+        }
+        await tester.pumpAndSettle();
+        expect(tester.getRect(find.byKey(_destination)), Offset.zero & _screen);
+
+        // Going back lifts it again and zooms it down into the card.
+        navigator.pop();
+        await tester.pump();
+        await tester.pump(ExpandPageRoute.duration ~/ 2);
+        expect(lifted(tester), isTrue);
+        expect(zoom(tester), lessThan(1));
+        await tester.pumpAndSettle();
+      });
+    }
+
+    testWidgets('reduced motion: no zoom and no shadow', (tester) async {
+      final navigator = await _pumpHost(tester, reduceMotion: true);
+      unawaited(navigator.push(_route(_origins.first)));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byKey(ExpandPageRoute.zoomKey), findsNothing);
+      expect(tester.getRect(find.byKey(_destination)), Offset.zero & _screen);
+    });
+  });
 }
 
 class _Counter extends StatefulWidget {

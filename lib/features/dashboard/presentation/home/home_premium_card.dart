@@ -5,6 +5,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/subscription_status.dart';
 import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
 
@@ -12,6 +13,10 @@ import 'package:sirati/shared/widgets/lively_icon.dart';
 /// to: what Premium adds and today's free usage, so a limit never comes as
 /// a surprise. Hidden for Premium and while monetization is off.
 class HomePremiumCard extends StatelessWidget {
+  /// Peak strength of the gold shine; the card's text keeps AA under it in
+  /// both themes (checked in a test).
+  static const shineStrength = .2;
+
   const HomePremiumCard({super.key, this.padding = EdgeInsets.zero});
 
   /// Applied only while the card shows, so Premium accounts get no gap.
@@ -23,7 +28,20 @@ class HomePremiumCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SubscriptionBuilder(
       builder: (context, status) => status.isFreeTier
-          ? Padding(padding: padding, child: _Card(status: status))
+          ? Padding(
+              padding: padding,
+              // A soft gold shine passes over it every few seconds.
+              child: Builder(
+                builder: (context) => AmbientShine(
+                  radius: 18,
+                  color: context.sirati.amberAccent,
+                  strength: HomePremiumCard.shineStrength,
+                  delay: const Duration(seconds: 8),
+                  rest: const Duration(seconds: 10),
+                  child: _Card(status: status),
+                ),
+              ),
+            )
           : const SizedBox.shrink(),
     );
   }
@@ -67,11 +85,15 @@ class _Card extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(10),
-                  child: LivelyIcon(
-                    Icons.workspace_premium_rounded,
-                    size: 24,
-                    color: c.onWarningContainer,
-                    life: IconLife.twinkle,
+                  child: AmbientMove(
+                    kind: AmbientKind.twinkle,
+                    delay: const Duration(seconds: 9),
+                    rest: const Duration(seconds: 10),
+                    child: LivelyIcon(
+                      Icons.workspace_premium_rounded,
+                      size: 24,
+                      color: c.onWarningContainer,
+                    ),
                   ),
                 ),
               ),

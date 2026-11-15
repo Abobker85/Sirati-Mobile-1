@@ -24,6 +24,7 @@ import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/score_ring.dart';
 
 /// Reading direction for a CV: its declared language's, never guessed
 /// from the text.
@@ -600,29 +601,45 @@ class _AtsScoreCard extends StatelessWidget {
               child: SizedBox.square(
                 key: const ValueKey('cv-hub-score-ring'),
                 dimension: ringSize,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CircularProgressIndicator(
-                      value: value / 100,
-                      strokeWidth: 6,
-                      color: c.primaryInk,
-                      backgroundColor: c.borderStrong,
+                // Draws and counts up like every score ring in the app, once
+                // the page has finished coming in.
+                child: RouteSettled(
+                  builder: (context, settled) => TweenAnimationBuilder<double>(
+                    tween: Tween(
+                      begin: MotionSettings.reduce(context) ? value / 100 : 0,
+                      end: settled || MotionSettings.reduce(context)
+                          ? value / 100
+                          : 0,
                     ),
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.xs),
-                        child: Text(
-                          l.cvHubAtsScore(value),
-                          textDirection: TextDirection.ltr,
-                          style: AppTypography.of(
-                            context,
-                            AppTypography.titleMd,
+                    duration: MotionSettings.reduce(context)
+                        ? Duration.zero
+                        : ScoreRing.duration,
+                    curve: MotionCurves.enter,
+                    builder: (context, shown, _) => Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CircularProgressIndicator(
+                          value: shown,
+                          strokeWidth: 6,
+                          color: c.primaryInk,
+                          backgroundColor: c.borderStrong,
+                        ),
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.xs),
+                            child: Text(
+                              l.cvHubAtsScore((shown * 100).round()),
+                              textDirection: TextDirection.ltr,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.titleMd,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

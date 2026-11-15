@@ -16,6 +16,7 @@ import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 
 /// Job Match entry: server-gated (paywall / quota / unavailable), then job
 /// details + CV choice → match → [JobMatchResultScreen].
@@ -65,7 +66,8 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
       appBar: AppBar(title: Text(l.jobMatchTitle)),
       body: entitlement.when(
         skipLoadingOnRefresh: false,
-        loading: () => const Center(child: CircularProgressIndicator()),
+        // The form's own shape while access is checked, not a spinner.
+        loading: () => const ListScreenSkeleton(itemCount: 4),
         error: (_, __) => _GateView(
           icon: Icons.cloud_off_rounded,
           title: l.jobMatchEntitlementLoadFailed,
@@ -220,9 +222,15 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
         ),
         const SizedBox(height: AppSpacing.md),
         cvs.when(
-          loading: () => const Padding(
-            padding: EdgeInsets.all(AppSpacing.md),
-            child: Center(child: CircularProgressIndicator()),
+          loading: () => const AppSkeletonScope(
+            child: Column(
+              key: ValueKey('jm-cvs-skeleton'),
+              children: [
+                AppSkeleton(height: 72, radius: 16),
+                SizedBox(height: AppSpacing.xs),
+                AppSkeleton(height: 72, radius: 16),
+              ],
+            ),
           ),
           error: (_, __) => JobMatchNotice(
             tone: JobMatchTone.error,

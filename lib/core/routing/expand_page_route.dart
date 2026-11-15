@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 /// Where on screen an expanding page starts: the tapped card's rectangle
@@ -51,6 +53,11 @@ class ExpandFrom {
 
 /// A page that grows out of the card that opened it and shrinks back onto it.
 ///
+/// Back gestures: like every page in the app (see
+/// `SiratiPageTransitionsBuilder` in the theme), this route has no iOS
+/// edge-swipe or Android predictive-back preview; back is the button or the
+/// system back, and the page then shrinks onto its card.
+///
 /// The page is laid out at full size from the first frame and revealed
 /// through a rounded rectangle that travels from [origin] to the whole
 /// screen, so its content never stretches. With "remove animations" on, the
@@ -70,6 +77,15 @@ class ExpandPageRoute<T> extends MaterialPageRoute<T> {
 
   /// Key of the clip the page is revealed through, for tests.
   static const revealKey = ValueKey('expand-page-reveal');
+
+  /// Key of the zoom applied to the page while it grows, for tests.
+  static const zoomKey = ValueKey('expand-page-zoom');
+
+  /// How small the page content starts, as it zooms out of the card.
+  static const zoomFrom = .92;
+
+  /// Share of the growth after which the content is at full size.
+  static const zoomEndsAt = .85;
 
   final ExpandOrigin origin;
 
@@ -99,17 +115,54 @@ class ExpandPageRoute<T> extends MaterialPageRoute<T> {
       curve: const Interval(0, 0.5, curve: Curves.easeOut),
     );
 
+    final clipper = _RevealClipper(origin: origin, progress: progress);
+    final shadow = Theme.of(context).colorScheme.shadow;
+    // The content zooms out of the card: it starts a little smaller, scaled
+    // around the card's centre, so the card seems to become the page.
+    final size = MediaQuery.sizeOf(context);
+    final focus = Alignment(
+      size.width == 0 ? 0 : origin.rect.center.dx / size.width * 2 - 1,
+      size.height == 0 ? 0 : origin.rect.center.dy / size.height * 2 - 1,
+    );
+
     return AnimatedBuilder(
       animation: animation,
       // The tree keeps one shape for the route's whole life, so the page's
       // state survives the end of the transition.
-      builder: (context, page) => ClipRRect(
-        key: revealKey,
-        clipBehavior: animation.isCompleted ? Clip.none : Clip.antiAlias,
-        clipper: _RevealClipper(origin: origin, progress: progress),
-        child: page,
+      builder: (context, page) {
+        final t = progress.value.clamp(0.0, 1.0);
+        final moving = !animation.isCompleted && !animation.isDismissed;
+        return CustomPaint(
+          // The growing card is lifted off the page by a soft shadow that is
+          // deepest halfway and gone at both ends.
+          painter: moving
+              ? _RevealShadowPainter(
+                  clipper: clipper,
+                  color: shadow,
+                  lift: math.sin(math.pi * t),
+                )
+              : null,
+          child: ClipRRect(
+            key: revealKey,
+            clipBehavior: moving ? Clip.antiAlias : Clip.none,
+            clipper: clipper,
+            child: Transform.scale(
+              key: zoomKey,
+              // Full size a little before the reveal fills the screen, so
+              // the page under it never peeks round a not-yet-full page.
+              scale: zoomFrom + (1 - zoomFrom) * math.min(1.0, t / zoomEndsAt),
+              alignment: focus,
+              child: page,
+            ),
+          ),
+        );
+      },
+      // The page is drawn once into its own layer and then only clipped,
+      // scaled and faded while it grows, not redrawn every frame.
+      child: FadeTransition(
+        opacity: opacity,
+        child: RepaintBoundary(child: child),
       ),
-      child: FadeTransition(opacity: opacity, child: child),
     );
   }
 }
@@ -140,4 +193,30 @@ class _RevealClipper extends CustomClipper<RRect> {
   @override
   bool shouldReclip(_RevealClipper oldClipper) =>
       oldClipper.origin != origin || oldClipper.progress != progress;
+}
+
+/// Paints the soft shadow under the growing card.
+class _RevealShadowPainter extends CustomPainter {
+  _RevealShadowPainter({
+    required this.clipper,
+    required this.color,
+    required this.lift,
+  });
+
+  final _RevealClipper clipper;
+  final Color color;
+
+  /// 0 (flat) to 1 (highest).
+  final double lift;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (lift <= 0) return;
+    final path = Path()..addRRect(clipper.getClip(size));
+    canvas.drawShadow(path, color.withValues(alpha: .5), 24 * lift, false);
+  }
+
+  @override
+  bool shouldRepaint(_RevealShadowPainter old) =>
+      old.lift != lift || old.color != color;
 }

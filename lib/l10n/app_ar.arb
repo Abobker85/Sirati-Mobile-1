@@ -134,6 +134,14 @@
   "themeLight": "فاتح",
   "themeDark": "داكن",
   "pushNotifications": "إشعارات الدفع",
+  "settingsDecorativeMotion": "الحركة التزيينية",
+  "@settingsDecorativeMotion": {
+    "description": "Settings switch: animations that play by themselves (shines, floating pictures, glows)."
+  },
+  "settingsDecorativeMotionHint": "حركات خفيفة تعمل تلقائياً في الشاشات",
+  "@settingsDecorativeMotionHint": {
+    "description": "Subtitle of the decorative motion switch."
+  },
   "aboutSection": "حول",
   "privacyPolicy": "سياسة الخصوصية",
   "contactUs": "تواصل معنا",
@@ -4142,5 +4150,21 @@
       }
     }
   },
-  "premiumUnlockAll": "افتح التحليل الكامل"
+  "premiumUnlockAll": "افتح التحليل الكامل",
+  "atsScoreUpSinceLast": "أعلى بـ {points} من آخر فحص لهذه السيرة",
+  "@atsScoreUpSinceLast": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "atsScoreDownSinceLast": "أقل بـ {points} من آخر فحص لهذه السيرة",
+  "@atsScoreDownSinceLast": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  }
 }

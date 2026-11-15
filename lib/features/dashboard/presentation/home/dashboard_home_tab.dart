@@ -26,11 +26,13 @@ import 'package:sirati/shared/navigation/dashboard_scroll_end.dart';
 import 'package:sirati/shared/navigation/dashboard_tab.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
+import 'package:sirati/shared/widgets/sirati_refresh_indicator.dart';
 
 /// Home tab, as on the approved board (option 3 with its changes): profile
 /// row, the create and ATS start cards, three services, latest jobs, and the
@@ -135,10 +137,24 @@ class _DashboardListState extends State<_DashboardList>
     duration: MotionDurations.homeIntro,
   );
   bool _introStarted = false;
+  int? _visit;
+
+  /// Coming back to Home plays a quicker version of the intro.
+  static const _revisitIntro = Duration(milliseconds: 900);
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final visit = TabVisitScope.maybeOf(context);
+    final revisit = _visit != null && visit != _visit;
+    _visit = visit;
+    if (revisit &&
+        AmbientMotion.enabled.value &&
+        !MotionSettings.reduce(context)) {
+      _intro.duration = _revisitIntro;
+      _intro.forward(from: 0);
+      return;
+    }
     if (_introStarted) return;
     _introStarted = true;
     if (_introPlayed || MotionSettings.reduce(context)) {
@@ -169,12 +185,28 @@ class _DashboardListState extends State<_DashboardList>
         child: child,
       );
 
-  Widget _sweep(double begin, double end, Widget child) => HomeIntroSweep(
+  /// The intro's light sweep, then the same light passing again by itself
+  /// every few seconds, the two cards taking turns ([shineDelay]).
+  Widget _sweep(
+    double begin,
+    double end,
+    Widget child, {
+    Duration shineDelay = const Duration(seconds: 6),
+  }) =>
+      HomeIntroSweep(
         animation: _intro,
         begin: begin,
         end: end,
         radius: 22,
-        child: child,
+        strength: HomeStartCard.shineStrength,
+        child: AmbientShine(
+          radius: 22,
+          strength: HomeStartCard.shineStrength,
+          color: context.sirati.onBrandSurface,
+          delay: shineDelay,
+          rest: const Duration(seconds: 7),
+          child: child,
+        ),
       );
 
   void _push(BuildContext context, Widget screen) {
@@ -186,7 +218,6 @@ class _DashboardListState extends State<_DashboardList>
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final c = context.sirati;
     final gutter = EdgeInsets.symmetric(horizontal: widget.horizontalPadding);
 
     final services = [
@@ -229,8 +260,7 @@ class _DashboardListState extends State<_DashboardList>
         ),
     ];
 
-    return RefreshIndicator(
-      color: c.primary,
+    return SiratiRefreshIndicator(
       onRefresh: widget.onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -288,13 +318,16 @@ class _DashboardListState extends State<_DashboardList>
                         _sweep(
                           .30,
                           .70,
-                          HomeStartCard(
-                            inkKey: const ValueKey('home-start-create'),
-                            tone: HomeStartTone.create,
-                            title: l.homeStartCreateTitle,
-                            body: l.homeStartCreateBody,
-                            onTap: () => unawaited(
-                              Navigator.pushNamed(context, AppRoutes.createCv),
+                          IdleNudge(
+                            child: HomeStartCard(
+                              inkKey: const ValueKey('home-start-create'),
+                              tone: HomeStartTone.create,
+                              title: l.homeStartCreateTitle,
+                              body: l.homeStartCreateBody,
+                              onTap: () => unawaited(
+                                Navigator.pushNamed(
+                                    context, AppRoutes.createCv),
+                              ),
                             ),
                           ),
                         ),
@@ -315,6 +348,7 @@ class _DashboardListState extends State<_DashboardList>
                             onTap: () =>
                                 _push(context, const CvAnalysisScreen()),
                           ),
+                          shineDelay: const Duration(seconds: 10),
                         ),
                       ),
                     ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -43,54 +44,58 @@ class MyCvsHeader extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final ink = c.onBrandSurface;
 
-    return DecoratedBox(
-      decoration: brandBand(context),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.lg + bottomInset,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.of(
-                        context,
-                        AppTypography.headlineMd,
-                        color: ink,
+    // The band breathes: a soft darker glow drifts across now and then.
+    return BreathingBand(
+      deep: c.brandSurfaceDeep,
+      child: DecoratedBox(
+        decoration: brandBand(context),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg + bottomInset,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.of(
+                          context,
+                          AppTypography.headlineMd,
+                          color: ink,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      l10n.myCvsHeaderSubtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.of(
-                        context,
-                        AppTypography.bodySm,
-                        color: ink,
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.myCvsHeaderSubtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.of(
+                          context,
+                          AppTypography.bodySm,
+                          color: ink,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _BandBell(
-                unreadCount: unreadCount,
-                onTap: onNotifications,
-              ),
-            ],
+                const SizedBox(width: AppSpacing.sm),
+                _BandBell(
+                  unreadCount: unreadCount,
+                  onTap: onNotifications,
+                ),
+              ],
+            ),
           ),
         ),
       ),

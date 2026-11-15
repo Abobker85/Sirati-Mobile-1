@@ -5,6 +5,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/profile_photo.dart';
 
@@ -142,12 +143,20 @@ class DashboardHomeHeader extends StatelessWidget {
                       children: [
                         Center(
                           // Rings when there is something new to read.
-                          child: LivelyIcon(
-                            Icons.notifications_none_rounded,
-                            color: c.textPrimary,
-                            life: IconLife.ring,
-                            plays: unreadCount > 0 ? 2 : 0,
-                            trigger: unreadCount,
+                          // ...and again softly every 30 s while it waits.
+                          child: AmbientMove(
+                            kind: AmbientKind.ring,
+                            priority: AmbientPriority.news,
+                            enabled: unreadCount > 0,
+                            delay: const Duration(seconds: 30),
+                            rest: const Duration(seconds: 30),
+                            child: LivelyIcon(
+                              Icons.notifications_none_rounded,
+                              color: c.textPrimary,
+                              life: IconLife.ring,
+                              plays: unreadCount > 0 ? 2 : 0,
+                              trigger: unreadCount,
+                            ),
                           ),
                         ),
                         if (unreadCount > 0)

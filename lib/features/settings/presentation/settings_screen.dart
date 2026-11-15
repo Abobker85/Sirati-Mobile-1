@@ -21,6 +21,7 @@ import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/theme/app_theme_controller.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
@@ -31,6 +32,9 @@ class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   static const subscriptionKey = ValueKey('settings-subscription');
+
+  /// The "Decorative motion" switch.
+  static const decorativeMotionKey = ValueKey('settings-decorative-motion');
   static const manageSubscriptionKey = ValueKey('settings-manage-subscription');
 
   @override
@@ -319,6 +323,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onChanged: notifications.hasValue
                   ? (value) => unawaited(_toggleNotifications(value))
                   : null,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          // Lets anyone stop the motion that plays by itself (shines,
+          // floating pictures, glows); motion that answers a tap stays.
+          Material(
+            color: context.sirati.surface,
+            borderRadius: BorderRadius.circular(14),
+            child: ValueListenableBuilder<bool>(
+              valueListenable: AmbientMotion.enabled,
+              builder: (context, on, _) => SwitchListTile.adaptive(
+                key: SettingsScreen.decorativeMotionKey,
+                secondary: Icon(Icons.auto_awesome_outlined,
+                    color: context.sirati.primaryInk),
+                title: Text(l10n.settingsDecorativeMotion),
+                subtitle: Text(l10n.settingsDecorativeMotionHint),
+                value: on,
+                onChanged: (value) =>
+                    unawaited(AmbientMotion.setEnabled(value)),
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.xl),

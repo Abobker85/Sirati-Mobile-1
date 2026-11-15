@@ -18,6 +18,7 @@ import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/sirati_refresh_indicator.dart';
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -123,7 +124,7 @@ class NotificationsScreen extends ConsumerWidget {
           padding: EdgeInsets.fromLTRB(AppSpacing.lg, 18, AppSpacing.lg, 32),
         ),
         isEmpty: (items) => items.isEmpty,
-        empty: RefreshIndicator(
+        empty: SiratiRefreshIndicator(
           onRefresh: () => _refresh(ref),
           child: NotificationsEmptyState(
             onRoute: NotificationService.instance.onNotificationTap == null
@@ -211,9 +212,7 @@ class _NotificationInboxState extends State<NotificationInbox> {
             onTap: () => _select(category: c),
           ),
     ];
-
-    var order = 0;
-    return RefreshIndicator(
+    return SiratiRefreshIndicator(
       onRefresh: widget.onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -255,10 +254,15 @@ class _NotificationInboxState extends State<NotificationInbox> {
                     const SizedBox(height: AppSpacing.sm),
                 itemBuilder: (context, index) {
                   final item = group.items[index];
+                  // Keyed by the notification, so a refresh that adds rows
+                  // never moves a row's dot or reveal onto another item.
                   return MotionReveal(
-                    order: (order++).clamp(0, 5),
+                    key: ValueKey('notification-${item.id}'),
+                    order: index.clamp(0, 5),
                     child: NotificationCard(
+                      key: ValueKey('notification-card-${item.id}'),
                       item: item,
+                      order: index,
                       onTap: () => widget.onOpen(item),
                     ),
                   );
@@ -475,10 +479,19 @@ String notificationTimeLabel(
 }
 
 class NotificationCard extends StatelessWidget {
-  const NotificationCard({super.key, required this.item, required this.onTap});
+  const NotificationCard({
+    super.key,
+    required this.item,
+    required this.onTap,
+    this.order = 0,
+  });
 
   final NotificationItem item;
   final VoidCallback onTap;
+
+  /// Place in its group: when all are marked read, the dots go one after
+  /// another (the first [NotificationUnreadDot.maxStagger]), then together.
+  final int order;
 
   @override
   Widget build(BuildContext context) {
@@ -544,20 +557,14 @@ class NotificationCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (unread)
-                              Semantics(
-                                label: l10n.settingsNotificationsUnread,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  margin: const EdgeInsetsDirectional.only(
-                                      start: AppSpacing.xs, top: 6),
-                                  decoration: BoxDecoration(
-                                    color: c.primaryInk,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
+                            // Shrinks away when the item is read, instead of
+                            // vanishing.
+                            NotificationUnreadDot(
+                              unread: unread,
+                              order: order,
+                              label: l10n.settingsNotificationsUnread,
+                              color: c.primaryInk,
+                            ),
                             if (item.opensSomething) ...[
                               const SizedBox(width: 6),
                               Icon(
@@ -825,5 +832,103 @@ class _PreviewRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// The unread dot on a notification. When the item becomes read the dot
+/// shrinks and fades away, a little after the ones above it, so "mark all
+/// read" shows what it did. Reduced motion removes it at once.
+class NotificationUnreadDot extends StatefulWidget {
+  const NotificationUnreadDot({
+    super.key,
+    required this.unread,
+    required this.label,
+    required this.color,
+    this.order = 0,
+  });
+
+  final bool unread;
+  final String label;
+  final Color color;
+  final int order;
+
+  /// Dots after this many go together.
+  static const maxStagger = 5;
+
+  /// Delay between one dot and the next.
+  static const stagger = Duration(milliseconds: 40);
+
+  @override
+  State<NotificationUnreadDot> createState() => _NotificationUnreadDotState();
+}
+
+class _NotificationUnreadDotState extends State<NotificationUnreadDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shown = AnimationController(
+    vsync: this,
+    value: widget.unread ? 1 : 0,
+  );
+
+  @override
+  void didUpdateWidget(NotificationUnreadDot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.unread == widget.unread) return;
+    if (MotionSettings.reduce(context)) {
+      _shown.value = widget.unread ? 1 : 0;
+      return;
+    }
+    if (widget.unread) {
+      _shown.animateTo(1, duration: MotionDurations.medium);
+      return;
+    }
+    final delay = NotificationUnreadDot.stagger *
+        widget.order.clamp(0, NotificationUnreadDot.maxStagger);
+    final total = delay + MotionDurations.medium;
+    _shown.animateTo(
+      0,
+      duration: total,
+      curve: Interval(
+        delay.inMicroseconds / total.inMicroseconds,
+        1,
+        curve: MotionCurves.standard,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _shown.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dot = AnimatedBuilder(
+      animation: _shown,
+      builder: (context, child) {
+        if (_shown.value == 0) return const SizedBox.shrink();
+        // Its slot narrows with it, so the title does not jump at the end.
+        return ClipRect(
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            widthFactor: _shown.value,
+            child: Opacity(
+              opacity: _shown.value,
+              child: Transform.scale(scale: _shown.value, child: child),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 8,
+        height: 8,
+        margin: const EdgeInsetsDirectional.only(start: AppSpacing.xs, top: 6),
+        decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+      ),
+    );
+    // Only an unread item says "unread" to screen readers.
+    return widget.unread
+        ? Semantics(label: widget.label, child: dot)
+        : ExcludeSemantics(child: dot);
   }
 }

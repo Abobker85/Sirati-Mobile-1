@@ -43,8 +43,10 @@ Future<void> _pumpBar(
   await tester.pumpAndSettle();
 }
 
-Rect _pill(WidgetTester tester) =>
-    tester.getRect(find.byKey(DashboardNavigationBar.pillKey));
+/// The pill as painted in the last frame, in global coordinates.
+Rect _pill(WidgetTester tester) => tester
+    .state<DashboardNavigationBarState>(find.byType(DashboardNavigationBar))
+    .paintedPill!;
 
 /// Centre of the icon slot of the selected tab.
 Offset _selectedIconCenter(WidgetTester tester) => tester.getCenter(
@@ -196,8 +198,10 @@ void main() {
             width: 100,
             height: 60,
           );
-          double opacity() =>
-              tester.widget<Opacity>(find.byType(Opacity)).opacity;
+          double opacity() => tester
+              .widget<FadeTransition>(find.byType(FadeTransition))
+              .opacity
+              .value;
 
           for (final v in [0.0, begin]) {
             c.value = v;

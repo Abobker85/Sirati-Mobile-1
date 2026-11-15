@@ -127,6 +127,8 @@
   "themeLight": "Light",
   "themeDark": "Dark",
   "pushNotifications": "Push notifications",
+  "settingsDecorativeMotion": "Decorative motion",
+  "settingsDecorativeMotionHint": "Small animations that play by themselves",
   "aboutSection": "About",
   "privacyPolicy": "Privacy policy",
   "contactUs": "Contact us",
@@ -1663,5 +1665,21 @@
   "premiumHomeBody": "Clean PDFs, AI writing, full analysis and Job Match.",
   "premiumHomeCvsToday": "{used} of {limit} free CVs today",
   "premiumHomeAnalysesToday": "{used} of {limit} free analyses today",
-  "premiumUnlockAll": "Unlock the full analysis"
+  "premiumUnlockAll": "Unlock the full analysis",
+  "atsScoreUpSinceLast": "Up {points} since your last scan of this CV",
+  "@atsScoreUpSinceLast": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "atsScoreDownSinceLast": "Down {points} since your last scan of this CV",
+  "@atsScoreDownSinceLast": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  }
 }

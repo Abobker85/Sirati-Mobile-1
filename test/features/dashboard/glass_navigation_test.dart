@@ -1,5 +1,8 @@
+import 'dart:ui' show FrameTiming;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_navigation_bar.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_glass_header.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -93,8 +96,29 @@ Future<void> _pump(
 }
 
 Finder get _capsule => find.byKey(DashboardNavigationBar.capsuleKey);
-Rect _pill(WidgetTester tester) =>
-    tester.getRect(find.byKey(DashboardNavigationBar.pillKey));
+
+/// Whether any glass pane inside [of] is blurring what is behind it.
+bool _blurring(WidgetTester tester, Finder of) => tester
+    .widgetList<BackdropFilter>(
+        find.descendant(of: of, matching: find.byType(BackdropFilter)))
+    .any((b) => b.enabled);
+
+/// The tint of the glass pane inside [of].
+Color _fill(WidgetTester tester, Finder of) => (tester
+        .widget<DecoratedBox>(find
+            .descendant(
+              of: find.descendant(
+                  of: of, matching: find.byType(BackdropFilter)),
+              matching: find.byType(DecoratedBox),
+            )
+            .first)
+        .decoration as BoxDecoration)
+    .color!;
+
+/// The pill as painted in the last frame, in global coordinates.
+Rect _pill(WidgetTester tester) => tester
+    .state<DashboardNavigationBarState>(find.byType(DashboardNavigationBar))
+    .paintedPill!;
 Offset _selectedIcon(WidgetTester tester) => tester.getCenter(
       find.byWidgetPredicate((w) => w is MotionNavIcon && w.selected),
     );
@@ -130,24 +154,14 @@ void main() {
     testWidgets('it is frosted glass: the page behind is blurred',
         (tester) async {
       await _pump(tester, const _Shell(itemCount: 3));
-      expect(
-        find.descendant(of: _capsule, matching: find.byType(BackdropFilter)),
-        findsOneWidget,
-      );
+      expect(_blurring(tester, _capsule), isTrue);
     });
 
     testWidgets('with more contrast asked for, it is solid with no blur',
         (tester) async {
       await _pump(tester, const _Shell(itemCount: 3), highContrast: true);
-      expect(
-        find.descendant(of: _capsule, matching: find.byType(BackdropFilter)),
-        findsNothing,
-      );
-      final box = tester.widget<DecoratedBox>(find
-          .descendant(of: _capsule, matching: find.byType(DecoratedBox))
-          .first);
-      final fill = (box.decoration as BoxDecoration).color!;
-      expect(fill.a, 1);
+      expect(_blurring(tester, _capsule), isFalse);
+      expect(_fill(tester, _capsule).a, 1);
     });
 
     testWidgets('every tab is announced as a tab with its place and state',
@@ -251,6 +265,31 @@ void main() {
       expect(tester.getRect(_capsule), open);
     });
 
+    for (final locale in const [Locale('ar'), Locale('en')]) {
+      testWidgets(
+          '$locale: the pill stays on its icon in every frame of the fold',
+          (tester) async {
+        await _pump(tester, const _Shell(itemCount: 30), locale: locale);
+        for (final tab in [0, 2]) {
+          await tester.tap(_icons.at(tab));
+          await tester.pumpAndSettle();
+          for (final dy in [-300.0, 200.0]) {
+            await tester.drag(
+                find.byKey(const ValueKey('list')), Offset(0, dy));
+            for (var f = 0; f < 20; f++) {
+              await tester.pump(const Duration(milliseconds: 16));
+              expect(
+                (_pill(tester).center - _selectedIcon(tester)).distance,
+                lessThan(.5),
+                reason: 'tab $tab, drag $dy, frame $f',
+              );
+            }
+            await tester.pumpAndSettle();
+          }
+        }
+      });
+    }
+
     testWidgets('a sideways list never folds the bar', (tester) async {
       await _pump(tester, const _Shell(itemCount: 30, axis: Axis.horizontal));
       final open = tester.getRect(_capsule);
@@ -281,8 +320,8 @@ void main() {
         ),
       );
       double glass() => tester
-          .widget<AnimatedOpacity>(find.byKey(HomeGlassHeader.glassKey))
-          .opacity;
+          .widget<GlassSurface>(find.byKey(HomeGlassHeader.glassKey))
+          .strength;
       final top = tester.getRect(find.byType(HomeGlassHeader));
       expect(glass(), 0);
       await _drag(tester, -400);
@@ -291,6 +330,232 @@ void main() {
       expect(tester.getRect(find.byType(HomeGlassHeader)), top);
       await _drag(tester, 2000);
       expect(glass(), 0);
+    });
+
+    testWidgets(
+        'while the glass fades in, the blur grows with the tint and is never '
+        'inside an opacity layer', (tester) async {
+      await _pump(
+        tester,
+        Scaffold(
+          body: CustomScrollView(
+            key: const ValueKey('list'),
+            slivers: [
+              const PinnedHeaderSliver(
+                child: HomeGlassHeader(child: SizedBox(height: 80)),
+              ),
+              SliverList.list(children: [
+                for (var i = 0; i < 20; i++) const SizedBox(height: 100),
+              ]),
+            ],
+          ),
+        ),
+      );
+      await tester.drag(
+          find.byKey(const ValueKey('list')), const Offset(0, -400));
+      var previous = 0.0;
+      var sawMiddle = false;
+      for (var f = 0; f < 30; f++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        final glass = find.byKey(HomeGlassHeader.glassKey);
+        final strength = tester.widget<GlassSurface>(glass).strength;
+        expect(strength, greaterThanOrEqualTo(previous));
+        previous = strength;
+        if (strength > 0 && strength < 1) sawMiddle = true;
+        for (final blur in tester
+            .widgetList<BackdropFilter>(find.descendant(
+                of: glass, matching: find.byType(BackdropFilter)))
+            .where((b) => b.enabled)) {
+          final under = find.ancestor(
+              of: find.byWidget(blur),
+              matching: find.byWidgetPredicate((w) =>
+                  w is Opacity || w is FadeTransition || w is AnimatedOpacity));
+          expect(under, findsNothing, reason: 'frame $f');
+        }
+      }
+      expect(sawMiddle, isTrue, reason: 'it fades, it does not snap');
+      expect(previous, 1);
+    });
+  });
+
+  group('glass quality', () {
+    setUp(() {
+      GlassQuality.reset();
+      // Glass is blurring on screen unless a test says otherwise.
+      GlassQuality.debugVisibleBlur = 1;
+      SharedPreferences.setMockInitialValues({});
+    });
+    tearDown(() {
+      GlassQuality.reset();
+      GlassQuality.debugVisibleBlur = 0;
+    });
+
+    List<Duration> frames(int count, int ms) =>
+        List.filled(count, Duration(milliseconds: ms));
+    List<Duration> warmUp() => frames(GlassQuality.warmUpFrames, 50);
+    List<Duration> slowRun() =>
+        frames(GlassQuality.window * GlassQuality.slowWindowsToSwitch, 30);
+
+    test('smooth frames keep the glass', () {
+      GlassQuality.report(
+          [...warmUp(), ...frames(GlassQuality.window * 10, 8)]);
+      expect(GlassQuality.tooSlow, isFalse);
+    });
+
+    test('a slow start (shader warm-up, splash) never counts', () {
+      GlassQuality.report(frames(GlassQuality.warmUpFrames, 80));
+      GlassQuality.report(frames(GlassQuality.window * 5, 8));
+      expect(GlassQuality.tooSlow, isFalse);
+    });
+
+    test('slow frames while no glass is on screen never count', () {
+      GlassQuality.debugVisibleBlur = 0;
+      GlassQuality.report([...warmUp(), ...slowRun(), ...slowRun()]);
+      expect(GlassQuality.tooSlow, isFalse);
+    });
+
+    test('a short hiccup keeps the glass', () {
+      GlassQuality.report(warmUp());
+      for (var i = 0; i < 5; i++) {
+        GlassQuality.report(frames(
+            GlassQuality.window * (GlassQuality.slowWindowsToSwitch - 1), 30));
+        GlassQuality.report(frames(GlassQuality.window, 8));
+      }
+      expect(GlassQuality.tooSlow, isFalse);
+    });
+
+    test('only the slowest tenth decides: a few slow frames are fine', () {
+      GlassQuality.report(warmUp());
+      final mixed = [
+        ...frames((GlassQuality.window * .92).floor(), 8),
+        ...frames(
+            GlassQuality.window - (GlassQuality.window * .92).floor(), 40),
+      ];
+      for (var i = 0; i < 10; i++) {
+        GlassQuality.report(mixed);
+      }
+      expect(GlassQuality.tooSlow, isFalse);
+    });
+
+    for (final (rate, fine, slow) in [
+      (60.0, 13, 16),
+      (90.0, 9, 11),
+      (120.0, 6, 9),
+    ]) {
+      test('the budget follows the display: ${rate.toInt()} Hz', () {
+        GlassQuality.reset(refreshRate: rate);
+        GlassQuality.report(
+            [...warmUp(), ...frames(GlassQuality.window * 10, fine)]);
+        expect(GlassQuality.tooSlow, isFalse, reason: '$fine ms is fine');
+        GlassQuality.report(frames(
+            GlassQuality.window * GlassQuality.slowWindowsToSwitch, slow));
+        expect(GlassQuality.tooSlow, isTrue, reason: '$slow ms is slow');
+      });
+    }
+
+    test(
+        'a run of slow windows is saved for the next launch, and never flips '
+        'the glass mid-session', () async {
+      GlassQuality.report([...warmUp(), ...slowRun()]);
+      expect(GlassQuality.tooSlow, isTrue);
+      expect(GlassQuality.solid.value, isFalse, reason: 'not mid-session');
+      await Future<void>.delayed(Duration.zero);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('glass_quality.solid'), isTrue);
+
+      // The next launch starts solid.
+      GlassQuality.reset();
+      await GlassQuality.debugLoadSaved();
+      expect(GlassQuality.solid.value, isTrue);
+    });
+
+    test('engine frame timings feed the same decision', () {
+      FrameTiming timing(int rasterMs) => FrameTiming(
+            vsyncStart: 0,
+            buildStart: 0,
+            buildFinish: 1000,
+            rasterStart: 1000,
+            rasterFinish: 1000 + rasterMs * 1000,
+            rasterFinishWallTime: 1000 + rasterMs * 1000,
+          );
+      GlassQuality.onTimings([
+        for (var i = 0; i < GlassQuality.warmUpFrames; i++) timing(50),
+        for (var i = 0;
+            i < GlassQuality.window * GlassQuality.slowWindowsToSwitch;
+            i++)
+          timing(30),
+      ]);
+      expect(GlassQuality.tooSlow, isTrue);
+    });
+
+    testWidgets('glass on screen is counted only while it blurs',
+        (tester) async {
+      GlassQuality.debugVisibleBlur = 0;
+      await _pump(tester, const _Shell(itemCount: 3));
+      expect(GlassQuality.visibleBlur, 1, reason: 'the bar');
+      await tester.pumpWidget(const SizedBox());
+      expect(GlassQuality.visibleBlur, 0);
+      await _pump(tester, const _Shell(itemCount: 3), highContrast: true);
+      expect(GlassQuality.visibleBlur, 0, reason: 'solid does not blur');
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a solid decision draws no blur', (tester) async {
+      GlassQuality.debugVisibleBlur = 0;
+      await _pump(tester, const _Shell(itemCount: 3));
+      expect(_blurring(tester, _capsule), isTrue);
+      GlassQuality.solid.value = true;
+      await tester.pump();
+      expect(_blurring(tester, _capsule), isFalse);
+      expect(_fill(tester, _capsule).a, 1);
+    });
+
+    testWidgets(
+        'switching glass to solid keeps what is inside: typed text, focus '
+        'and scroll', (tester) async {
+      GlassQuality.debugVisibleBlur = 0;
+      final scroll = ScrollController();
+      addTearDown(scroll.dispose);
+      await _pump(
+        tester,
+        Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 300,
+              height: 300,
+              child: GlassSurface(
+                borderRadius: BorderRadius.circular(24),
+                child: ListView(
+                  controller: scroll,
+                  children: [
+                    const TextField(key: ValueKey('field')),
+                    for (var i = 0; i < 20; i++) const SizedBox(height: 60),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.enterText(find.byKey(const ValueKey('field')), 'my notes');
+      await tester.pump();
+      scroll.jumpTo(10);
+      await tester.pump();
+      final field = tester.state<EditableTextState>(find.byType(EditableText));
+
+      for (final solid in [true, false, true]) {
+        GlassQuality.solid.value = solid;
+        await tester.pump();
+        expect(_blurring(tester, find.byType(GlassSurface)), !solid);
+        expect(find.text('my notes'), findsOneWidget);
+        expect(
+          tester.state<EditableTextState>(find.byType(EditableText)),
+          same(field),
+          reason: 'the same field, not a new one',
+        );
+        expect(field.widget.focusNode.hasFocus, isTrue);
+        expect(scroll.offset, 10);
+      }
     });
   });
 
@@ -323,10 +588,7 @@ void main() {
           matching: find.byType(GlassSurface),
         );
         expect(glass, findsOneWidget);
-        expect(
-          find.descendant(of: glass, matching: find.byType(BackdropFilter)),
-          findsOneWidget,
-        );
+        expect(_blurring(tester, glass), isTrue);
         expect(find.byType(SheetDragHandle),
             handle ? findsOneWidget : findsNothing);
       });

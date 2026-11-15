@@ -19,7 +19,9 @@ List<Color> paintedBackgroundsOf(Element element) {
       if (d is BoxDecoration) {
         candidates = d.gradient?.colors ?? [if (d.color != null) d.color!];
       }
-    } else if (widget is GlassSurface && !GlassSurface.solid(ancestor)) {
+    } else if (widget is GlassSurface &&
+        widget.strength > 0 &&
+        !GlassSurface.solid(ancestor)) {
       // Glass is see-through and anything can scroll under it, so check its
       // tint over both extremes.
       candidates = const [Color(0xFF000000), Color(0xFFFFFFFF)];
@@ -61,7 +63,9 @@ List<Color> paintedBackgroundsOf(Element element) {
           Theme.of(ancestor).inputDecorationTheme,
         );
         if (bounds.contains(center) && decoration.filled == true) {
-          candidates = [if (decoration.fillColor != null) decoration.fillColor!];
+          candidates = [
+            if (decoration.fillColor != null) decoration.fillColor!
+          ];
         }
       }
     }
@@ -145,9 +149,11 @@ void expectAllIconsAa(String label) {
 }
 
 void expectAllProgressIndicatorsAa(String label) {
-  for (final element in find.byWidgetPredicate((widget) =>
-      widget is CircularProgressIndicator ||
-      widget is LinearProgressIndicator).evaluate()) {
+  for (final element in find
+      .byWidgetPredicate((widget) =>
+          widget is CircularProgressIndicator ||
+          widget is LinearProgressIndicator)
+      .evaluate()) {
     final indicator = element.widget as ProgressIndicator;
     final rawInk = indicator.valueColor?.value ??
         indicator.color ??

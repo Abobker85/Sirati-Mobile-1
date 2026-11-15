@@ -27,6 +27,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/notification_service.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/theme/app_theme_controller.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 
 /// Top-level background message handler — MUST be a top-level function.
 @pragma('vm:entry-point')
@@ -116,6 +117,8 @@ Future<void> startSiratiApp() async {
       } catch (e, st) {
         debugPrint('[Boot] AppThemeController failed: $e\n$st');
       }
+      // The user's "Decorative motion" choice, before the first frame.
+      await AmbientMotion.load();
 
       final firebaseReady = await _initFirebaseStack();
 

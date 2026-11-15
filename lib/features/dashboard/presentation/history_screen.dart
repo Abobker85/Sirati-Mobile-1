@@ -17,6 +17,7 @@ import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
+import 'package:sirati/shared/widgets/sirati_refresh_indicator.dart';
 
 /// Past analyses and generated CVs, one tab each.
 class HistoryScreen extends ConsumerWidget {
@@ -100,7 +101,7 @@ class _HistoryTab<T> extends StatelessWidget {
         final items = page.items;
         final headerWidget = header?.call(page);
         final leading = headerWidget == null ? 0 : 1;
-        return RefreshIndicator(
+        return SiratiRefreshIndicator(
           onRefresh: onRefresh,
           child: items.isEmpty
               // Scrollable so pull-to-refresh still works when empty.

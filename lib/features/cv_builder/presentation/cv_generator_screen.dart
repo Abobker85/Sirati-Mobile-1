@@ -420,7 +420,9 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
             onAction: _submit,
           );
         }
-        await SuccessBeat.play(context);
+        // The full scene celebrates a new CV; saving an edit gets the haptic
+        // only, so it never uses up the full plays or confetti for a tweak.
+        await SuccessBeat.celebrate(context, fullOverlay: !_isEditMode);
         if (!mounted) return;
         // Peak satisfaction: OS review prompt after SuccessBeat (create only).
         if (!_isEditMode) {

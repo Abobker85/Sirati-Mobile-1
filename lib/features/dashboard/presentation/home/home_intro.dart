@@ -50,32 +50,35 @@ class HomeIntroItem extends StatelessWidget {
           motion == HomeIntroMotion.pop ? MotionCurves.pop : MotionCurves.enter,
     );
     final fade = Interval(begin, end, curve: MotionCurves.enter);
-    return AnimatedBuilder(
-      animation: animation,
-      child: child,
-      builder: (context, child) {
-        final t = move.transform(animation.value);
-        final shown = fade.transform(animation.value);
-        final moved = switch (motion) {
-          HomeIntroMotion.drop => Transform.translate(
-              offset: Offset(0, -18 * (1 - t)),
-              child: child,
-            ),
-          HomeIntroMotion.rise => Transform.translate(
-              offset: Offset(0, 22 * (1 - t)),
-              child: child,
-            ),
-          HomeIntroMotion.zoom => Transform.scale(
-              scale: .94 + .06 * t,
-              child: child,
-            ),
-          HomeIntroMotion.pop => Transform.scale(
-              scale: .85 + .15 * t,
-              child: child,
-            ),
-        };
-        return Opacity(opacity: shown, child: moved);
-      },
+    // FadeTransition reuses one layer instead of an Opacity saveLayer that
+    // is rebuilt every frame.
+    return FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: fade),
+      child: AnimatedBuilder(
+        animation: animation,
+        child: child,
+        builder: (context, child) {
+          final t = move.transform(animation.value);
+          return switch (motion) {
+            HomeIntroMotion.drop => Transform.translate(
+                offset: Offset(0, -18 * (1 - t)),
+                child: child,
+              ),
+            HomeIntroMotion.rise => Transform.translate(
+                offset: Offset(0, 22 * (1 - t)),
+                child: child,
+              ),
+            HomeIntroMotion.zoom => Transform.scale(
+                scale: .94 + .06 * t,
+                child: child,
+              ),
+            HomeIntroMotion.pop => Transform.scale(
+                scale: .85 + .15 * t,
+                child: child,
+              ),
+          };
+        },
+      ),
     );
   }
 }
@@ -91,6 +94,7 @@ class HomeIntroSweep extends StatelessWidget {
     required this.end,
     required this.radius,
     required this.child,
+    this.strength = .38,
   });
 
   final Animation<double> animation;
@@ -99,6 +103,9 @@ class HomeIntroSweep extends StatelessWidget {
 
   /// Corner radius of the card underneath, so the light stays inside it.
   final double radius;
+
+  /// Peak opacity of the light; capped by callers so text under it keeps AA.
+  final double strength;
   final Widget child;
 
   @override
@@ -109,7 +116,8 @@ class HomeIntroSweep extends StatelessWidget {
     final light = context.sirati.onBrandSurface;
     return Stack(
       children: [
-        child,
+        // The card is drawn once; only the light over it repaints.
+        RepaintBoundary(child: child),
         Positioned.fill(
           child: IgnorePointer(
             child: AnimatedBuilder(
@@ -129,7 +137,7 @@ class HomeIntroSweep extends StatelessWidget {
                         end: Alignment(x + .55, 1),
                         colors: [
                           light.withValues(alpha: 0),
-                          light.withValues(alpha: .38),
+                          light.withValues(alpha: strength),
                           light.withValues(alpha: 0),
                         ],
                       ),

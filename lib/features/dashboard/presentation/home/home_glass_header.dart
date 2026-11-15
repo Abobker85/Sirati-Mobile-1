@@ -53,18 +53,21 @@ class _HomeGlassHeaderState extends State<HomeGlassHeader> {
       children: [
         Positioned.fill(
           child: IgnorePointer(
-            child: AnimatedOpacity(
-              key: HomeGlassHeader.glassKey,
-              opacity: _scrolled ? 1 : 0,
+            // The glass itself fades in (tint and blur together); an opacity
+            // over a blur would show tint first and pop the blur on at the end.
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(end: _scrolled ? 1 : 0),
               duration: MotionSettings.reduce(context)
                   ? Duration.zero
                   : MotionDurations.medium,
               curve: MotionCurves.standard,
-              child: const GlassSurface(
-                borderRadius: BorderRadius.vertical(
+              builder: (context, strength, _) => GlassSurface(
+                key: HomeGlassHeader.glassKey,
+                strength: strength,
+                borderRadius: const BorderRadius.vertical(
                   bottom: Radius.circular(AppSpacing.xl),
                 ),
-                child: SizedBox.expand(),
+                child: const SizedBox.expand(),
               ),
             ),
           ),

@@ -9,6 +9,7 @@ import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/idempotency_key.dart';
+import 'package:sirati/features/ats_scanner/application/last_scan_scores.dart';
 import 'package:sirati/features/ats_scanner/application/saved_analysis_cvs.dart';
 import 'package:sirati/features/ats_scanner/domain/analysis_draft.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
@@ -183,6 +184,17 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       return;
     }
     final api = ref.read(cvApiServiceProvider);
+    // The last score of this CV for this job, read while the scan runs so
+    // the result never waits on storage. Unknown if not read in time.
+    final memoryKey = LastScanScores.keyFor(
+      savedCvId: _source == AnalysisCvSource.saved ? _selectedCvId : null,
+      fileName: draft.fileName,
+      jobTitle: draft.jobTitle,
+    );
+    final previousRead =
+        memoryKey == null ? null : LastScanScores.read(memoryKey);
+    int? previousScore;
+    unawaited(previousRead?.then((value) => previousScore = value));
     final requestId = ++_aiRequestGen;
     final idempotencyKey = _keys.keyFor(draft);
     setState(() => _isLoading = true);
@@ -230,6 +242,16 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       // now a new analysis.
       _keys.consume();
       refreshUsageIfFree(ref);
+      // Remember this score for the next rescan (after the read, so the
+      // read never sees it). A timed out result may be incomplete, so it is
+      // neither compared nor kept.
+      final comparable = analysis.hasScore && !poll.timedOut;
+      if (memoryKey != null && previousRead != null && comparable) {
+        final score = analysis.scoreTotal;
+        unawaited(previousRead.then(
+          (_) => LastScanScores.write(memoryKey, score),
+        ));
+      }
       unawaited(
         AnalyticsService.logAnalysisCompleted(
           // Bucketed by the service — never the exact score.
@@ -274,7 +296,11 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       unawaited(
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => AnalysisResultScreen(analysis: analysis),
+            builder: (_) => AnalysisResultScreen(
+              analysis: analysis,
+              justScanned: true,
+              previousScore: comparable ? previousScore : null,
+            ),
           ),
         ),
       );

@@ -371,6 +371,15 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('pushNotifications') ?? _base.pushNotifications;
 
   @override
+  String get settingsDecorativeMotion =>
+      remote.text('settingsDecorativeMotion') ?? _base.settingsDecorativeMotion;
+
+  @override
+  String get settingsDecorativeMotionHint =>
+      remote.text('settingsDecorativeMotionHint') ??
+      _base.settingsDecorativeMotionHint;
+
+  @override
   String get aboutSection => remote.text('aboutSection') ?? _base.aboutSection;
 
   @override
@@ -6737,6 +6746,30 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get premiumUnlockAll =>
       remote.text('premiumUnlockAll') ?? _base.premiumUnlockAll;
 
+  @override
+  String atsScoreUpSinceLast(int points) =>
+      remote.format(
+        'atsScoreUpSinceLast',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'points': points},
+        ),
+      ) ??
+      _base.atsScoreUpSinceLast(points);
+
+  @override
+  String atsScoreDownSinceLast(int points) =>
+      remote.format(
+        'atsScoreDownSinceLast',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'points': points},
+        ),
+      ) ??
+      _base.atsScoreDownSinceLast(points);
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -6822,6 +6855,8 @@ class RemoteAppLocalizations extends AppLocalizations {
     'themeLight': [],
     'themeDark': [],
     'pushNotifications': [],
+    'settingsDecorativeMotion': [],
+    'settingsDecorativeMotionHint': [],
     'aboutSection': [],
     'privacyPolicy': [],
     'contactUs': [],
@@ -8096,6 +8131,8 @@ class RemoteAppLocalizations extends AppLocalizations {
     'premiumHomeCvsToday': ['int', 'int'],
     'premiumHomeAnalysesToday': ['int', 'int'],
     'premiumUnlockAll': [],
+    'atsScoreUpSinceLast': ['int'],
+    'atsScoreDownSinceLast': ['int'],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -8189,6 +8226,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'themeLight' => l.themeLight,
         'themeDark' => l.themeDark,
         'pushNotifications' => l.pushNotifications,
+        'settingsDecorativeMotion' => l.settingsDecorativeMotion,
+        'settingsDecorativeMotionHint' => l.settingsDecorativeMotionHint,
         'aboutSection' => l.aboutSection,
         'privacyPolicy' => l.privacyPolicy,
         'contactUs' => l.contactUs,
@@ -9569,6 +9608,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'premiumHomeAnalysesToday' =>
           l.premiumHomeAnalysesToday(a[0] as int, a[1] as int),
         'premiumUnlockAll' => l.premiumUnlockAll,
+        'atsScoreUpSinceLast' => l.atsScoreUpSinceLast(a[0] as int),
+        'atsScoreDownSinceLast' => l.atsScoreDownSinceLast(a[0] as int),
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

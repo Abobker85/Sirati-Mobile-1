@@ -243,17 +243,26 @@ class _ComingSoonHero extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              icon: Icon(
-                notified
-                    ? Icons.check_circle_rounded
-                    : Icons.notifications_active_rounded,
-                size: 18,
+              // The button turns into its confirmation: the bell pops into
+              // a tick and the label cross-fades.
+              icon: MotionMorph(
+                morphKey: notified,
+                child: Icon(
+                  notified
+                      ? Icons.check_circle_rounded
+                      : Icons.notifications_active_rounded,
+                  size: 18,
+                ),
               ),
-              label: Text(
-                notified
-                    ? l10n.dashboardEducationInterestRegistered
-                    : AppLocalizations.of(context).registerInterest,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+              label: MotionMorph(
+                morphKey: notified,
+                pop: false,
+                child: Text(
+                  notified
+                      ? l10n.dashboardEducationInterestRegistered
+                      : AppLocalizations.of(context).registerInterest,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ),
           ),
