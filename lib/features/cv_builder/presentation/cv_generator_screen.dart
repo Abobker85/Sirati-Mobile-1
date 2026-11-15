@@ -38,6 +38,7 @@ import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/success_beat.dart';
+import 'package:sirati/shared/widgets/word_write_in.dart';
 
 /// Four-step CV wizard. Creates a CV, or edits [initialCv] when given.
 ///
@@ -69,6 +70,9 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
   /// Review panel data from the last successful enhancement, per field.
   final Map<String, Map<String, dynamic>> _fieldResults = {};
+
+  /// AI text being written into a field, word by word, per field.
+  final Map<String, WordWriteIn> _writeIns = {};
 
   // Captured in initState: ref cannot be used from dispose().
   late final CvDraftStore _draftStore;
@@ -123,6 +127,9 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
   @override
   void dispose() {
+    for (final writer in _writeIns.values) {
+      writer.cancel();
+    }
     _autosaveTimer?.cancel();
     // Flush a pending create-mode draft so pop / background kill keeps data.
     // Read the form before the controllers are disposed below.
@@ -489,7 +496,17 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           fallback: AppLocalizations.of(context).cvEnhanceFieldFailed,
         );
       case CvEnhanced(:final text, :final details):
-        _setTextSilently(controller, text);
+        // The AI's text writes itself in, a few words at a time.
+        _writeIns.remove(field)?.cancel();
+        _writeIns[field] = WordWriteIn.start(
+          text: text,
+          animate: !MotionSettings.reduce(context) &&
+              !(MediaQuery.maybeAccessibleNavigationOf(context) ?? false),
+          current: () => controller.text,
+          write: (shown) {
+            if (mounted) _setTextSilently(controller, shown);
+          },
+        );
         _markDirty();
         setState(() => _fieldResults[field] = details);
         AppSnackBar.show(
@@ -499,6 +516,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           actionLabel: AppLocalizations.of(context).cvUndo,
           onAction: () {
             if (!mounted) return;
+            _writeIns.remove(field)?.cancel();
             _setTextSilently(controller, draft);
             _markDirty();
             setState(() => _fieldResults.remove(field));

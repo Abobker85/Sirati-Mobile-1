@@ -4,6 +4,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/rolling_number.dart';
 
 /// Brand band at the top of My CVs (design/cv-tab): title, one-line hint and
 /// the notifications bell. Brand-surface tokens keep the ink AA across the
@@ -224,8 +225,9 @@ class _BandBell extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 4, vertical: 1),
                           // Gated pair: onError on error.
-                          child: Text(
-                            unreadCount > 9 ? '9+' : '$unreadCount',
+                          child: RollingNumber(
+                            value: unreadCount,
+                            cap: 9,
                             textAlign: TextAlign.center,
                             style: AppTypography.of(
                               context,

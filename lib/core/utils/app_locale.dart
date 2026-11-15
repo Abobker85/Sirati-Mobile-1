@@ -217,6 +217,37 @@ class AppLocale {
     return '${l10n.coreGreetingHello(display)}${BidiText.rlm}';
   }
 
+  /// The time of day [now] falls in, for the Home greeting: morning from
+  /// 04:00, afternoon from 12:00, evening from 17:00 (until 04:00).
+  static DayPart dayPart(DateTime now) {
+    final h = now.hour;
+    if (h >= 4 && h < 12) return DayPart.morning;
+    if (h >= 12 && h < 17) return DayPart.afternoon;
+    return DayPart.evening;
+  }
+
+  /// Like [greeting], but by time of day ("Good morning, Sara" /
+  /// "صباح الخير، سارة"). Empty [name] → the same neutral greeting.
+  static String timedGreeting(
+    String name,
+    BuildContext context, {
+    DateTime? now,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return l10n.coreGreetingWelcome;
+    final rtl = direction(context) == TextDirection.rtl;
+    final display = rtl && BidiText.looksLatin(trimmed)
+        ? BidiText.isolateLtr(trimmed)
+        : trimmed;
+    final text = switch (dayPart(now ?? DateTime.now())) {
+      DayPart.morning => l10n.coreGreetingMorning(display),
+      DayPart.afternoon => l10n.coreGreetingAfternoon(display),
+      DayPart.evening => l10n.coreGreetingEvening(display),
+    };
+    return rtl ? '$text${BidiText.rlm}' : text;
+  }
+
   /// BiDi-safe mixed body for AR locale.
   static String mixedBody(String body, BuildContext context) {
     return LocaleFormat.mixedBody(body, english: isEnglish(context));
@@ -266,3 +297,6 @@ class AppLocale {
     _pendingStored = null;
   }
 }
+
+/// Part of the day, for greetings.
+enum DayPart { morning, afternoon, evening }

@@ -40,6 +40,7 @@ class PersonalStep extends StatelessWidget {
         FieldGroup(
           label: l10n.cvPersonalFullName,
           child: AppTextFormField(
+            tickWhenValid: true,
             controller: f.name,
             textAlign: TextAlign.start,
             textCapitalization: TextCapitalization.words,
@@ -56,6 +57,7 @@ class PersonalStep extends StatelessWidget {
         FieldGroup(
           label: l10n.emailLabel,
           child: AppTextFormField(
+            tickWhenValid: true,
             controller: f.email,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
@@ -80,6 +82,7 @@ class PersonalStep extends StatelessWidget {
         FieldGroup(
           label: l10n.cvPersonalPhone,
           child: AppTextFormField(
+            tickWhenValid: true,
             controller: f.phone,
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.next,
@@ -97,6 +100,7 @@ class PersonalStep extends StatelessWidget {
         FieldGroup(
           label: l10n.cvPersonalLinkedin,
           child: AppTextFormField(
+            tickWhenValid: true,
             controller: f.linkedin,
             keyboardType: TextInputType.url,
             textInputAction: TextInputAction.next,
@@ -111,6 +115,7 @@ class PersonalStep extends StatelessWidget {
         FieldGroup(
           label: l10n.cvPersonalTargetJob,
           child: AppTextFormField(
+            tickWhenValid: true,
             controller: f.jobTitle,
             textAlign: TextAlign.start,
             textInputAction: TextInputAction.next,
@@ -167,6 +172,7 @@ class _JobDescriptionField extends StatelessWidget {
           isLoading: isEnhancing,
           semanticsLabel: l10n.cvPersonalEnhancingJobDescription,
           child: AppTextFormField(
+            tickWhenValid: true,
             controller: controller,
             textAlign: TextAlign.start,
             maxLines: 5,

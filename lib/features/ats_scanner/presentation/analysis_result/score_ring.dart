@@ -382,16 +382,16 @@ class ScoreRingPainter extends CustomPainter {
     required this.head,
     required this.land,
     this.ghost = 0,
-    this.ghostColor = const Color(0x00000000),
+    this.ghostColor,
   });
 
   /// Share of the circle covered, 0 → 1.
   final double value;
 
   /// Share of the circle the previous score covered (0 = none), drawn
-  /// faintly under the arc in [ghostColor].
+  /// faintly under the arc in [ghostColor] (none without one).
   final double ghost;
-  final Color ghostColor;
+  final Color? ghostColor;
   final Color track;
   final Color color;
 
@@ -427,7 +427,8 @@ class ScoreRingPainter extends CustomPainter {
         ..strokeWidth = stroke
         ..color = track,
     );
-    if (ghost > 0 && ghostColor.a > 0) {
+    final ghostColor = this.ghostColor;
+    if (ghost > 0 && ghostColor != null && ghostColor.a > 0) {
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         start,

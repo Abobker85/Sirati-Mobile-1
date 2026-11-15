@@ -24,6 +24,10 @@ class AppEmptyState extends StatelessWidget {
   final Color? iconBackground;
   final Color? iconColor;
 
+  /// Drawn in the tile instead of [icon] (which then only names the state
+  /// for code readers), e.g. the 404 compass. It brings its own motion.
+  final Widget? illustration;
+
   const AppEmptyState({
     super.key,
     required this.icon,
@@ -36,6 +40,7 @@ class AppEmptyState extends StatelessWidget {
     this.topInsetFactor = 0.12,
     this.iconBackground,
     this.iconColor,
+    this.illustration,
   });
 
   @override
@@ -56,15 +61,17 @@ class AppEmptyState extends StatelessWidget {
                 borderRadius: BorderRadius.circular(22),
               ),
               // Floats gently by itself while the screen is empty.
-              child: AmbientMove(
-                kind: AmbientKind.float,
-                delay: const Duration(seconds: 1),
-                child: LivelyIcon(
-                  icon,
-                  size: 32,
-                  color: iconColor ?? context.sirati.primaryInk,
-                ),
-              ),
+              child: illustration != null
+                  ? Center(child: illustration)
+                  : AmbientMove(
+                      kind: AmbientKind.float,
+                      delay: const Duration(seconds: 1),
+                      child: LivelyIcon(
+                        icon,
+                        size: 32,
+                        color: iconColor ?? context.sirati.primaryInk,
+                      ),
+                    ),
             ),
             const SizedBox(height: AppSpacing.md + 2),
             Text(

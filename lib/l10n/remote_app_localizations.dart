@@ -6770,6 +6770,42 @@ class RemoteAppLocalizations extends AppLocalizations {
       ) ??
       _base.atsScoreDownSinceLast(points);
 
+  @override
+  String coreGreetingMorning(String name) =>
+      remote.format(
+        'coreGreetingMorning',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'name': name},
+        ),
+      ) ??
+      _base.coreGreetingMorning(name);
+
+  @override
+  String coreGreetingAfternoon(String name) =>
+      remote.format(
+        'coreGreetingAfternoon',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'name': name},
+        ),
+      ) ??
+      _base.coreGreetingAfternoon(name);
+
+  @override
+  String coreGreetingEvening(String name) =>
+      remote.format(
+        'coreGreetingEvening',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'name': name},
+        ),
+      ) ??
+      _base.coreGreetingEvening(name);
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -8133,6 +8169,9 @@ class RemoteAppLocalizations extends AppLocalizations {
     'premiumUnlockAll': [],
     'atsScoreUpSinceLast': ['int'],
     'atsScoreDownSinceLast': ['int'],
+    'coreGreetingMorning': ['String'],
+    'coreGreetingAfternoon': ['String'],
+    'coreGreetingEvening': ['String'],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -9610,6 +9649,9 @@ class RemoteAppLocalizations extends AppLocalizations {
         'premiumUnlockAll' => l.premiumUnlockAll,
         'atsScoreUpSinceLast' => l.atsScoreUpSinceLast(a[0] as int),
         'atsScoreDownSinceLast' => l.atsScoreDownSinceLast(a[0] as int),
+        'coreGreetingMorning' => l.coreGreetingMorning(a[0] as String),
+        'coreGreetingAfternoon' => l.coreGreetingAfternoon(a[0] as String),
+        'coreGreetingEvening' => l.coreGreetingEvening(a[0] as String),
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

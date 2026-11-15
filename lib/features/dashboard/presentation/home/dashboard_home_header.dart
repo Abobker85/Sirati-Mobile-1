@@ -6,8 +6,10 @@ import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
+import 'package:sirati/shared/widgets/greeting_reveal.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/profile_photo.dart';
+import 'package:sirati/shared/widgets/rolling_number.dart';
 
 /// Profile row at the top of Home (approved board, option 3): one card that
 /// opens the profile (avatar, greeting, hint, chevron), with the
@@ -86,10 +88,11 @@ class DashboardHomeHeader extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  AppLocale.greeting(name, context),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                // Good morning / evening, revealed once
+                                // per session.
+                                GreetingReveal(
+                                  text: AppLocale.timedGreeting(name, context),
+                                  dayPart: AppLocale.dayPart(DateTime.now()),
                                   style: TextStyle(
                                     color: c.textPrimary,
                                     fontSize: 17,
@@ -179,8 +182,9 @@ class DashboardHomeHeader extends StatelessWidget {
                                     vertical: 1,
                                   ),
                                   // Gated pair: onError on error.
-                                  child: Text(
-                                    unreadCount > 9 ? '9+' : '$unreadCount',
+                                  child: RollingNumber(
+                                    value: unreadCount,
+                                    cap: 9,
                                     textAlign: TextAlign.center,
                                     style: AppTypography.of(
                                       context,

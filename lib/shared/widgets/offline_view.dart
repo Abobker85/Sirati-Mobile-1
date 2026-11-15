@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components/brand_gradient_button.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Full-screen "no internet" state with retry and automatic recovery.
 ///
@@ -42,6 +44,10 @@ class OfflineView extends StatefulWidget {
 class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
   Timer? _timer;
   int _attempt = 0;
+
+  /// Reconnect attempts started while this screen showed; each one makes
+  /// the offline badge send out a ping.
+  int _pings = 0;
   bool _checking = false;
   bool _foreground = true;
 
@@ -93,7 +99,10 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
     final onRetry = widget.onRetry;
     if (onRetry == null || _checking) return;
     _timer?.cancel();
-    setState(() => _checking = true);
+    setState(() {
+      _checking = true;
+      _pings++;
+    });
     try {
       await onRetry();
     } catch (_) {
@@ -141,7 +150,7 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Spacer(),
-                const ExcludeSemantics(child: _OfflineIllustration()),
+                ExcludeSemantics(child: _OfflineIllustration(pings: _pings)),
                 const SizedBox(height: AppSpacing.lg),
                 if (widget.onRetry != null) ...[
                   Center(
@@ -434,7 +443,9 @@ class _TipsCard extends StatelessWidget {
 /// CV page with a "wifi off" badge on soft tinted shapes. Widgets only, so
 /// it follows the theme in dark mode.
 class _OfflineIllustration extends StatelessWidget {
-  const _OfflineIllustration();
+  const _OfflineIllustration({required this.pings});
+
+  final int pings;
 
   @override
   Widget build(BuildContext context) {
@@ -504,27 +515,111 @@ class _OfflineIllustration extends StatelessWidget {
             PositionedDirectional(
               end: 34,
               bottom: 8,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [c.brandSurface, c.brandSurfaceDeep],
+              child: OfflinePing(
+                trigger: pings,
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [c.brandSurface, c.brandSurfaceDeep],
+                    ),
+                    border: Border.all(color: c.surface, width: 4),
+                    boxShadow: c.softShadow,
                   ),
-                  border: Border.all(color: c.surface, width: 4),
-                  boxShadow: c.softShadow,
-                ),
-                child: Icon(
-                  Icons.wifi_off_rounded,
-                  size: 26,
-                  color: c.onBrandSurface,
+                  child: Icon(
+                    Icons.wifi_off_rounded,
+                    size: 26,
+                    color: c.onBrandSurface,
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Each time [trigger] changes (a reconnect attempt starts), a ring goes
+/// out from [child] and the child hops once, as if calling out. It moves
+/// only on an attempt, never by itself; with reduced motion it is still.
+class OfflinePing extends StatefulWidget {
+  const OfflinePing({super.key, required this.trigger, required this.child});
+
+  final int trigger;
+  final Widget child;
+
+  /// One ping.
+  static const duration = Duration(milliseconds: 900);
+
+  /// Key of the ring, for tests.
+  static const ringKey = ValueKey('offline-ping-ring');
+
+  @override
+  State<OfflinePing> createState() => _OfflinePingState();
+}
+
+class _OfflinePingState extends State<OfflinePing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: OfflinePing.duration);
+
+  @override
+  void didUpdateWidget(OfflinePing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.trigger != oldWidget.trigger &&
+        !MotionSettings.reduce(context)) {
+      _c.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return AnimatedBuilder(
+      animation: _c,
+      child: widget.child,
+      builder: (context, child) {
+        final t = _c.value;
+        final moving = _c.isAnimating && t > 0 && t < 1;
+        final ring = Curves.easeOut.transform(t);
+        // A small hop at the start of the ping.
+        final hop = math.sin(math.pi * (t / .4).clamp(0.0, 1.0));
+        return Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            if (moving)
+              IgnorePointer(
+                child: Container(
+                  key: OfflinePing.ringKey,
+                  width: 56 + 44 * ring,
+                  height: 56 + 44 * ring,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: c.brandSurface.withValues(alpha: .5 * (1 - ring)),
+                      width: 3 * (1 - ring) + .5,
+                    ),
+                  ),
+                ),
+              ),
+            Transform.translate(
+              offset: Offset(0, moving ? -5 * hop : 0),
+              child: child,
+            ),
+          ],
+        );
+      },
     );
   }
 }

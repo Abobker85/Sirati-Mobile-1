@@ -9,6 +9,7 @@ import 'package:sirati/features/jobs/presentation/job_news_detail_screen.dart';
 import 'package:sirati/features/jobs/presentation/widgets/job_news_card.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/fresh_glint.dart';
 
 /// "Latest jobs" on Home (approved board): the first few jobs of the
 /// unfiltered feed as compact cards, with a way to the full Jobs tab.
@@ -75,14 +76,19 @@ class DashboardJobsSection extends ConsumerWidget {
           for (final item in items.take(limit))
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: JobNewsCard(
-                item: item,
-                english: english,
-                compact: true,
-                onTap: () => unawaited(
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => JobNewsDetailScreen(item: item),
+              // A job that is new since the last visit glints once.
+              child: FreshGlint(
+                id: 'job:${item.id}',
+                radius: 18,
+                child: JobNewsCard(
+                  item: item,
+                  english: english,
+                  compact: true,
+                  onTap: () => unawaited(
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => JobNewsDetailScreen(item: item),
+                      ),
                     ),
                   ),
                 ),

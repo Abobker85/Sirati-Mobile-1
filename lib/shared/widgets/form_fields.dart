@@ -348,6 +348,11 @@ class AppTextFormField extends FormField<String> {
     /// (after first blur, or when [autovalidateMode] forces validation).
     this.showSuccessWhenValid = false,
     this.successMessage,
+
+    /// A small check draws at the field's end the first time it becomes
+    /// valid with text in it, then fades away: quiet encouragement for long
+    /// forms that do not use [showSuccessWhenValid].
+    this.tickWhenValid = false,
   })  : _autovalidateMode = autovalidateMode,
         super(
           initialValue:
@@ -387,6 +392,7 @@ class AppTextFormField extends FormField<String> {
   final FocusNode? focusNode;
   final bool showSuccessWhenValid;
   final String? successMessage;
+  final bool tickWhenValid;
   final List<String>? autofillHints;
   final ValueChanged<String>? onFocusLost;
   final ValueChanged<String>? onBecameValid;
@@ -409,6 +415,17 @@ class _AppTextFormFieldState extends FormFieldState<String> {
   /// After first unfocus, re-validate on each keystroke (onUserInteraction).
   bool _blurredOnce = false;
   bool _wasValid = false;
+
+  /// The valid tick has played (once per field) / is showing now.
+  bool _ticked = false;
+  bool _showTick = false;
+
+  void _becameValid(String text) {
+    widget.onBecameValid?.call(text);
+    if (!widget.tickWhenValid || _ticked || text.trim().isEmpty) return;
+    _ticked = true;
+    if (mounted) setState(() => _showTick = true);
+  }
 
   TextEditingController get _effectiveController =>
       widget.controller ?? _localController!;
@@ -487,7 +504,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
       widget.onFocusLost?.call(text);
       if (ok && !_wasValid) {
         _wasValid = true;
-        widget.onBecameValid?.call(text);
+        _becameValid(text);
       } else if (!ok) {
         _wasValid = false;
       }
@@ -510,7 +527,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
       final ok = validate();
       if (ok && !_wasValid) {
         _wasValid = true;
-        widget.onBecameValid?.call(value ?? '');
+        _becameValid(value ?? '');
       } else if (!ok) {
         _wasValid = false;
       }
@@ -597,7 +614,22 @@ class _AppTextFormFieldState extends FormFieldState<String> {
               ),
             ],
           )
-        : suffixIcon;
+        : _showTick
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (suffixIcon != null) suffixIcon,
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 12),
+                    child: ValidTick(
+                      onDone: () {
+                        if (mounted) setState(() => _showTick = false);
+                      },
+                    ),
+                  ),
+                ],
+              )
+            : suffixIcon;
     final successBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppFormStyles.radius),
       borderSide: BorderSide(color: c.success, width: 1.4),
@@ -705,4 +737,97 @@ Widget? _tokenLabel(String? text) {
           ),
     ),
   );
+}
+
+/// A check that draws itself in, holds, then fades away, and tells
+/// [onDone]. With reduced motion it does not show at all.
+class ValidTick extends StatefulWidget {
+  const ValidTick({super.key, required this.onDone});
+
+  final VoidCallback onDone;
+
+  /// Draw, hold and fade.
+  static const duration = Duration(milliseconds: 1400);
+
+  @override
+  State<ValidTick> createState() => _ValidTickState();
+}
+
+class _ValidTickState extends State<ValidTick>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: ValidTick.duration);
+
+  static const _draw = Interval(0, .2, curve: MotionCurves.enter);
+  static const _fade = Interval(.75, 1, curve: MotionCurves.exit);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_c.isAnimating || _c.isCompleted) return;
+    if (MotionSettings.reduce(context)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => widget.onDone());
+      _c.value = 1;
+      return;
+    }
+    _c.forward().whenComplete(() {
+      if (mounted) widget.onDone();
+    });
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = context.sirati.success;
+    return ExcludeSemantics(
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, _) => Opacity(
+          opacity: 1 - _fade.transform(_c.value),
+          child: CustomPaint(
+            size: const Size.square(16),
+            painter: _TickPainter(
+              progress: _draw.transform(_c.value),
+              color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TickPainter extends CustomPainter {
+  _TickPainter({required this.progress, required this.color});
+
+  final double progress;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0) return;
+    final path = Path()
+      ..moveTo(size.width * .15, size.height * .55)
+      ..lineTo(size.width * .42, size.height * .8)
+      ..lineTo(size.width * .88, size.height * .25);
+    final metric = path.computeMetrics().first;
+    canvas.drawPath(
+      metric.extractPath(0, metric.length * progress),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TickPainter old) =>
+      old.progress != progress || old.color != color;
 }

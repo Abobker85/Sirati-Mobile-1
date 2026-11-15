@@ -4166,5 +4166,35 @@
         "type": "int"
       }
     }
+  },
+  "coreGreetingMorning": "صباح الخير، {name}",
+  "@coreGreetingMorning": {
+    "description": "Home header greeting in the morning, with the user display name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "سارة"
+      }
+    }
+  },
+  "coreGreetingAfternoon": "مساء الخير، {name}",
+  "@coreGreetingAfternoon": {
+    "description": "Home header greeting in the afternoon, with the user display name. Arabic uses the evening greeting.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "سارة"
+      }
+    }
+  },
+  "coreGreetingEvening": "مساء الخير، {name}",
+  "@coreGreetingEvening": {
+    "description": "Home header greeting in the evening, with the user display name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "سارة"
+      }
+    }
   }
 }

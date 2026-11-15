@@ -1681,5 +1681,29 @@
         "type": "int"
       }
     }
+  },
+  "coreGreetingMorning": "Good morning, {name}",
+  "@coreGreetingMorning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "coreGreetingAfternoon": "Good afternoon, {name}",
+  "@coreGreetingAfternoon": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "coreGreetingEvening": "Good evening, {name}",
+  "@coreGreetingEvening": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }
