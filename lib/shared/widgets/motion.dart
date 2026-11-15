@@ -43,7 +43,8 @@ class MotionDurations {
   static const step = Duration(milliseconds: 280);
 
   /// Soft pulse for skeleton placeholders (single shared loop feel).
-  static const skeleton = Duration(milliseconds: 1100);
+  /// Skeleton pulse: slow, near a calm breath, so long loads feel quiet.
+  static const skeleton = Duration(milliseconds: 1700);
 
   /// Max staggered reveal delay across a screen (order * step, capped).
   static const maxRevealDelay = Duration(milliseconds: 120);

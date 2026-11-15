@@ -27,12 +27,19 @@ enum ScanStage {
 /// runs and never longer than [maxScan]. Under reduced motion callers show
 /// the plain checklist instead.
 class ScanPaperScene extends StatefulWidget {
-  const ScanPaperScene({super.key, required this.stage});
+  const ScanPaperScene({super.key, required this.stage, this.slow = false});
 
   final ScanStage stage;
 
+  /// After a long wait: the beam passes more slowly ([slowPass]), so a long
+  /// scan feels calm rather than frantic.
+  final bool slow;
+
   /// One pass of the beam over the paper.
   static const pass = Duration(milliseconds: 1600);
+
+  /// One pass once the wait is long.
+  static const slowPass = Duration(milliseconds: 2400);
 
   /// The beam stops after this even if the scan does not answer (the scan's
   /// own polling gives up at about this point).
@@ -67,6 +74,14 @@ class ScanPaperSceneState extends State<ScanPaperScene>
   @visibleForTesting
   bool get scanning => _beam.isAnimating;
 
+  /// One beam pass now, for tests.
+  @visibleForTesting
+  Duration? get passDuration => _beam.duration;
+
+  /// Time since the scene appeared, to keep the [ScanPaperScene.maxScan] cap
+  /// when the pace changes.
+  final _since = Stopwatch()..start();
+
   @override
   void initState() {
     super.initState();
@@ -80,14 +95,25 @@ class ScanPaperSceneState extends State<ScanPaperScene>
       return;
     }
     if (_beam.isAnimating) return;
-    final passes = ScanPaperScene.maxScan.inMilliseconds ~/
-        ScanPaperScene.pass.inMilliseconds;
+    final pass = widget.slow ? ScanPaperScene.slowPass : ScanPaperScene.pass;
+    final left = ScanPaperScene.maxScan - _since.elapsed;
+    final passes = left.inMilliseconds ~/ pass.inMilliseconds;
+    if (passes <= 0) {
+      _beam.stop();
+      return;
+    }
+    _beam.duration = pass;
     _beam.repeat(count: passes);
   }
 
   @override
   void didUpdateWidget(ScanPaperScene oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.slow != widget.slow && _beam.isAnimating) {
+      // New pace from the next pass on.
+      _beam.stop();
+      _runBeam();
+    }
     if (oldWidget.stage == widget.stage) return;
     // Two stages in quick succession: blend on from whichever look was
     // mostly showing, instead of jumping back.

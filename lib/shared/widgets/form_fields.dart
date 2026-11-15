@@ -170,8 +170,30 @@ class AppFormErrorBanner extends StatelessWidget {
 
   const AppFormErrorBanner({super.key, required this.message, this.onDismiss});
 
+  /// How far it drifts down as it arrives.
+  static const drift = 8.0;
+
   @override
   Widget build(BuildContext context) {
+    // Arrives calmly once: fades in while drifting 8 px into place. No
+    // shake, no flash.
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration:
+          MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
+      curve: MotionCurves.enter,
+      builder: (context, t, child) => Opacity(
+        opacity: t,
+        child: Transform.translate(
+          offset: Offset(0, -drift * (1 - t)),
+          child: child,
+        ),
+      ),
+      child: _banner(context),
+    );
+  }
+
+  Widget _banner(BuildContext context) {
     return AnimatedSize(
       duration: MotionDurations.fast,
       curve: MotionCurves.state,

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/idempotency_key.dart';
@@ -262,8 +263,11 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
       );
       final aiFailed = analysis.aiStatus == AiStatus.failed;
       if (!poll.timedOut && !aiFailed) await progress.complete();
-      await progress.dismiss();
-      if (!mounted || stale()) return;
+      // The overlay stays until the result is in place (curtain lift).
+      if (!mounted || stale()) {
+        await progress.dismiss();
+        return;
+      }
 
       if (poll.timedOut) {
         AppSnackBar.warning(
@@ -295,8 +299,9 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
         );
       }
       unawaited(
-        Navigator.of(context).push(
-          MaterialPageRoute(
+        progress.handOff(
+          Navigator.of(context),
+          FadeThroughPageRoute<void>(
             builder: (_) => AnalysisResultScreen(
               analysis: analysis,
               justScanned: true,

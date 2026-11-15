@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/application/cv_draft_store.dart';
@@ -426,10 +427,19 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
         // Finish the overlay on a resolved state before it closes.
         if (!timedOut && !aiFailed) await progress.complete();
-        await progress.dismiss();
-        if (!mounted) return;
+        final handBack =
+            !_isEditMode && (widget.targetJob?.handBackResult ?? false);
+        // A new CV opens its own page: the overlay stays (under the
+        // celebration) until that page is in place, so the filled form
+        // never flashes in between. Every other ending closes it now.
+        final opensResult = !_isEditMode && !handBack && !timedOut;
+        if (!opensResult) await progress.dismiss();
+        if (!mounted) {
+          await progress.dismiss();
+          return;
+        }
 
-        if (!_isEditMode && (widget.targetJob?.handBackResult ?? false)) {
+        if (handBack) {
           // The opener (e.g. Job Match) continues with this CV and reports
           // its AI state itself; don't stack the preview on top of it.
           Navigator.of(context).pop<GeneratedCv>(cv);
@@ -455,7 +465,10 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         // The full scene celebrates a new CV; saving an edit gets the haptic
         // only, so it never uses up the full plays or confetti for a tweak.
         await SuccessBeat.celebrate(context, fullOverlay: !_isEditMode);
-        if (!mounted) return;
+        if (!mounted) {
+          await progress.dismiss();
+          return;
+        }
         // Peak satisfaction: OS review prompt after SuccessBeat (create only).
         if (!_isEditMode) {
           unawaited(InAppReviewService.maybeRequestAfterCvGenerated());
@@ -466,8 +479,11 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           Navigator.of(context).pop<GeneratedCv>(cv);
           return;
         }
-        unawaited(Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => GeneratedCvScreen(generatedCv: cv)),
+        unawaited(progress.handOff(
+          Navigator.of(context),
+          FadeThroughPageRoute<void>(
+            builder: (_) => GeneratedCvScreen(generatedCv: cv),
+          ),
         ));
     }
   }

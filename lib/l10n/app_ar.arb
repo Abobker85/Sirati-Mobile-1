@@ -1080,7 +1080,7 @@
   "@sharedAiStageAnalysisPreparing": {
     "description": "CV analysis progress step 3."
   },
-  "sharedAiLongWait": "يستغرق هذا وقتًا أطول من المعتاد — لا يزال العمل جاريًا…",
+  "sharedAiLongWait": "ما زلنا نعمل عليها. سيرتك محفوظة، شكرًا لانتظارك.",
   "@sharedAiLongWait": {
     "description": "AI progress status after a long wait."
   },
