@@ -19,9 +19,22 @@ import 'package:sirati/shared/widgets/submit_button.dart';
 /// Analysis result: score + criteria tab, recommendations tab, and a
 /// "generate improved CV" action driven by [ImprovedCvController].
 class AnalysisResultScreen extends ConsumerWidget {
-  const AnalysisResultScreen({super.key, required this.analysis});
+  const AnalysisResultScreen({
+    super.key,
+    required this.analysis,
+    this.justScanned = false,
+    this.previousScore,
+  });
 
   final CvAnalysis analysis;
+
+  /// Opened straight from a finished scan: the score is revealed as a
+  /// moment. Saved results show it at once.
+  final bool justScanned;
+
+  /// The score of the last scan of the same CV for the same job, when there
+  /// was one: the ring then shows how far the score moved.
+  final int? previousScore;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -72,7 +85,12 @@ class AnalysisResultScreen extends ConsumerWidget {
           ),
           body: TabBarView(
             children: [
-              ScoreTab(analysis: analysis, english: english),
+              ScoreTab(
+                analysis: analysis,
+                english: english,
+                revealScore: justScanned,
+                previousScore: previousScore,
+              ),
               RecommendationsTab(
                 weaknesses: analysis.weaknesses,
                 strengths: analysis.strengths,

@@ -6,6 +6,7 @@ import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/dashboard/application/education_interest_controller.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/navigation/dashboard_scroll_end.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
@@ -33,7 +34,9 @@ class EducationScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final notified = ref.watch(educationInterestProvider).value ?? false;
 
+    // Bottom stays open: the list scrolls behind the floating bar.
     return SafeArea(
+      bottom: false,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxContentWidth = constraints.maxWidth >= 1100
@@ -52,10 +55,7 @@ class EducationScreen extends ConsumerWidget {
                   horizontalPadding,
                   18,
                   horizontalPadding,
-                  // This tab has no FAB and the shell Scaffold already reserves
-                  // the bottom nav bar's height, so FAB-sized padding here was
-                  // pure dead space at the end of the list.
-                  AppSpacing.scrollBottomTab,
+                  dashboardScrollEnd(context),
                 ),
                 children: [
                   ScreenHeader(
@@ -243,17 +243,26 @@ class _ComingSoonHero extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              icon: Icon(
-                notified
-                    ? Icons.check_circle_rounded
-                    : Icons.notifications_active_rounded,
-                size: 18,
+              // The button turns into its confirmation: the bell pops into
+              // a tick and the label cross-fades.
+              icon: MotionMorph(
+                morphKey: notified,
+                child: Icon(
+                  notified
+                      ? Icons.check_circle_rounded
+                      : Icons.notifications_active_rounded,
+                  size: 18,
+                ),
               ),
-              label: Text(
-                notified
-                    ? l10n.dashboardEducationInterestRegistered
-                    : AppLocalizations.of(context).registerInterest,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+              label: MotionMorph(
+                morphKey: notified,
+                pop: false,
+                child: Text(
+                  notified
+                      ? l10n.dashboardEducationInterestRegistered
+                      : AppLocalizations.of(context).registerInterest,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ),
           ),

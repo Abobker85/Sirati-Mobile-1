@@ -4,8 +4,10 @@ import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/domain/cv_list.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ats_grade.dart';
+import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/score_ring.dart';
 
 /// "Updated 3 days ago", or the server label when there's no timestamp.
 String cvUpdatedText(
@@ -97,13 +99,16 @@ class CvDocumentCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                _CardMenu(
-                  key: menuKey(item.id),
-                  editable: editable,
-                  canDownload: item.canDownload,
-                  onEdit: onEdit,
-                  onDownload: onDownload,
-                  onDelete: onDelete,
+                // Locked if either the CV or the account says so.
+                SubscriptionBuilder(
+                  builder: (context, status) => _CardMenu(
+                    key: menuKey(item.id),
+                    editable: editable,
+                    canDownload: item.canDownload && !status.downloadLocked,
+                    onEdit: onEdit,
+                    onDownload: onDownload,
+                    onDelete: onDelete,
+                  ),
                 ),
               ],
             ),
@@ -119,10 +124,9 @@ class CvDocumentCard extends StatelessWidget {
                     child: score != null
                         ? Row(
                             children: [
-                              // The line beside it already reads the score.
-                              ExcludeSemantics(
-                                child: _ScoreRing(score: score),
-                              ),
+                              // The line beside it already reads the score,
+                              // so the ring carries no label.
+                              ScoreRing(score: score),
                               const SizedBox(width: 10),
                               Flexible(
                                 child: Text(
@@ -250,6 +254,7 @@ class _CardMenu extends StatelessWidget {
       String label, {
       required bool enabled,
       Color? color,
+      bool premium = false,
     }) =>
         PopupMenuItem(
           value: value,
@@ -258,13 +263,26 @@ class _CardMenu extends StatelessWidget {
             children: [
               Icon(icon, size: 20, color: color ?? colors.textPrimary),
               const SizedBox(width: 12),
-              Text(label, style: TextStyle(color: color)),
+              Flexible(child: Text(label, style: TextStyle(color: color))),
+              // Crown only: a menu row is too narrow for the full chip.
+              if (premium) ...[
+                const SizedBox(width: 8),
+                const PremiumChip(compact: true),
+              ],
             ],
           ),
         );
 
     return PopupMenuButton<_CardAction>(
       tooltip: l.cvCardMore,
+      // Grows out of the button quickly instead of the slower default.
+      popUpAnimationStyle: MotionSettings.reduce(context)
+          ? AnimationStyle.noAnimation
+          : const AnimationStyle(
+              duration: MotionDurations.medium,
+              reverseDuration: MotionDurations.fast,
+              curve: MotionCurves.standard,
+            ),
       icon: Icon(Icons.more_horiz_rounded, color: colors.textSecondary),
       onSelected: (action) => switch (action) {
         _CardAction.edit => onEdit(),
@@ -274,53 +292,12 @@ class _CardMenu extends StatelessWidget {
       itemBuilder: (_) => [
         entry(_CardAction.edit, Icons.edit_outlined, l.cvCardEdit,
             enabled: editable),
+        // Locked downloads stay tappable and open the Premium prompt.
         entry(_CardAction.download, Icons.download_rounded, l.cvCardDownload,
-            enabled: canDownload),
+            enabled: true, premium: !canDownload),
         entry(_CardAction.delete, Icons.delete_outline_rounded, l.deleteItem,
             enabled: editable, color: colors.error),
       ],
-    );
-  }
-}
-
-/// Circular ATS score; the arc colour follows the score band, the number
-/// stays on body ink so it holds AA in both themes.
-class _ScoreRing extends StatelessWidget {
-  const _ScoreRing({required this.score});
-
-  final int score;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.sirati;
-    final arc = switch (ScoreBand.of(score)) {
-      ScoreBand.excellent || ScoreBand.veryGood => colors.success,
-      ScoreBand.fair => colors.warning,
-      ScoreBand.weak => colors.error,
-    };
-    return SizedBox.square(
-      dimension: 44,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          CircularProgressIndicator(
-            value: score / 100,
-            strokeWidth: 4,
-            strokeCap: StrokeCap.round,
-            color: arc,
-            backgroundColor: colors.surfaceLow,
-          ),
-          Center(
-            child: Text(
-              AppFormat.digits(
-                '$score',
-                english: AppLocale.isEnglish(context),
-              ),
-              style: AppTypography.of(context, AppTypography.labelLg),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

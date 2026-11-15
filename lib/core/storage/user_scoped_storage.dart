@@ -13,6 +13,10 @@ abstract final class UserScopedKeys {
   static const builderDocPrefix = 'sirati_cv_doc_';
   static const builderIndexKey = 'sirati_cv_ids';
 
+  /// The last ATS score per CV and job title (SharedPreferences), for the
+  /// "since your last scan" comparison.
+  static const lastScanScoresKey = 'sirati_last_scan_scores';
+
   /// Secure-storage keys holding account data.
   static const secureKeys = [
     PreferenceStore.cvDraftKey,
@@ -23,7 +27,8 @@ abstract final class UserScopedKeys {
   static bool isUserScopedPreference(String key) =>
       key.startsWith(builderDraftPrefix) ||
       key.startsWith(builderDocPrefix) ||
-      key == builderIndexKey;
+      key == builderIndexKey ||
+      key == lastScanScoresKey;
 }
 
 /// Removes everything account-specific stored on the device, so the next

@@ -5,6 +5,8 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/profile_photo.dart';
 
 /// Profile row at the top of Home (approved board, option 3): one card that
@@ -72,6 +74,8 @@ class DashboardHomeHeader extends StatelessWidget {
                               url: user?.avatarUrl,
                               name: name,
                               size: 44,
+                              premium:
+                                  user?.subscriptionStatus.isPremium ?? false,
                               background: c.primaryLight,
                               foreground: c.primaryInk,
                             ),
@@ -138,9 +142,21 @@ class DashboardHomeHeader extends StatelessWidget {
                       clipBehavior: Clip.none,
                       children: [
                         Center(
-                          child: Icon(
-                            Icons.notifications_none_rounded,
-                            color: c.textPrimary,
+                          // Rings when there is something new to read.
+                          // ...and again softly every 30 s while it waits.
+                          child: AmbientMove(
+                            kind: AmbientKind.ring,
+                            priority: AmbientPriority.news,
+                            enabled: unreadCount > 0,
+                            delay: const Duration(seconds: 30),
+                            rest: const Duration(seconds: 30),
+                            child: LivelyIcon(
+                              Icons.notifications_none_rounded,
+                              color: c.textPrimary,
+                              life: IconLife.ring,
+                              plays: unreadCount > 0 ? 2 : 0,
+                              trigger: unreadCount,
+                            ),
                           ),
                         ),
                         if (unreadCount > 0)

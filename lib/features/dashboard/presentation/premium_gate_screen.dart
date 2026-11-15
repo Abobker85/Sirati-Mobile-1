@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/core/routing/app_routes.dart';
@@ -6,12 +9,16 @@ import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/features/dashboard/application/premium_gate_controller.dart';
 import 'package:sirati/features/dashboard/domain/subscription_offer.dart';
+import 'package:sirati/features/dashboard/presentation/premium_unlocked_mark.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/purchases/store_purchases.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/services/session_user_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Apple's standard licence agreement, linked as the paywall's Terms of Use.
 const appleStandardEulaUrl =
@@ -26,9 +33,14 @@ const appleStandardEulaUrl =
 class PremiumGateScreen extends ConsumerStatefulWidget {
   const PremiumGateScreen({
     super.key,
+    this.feature = PremiumFeature.general,
     this.confirmDelay = const Duration(seconds: 2),
     this.confirmAttempts = 4,
   });
+
+  /// What the user tapped to get here: it sets the headline and which
+  /// benefit is listed first.
+  final PremiumFeature feature;
 
   /// Pause between server checks after a purchase (the webhook is async).
   final Duration confirmDelay;
@@ -347,13 +359,13 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
     return [
-      const _Hero(),
+      _Hero(feature: widget.feature),
       const SizedBox(height: AppSpacing.lg),
       if (active) ...[
         _ActiveCard(onContinue: _leave),
         const SizedBox(height: AppSpacing.lg),
       ],
-      const _Benefits(),
+      _Benefits(feature: widget.feature),
       const SizedBox(height: AppSpacing.md),
       _Notice(
         tone: _Tone.info,
@@ -405,13 +417,13 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     final catalog = ref.watch(storeCatalogProvider);
     final offerValue = offer.value;
     return [
-      const _Hero(),
+      _Hero(feature: widget.feature),
       const SizedBox(height: AppSpacing.lg),
       if (active) ...[
         _ActiveCard(onContinue: _leave),
         const SizedBox(height: AppSpacing.lg),
       ],
-      const _Benefits(),
+      _Benefits(feature: widget.feature),
       if (!active) ...[
         const SizedBox(height: AppSpacing.lg),
         if (offer.hasError || (offerValue != null && offerValue.plans.isEmpty))
@@ -463,7 +475,8 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
         children: [
           title,
           const SizedBox(height: AppSpacing.md),
-          const Center(child: CircularProgressIndicator()),
+          // Plan-card shapes while the plans load, so nothing jumps.
+          const _PlansSkeleton(),
         ],
       );
     }
@@ -506,22 +519,31 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       children: [
         title,
         const SizedBox(height: AppSpacing.sm),
-        for (final plan in plans) ...[
-          _PlanCard(
-            key: PremiumGateScreen.planKey(plan.key),
-            plan: plan,
-            english: english,
-            storePrice: data.offers[plan.key]!.priceString,
-            selected: plan.key == selectedKey,
-            onSelect: _busy
-                ? null
-                : () => setState(() {
-                      _selectedPlan = plan.key;
-                      _notice = null;
-                    }),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
+        // A halo slides from the old choice to the new one.
+        PlanSelectionHalo(
+          selected: plans.indexWhere((p) => p.key == selectedKey),
+          children: [
+            for (final plan in plans)
+              _PlanCard(
+                key: PremiumGateScreen.planKey(plan.key),
+                plan: plan,
+                english: english,
+                storePrice: data.offers[plan.key]!.priceString,
+                selected: plan.key == selectedKey,
+                onSelect: _busy
+                    ? null
+                    : () {
+                        if (plan.key != selectedKey) {
+                          unawaited(HapticFeedback.selectionClick());
+                        }
+                        setState(() {
+                          _selectedPlan = plan.key;
+                          _notice = null;
+                        });
+                      },
+              ),
+          ],
+        ),
         if (trial != null) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -577,7 +599,8 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
         children: [
           title,
           const SizedBox(height: AppSpacing.md),
-          const Center(child: CircularProgressIndicator()),
+          // Plan-card shapes while the plans load, so nothing jumps.
+          const _PlansSkeleton(),
         ],
       );
     }
@@ -695,7 +718,9 @@ String _trialDuration(AppLocalizations l, StoreTrial trial) =>
     };
 
 class _Hero extends StatelessWidget {
-  const _Hero();
+  const _Hero({required this.feature});
+
+  final PremiumFeature feature;
 
   @override
   Widget build(BuildContext context) {
@@ -722,7 +747,7 @@ class _Hero extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              l.premiumGateHeroTitle,
+              feature.title(l),
               style: AppTypography.of(
                 context,
                 AppTypography.headlineLg,
@@ -731,7 +756,7 @@ class _Hero extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              l.premiumGateHeroBody,
+              feature.body(l),
               style: AppTypography.of(
                 context,
                 AppTypography.bodyMd,
@@ -746,7 +771,19 @@ class _Hero extends StatelessWidget {
 }
 
 class _Benefits extends StatelessWidget {
-  const _Benefits();
+  const _Benefits({required this.feature});
+
+  final PremiumFeature feature;
+
+  /// Index of the benefit that matches [feature], listed first.
+  int? get _leading => switch (feature) {
+        PremiumFeature.download => 0,
+        PremiumFeature.aiWriting => 1,
+        PremiumFeature.fullAnalysis => 2,
+        PremiumFeature.jobMatch => 3,
+        PremiumFeature.dailyCvLimit || PremiumFeature.dailyAnalysisLimit => 4,
+        PremiumFeature.general => null,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -778,6 +815,8 @@ class _Benefits extends StatelessWidget {
         l.premiumGateBenefitLimitsBody,
       ),
     ];
+    final lead = _leading;
+    if (lead != null) items.insert(0, items.removeAt(lead));
     return _Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -931,11 +970,15 @@ class _PlanCard extends StatelessWidget {
               children: [
                 Expanded(child: details),
                 const SizedBox(width: AppSpacing.sm),
-                Icon(
-                  isSelected
-                      ? Icons.radio_button_checked_rounded
-                      : Icons.radio_button_unchecked_rounded,
-                  color: isSelected ? c.primary : c.textSecondary,
+                // The radio pops into its new state.
+                MotionMorph(
+                  morphKey: isSelected,
+                  child: Icon(
+                    isSelected
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.radio_button_unchecked_rounded,
+                    color: isSelected ? c.primary : c.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -1133,27 +1176,17 @@ class _SuccessView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: AppSpacing.xxl),
-        Center(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: c.primaryLight,
-              shape: BoxShape.circle,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Icon(
-                confirmed ? Icons.check_rounded : Icons.hourglass_top_rounded,
-                size: 48,
-                color: c.primaryInk,
-              ),
-            ),
-          ),
-        ),
+        // "Premium unlocked" plays here once the server confirms; a paid
+        // but unconfirmed purchase gets a calm hourglass instead.
+        Center(child: PremiumUnlockedMark(confirmed: confirmed)),
         const SizedBox(height: AppSpacing.lg),
-        Text(
-          confirmed ? l.premiumGateSuccessTitle : l.premiumGateSyncingTitle,
-          textAlign: TextAlign.center,
-          style: AppTypography.of(context, AppTypography.titleLg),
+        MotionStateSwitcher(
+          stateKey: confirmed,
+          child: Text(
+            confirmed ? l.premiumGateSuccessTitle : l.premiumGateSyncingTitle,
+            textAlign: TextAlign.center,
+            style: AppTypography.of(context, AppTypography.titleLg),
+          ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
@@ -1273,4 +1306,176 @@ class _Notice extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Placeholder plan cards in the shape of the real ones.
+class _PlansSkeleton extends StatelessWidget {
+  const _PlansSkeleton();
+
+  /// Key for tests.
+  static const skeletonKey = ValueKey('premium-plans-skeleton');
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppSkeletonScope(
+      child: Column(
+        key: skeletonKey,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppSkeleton(height: 84, radius: 16),
+          SizedBox(height: AppSpacing.sm),
+          AppSkeleton(height: 84, radius: 16),
+          SizedBox(height: AppSpacing.sm),
+          AppSkeleton(height: 84, radius: 16),
+        ],
+      ),
+    );
+  }
+}
+
+/// Stacks plan cards with a gap and draws a soft halo around the selected
+/// one. When the choice changes the halo slides to the new card (like the
+/// bottom bar's pill), measured from the cards at paint time so it always
+/// sits on them. Reduced motion moves it at once.
+@visibleForTesting
+class PlanSelectionHalo extends StatefulWidget {
+  const PlanSelectionHalo({
+    super.key,
+    required this.selected,
+    required this.children,
+  });
+
+  final int selected;
+  final List<Widget> children;
+
+  /// How far the halo sits outside the card.
+  static const outset = 3.0;
+
+  @override
+  State<PlanSelectionHalo> createState() => PlanSelectionHaloState();
+}
+
+@visibleForTesting
+class PlanSelectionHaloState extends State<PlanSelectionHalo>
+    with SingleTickerProviderStateMixin {
+  final _layerKey = GlobalKey();
+  late List<GlobalKey> _cardKeys = _keys(widget.children.length);
+  late final AnimationController _slide = AnimationController(
+    vsync: this,
+    duration: MotionDurations.navIndicator,
+    value: 1,
+  );
+  Rect? _from;
+  Rect? _painted;
+
+  static List<GlobalKey> _keys(int n) =>
+      [for (var i = 0; i < n; i++) GlobalKey()];
+
+  /// The halo as last painted, in global coordinates, for tests.
+  @visibleForTesting
+  Rect? get paintedHalo {
+    final box = _layerKey.currentContext?.findRenderObject();
+    final r = _painted;
+    if (r == null || box is! RenderBox) return null;
+    return box.localToGlobal(r.topLeft) & r.size;
+  }
+
+  @override
+  void didUpdateWidget(PlanSelectionHalo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.children.length != _cardKeys.length) {
+      _cardKeys = _keys(widget.children.length);
+      _from = null;
+    }
+    if (oldWidget.selected == widget.selected) return;
+    if (MotionSettings.reduce(context) || _painted == null) {
+      _from = null;
+      _slide.value = 1;
+      return;
+    }
+    _from = _painted;
+    _slide.forward(from: 0);
+  }
+
+  Rect? _target() {
+    final i = widget.selected;
+    if (i < 0 || i >= _cardKeys.length) return null;
+    final layer = _layerKey.currentContext?.findRenderObject();
+    final card = _cardKeys[i].currentContext?.findRenderObject();
+    if (layer is! RenderBox || card is! RenderBox || !card.hasSize) return null;
+    final topLeft = card.localToGlobal(Offset.zero, ancestor: layer);
+    return (topLeft & card.size).inflate(PlanSelectionHalo.outset);
+  }
+
+  Rect? _haloNow() {
+    final to = _target();
+    final from = _from;
+    if (to == null) return null;
+    if (from == null || _slide.value >= 1) return to;
+    return Rect.lerp(from, to, MotionCurves.standard.transform(_slide.value));
+  }
+
+  @override
+  void dispose() {
+    _slide.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return Stack(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final (i, card) in widget.children.indexed) ...[
+              KeyedSubtree(key: _cardKeys[i], child: card),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+          ],
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(
+              key: _layerKey,
+              painter: _HaloPainter(
+                halo: this,
+                color: c.primary.withValues(alpha: .35),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HaloPainter extends CustomPainter {
+  _HaloPainter({required this.halo, required this.color})
+      : super(repaint: halo._slide);
+
+  final PlanSelectionHaloState halo;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = halo._haloNow();
+    halo._painted = rect;
+    if (rect == null) return;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        rect,
+        const Radius.circular(AppRadius.lg + PlanSelectionHalo.outset),
+      ),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..color = color,
+    );
+  }
+
+  // The cards may have moved even when nothing here changed.
+  @override
+  bool shouldRepaint(_HaloPainter old) => true;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/bidi_text.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/ai_field_loading_overlay.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
@@ -131,15 +132,29 @@ class AiCvField extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SubmitButton(
-                  key: Key('enhance_$field'),
-                  label: l10n.sharedAiEnhance,
-                  loadingLabel: l10n.sharedAiEnhancing,
-                  isLoading: isLoading,
-                  outlined: true,
-                  height: AppTouchTarget.min,
-                  icon: Icons.auto_fix_high_rounded,
-                  onPressed: enabled ? onEnhance : null,
+                // AI writing is Premium: free accounts see the chip on the
+                // button before they tap it.
+                SubscriptionBuilder(
+                  builder: (context, status) => Row(
+                    children: [
+                      Expanded(
+                        child: SubmitButton(
+                          key: Key('enhance_$field'),
+                          label: l10n.sharedAiEnhance,
+                          loadingLabel: l10n.sharedAiEnhancing,
+                          isLoading: isLoading,
+                          outlined: true,
+                          height: AppTouchTarget.min,
+                          icon: Icons.auto_fix_high_rounded,
+                          onPressed: enabled ? onEnhance : null,
+                        ),
+                      ),
+                      if (status.aiWritingLocked) ...[
+                        const SizedBox(width: AppSpacing.xs),
+                        const PremiumChip(),
+                      ],
+                    ],
+                  ),
                 ),
                 // Always say why the button is off — an empty field included —
                 // so a disabled Enhance never looks broken.

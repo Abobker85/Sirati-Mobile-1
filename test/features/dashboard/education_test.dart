@@ -87,7 +87,8 @@ void main() {
           ),
         );
 
-    testWidgets('Register interest records interest without promising a message',
+    testWidgets(
+        'Register interest records interest without promising a message',
         (tester) async {
       tester.view.physicalSize = const Size(1080, 3200);
       tester.view.devicePixelRatio = 1;

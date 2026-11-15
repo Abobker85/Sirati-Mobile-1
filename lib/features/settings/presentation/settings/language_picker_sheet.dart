@@ -5,6 +5,7 @@ import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components/app_sheet.dart';
 
 /// Native name of the selected app language (picker subtitle).
 String currentLanguageName() =>
@@ -14,9 +15,8 @@ String currentLanguageName() =>
 /// Bottom sheet listing every enabled language (cached list; `ar` and `en`
 /// always present, also offline). Selecting one applies and persists it.
 Future<void> showLanguagePicker(BuildContext context) async {
-  final code = await showModalBottomSheet<String>(
+  final code = await showGlassBottomSheet<String>(
     context: context,
-    showDragHandle: true,
     isScrollControlled: true,
     builder: (context) => const LanguagePickerSheet(),
   );

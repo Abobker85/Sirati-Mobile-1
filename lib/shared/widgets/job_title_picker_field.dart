@@ -4,6 +4,7 @@ import 'package:sirati/core/utils/bidi_text.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_title.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 
 /// Searchable job-title selector used on register + profile screens.
@@ -37,13 +38,11 @@ class JobTitlePickerField extends StatelessWidget {
   Future<void> _openPicker(BuildContext context) async {
     if (!enabled || loading) return;
 
-    final selected = await showModalBottomSheet<JobTitle?>(
+    final selected = await showGlassBottomSheet<JobTitle?>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.sirati.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      // The sheet draws its own grab bar.
+      showDragHandle: false,
       builder: (ctx) => _JobTitlePickerSheet(
         titles: titles,
         selected: value,

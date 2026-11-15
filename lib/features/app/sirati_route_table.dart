@@ -32,6 +32,7 @@ import 'package:sirati/features/settings/presentation/settings_screen.dart';
 import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/navigation/dashboard_tab.dart';
+import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/services/local_session_cleanup.dart';
 
 /// Composition root: maps route names onto feature screens.
@@ -129,7 +130,10 @@ Widget _widgetFor(ParsedRoute parsed) {
     case AppRoutes.notifications:
       return const NotificationsScreen();
     case AppRoutes.premium:
-      return const PremiumGateScreen();
+      final feature = parsed.arguments;
+      return PremiumGateScreen(
+        feature: feature is PremiumFeature ? feature : PremiumFeature.general,
+      );
     case AppRoutes.gallery:
       return const ComponentGalleryScreen();
     case AppRoutes.jobMatch:

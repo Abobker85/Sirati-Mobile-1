@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Token-driven text field (SIRATI-21). Uses [AppFormStyles] / theme inputs.
 class AppInput extends StatelessWidget {
@@ -50,52 +51,59 @@ class AppInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget buildField(TextDirection effectiveDirection) {
-      final field = ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
-        child: TextField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          maxLines: maxLines,
-          onChanged: onChanged,
-          textDirection: effectiveDirection,
-          inputFormatters: inputFormatters,
-          focusNode: focusNode,
-          enabled: enabled,
-          readOnly: readOnly,
-          onTap: onTap,
-          style: AppTypography.of(context, AppTypography.bodyMd),
-          decoration: InputDecoration(
-            label: label == null
-                ? null
-                : Builder(
-                    builder: (context) => Text(
-                      label!,
-                      style: DefaultTextStyle.of(context).style.copyWith(
-                            height:
-                                AppTypography.of(context, AppTypography.bodyMd)
-                                    .height,
-                          ),
-                    ),
-                  ),
-            hintText: hint,
-            errorText: errorText,
-            errorMaxLines: 100,
-            helperText: helperText,
-            prefixIcon: prefixIcon,
-            suffixIcon: errorText == null
-                ? suffixIcon
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (suffixIcon != null) suffixIcon!,
-                      Icon(
-                        Icons.error_outline_rounded,
-                        color: context.sirati.error,
+      // A new error shakes the field once.
+      final field = ErrorShake(
+        errorKey: errorText,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
+          child: TextField(
+            controller: controller,
+            obscureText: obscureText,
+            keyboardType: keyboardType,
+            maxLines: maxLines,
+            onChanged: onChanged,
+            textDirection: effectiveDirection,
+            inputFormatters: inputFormatters,
+            focusNode: focusNode,
+            enabled: enabled,
+            readOnly: readOnly,
+            onTap: onTap,
+            style: AppTypography.of(context, AppTypography.bodyMd),
+            decoration: InputDecoration(
+              label: label == null
+                  ? null
+                  : Builder(
+                      builder: (context) => Text(
+                        label!,
+                        style: DefaultTextStyle.of(context).style.copyWith(
+                              height: AppTypography.of(
+                                      context, AppTypography.bodyMd)
+                                  .height,
+                            ),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                    ],
-                  ),
+                    ),
+              hintText: hint,
+              errorText: errorText,
+              errorMaxLines: 100,
+              helperText: helperText,
+              prefixIcon: prefixIcon,
+              suffixIcon: errorText == null
+                  ? suffixIcon
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (suffixIcon != null) suffixIcon!,
+                        MotionMorph(
+                          morphKey: errorText!,
+                          child: Icon(
+                            Icons.error_outline_rounded,
+                            color: context.sirati.error,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                      ],
+                    ),
+            ),
           ),
         ),
       );

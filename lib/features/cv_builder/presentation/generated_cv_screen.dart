@@ -16,11 +16,15 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
+import 'package:sirati/shared/premium/premium_feature.dart';
+import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/score_ring.dart';
 
 /// Reading direction for a CV: its declared language's, never guessed
 /// from the text.
@@ -100,9 +104,32 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
     return false;
   }
 
+  /// [label] with the Premium chip while downloads are locked for this
+  /// account, so the button says up front where it leads.
+  Widget _withPremiumChip(Widget label) => SubscriptionBuilder(
+        builder: (context, status) => status.downloadLocked
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(child: label),
+                  const SizedBox(width: AppSpacing.xs),
+                  const PremiumChip(),
+                ],
+              )
+            : label,
+      );
+
+  /// A free account is offered Premium before a locked download or share;
+  /// true when the action may go ahead (already allowed, or just bought).
+  Future<bool> _downloadAllowed() async {
+    if (!currentSubscription().downloadLocked) return true;
+    return PremiumPromptSheet.show(context, PremiumFeature.download);
+  }
+
   Future<void> _downloadPdf() async {
     if (_isDownloading) return;
     if (!_readyOrExplain()) return;
+    if (!await _downloadAllowed() || !mounted) return;
     final api = ref.read(cvApiServiceProvider);
     setState(() => _isDownloading = true);
     try {
@@ -153,9 +180,8 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
           .listCvTemplates(language: _cv.language);
       if (!mounted) return null;
       if (templates.isEmpty) return (template: null);
-      final picked = await showModalBottomSheet<CvTemplate>(
+      final picked = await showGlassBottomSheet<CvTemplate>(
         context: context,
-        showDragHandle: true,
         builder: (_) => CvTemplatePicker(
           templates: templates,
           english: AppLocale.isEnglishCode(_cv.language),
@@ -177,6 +203,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
   Future<void> _share() async {
     if (_isSharing) return;
     if (!_readyOrExplain()) return;
+    if (!await _downloadAllowed() || !mounted) return;
     final l = AppLocalizations.of(context);
     final box = context.findRenderObject() as RenderBox?;
     final origin =
@@ -190,12 +217,16 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
     try {
       final shared = await controller.sharePdf(sharePositionOrigin: origin);
       if (shared || !mounted) return;
-      AppSnackBar.warning(
-        context,
-        controller.state.status == ExportStatus.premiumLocked
-            ? l.cvShareSubscriptionRequired
-            : l.cvShareFailed,
-      );
+      if (controller.state.status == ExportStatus.premiumLocked) {
+        // The server refused although the app thought it was allowed:
+        // offer Premium and share once the same account has it.
+        unawaited(PremiumPromptSheet.show(context, PremiumFeature.download)
+            .then((premium) {
+          if (premium && mounted) unawaited(_share());
+        }));
+        return;
+      }
+      AppSnackBar.warning(context, l.cvShareFailed);
     } finally {
       controller.dispose();
       if (mounted) setState(() => _isSharing = false);
@@ -287,10 +318,10 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
                         ),
                       )
                     : const Icon(Icons.download_outlined, size: 20),
-                label: Text(
+                label: _withPremiumChip(Text(
                   _isDownloading ? l.cvHubPreparing : l.cvHubDownload,
                   textAlign: TextAlign.center,
-                ),
+                )),
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -311,7 +342,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
                         ),
                       )
                     : const Icon(Icons.share_outlined, size: 20),
-                label: Text(l.cvHubShare),
+                label: _withPremiumChip(Text(l.cvHubShare)),
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
@@ -570,29 +601,45 @@ class _AtsScoreCard extends StatelessWidget {
               child: SizedBox.square(
                 key: const ValueKey('cv-hub-score-ring'),
                 dimension: ringSize,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CircularProgressIndicator(
-                      value: value / 100,
-                      strokeWidth: 6,
-                      color: c.primaryInk,
-                      backgroundColor: c.borderStrong,
+                // Draws and counts up like every score ring in the app, once
+                // the page has finished coming in.
+                child: RouteSettled(
+                  builder: (context, settled) => TweenAnimationBuilder<double>(
+                    tween: Tween(
+                      begin: MotionSettings.reduce(context) ? value / 100 : 0,
+                      end: settled || MotionSettings.reduce(context)
+                          ? value / 100
+                          : 0,
                     ),
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.xs),
-                        child: Text(
-                          l.cvHubAtsScore(value),
-                          textDirection: TextDirection.ltr,
-                          style: AppTypography.of(
-                            context,
-                            AppTypography.titleMd,
+                    duration: MotionSettings.reduce(context)
+                        ? Duration.zero
+                        : ScoreRing.duration,
+                    curve: MotionCurves.enter,
+                    builder: (context, shown, _) => Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CircularProgressIndicator(
+                          value: shown,
+                          strokeWidth: 6,
+                          color: c.primaryInk,
+                          backgroundColor: c.borderStrong,
+                        ),
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.xs),
+                            child: Text(
+                              l.cvHubAtsScore((shown * 100).round()),
+                              textDirection: TextDirection.ltr,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.titleMd,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

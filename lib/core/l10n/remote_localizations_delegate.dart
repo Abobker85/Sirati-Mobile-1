@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/core/l10n/remote_l10n_repository.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -70,11 +71,45 @@ class FallbackLocalizationsDelegate<T> extends LocalizationsDelegate<T> {
       inner.shouldReload(old.inner);
 }
 
+/// Marker resource for [LatinDigitsDelegate].
+class LatinDigits {
+  const LatinDigits._();
+}
+
+/// Every number in the app is 0-9 in every language (SIRATI-63). Newer
+/// Flutter date data gives some languages (Arabic, Persian, Bengali, …)
+/// native digits, so before any date is formatted this turns them off for
+/// the loaded language and the bundled fallbacks Material may use instead.
+class LatinDigitsDelegate extends LocalizationsDelegate<LatinDigits> {
+  const LatinDigitsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<LatinDigits> load(Locale locale) {
+    final full = intl.Intl.canonicalizedLocale(locale.toString());
+    for (final name in {
+      full,
+      intl.Intl.shortLocale(full),
+      locale.languageCode,
+      ...bundledLanguageCodes,
+    }) {
+      intl.DateFormat.useNativeDigitsByDefaultFor(name, false);
+    }
+    return SynchronousFuture<LatinDigits>(const LatinDigits._());
+  }
+
+  @override
+  bool shouldReload(LatinDigitsDelegate old) => false;
+}
+
 /// The app's delegate list for [state].
 List<LocalizationsDelegate<dynamic>> appLocalizationsDelegates(
   RemoteL10nState state,
 ) =>
     [
+      const LatinDigitsDelegate(),
       RemoteLocalizationsDelegate(state),
       const FallbackLocalizationsDelegate<MaterialLocalizations>(
         GlobalMaterialLocalizations.delegate,

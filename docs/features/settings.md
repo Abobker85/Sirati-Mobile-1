@@ -6,8 +6,10 @@ The settings feature provides user management, app preferences configuration, ac
 
 - **Settings Hub (`SettingsScreen`)**:
   - Displays user profile summary, categorized preference tiles, legal info, and account deletion.
-  - Profile Summary Card (`ProfileSummaryCard`): shows user avatar initial, full name, localized target job title, and email.
+  - Profile Summary Card (`ProfileSummaryCard`): shows the profile photo (`ProfilePhoto`, the same as Home; the initial while there is none), full name, localized target job title, and email. The photo comes from `SessionCache.instance.user` first, so a new upload shows at once.
+  - Premium badge: `ProfilePhoto(premium: true)` draws a gold ring and a badge at the top end corner. Home header, this card and `ProfileScreen` pass `AuthUser.subscriptionStatus.isPremium`, which is true only for an explicit `is_subscribed: true` from `/auth/me`.
   - Section actions:
+    - Subscription (`SettingsScreen.subscriptionKey`): "Siratie Premium" with plan and "Active until {date}" (from `subscription.plan_id` / `expires_at`; plan omitted when the product id is not a known plan), or "Free plan" with "See Premium plans". Tapping opens `AppRoutes.premium` and re-reads the account on return. Premium accounts on iOS also get "Manage subscription" (`SettingsScreen.manageSubscriptionKey`), which opens Apple's `https://apps.apple.com/account/subscriptions`.
     - Account: "Edit profile" (opens `ProfileScreen`) and "Change password" (opens `ChangePasswordScreen`).
     - Preferences: "Language" (switches Arabic/English), "Appearance" (`ThemeModeSelector` for System, Light, Dark), "Push notifications" (`Switch.adaptive` toggling `NotificationPreferenceController`).
     - About: "Privacy policy" (opens `PrivacyPolicyScreen`), "Contact us" (launches `mailto:` client), "App version" (displays `ApiConfig.appVersion`).

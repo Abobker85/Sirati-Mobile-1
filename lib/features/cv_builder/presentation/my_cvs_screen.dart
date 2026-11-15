@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/routing/expand_page_route.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/features/cv_builder/application/my_cvs_controller.dart';
@@ -16,16 +17,21 @@ import 'package:sirati/features/cv_builder/presentation/my_cvs/my_cvs_tools.dart
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
+import 'package:sirati/shared/navigation/dashboard_scroll_end.dart';
+import 'package:sirati/shared/premium/premium_feature.dart';
+import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
+import 'package:sirati/shared/widgets/sirati_refresh_indicator.dart';
 
 /// "My CVs" tab (design/cv-tab): tools to create, scan, upload or target a
 /// job, then saved CVs with open, edit, download (per template) and delete.
@@ -111,6 +117,12 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
 
   Future<void> _download(CvListItem item) async {
     final english = _english;
+    // Locked for a free account: offer Premium, then carry on if bought.
+    if (!item.canDownload || currentSubscription().downloadLocked) {
+      final premium =
+          await PremiumPromptSheet.show(context, PremiumFeature.download);
+      if (!premium || !mounted) return;
+    }
     // The PDF link opens in a browser; a CV the server refuses would land
     // on an error page there, so explain the gap here instead.
     final export = item.export;
@@ -182,9 +194,8 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
       if (!mounted) return const _Cancelled();
       if (templates.isEmpty) return const _Chosen(null);
 
-      final picked = await showModalBottomSheet<CvTemplate>(
+      final picked = await showGlassBottomSheet<CvTemplate>(
         context: context,
-        showDragHandle: true,
         builder: (_) =>
             CvTemplatePicker(templates: templates, english: english),
       );
@@ -224,11 +235,17 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     }());
   }
 
-  void _open(CvListItem item) {
+  /// Opens the CV. With [card] (the tapped card's context) the page grows
+  /// out of that card.
+  void _open(CvListItem item, {BuildContext? card}) {
     final id = item.id;
     if (id == null) return;
+    final origin = card == null ? null : ExpandOrigin.of(card);
     unawaited(() async {
-      await Navigator.of(context).pushNamed(AppRoutes.cv(id));
+      await Navigator.of(context).pushNamed(
+        AppRoutes.cv(id),
+        arguments: origin == null ? null : ExpandFrom(origin),
+      );
       if (mounted) await _refresh();
     }());
   }
@@ -241,6 +258,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     // The brand band draws under the status bar; the rest stays inset.
     return SafeArea(
       top: false,
+      bottom: false,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxContentWidth = constraints.maxWidth >= 1100
@@ -272,14 +290,78 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
                 CvListSkeleton(horizontalPadding: horizontalPadding),
               ),
             ),
-            builder: (data) => RefreshIndicator(
-              color: context.sirati.primary,
-              onRefresh: _refresh,
-              child: _buildList(context, data, english, horizontalPadding,
-                  shell: shell),
+            builder: (data) => Stack(
+              children: [
+                NotificationListener<ScrollNotification>(
+                  onNotification: _onListScroll,
+                  child: SiratiRefreshIndicator(
+                    onRefresh: _refresh,
+                    child: _buildList(context, data, english, horizontalPadding,
+                        shell: shell),
+                  ),
+                ),
+                PositionedDirectional(
+                  top: 0,
+                  start: 0,
+                  end: 0,
+                  child: _slimHeader(context, data),
+                ),
+              ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// Whether the band's top row has scrolled out, so the slim header shows.
+  final _slim = ValueNotifier<bool>(false);
+
+  @override
+  void dispose() {
+    _slim.dispose();
+    super.dispose();
+  }
+
+  bool _onListScroll(ScrollNotification notification) {
+    if (notification.depth == 0 && notification.metrics.axis == Axis.vertical) {
+      _slim.value = notification.metrics.pixels > MyCvsSlimHeader.showAfter;
+    }
+    return false;
+  }
+
+  String _title(BuildContext context, CvList data) => data.title.isNotEmpty
+      ? data.title
+      : AppLocalizations.of(context).myCvsListTitle;
+
+  /// Slides down over the band as its top row leaves, and back up at the top
+  /// of the list. Out of the tree while hidden, so the page has one title and
+  /// one bell at a time for screen readers.
+  Widget _slimHeader(BuildContext context, CvList data) {
+    final reduce = MotionSettings.reduce(context);
+    return ValueListenableBuilder<bool>(
+      valueListenable: _slim,
+      builder: (context, slim, _) => AnimatedSwitcher(
+        duration: reduce ? Duration.zero : MotionDurations.slow,
+        switchInCurve: MotionCurves.standard,
+        switchOutCurve: MotionCurves.standard.flipped,
+        transitionBuilder: (child, animation) => ClipRect(
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -1),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        ),
+        child: slim
+            ? MyCvsSlimHeader(
+                title: _title(context, data),
+                unreadCount: SessionCache.instance.unreadCount,
+                onNotifications: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.notifications),
+              )
+            : const SizedBox(width: double.infinity),
       ),
     );
   }
@@ -301,7 +383,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
 
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: AppSpacing.scrollBottomNavFab),
+      padding: EdgeInsets.only(bottom: dashboardScrollEnd(context)),
       itemCount: itemCount,
       itemBuilder: (context, index) {
         if (index == 0) {
@@ -309,9 +391,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               MyCvsHeader(
-                title: data.title.isNotEmpty
-                    ? data.title
-                    : AppLocalizations.of(context).myCvsListTitle,
+                title: _title(context, data),
                 unreadCount: SessionCache.instance.unreadCount,
                 onNotifications: () =>
                     Navigator.of(context).pushNamed(AppRoutes.notifications),
@@ -378,13 +458,17 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
           // order > maxStaggerIndex → no reveal controller.
           child: MotionReveal(
             order: index,
-            child: CvDocumentCard(
-              item: item,
-              onOpen: () => _open(item),
-              onEdit: () => unawaited(_edit(item)),
-              onDelete: () => unawaited(_delete(item)),
-              onDownload: () => unawaited(_download(item)),
-              onScan: () => _openScan(cvId: item.id),
+            // The Builder's context is the card itself, which is what the
+            // CV page expands from.
+            child: Builder(
+              builder: (card) => CvDocumentCard(
+                item: item,
+                onOpen: () => _open(item, card: card),
+                onEdit: () => unawaited(_edit(item)),
+                onDelete: () => unawaited(_delete(item)),
+                onDownload: () => unawaited(_download(item)),
+                onScan: () => _openScan(cvId: item.id),
+              ),
             ),
           ),
         ));

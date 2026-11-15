@@ -371,6 +371,15 @@ class RemoteAppLocalizations extends AppLocalizations {
       remote.text('pushNotifications') ?? _base.pushNotifications;
 
   @override
+  String get settingsDecorativeMotion =>
+      remote.text('settingsDecorativeMotion') ?? _base.settingsDecorativeMotion;
+
+  @override
+  String get settingsDecorativeMotionHint =>
+      remote.text('settingsDecorativeMotionHint') ??
+      _base.settingsDecorativeMotionHint;
+
+  @override
   String get aboutSection => remote.text('aboutSection') ?? _base.aboutSection;
 
   @override
@@ -6599,6 +6608,168 @@ class RemoteAppLocalizations extends AppLocalizations {
   String get serverCvDownloadLocked =>
       remote.text('serverCvDownloadLocked') ?? _base.serverCvDownloadLocked;
 
+  @override
+  String get premiumBadgeLabel =>
+      remote.text('premiumBadgeLabel') ?? _base.premiumBadgeLabel;
+
+  @override
+  String get subscriptionSection =>
+      remote.text('subscriptionSection') ?? _base.subscriptionSection;
+
+  @override
+  String get subscriptionFreePlan =>
+      remote.text('subscriptionFreePlan') ?? _base.subscriptionFreePlan;
+
+  @override
+  String get subscriptionActive =>
+      remote.text('subscriptionActive') ?? _base.subscriptionActive;
+
+  @override
+  String subscriptionActiveUntil(String date) =>
+      remote.format(
+        'subscriptionActiveUntil',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'date': date},
+        ),
+      ) ??
+      _base.subscriptionActiveUntil(date);
+
+  @override
+  String get subscriptionManage =>
+      remote.text('subscriptionManage') ?? _base.subscriptionManage;
+
+  @override
+  String get subscriptionManageHint =>
+      remote.text('subscriptionManageHint') ?? _base.subscriptionManageHint;
+
+  @override
+  String get premiumChipLabel =>
+      remote.text('premiumChipLabel') ?? _base.premiumChipLabel;
+
+  @override
+  String get premiumFeatureLabel =>
+      remote.text('premiumFeatureLabel') ?? _base.premiumFeatureLabel;
+
+  @override
+  String get premiumFeatureDownloadTitle =>
+      remote.text('premiumFeatureDownloadTitle') ??
+      _base.premiumFeatureDownloadTitle;
+
+  @override
+  String get premiumFeatureDownloadBody =>
+      remote.text('premiumFeatureDownloadBody') ??
+      _base.premiumFeatureDownloadBody;
+
+  @override
+  String get premiumFeatureAiTitle =>
+      remote.text('premiumFeatureAiTitle') ?? _base.premiumFeatureAiTitle;
+
+  @override
+  String get premiumFeatureAiBody =>
+      remote.text('premiumFeatureAiBody') ?? _base.premiumFeatureAiBody;
+
+  @override
+  String get premiumFeatureAnalysisTitle =>
+      remote.text('premiumFeatureAnalysisTitle') ??
+      _base.premiumFeatureAnalysisTitle;
+
+  @override
+  String get premiumFeatureAnalysisBody =>
+      remote.text('premiumFeatureAnalysisBody') ??
+      _base.premiumFeatureAnalysisBody;
+
+  @override
+  String get premiumFeatureJobMatchTitle =>
+      remote.text('premiumFeatureJobMatchTitle') ??
+      _base.premiumFeatureJobMatchTitle;
+
+  @override
+  String get premiumFeatureJobMatchBody =>
+      remote.text('premiumFeatureJobMatchBody') ??
+      _base.premiumFeatureJobMatchBody;
+
+  @override
+  String get premiumFeatureCvLimitTitle =>
+      remote.text('premiumFeatureCvLimitTitle') ??
+      _base.premiumFeatureCvLimitTitle;
+
+  @override
+  String get premiumFeatureCvLimitBody =>
+      remote.text('premiumFeatureCvLimitBody') ??
+      _base.premiumFeatureCvLimitBody;
+
+  @override
+  String get premiumFeatureAnalysisLimitTitle =>
+      remote.text('premiumFeatureAnalysisLimitTitle') ??
+      _base.premiumFeatureAnalysisLimitTitle;
+
+  @override
+  String get premiumFeatureAnalysisLimitBody =>
+      remote.text('premiumFeatureAnalysisLimitBody') ??
+      _base.premiumFeatureAnalysisLimitBody;
+
+  @override
+  String get premiumHomeTitle =>
+      remote.text('premiumHomeTitle') ?? _base.premiumHomeTitle;
+
+  @override
+  String get premiumHomeBody =>
+      remote.text('premiumHomeBody') ?? _base.premiumHomeBody;
+
+  @override
+  String premiumHomeCvsToday(int used, int limit) =>
+      remote.format(
+        'premiumHomeCvsToday',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'used': used, 'limit': limit},
+        ),
+      ) ??
+      _base.premiumHomeCvsToday(used, limit);
+
+  @override
+  String premiumHomeAnalysesToday(int used, int limit) =>
+      remote.format(
+        'premiumHomeAnalysesToday',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'used': used, 'limit': limit},
+        ),
+      ) ??
+      _base.premiumHomeAnalysesToday(used, limit);
+
+  @override
+  String get premiumUnlockAll =>
+      remote.text('premiumUnlockAll') ?? _base.premiumUnlockAll;
+
+  @override
+  String atsScoreUpSinceLast(int points) =>
+      remote.format(
+        'atsScoreUpSinceLast',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'points': points},
+        ),
+      ) ??
+      _base.atsScoreUpSinceLast(points);
+
+  @override
+  String atsScoreDownSinceLast(int points) =>
+      remote.format(
+        'atsScoreDownSinceLast',
+        (icuMessage, icuLocale) => IcuLite.format(
+          icuMessage,
+          locale: icuLocale,
+          args: {'points': points},
+        ),
+      ) ??
+      _base.atsScoreDownSinceLast(points);
+
   /// Placeholder Dart types of every label, in parameter order.
   @visibleForTesting
   static const debugPlaceholderTypes = <String, List<String>>{
@@ -6684,6 +6855,8 @@ class RemoteAppLocalizations extends AppLocalizations {
     'themeLight': [],
     'themeDark': [],
     'pushNotifications': [],
+    'settingsDecorativeMotion': [],
+    'settingsDecorativeMotionHint': [],
     'aboutSection': [],
     'privacyPolicy': [],
     'contactUs': [],
@@ -7932,6 +8105,34 @@ class RemoteAppLocalizations extends AppLocalizations {
     'serverPlanFreeIncludesDailyLimits': ['int', 'int'],
     'serverPlanFreeExcludesRecommendations': ['int'],
     'serverCvDownloadLocked': [],
+    'premiumBadgeLabel': [],
+    'subscriptionSection': [],
+    'subscriptionFreePlan': [],
+    'subscriptionActive': [],
+    'subscriptionActiveUntil': ['String'],
+    'subscriptionManage': [],
+    'subscriptionManageHint': [],
+    'premiumChipLabel': [],
+    'premiumFeatureLabel': [],
+    'premiumFeatureDownloadTitle': [],
+    'premiumFeatureDownloadBody': [],
+    'premiumFeatureAiTitle': [],
+    'premiumFeatureAiBody': [],
+    'premiumFeatureAnalysisTitle': [],
+    'premiumFeatureAnalysisBody': [],
+    'premiumFeatureJobMatchTitle': [],
+    'premiumFeatureJobMatchBody': [],
+    'premiumFeatureCvLimitTitle': [],
+    'premiumFeatureCvLimitBody': [],
+    'premiumFeatureAnalysisLimitTitle': [],
+    'premiumFeatureAnalysisLimitBody': [],
+    'premiumHomeTitle': [],
+    'premiumHomeBody': [],
+    'premiumHomeCvsToday': ['int', 'int'],
+    'premiumHomeAnalysesToday': ['int', 'int'],
+    'premiumUnlockAll': [],
+    'atsScoreUpSinceLast': ['int'],
+    'atsScoreDownSinceLast': ['int'],
   };
 
   /// Calls label [key] on [l] with positional args [a].
@@ -8025,6 +8226,8 @@ class RemoteAppLocalizations extends AppLocalizations {
         'themeLight' => l.themeLight,
         'themeDark' => l.themeDark,
         'pushNotifications' => l.pushNotifications,
+        'settingsDecorativeMotion' => l.settingsDecorativeMotion,
+        'settingsDecorativeMotionHint' => l.settingsDecorativeMotionHint,
         'aboutSection' => l.aboutSection,
         'privacyPolicy' => l.privacyPolicy,
         'contactUs' => l.contactUs,
@@ -9376,6 +9579,37 @@ class RemoteAppLocalizations extends AppLocalizations {
         'serverPlanFreeExcludesRecommendations' =>
           l.serverPlanFreeExcludesRecommendations(a[0] as int),
         'serverCvDownloadLocked' => l.serverCvDownloadLocked,
+        'premiumBadgeLabel' => l.premiumBadgeLabel,
+        'subscriptionSection' => l.subscriptionSection,
+        'subscriptionFreePlan' => l.subscriptionFreePlan,
+        'subscriptionActive' => l.subscriptionActive,
+        'subscriptionActiveUntil' => l.subscriptionActiveUntil(a[0] as String),
+        'subscriptionManage' => l.subscriptionManage,
+        'subscriptionManageHint' => l.subscriptionManageHint,
+        'premiumChipLabel' => l.premiumChipLabel,
+        'premiumFeatureLabel' => l.premiumFeatureLabel,
+        'premiumFeatureDownloadTitle' => l.premiumFeatureDownloadTitle,
+        'premiumFeatureDownloadBody' => l.premiumFeatureDownloadBody,
+        'premiumFeatureAiTitle' => l.premiumFeatureAiTitle,
+        'premiumFeatureAiBody' => l.premiumFeatureAiBody,
+        'premiumFeatureAnalysisTitle' => l.premiumFeatureAnalysisTitle,
+        'premiumFeatureAnalysisBody' => l.premiumFeatureAnalysisBody,
+        'premiumFeatureJobMatchTitle' => l.premiumFeatureJobMatchTitle,
+        'premiumFeatureJobMatchBody' => l.premiumFeatureJobMatchBody,
+        'premiumFeatureCvLimitTitle' => l.premiumFeatureCvLimitTitle,
+        'premiumFeatureCvLimitBody' => l.premiumFeatureCvLimitBody,
+        'premiumFeatureAnalysisLimitTitle' =>
+          l.premiumFeatureAnalysisLimitTitle,
+        'premiumFeatureAnalysisLimitBody' => l.premiumFeatureAnalysisLimitBody,
+        'premiumHomeTitle' => l.premiumHomeTitle,
+        'premiumHomeBody' => l.premiumHomeBody,
+        'premiumHomeCvsToday' =>
+          l.premiumHomeCvsToday(a[0] as int, a[1] as int),
+        'premiumHomeAnalysesToday' =>
+          l.premiumHomeAnalysesToday(a[0] as int, a[1] as int),
+        'premiumUnlockAll' => l.premiumUnlockAll,
+        'atsScoreUpSinceLast' => l.atsScoreUpSinceLast(a[0] as int),
+        'atsScoreDownSinceLast' => l.atsScoreDownSinceLast(a[0] as int),
         _ => throw ArgumentError.value(key, 'key'),
       };
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/routing/expand_page_route.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/domain/cv_list.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_document_card.dart';
@@ -46,6 +47,8 @@ void main() {
     List<Map<String, dynamic>> items, {
     String language = 'ar',
     bool dark = false,
+    double textScale = 1,
+    bool reduceMotion = false,
   }) async {
     AppLocale.languageCode.value = language;
     tester.view.physicalSize = const Size(1080, 2400);
@@ -63,6 +66,13 @@ void main() {
         locale: Locale(language),
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+            disableAnimations: reduceMotion,
+          ),
+          child: child!,
+        ),
         home: const Scaffold(body: MyCvsScreen()),
         onGenerateRoute: (settings) {
           pushed.add(settings);
@@ -129,6 +139,128 @@ void main() {
       });
     }
   }
+
+  for (final language in ['ar', 'en']) {
+    testWidgets('$language: opening a CV expands from that row\'s card',
+        (tester) async {
+      final ids = [11, 4, 907];
+      await pump(
+        tester,
+        [for (final id in ids) _cv(id, score: id == 4 ? 37 : null)],
+        language: language,
+      );
+
+      for (final id in ids) {
+        final open = find.byKey(CvDocumentCard.openKey(id));
+        await tester.ensureVisible(open);
+        await tester.pumpAndSettle();
+        final card = tester.getRect(find.ancestor(
+          of: open,
+          matching: find.byType(CvDocumentCard),
+        ));
+
+        pushed.clear();
+        await tapAndReturn(tester, open);
+
+        final from = pushed.single.arguments as ExpandFrom;
+        expect(from.origin.rect, card);
+        expect(from.arguments, isNull);
+      }
+    });
+  }
+
+  group('slim header', () {
+    final slim = find.byType(MyCvsSlimHeader);
+    final bandBell = find.byKey(MyCvsHeader.bellKey);
+    final slimBell = find.byKey(MyCvsSlimHeader.bellKey);
+    final list = find.byType(ListView);
+    final many = [for (var i = 1; i <= 12; i++) _cv(i, score: i * 8)];
+
+    /// At any resting scroll position there is exactly one bell to tap: the
+    /// band's while it is fully on screen, the slim header's once it is not.
+    void expectOneReachableBell(WidgetTester tester) {
+      final bandBellOnScreen = bandBell.evaluate().isNotEmpty &&
+          tester.getRect(bandBell).top >= 0;
+      expect(slim.evaluate().isNotEmpty, !bandBellOnScreen);
+      if (bandBellOnScreen) {
+        expect(bandBell.hitTestable(), findsOneWidget);
+        expect(slimBell, findsNothing);
+      } else {
+        expect(slimBell.hitTestable(), findsOneWidget);
+        expect(bandBell.hitTestable(), findsNothing);
+        final bar = tester.getRect(slim);
+        expect(bar.top, 0);
+        expect(bar.width, tester.getSize(find.byType(MyCvsScreen)).width);
+      }
+    }
+
+    for (final language in ['ar', 'en']) {
+      for (final textScale in [1.0, 1.6]) {
+        for (final reduceMotion in [false, true]) {
+          testWidgets(
+              '$language x$textScale${reduceMotion ? ' reduced' : ''}: one '
+              'bell is reachable at every scroll position', (tester) async {
+            await pump(tester, many,
+                language: language,
+                textScale: textScale,
+                reduceMotion: reduceMotion);
+            expect(slim, findsNothing);
+            expectOneReachableBell(tester);
+
+            // Down in uneven steps (small ones around the switch), then
+            // back to the top.
+            for (final dy in <double>[
+              -6, -9, -2, -1, -30, -120, -400, -900, 300, 700, 250, 30, 9, 4, //
+              2000,
+            ]) {
+              await tester.drag(list, Offset(0, dy));
+              await tester.pumpAndSettle();
+              expectOneReachableBell(tester);
+            }
+            expect(slim, findsNothing);
+          });
+        }
+      }
+    }
+
+    testWidgets('its bell opens notifications and its title is the page title',
+        (tester) async {
+      await pump(tester, many);
+      final title = tester
+          .widget<Text>(find
+              .descendant(
+                of: find.byType(MyCvsHeader),
+                matching: find.byType(Text),
+              )
+              .first)
+          .data!;
+      await tester.drag(list, const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(of: slim, matching: find.text(title)),
+        findsOneWidget,
+      );
+      pushed.clear();
+      await tapAndReturn(tester, slimBell);
+      expect(pushed.single.name, AppRoutes.notifications);
+    });
+
+    testWidgets('reduced motion: it is in place on the first frame',
+        (tester) async {
+      await pump(tester, many, reduceMotion: true);
+      await tester.drag(list, const Offset(0, -300));
+      await tester.pump();
+      expect(tester.getRect(slim).top, 0);
+    });
+
+    testWidgets('a list too short to scroll never shows it', (tester) async {
+      await pump(tester, const []);
+      await tester.drag(list, const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expectOneReachableBell(tester);
+    });
+  });
 
   testWidgets('every row opens its own CV; unscored rows scan that CV',
       (tester) async {

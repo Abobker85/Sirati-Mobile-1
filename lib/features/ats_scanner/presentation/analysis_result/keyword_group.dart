@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components/app_sheet.dart';
 
 /// Wrap of keyword chips, capped at [initialVisibleCount] with a
 /// show-more / show-less toggle. Missing keywords open an advice sheet.
@@ -147,13 +148,8 @@ class _KeywordOverflowButton extends StatelessWidget {
 }
 
 void _showKeywordAdvice(BuildContext context, String keyword) {
-  showModalBottomSheet<void>(
+  showGlassBottomSheet<void>(
     context: context,
-    showDragHandle: true,
-    backgroundColor: context.sirati.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
     builder: (context) {
       final c = context.sirati;
       return SafeArea(

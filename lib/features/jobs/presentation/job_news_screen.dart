@@ -16,6 +16,7 @@ import 'package:sirati/features/jobs/presentation/widgets/job_news_filters_bar.d
 import 'package:sirati/features/jobs/presentation/widgets/matched_preset_note.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_news.dart';
+import 'package:sirati/shared/navigation/dashboard_scroll_end.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
@@ -25,6 +26,7 @@ import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
+import 'package:sirati/shared/widgets/sirati_refresh_indicator.dart';
 
 /// Job-news tab: search, preset / category / city filters, a featured
 /// posting, then the rest of the list. Data comes from [jobNewsFeedProvider].
@@ -89,7 +91,9 @@ class _JobNewsScreenState extends ConsumerState<JobNewsScreen> {
     final feed = ref.watch(jobNewsFeedProvider(english));
     final filters = ref.watch(jobNewsFiltersProvider);
 
+    // Bottom stays open: the list scrolls behind the floating bar.
     return SafeArea(
+      bottom: false,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxContentWidth = constraints.maxWidth >= 1100
@@ -206,8 +210,7 @@ class _JobNewsList extends ConsumerWidget {
     final resultsKey = '${filters.hashCode}|${feed.items.length}|'
         '${featured?.id ?? 0}|$failed';
 
-    return RefreshIndicator(
-      color: context.sirati.primary,
+    return SiratiRefreshIndicator(
       onRefresh: onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -322,8 +325,8 @@ class _JobNewsList extends ConsumerWidget {
             ),
           ),
           SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-                horizontalPadding, 0, horizontalPadding, 112),
+            padding: EdgeInsets.fromLTRB(horizontalPadding, 0,
+                horizontalPadding, dashboardScrollEnd(context)),
             sliver: SliverList.builder(
               itemCount: latest.length,
               itemBuilder: (context, index) {

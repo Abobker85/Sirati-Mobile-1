@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/routing/entitlement_store.dart';
+import 'package:sirati/core/routing/expand_page_route.dart';
 import 'package:sirati/core/storage/guest_session.dart';
 
 /// Feature screens register themselves so `core/` never imports `features/`.
@@ -148,9 +149,11 @@ class AppRouter {
         AppRoutes.premium,
       );
     }
+    final arguments = settings.arguments;
     return _page(
-      _widgetFor(parsed.withArguments(settings.arguments)),
+      _widgetFor(parsed.withArguments(ExpandFrom.unwrap(arguments))),
       parsed.name,
+      origin: arguments is ExpandFrom ? arguments.origin : null,
     );
   }
 
@@ -278,9 +281,23 @@ class AppRouter {
     return int.tryParse(path.substring(prefix.length));
   }
 
-  static MaterialPageRoute<dynamic> _page(Widget child, String name) {
+  /// A page that grows out of [origin] when one is given, else the standard
+  /// transition.
+  static MaterialPageRoute<dynamic> _page(
+    Widget child,
+    String name, {
+    ExpandOrigin? origin,
+  }) {
+    final settings = RouteSettings(name: name);
+    if (origin != null) {
+      return ExpandPageRoute<dynamic>(
+        origin: origin,
+        settings: settings,
+        builder: (_) => child,
+      );
+    }
     return MaterialPageRoute<dynamic>(
-      settings: RouteSettings(name: name),
+      settings: settings,
       builder: (_) => child,
     );
   }

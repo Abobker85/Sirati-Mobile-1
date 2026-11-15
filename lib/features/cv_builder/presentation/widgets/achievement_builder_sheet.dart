@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:sirati/core/utils/bidi_text.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 
 /// Starter verbs offered as one-tap chips for the action field.
@@ -74,13 +75,11 @@ class AchievementBuilderSheet extends StatefulWidget {
     required bool english,
     required ValueChanged<String> onInsert,
   }) {
-    return showModalBottomSheet<void>(
+    return showGlassBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.sirati.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      // The sheet draws its own grab bar.
+      showDragHandle: false,
       builder: (ctx) => AchievementBuilderSheet(
         english: english,
         onInsert: onInsert,

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
+import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/screen_header.dart';
+import 'package:sirati/shared/widgets/profile_photo.dart';
 
 class SettingsSectionLabel extends StatelessWidget {
   const SettingsSectionLabel(this.text, {super.key});
@@ -53,11 +54,19 @@ class ProfileSummaryCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ProfileAvatar(
-            label: BidiText.avatarInitial(name,
-                fallback: AppLocalizations.of(context).avatarFallbackInitial),
-            size: 64,
-            english: english,
+          // Same photo and Premium badge as Home; the session cache holds
+          // the newest photo right after an upload.
+          ValueListenableBuilder<AuthUser?>(
+            valueListenable: SessionCache.instance.user,
+            builder: (context, cached, _) {
+              final current = cached ?? user;
+              return ProfilePhoto(
+                url: current?.avatarUrl,
+                name: name,
+                size: 64,
+                premium: current?.subscriptionStatus.isPremium ?? false,
+              );
+            },
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(

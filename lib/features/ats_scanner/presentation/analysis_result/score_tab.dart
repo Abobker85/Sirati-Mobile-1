@@ -17,11 +17,19 @@ class ScoreTab extends StatelessWidget {
     required this.analysis,
     required this.english,
     this.trailing,
+    this.revealScore = false,
+    this.previousScore,
   });
 
   final CvAnalysis analysis;
   final bool english;
   final Widget? trailing;
+
+  /// Reveal the score as a moment: only right after a scan.
+  final bool revealScore;
+
+  /// The last scan's score for the same CV and job, if any.
+  final int? previousScore;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +37,12 @@ class ScoreTab extends StatelessWidget {
       key: const ValueKey('analysis-score-tab-list'),
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
       children: [
-        _ScoreHero(analysis: analysis, english: english),
+        _ScoreHero(
+          analysis: analysis,
+          english: english,
+          reveal: revealScore,
+          previousScore: previousScore,
+        ),
         const SizedBox(height: 24),
         if (analysis.hasKeywordSummary)
           Text(
@@ -65,10 +78,17 @@ class ScoreTab extends StatelessWidget {
 }
 
 class _ScoreHero extends StatelessWidget {
-  const _ScoreHero({required this.analysis, required this.english});
+  const _ScoreHero({
+    required this.analysis,
+    required this.english,
+    required this.reveal,
+    this.previousScore,
+  });
 
   final CvAnalysis analysis;
   final bool english;
+  final bool reveal;
+  final int? previousScore;
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +114,8 @@ class _ScoreHero extends StatelessWidget {
             AnimatedScoreRing(
               score: analysis.scoreTotal,
               scoreColor: scoreColor,
+              reveal: reveal,
+              previousScore: previousScore,
             ),
             const SizedBox(height: 14),
             Container(
@@ -122,6 +144,24 @@ class _ScoreHero extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
+            if (AnimatedScoreRing.deltaOf(analysis.scoreTotal, previousScore)
+                case final delta?) ...[
+              const SizedBox(height: 4),
+              Text(
+                delta > 0
+                    ? AppLocalizations.of(context).atsScoreUpSinceLast(delta)
+                    : AppLocalizations.of(context)
+                        .atsScoreDownSinceLast(delta.abs()),
+                key: const ValueKey('analysis-score-since-last'),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: c.textSecondary,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ] else
             Text(
               AppLocalizations.of(context).homeHeroScoreUnavailable,

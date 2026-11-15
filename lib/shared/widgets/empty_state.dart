@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/offline_view.dart';
 
 /// Centered empty-state panel with optional primary action.
@@ -53,8 +55,16 @@ class AppEmptyState extends StatelessWidget {
                 color: iconBackground ?? context.sirati.primaryLight,
                 borderRadius: BorderRadius.circular(22),
               ),
-              child: Icon(icon,
-                  size: 32, color: iconColor ?? context.sirati.primaryInk),
+              // Floats gently by itself while the screen is empty.
+              child: AmbientMove(
+                kind: AmbientKind.float,
+                delay: const Duration(seconds: 1),
+                child: LivelyIcon(
+                  icon,
+                  size: 32,
+                  color: iconColor ?? context.sirati.primaryInk,
+                ),
+              ),
             ),
             const SizedBox(height: AppSpacing.md + 2),
             Text(
@@ -76,18 +86,22 @@ class AppEmptyState extends StatelessWidget {
             ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: AppSpacing.lg),
-              FilledButton.icon(
-                onPressed: onAction,
-                icon: Icon(actionIcon, size: 18),
-                label: Text(actionLabel!),
-                style: FilledButton.styleFrom(
-                  backgroundColor: context.sirati.primary,
-                  foregroundColor: context.sirati.onPrimary,
-                  minimumSize: const Size(0, AppTouchTarget.min),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
-                  textStyle: AppTypography.of(context, AppTypography.labelLg),
+              // The way out of an empty screen hints at itself when idle.
+              IdleNudge(
+                child: FilledButton.icon(
+                  onPressed: onAction,
+                  icon: Icon(actionIcon, size: 18),
+                  label: Text(actionLabel!),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: context.sirati.primary,
+                    foregroundColor: context.sirati.onPrimary,
+                    minimumSize: const Size(0, AppTouchTarget.min),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    shape:
+                        RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+                    textStyle: AppTypography.of(context, AppTypography.labelLg),
+                  ),
                 ),
               ),
             ],

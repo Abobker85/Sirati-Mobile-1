@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 /// Direction-aware list row used across Home activity, history, and similar
@@ -149,7 +150,7 @@ class _LeadingIconBox extends StatelessWidget {
         color: background,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, color: iconColor, size: 18),
+      child: LivelyIcon(icon, color: iconColor, size: 18),
     );
   }
 }

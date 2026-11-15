@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_pressable_card.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 
 enum HomeStartTone { create, ats }
 
@@ -8,6 +10,12 @@ enum HomeStartTone { create, ats }
 /// card surface, then a coloured band with the action — brand green to create
 /// a CV, deep navy to check one with ATS. The whole card is one target.
 class HomeStartCard extends StatelessWidget {
+  /// Peak strength of the white light that sweeps across these cards. The
+  /// cards carry white text on the brand and ink surfaces; at this strength
+  /// the text keeps AA at the light's brightest point, in both themes
+  /// (checked in a test).
+  static const shineStrength = .12;
+
   const HomeStartCard({
     super.key,
     required this.tone,
@@ -53,7 +61,7 @@ class HomeStartCard extends StatelessWidget {
                     color: ink.withValues(alpha: .16),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
+                  child: LivelyIcon(
                     tone == HomeStartTone.create
                         ? Icons.note_add_outlined
                         : Icons.document_scanner_outlined,
@@ -88,9 +96,16 @@ class HomeStartCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: ink,
+                // Points the way once the intro has played.
+                AmbientMove(
+                  kind: AmbientKind.nudge,
+                  priority: AmbientPriority.nextStep,
+                  delay: const Duration(seconds: 5),
+                  rest: const Duration(seconds: 6),
+                  child: LivelyIcon(
+                    Icons.chevron_right_rounded,
+                    color: ink,
+                  ),
                 ),
               ],
             ),
@@ -120,49 +135,64 @@ class _StartIllustration extends StatelessWidget {
             borderRadius: BorderRadius.circular(1),
           ),
         );
-    Widget sparkle() => Icon(Icons.auto_awesome, size: 16, color: c.primaryInk);
-
-    return ExcludeSemantics(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          create ? guide() : sparkle(),
-          const SizedBox(width: 10),
-          Container(
-            width: 44,
-            height: 56,
-            decoration: BoxDecoration(
-              color: c.surface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: c.primaryInk, width: 1.6),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  create
-                      ? Icons.check_box_rounded
-                      : Icons.face_retouching_natural,
-                  size: 18,
-                  color: c.primaryInk,
-                ),
-                const SizedBox(height: 4),
-                for (final w in const [24.0, 18.0])
-                  Container(
-                    width: w,
-                    height: 2.5,
-                    margin: const EdgeInsets.only(top: 3),
-                    decoration: BoxDecoration(
-                      color: c.borderStrong,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-              ],
-            ),
+    Widget sparkle({Duration delay = const Duration(seconds: 3)}) =>
+        AmbientMove(
+          kind: AmbientKind.twinkle,
+          delay: delay,
+          // One source of motion per icon: the ambient twinkle.
+          child: LivelyIcon(
+            Icons.auto_awesome,
+            size: 16,
+            color: c.primaryInk,
           ),
-          const SizedBox(width: 10),
-          create ? guide() : sparkle(),
-        ],
+        );
+
+    // The little page bobs by itself, slowly.
+    return ExcludeSemantics(
+      child: AmbientMove(
+        kind: AmbientKind.float,
+        delay: Duration(seconds: create ? 2 : 3),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            create ? guide() : sparkle(),
+            const SizedBox(width: 10),
+            Container(
+              width: 44,
+              height: 56,
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: c.primaryInk, width: 1.6),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  LivelyIcon(
+                    create
+                        ? Icons.check_box_rounded
+                        : Icons.face_retouching_natural,
+                    size: 18,
+                    color: c.primaryInk,
+                  ),
+                  const SizedBox(height: 4),
+                  for (final w in const [24.0, 18.0])
+                    Container(
+                      width: w,
+                      height: 2.5,
+                      margin: const EdgeInsets.only(top: 3),
+                      decoration: BoxDecoration(
+                        color: c.borderStrong,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            create ? guide() : sparkle(),
+          ],
+        ),
       ),
     );
   }

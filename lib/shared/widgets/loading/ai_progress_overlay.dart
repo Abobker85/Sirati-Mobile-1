@@ -6,6 +6,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/branded_loader.dart';
+import 'package:sirati/shared/widgets/loading/scan_paper_scene.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 /// Kind of multi-second AI work — drives staged reassurance copy.
@@ -91,9 +92,16 @@ class AiProgressHandle {
     _dialogContext = null;
     if (ctx != null && ctx.mounted) {
       _pendingDismiss = false;
+      // Remove this overlay's own route. Popping the top route would close
+      // whatever opened above it meanwhile (e.g. the Premium prompt).
       final nav = Navigator.of(ctx, rootNavigator: true);
-      if (nav.canPop()) {
+      final route = ModalRoute.of(ctx);
+      if (route == null) {
+        if (nav.canPop()) nav.pop();
+      } else if (route.isCurrent) {
         nav.pop();
+      } else if (route.isActive) {
+        nav.removeRoute(route);
       }
     } else {
       _pendingDismiss = true;
@@ -354,9 +362,17 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
               child: SizedBox(
                 height: 96,
                 child: Center(
-                  child: finished
-                      ? _DoneMark(reduce: reduce)
-                      : BrandedLoader(size: 56, halo: !reduce),
+                  // A scan tells its story on a page; other jobs and reduced
+                  // motion keep the loader and tick.
+                  child: widget.kind == AiProgressKind.analysis && !reduce
+                      ? ScanPaperScene(
+                          stage: finished
+                              ? ScanStage.done
+                              : ScanStage.values[step.clamp(0, 2)],
+                        )
+                      : finished
+                          ? _DoneMark(reduce: reduce)
+                          : BrandedLoader(size: 56, halo: !reduce),
                 ),
               ),
             ),

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/prioritized_fixes.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
+import 'package:sirati/features/ats_scanner/presentation/cv_analysis_loader_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
+import 'package:sirati/shared/premium/premium_feature.dart';
+import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Second tab: strengths, numbered quick wins, and the upgrade CTA.
@@ -137,30 +141,78 @@ class _ItemList extends StatelessWidget {
   }
 }
 
-/// "+N more hidden" under a list the server trimmed (free tier).
+/// "+N more hidden" under a list the server trimmed (free tier). Tapping
+/// it offers Premium; once bought, the analysis is loaded again in full.
 class HiddenItemsNote extends StatelessWidget {
   const HiddenItemsNote({super.key, required this.count});
 
   final int count;
 
+  static const unlockKey = ValueKey('analysis-unlock');
+
+  Future<void> _unlock(BuildContext context) async {
+    final analysisId = context
+        .findAncestorWidgetOfExactType<AnalysisResultScreen>()
+        ?.analysis
+        .id;
+    final premium =
+        await PremiumPromptSheet.show(context, PremiumFeature.fullAnalysis);
+    if (!premium || !context.mounted || analysisId == null) return;
+    await Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
+      builder: (_) => CvAnalysisLoaderScreen(analysisId: analysisId),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    return Row(
-      children: [
-        Icon(Icons.lock_outline_rounded, size: 16, color: c.textSecondary),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            AppLocalizations.of(context).atsHiddenMore(count),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: c.textSecondary,
+    final l = AppLocalizations.of(context);
+    return Semantics(
+      button: true,
+      child: InkWell(
+        key: unlockKey,
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _unlock(context),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Icon(Icons.lock_outline_rounded,
+                    size: 16, color: c.textSecondary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l.atsHiddenMore(count),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: c.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l.premiumUnlockAll,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: c.primaryInk,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const PremiumChip(),
+              ],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }

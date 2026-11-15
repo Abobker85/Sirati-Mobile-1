@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -43,54 +44,126 @@ class MyCvsHeader extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final ink = c.onBrandSurface;
 
+    // The band breathes: a soft darker glow drifts across now and then.
+    return BreathingBand(
+      deep: c.brandSurfaceDeep,
+      child: DecoratedBox(
+        decoration: brandBand(context),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg + bottomInset,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.of(
+                          context,
+                          AppTypography.headlineMd,
+                          color: ink,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.myCvsHeaderSubtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.of(
+                          context,
+                          AppTypography.bodySm,
+                          color: ink,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _BandBell(
+                  unreadCount: unreadCount,
+                  onTap: onNotifications,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Slim copy of the brand band that stays at the top of My CVs once its top
+/// row scrolls out: the title and the notifications bell, nothing else.
+class MyCvsSlimHeader extends StatelessWidget {
+  const MyCvsSlimHeader({
+    super.key,
+    required this.title,
+    required this.unreadCount,
+    required this.onNotifications,
+  });
+
+  static const bellKey = ValueKey('my-cvs-slim-header-bell');
+
+  /// Height below the status bar.
+  static const barHeight = 56.0;
+
+  /// The band's top row (title and bell) starts to leave the screen once the
+  /// list has scrolled past the band's top padding; the slim header takes
+  /// over from there.
+  static const showAfter = AppSpacing.md;
+
+  final String title;
+  final int unreadCount;
+  final VoidCallback onNotifications;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
     return DecoratedBox(
-      decoration: brandBand(context),
+      decoration:
+          MyCvsHeader.brandBand(context).copyWith(boxShadow: c.softShadow),
       child: SafeArea(
         bottom: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.lg + bottomInset,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+        child: SizedBox(
+          height: barHeight,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.of(
                         context,
-                        AppTypography.headlineMd,
-                        color: ink,
+                        AppTypography.titleLg,
+                        color: c.onBrandSurface,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      l10n.myCvsHeaderSubtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.of(
-                        context,
-                        AppTypography.bodySm,
-                        color: ink,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _BandBell(
-                unreadCount: unreadCount,
-                onTap: onNotifications,
-              ),
-            ],
+                const SizedBox(width: AppSpacing.sm),
+                _BandBell(
+                  bellKey: bellKey,
+                  unreadCount: unreadCount,
+                  onTap: onNotifications,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -99,10 +172,15 @@ class MyCvsHeader extends StatelessWidget {
 }
 
 class _BandBell extends StatelessWidget {
-  const _BandBell({required this.unreadCount, required this.onTap});
+  const _BandBell({
+    required this.unreadCount,
+    required this.onTap,
+    this.bellKey = MyCvsHeader.bellKey,
+  });
 
   final int unreadCount;
   final VoidCallback onTap;
+  final Key bellKey;
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +197,7 @@ class _BandBell extends StatelessWidget {
         color: ink.withValues(alpha: .16),
         shape: const CircleBorder(),
         child: InkWell(
-          key: MyCvsHeader.bellKey,
+          key: bellKey,
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: SizedBox.square(

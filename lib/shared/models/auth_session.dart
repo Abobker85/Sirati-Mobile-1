@@ -1,3 +1,5 @@
+import 'package:sirati/shared/models/subscription_status.dart';
+
 class AuthSession {
   final String token;
   final String tokenType;
@@ -35,6 +37,10 @@ class AuthUser {
   /// Server-computed entitlement state (`SubscriptionGate::stateFor`); null
   /// when the payload did not include it.
   final Map<String, dynamic>? subscription;
+
+  /// Premium status read from [subscription].
+  SubscriptionStatus get subscriptionStatus =>
+      SubscriptionStatus.fromSubscription(subscription);
 
   /// False for Google/Apple accounts that never set a password: they
   /// confirm sensitive actions by signing in with the provider again.
