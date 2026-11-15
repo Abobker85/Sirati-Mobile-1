@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -87,7 +89,7 @@ void main() {
           reduce: r,
         );
 
-    testWidgets('the new state grows in with a small overshoot and settles',
+    testWidgets('the new state grows in and settles, with no overshoot',
         (tester) async {
       await tester.pumpWidget(morph(false));
       await tester.pumpWidget(morph(true));
@@ -101,8 +103,8 @@ void main() {
       }
       await tester.pumpAndSettle();
       expect(sizes.first, lessThan(40), reason: 'starts small');
-      expect(sizes.reduce((a, b) => a > b ? a : b), greaterThan(40),
-          reason: 'overshoots a little');
+      expect(sizes.reduce((a, b) => a > b ? a : b), lessThanOrEqualTo(40.01),
+          reason: 'a state change is not a reward: no bounce');
       expect(
           tester.getRect(find.byKey(const ValueKey('state-true'))).width, 40);
       expect(find.byKey(const ValueKey('state-false')), findsNothing);
@@ -246,5 +248,18 @@ void main() {
         AppLocale.languageCode.value = 'en';
       });
     }
+  });
+
+  group('curves', () {
+    test('settle never overshoots; pop overshoots only a little', () {
+      var popPeak = 0.0;
+      for (var i = 0; i <= 1000; i++) {
+        final t = i / 1000;
+        expect(MotionCurves.settle.transform(t), lessThanOrEqualTo(1.0));
+        popPeak = math.max(popPeak, MotionCurves.pop.transform(t));
+      }
+      expect(popPeak, greaterThan(1.0), reason: 'rewards still pop');
+      expect(popPeak, lessThan(1.05), reason: 'but only by a few percent');
+    });
   });
 }

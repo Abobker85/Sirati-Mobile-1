@@ -264,8 +264,9 @@ class LivelyIconState extends State<LivelyIcon> with TickerProviderStateMixin {
       child: icon,
       builder: (context, child) {
         // Each play rests a moment, then moves.
-        final t = const Interval(.3, 1).transform(_life.value);
-        final wave = math.sin(2 * math.pi * t);
+        // Eased, so each move starts and ends at rest.
+        final t = Curves.easeInOutSine
+            .transform(const Interval(.3, 1).transform(_life.value));
         final fade = 1 - t;
         var scale = 1 - (1 - LivelyIcon.pressedScale) * _press.value;
         var angle = 0.0;
@@ -275,16 +276,18 @@ class LivelyIconState extends State<LivelyIcon> with TickerProviderStateMixin {
           case IconLife.none:
             break;
           case IconLife.float:
-            offset = Offset(0, -3 * math.sin(math.pi * t));
+            offset = Offset(0, -2 * math.sin(math.pi * t));
           case IconLife.ring:
-            angle = .35 * math.sin(4 * 2 * math.pi * t) * fade;
+            // Two soft swings that fade out.
+            angle = .18 * math.sin(2 * 2 * math.pi * t) * fade;
             alignment = Alignment.topCenter;
           case IconLife.twinkle:
             final glow = math.sin(math.pi * t);
-            scale *= 1 + .28 * glow;
-            angle = .5 * glow;
+            scale *= 1 + .14 * glow;
+            angle = .25 * glow;
           case IconLife.nudge:
-            final dx = 4 * math.max(0.0, wave) * fade;
+            // One push toward the trailing edge and back.
+            final dx = 3 * math.sin(math.pi * t);
             offset = Offset(rtl ? -dx : dx, 0);
         }
         return Transform.translate(

@@ -1,7 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/routing/app_routes.dart';
-import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/features/job_match/application/job_match_controller.dart';
 import 'package:sirati/features/job_match/domain/job_match_entitlement.dart';
 import 'package:sirati/features/job_match/domain/job_match_failure.dart';
@@ -17,6 +18,7 @@ import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/sticky_text_direction.dart';
 
 /// Job Match entry: server-gated (paywall / quota / unavailable), then job
 /// details + CV choice → match → [JobMatchResultScreen].
@@ -563,7 +565,7 @@ class _GateView extends StatelessWidget {
 
 /// Input whose direction follows what was typed or pasted (an English job ad
 /// in the Arabic UI reads left-to-right). Label and errors live outside.
-class _BidiField extends StatelessWidget {
+class _BidiField extends StatefulWidget {
   const _BidiField({
     required this.fieldKey,
     required this.controller,
@@ -579,24 +581,58 @@ class _BidiField extends StatelessWidget {
   final bool multiline;
 
   @override
+  State<_BidiField> createState() => _BidiFieldState();
+}
+
+class _BidiFieldState extends State<_BidiField> {
+  final _focus = FocusNode();
+  final _direction = StickyTextDirection();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(_onFocus);
+  }
+
+  void _onFocus() => setState(() {});
+
+  @override
+  void dispose() {
+    _focus
+      ..removeListener(_onFocus)
+      ..dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ambient = Directionality.of(context);
+    final multiline = widget.multiline;
     return ValueListenableBuilder<TextEditingValue>(
-      valueListenable: controller,
+      valueListenable: widget.controller,
       builder: (context, value, _) => TextField(
-        key: fieldKey,
-        controller: controller,
-        onChanged: onChanged,
-        textDirection: BidiTextUtils.detectBaseDirection(
+        key: widget.fieldKey,
+        controller: widget.controller,
+        focusNode: _focus,
+        onChanged: widget.onChanged,
+        // Decided when typing starts, then kept while typing.
+        textDirection: _direction.resolve(
           value.text,
+          focused: _focus.hasFocus,
           fallback: ambient,
+        ),
+        scrollPadding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          math.min(120, MediaQuery.sizeOf(context).height * .2),
         ),
         minLines: multiline ? 6 : 1,
         maxLines: multiline ? 14 : 1,
         keyboardType: multiline ? TextInputType.multiline : TextInputType.text,
         textInputAction:
             multiline ? TextInputAction.newline : TextInputAction.next,
-        decoration: InputDecoration(hintText: hint),
+        decoration: InputDecoration(hintText: widget.hint),
       ),
     );
   }

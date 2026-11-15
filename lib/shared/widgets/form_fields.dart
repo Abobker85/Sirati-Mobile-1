@@ -1,9 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/sticky_text_direction.dart';
 
 /// Shared form chrome — soft error surfaces, professional borders, RTL-safe copy.
 class AppFormStyles {
@@ -416,6 +418,8 @@ class _AppTextFormFieldState extends FormFieldState<String> {
   bool _blurredOnce = false;
   bool _wasValid = false;
 
+  final _direction = StickyTextDirection();
+
   /// The valid tick has played (once per field) / is showing now.
   bool _ticked = false;
   bool _showTick = false;
@@ -524,6 +528,13 @@ class _AppTextFormFieldState extends FormFieldState<String> {
     // Before first blur: stay quiet — no error flash while typing.
     final forceAlways = widget._autovalidateMode == AutovalidateMode.always;
     if (_blurredOnce || forceAlways) {
+      // Forgive while editing: as long as the field has focus, typing may
+      // clear an error but never add one or change its message. New errors
+      // show on blur or submit (the rules themselves are unchanged).
+      if (_focusNode.hasFocus && widget.validator?.call(value) != null) {
+        _wasValid = false;
+        return;
+      }
       final ok = validate();
       if (ok && !_wasValid) {
         _wasValid = true;
@@ -653,11 +664,22 @@ class _AppTextFormFieldState extends FormFieldState<String> {
         minLines: minLines,
         maxLength: maxLength,
         textAlign: textAlign,
+        // Decided when typing starts, then kept while typing, so mixed
+        // Arabic and Latin text does not flip sides mid-word.
         textDirection: textDirection ??
-            BidiTextUtils.detectBaseDirection(
+            _direction.resolve(
               _effectiveController.text,
+              focused: _hasFocus,
               fallback: Directionality.of(context),
             ),
+        // Room under the field so its error line and the next field stay
+        // visible above the keyboard and any footer.
+        scrollPadding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          math.min(120, MediaQuery.sizeOf(context).height * .2),
+        ),
         style: AppTypography.of(context, AppTypography.bodyLg),
         cursorColor: c.primaryInk,
         onChanged: (value) {
@@ -696,7 +718,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
                     scale:
                         _hasFocus && !MotionSettings.reduce(context) ? 1.1 : 1,
                     duration: MotionDurations.medium,
-                    curve: MotionCurves.pop,
+                    curve: MotionCurves.settle,
                     child: prefixIcon,
                   ),
                 ),

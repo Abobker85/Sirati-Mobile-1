@@ -354,7 +354,7 @@ class AmbientMove extends StatelessWidget {
     super.key,
     required this.kind,
     required this.child,
-    this.rest = const Duration(seconds: 10),
+    this.rest = const Duration(seconds: 12),
     this.delay = const Duration(seconds: 2),
     this.active,
     this.enabled = true,
@@ -369,13 +369,63 @@ class AmbientMove extends StatelessWidget {
   final Duration? active;
   final bool enabled;
 
+  /// Calm pacing: every move travels only 2-3 px (or a few degrees) and
+  /// takes at least about a second, below the threshold where motion at
+  /// the edge of vision pulls the eye.
   static Duration defaultActive(AmbientKind kind) => switch (kind) {
-        AmbientKind.float => const Duration(milliseconds: 1600),
-        AmbientKind.twinkle => const Duration(milliseconds: 1200),
-        AmbientKind.ring => const Duration(milliseconds: 900),
-        AmbientKind.pulse => const Duration(milliseconds: 900),
-        AmbientKind.nudge => const Duration(milliseconds: 900),
+        AmbientKind.float => const Duration(milliseconds: 2400),
+        AmbientKind.twinkle => const Duration(milliseconds: 1600),
+        AmbientKind.ring => const Duration(milliseconds: 1100),
+        AmbientKind.pulse => const Duration(milliseconds: 1400),
+        AmbientKind.nudge => const Duration(milliseconds: 1200),
       };
+
+  /// The move's shape at progress [t] (0 → 1): eased so it starts and ends
+  /// at rest (zero speed), never with a twitch. Every kind returns exactly
+  /// its rest pose at 0 and 1.
+  @visibleForTesting
+  static ({Offset offset, double angle, double scale}) pose(
+    AmbientKind kind,
+    double t, {
+    TextDirection direction = TextDirection.ltr,
+  }) {
+    final e = Curves.easeInOutSine.transform(t.clamp(0.0, 1.0));
+    final hump = math.sin(math.pi * e);
+    return switch (kind) {
+      // One slow rise and fall.
+      AmbientKind.float => (
+          offset: Offset(0, -2 * hump),
+          angle: 0.0,
+          scale: 1.0,
+        ),
+      // About 6 degrees and 6%: a glint, not a spin.
+      AmbientKind.twinkle => (
+          offset: Offset.zero,
+          angle: .10 * hump,
+          scale: 1 + .06 * hump,
+        ),
+      // Two soft swings that fade out.
+      AmbientKind.ring => (
+          offset: Offset.zero,
+          angle: .18 * math.sin(2 * 2 * math.pi * e) * (1 - e),
+          scale: 1.0,
+        ),
+      AmbientKind.pulse => (
+          offset: Offset.zero,
+          angle: 0.0,
+          scale: 1 + .03 * hump,
+        ),
+      // One push toward the trailing edge and back.
+      AmbientKind.nudge => (
+          offset: Offset(
+            (direction == TextDirection.rtl ? -1 : 1) * 3 * hump,
+            0,
+          ),
+          angle: 0.0,
+          scale: 1.0,
+        ),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -390,35 +440,17 @@ class AmbientMove extends StatelessWidget {
         child: child,
         builder: (context, t, child) {
           if (t == 0) return child!;
-          final wave = math.sin(math.pi * t);
-          return switch (kind) {
-            AmbientKind.float => Transform.translate(
-                offset: Offset(0, -3 * math.sin(2 * math.pi * t)),
-                child: child,
-              ),
-            // About 10 degrees and 10%: a glint, not a spin.
-            AmbientKind.twinkle => Transform.rotate(
-                angle: .17 * wave,
-                child: Transform.scale(scale: 1 + .1 * wave, child: child),
-              ),
-            AmbientKind.ring => Transform.rotate(
-                angle: .3 * math.sin(4 * 2 * math.pi * t) * (1 - t),
-                alignment: Alignment.topCenter,
-                child: child,
-              ),
-            AmbientKind.pulse =>
-              Transform.scale(scale: 1 + .05 * wave, child: child),
-            AmbientKind.nudge => Transform.translate(
-                offset: Offset(
-                  (Directionality.of(context) == TextDirection.rtl ? -1 : 1) *
-                      4 *
-                      math.max(0.0, math.sin(2 * math.pi * t)) *
-                      (1 - t),
-                  0,
-                ),
-                child: child,
-              ),
-          };
+          final p = pose(kind, t, direction: Directionality.of(context));
+          return Transform.translate(
+            offset: p.offset,
+            child: Transform.rotate(
+              angle: p.angle,
+              alignment: kind == AmbientKind.ring
+                  ? Alignment.topCenter
+                  : Alignment.center,
+              child: Transform.scale(scale: p.scale, child: child),
+            ),
+          );
         },
       ),
     );
@@ -561,7 +593,7 @@ class IdleNudge extends StatefulWidget {
   final Listenable? activity;
 
   /// The pulse.
-  static const pulse = Duration(milliseconds: 700);
+  static const pulse = Duration(milliseconds: 1200);
 
   @override
   State<IdleNudge> createState() => IdleNudgeState();
@@ -659,8 +691,13 @@ class IdleNudgeState extends State<IdleNudge>
   Widget build(BuildContext context) => AnimatedBuilder(
         animation: _pulse,
         child: widget.child,
+        // Eased in and out, a 3% swell: an invitation, not a nag.
         builder: (context, child) => Transform.scale(
-          scale: 1 + .05 * math.sin(math.pi * _pulse.value),
+          scale: 1 +
+              .03 *
+                  math.sin(
+                    math.pi * Curves.easeInOutSine.transform(_pulse.value),
+                  ),
           child: child,
         ),
       );

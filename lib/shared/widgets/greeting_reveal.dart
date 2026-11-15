@@ -57,7 +57,7 @@ class GreetingRevealState extends State<GreetingReveal>
   // 250 ms wait, then the wipe (about 630 ms), then the glyph overlapping
   // its end; as shares of the 1150 ms timeline.
   static const _wipe = Interval(.22, .77, curve: MotionCurves.enter);
-  static const _glyph = Interval(.65, 1, curve: MotionCurves.pop);
+  static const _glyph = Interval(.65, 1, curve: MotionCurves.settle);
 
   /// 0 → 1 while the line is uncovered.
   @visibleForTesting

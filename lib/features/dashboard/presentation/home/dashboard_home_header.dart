@@ -5,7 +5,6 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/greeting_reveal.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/profile_photo.dart';
@@ -145,21 +144,11 @@ class DashboardHomeHeader extends StatelessWidget {
                       clipBehavior: Clip.none,
                       children: [
                         Center(
-                          // Rings when there is something new to read.
-                          // ...and again softly every 30 s while it waits.
-                          child: AmbientMove(
-                            kind: AmbientKind.ring,
-                            priority: AmbientPriority.news,
-                            enabled: unreadCount > 0,
-                            delay: const Duration(seconds: 30),
-                            rest: const Duration(seconds: 30),
-                            child: LivelyIcon(
-                              Icons.notifications_none_rounded,
-                              color: c.textPrimary,
-                              life: IconLife.ring,
-                              plays: unreadCount > 0 ? 2 : 0,
-                              trigger: unreadCount,
-                            ),
+                          // Rings once when there is something new to read,
+                          // never again while it waits.
+                          child: UnreadBell(
+                            unreadCount: unreadCount,
+                            color: c.textPrimary,
                           ),
                         ),
                         if (unreadCount > 0)
@@ -207,4 +196,44 @@ class DashboardHomeHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The notification bell: it rings once (two soft swings) when there is
+/// unread news on arrival, and again only when the unread count goes *up*.
+/// Reading notifications (the count going down) never rings it, and it does
+/// not repeat by itself.
+class UnreadBell extends StatefulWidget {
+  const UnreadBell({super.key, required this.unreadCount, required this.color});
+
+  final int unreadCount;
+  final Color color;
+
+  @override
+  State<UnreadBell> createState() => UnreadBellState();
+}
+
+@visibleForTesting
+class UnreadBellState extends State<UnreadBell> {
+  /// How many times new news arrived since this bell appeared.
+  int _rises = 0;
+
+  /// The number of rings asked for, for tests.
+  @visibleForTesting
+  int get rises => _rises;
+
+  @override
+  void didUpdateWidget(UnreadBell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.unreadCount > oldWidget.unreadCount) _rises++;
+  }
+
+  @override
+  Widget build(BuildContext context) => LivelyIcon(
+        Icons.notifications_none_rounded,
+        color: widget.color,
+        life: IconLife.ring,
+        plays: widget.unreadCount > 0 ? 1 : 0,
+        // Changes only when the count rises, so only a rise rings again.
+        trigger: _rises,
+      );
 }

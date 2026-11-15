@@ -60,8 +60,13 @@ class MotionCurves {
   /// moving things that stay on screen (indicators, sheets, expanding cards).
   static const standard = Cubic(0.4, 0, 0.2, 1);
 
-  /// Gentle overshoot for small elements popping in (Home service tiles).
-  static const pop = Cubic(0.3, 1.35, 0.5, 1);
+  /// A small overshoot (about 3%), kept for rewards only: CV created,
+  /// Premium unlocked, the score change chip.
+  static const pop = Cubic(0.3, 1.18, 0.5, 1);
+
+  /// Arrives quickly and settles softly, with no overshoot: for everything
+  /// that appears or responds but is not a reward (tiles, icons, marks).
+  static const settle = Cubic(0.2, 0.9, 0.3, 1);
 }
 
 class MotionSettings {
@@ -215,8 +220,6 @@ class _MotionTabStackState extends State<MotionTabStack> {
       );
     }
 
-    final directionSign = MotionAxis.endSign(context);
-
     return IndexedStack(
       index: _renderedIndex,
       children: [
@@ -225,7 +228,6 @@ class _MotionTabStackState extends State<MotionTabStack> {
             key: ValueKey('tab-$index'),
             active: index == _renderedIndex,
             animateOnActivate: _animateTabChanges,
-            directionSign: directionSign,
             child: TickerMode(
               enabled: index == _renderedIndex,
               child: TabVisitScope(
@@ -240,18 +242,16 @@ class _MotionTabStackState extends State<MotionTabStack> {
 }
 
 /// Keeps one stable pane per tab. The first frame is fully visible; later
-/// activations fade/slide in without rebuilding the tab's child state.
+/// activations fade in without rebuilding the tab's child state.
 class _TabEnterTransition extends StatefulWidget {
   final bool active;
   final bool animateOnActivate;
-  final double directionSign;
   final Widget child;
 
   const _TabEnterTransition({
     super.key,
     required this.active,
     required this.animateOnActivate,
-    required this.directionSign,
     required this.child,
   });
 
@@ -293,24 +293,26 @@ class _TabEnterTransitionState extends State<_TabEnterTransition>
     return AnimatedBuilder(
       animation: _curved,
       builder: (context, child) {
-        final value = _curved.value;
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(widget.directionSign * .035 * (1 - value), 0),
-            child: child,
-          ),
-        );
+        // A tab is a peer, not a step deeper: it only fades in, with no
+        // sideways move (which would claim a direction, even going "back"
+        // to Home).
+        return Opacity(opacity: _curved.value, child: child);
       },
       child: widget.child,
     );
   }
 }
 
-/// Gives [child] a short "no" shake, with a light haptic, whenever a new
-/// error appears: [errorKey] going from null to a value, or to a different
-/// value (a different message). The same error staying put never shakes
-/// again. Reduced motion shows the error without the shake or the buzz.
+/// Gives [child] a short, soft "no" shake, with a selection tick, whenever a
+/// new error appears: [errorKey] going from null to a value, or to a
+/// different value (a different message). The same error staying put never
+/// shakes again. Reduced motion shows the error without the shake or the
+/// tick.
+///
+/// Only one field shakes at a time: when a submit finds several errors at
+/// once, the first of them (top-most, as it is built first) shakes and buzzes;
+/// the others just show their message. One "here, fix this" instead of a
+/// storm of vibrations.
 class ErrorShake extends StatefulWidget {
   const ErrorShake({super.key, required this.errorKey, required this.child});
 
@@ -319,7 +321,14 @@ class ErrorShake extends StatefulWidget {
   final Widget child;
 
   /// Widest sideways swing.
-  static const amplitude = 6.0;
+  static const amplitude = 3.0;
+
+  /// When the last shake started (frame time), shared by every field.
+  static Duration? _lastShakeAt;
+
+  /// Forget the last shake, for tests.
+  @visibleForTesting
+  static void reset() => _lastShakeAt = null;
 
   @override
   State<ErrorShake> createState() => ErrorShakeState();
@@ -343,7 +352,12 @@ class ErrorShakeState extends State<ErrorShake>
     final error = widget.errorKey;
     if (error == null || error == oldWidget.errorKey) return;
     if (MotionSettings.reduce(context)) return;
-    unawaited(HapticFeedback.lightImpact());
+    // Another field already shook for this same submit: stay still.
+    final now = SchedulerBinding.instance.currentFrameTimeStamp;
+    final last = ErrorShake._lastShakeAt;
+    if (last != null && now - last < MotionDurations.shake) return;
+    ErrorShake._lastShakeAt = now;
+    unawaited(HapticFeedback.selectionClick());
     _shake.forward(from: 0);
   }
 
@@ -360,9 +374,9 @@ class ErrorShakeState extends State<ErrorShake>
         builder: (context, child) {
           final t = _shake.value;
           if (t == 0 || t == 1) return child!;
-          // Three swings, each smaller than the last.
+          // Two soft swings, the second smaller.
           final dx =
-              ErrorShake.amplitude * math.sin(3 * 2 * math.pi * t) * (1 - t);
+              ErrorShake.amplitude * math.sin(2 * 2 * math.pi * t) * (1 - t);
           return Transform.translate(offset: Offset(dx, 0), child: child);
         },
       );
@@ -455,7 +469,7 @@ class MotionMorph extends StatelessWidget {
         if (!pop) return faded;
         return ScaleTransition(
           scale: Tween<double>(begin: .6, end: 1).animate(
-            CurvedAnimation(parent: animation, curve: MotionCurves.pop),
+            CurvedAnimation(parent: animation, curve: MotionCurves.settle),
           ),
           child: faded,
         );
@@ -612,7 +626,7 @@ class _MotionNavIconState extends State<MotionNavIcon>
         child: AnimatedBuilder(
           animation: _settle,
           builder: (context, child) => Transform.scale(
-            scale: .85 + .15 * MotionCurves.pop.transform(_settle.value),
+            scale: .85 + .15 * MotionCurves.settle.transform(_settle.value),
             child: child,
           ),
           child:

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
@@ -164,7 +166,7 @@ void main() {
             AmbientMove(
               kind: kind,
               delay: Duration.zero,
-              rest: const Duration(seconds: 10),
+              rest: AmbientMove.defaultActive(kind) * AmbientLoop.restRatio,
               child: const SizedBox(key: _box, width: 40, height: 40),
             ),
             direction: d,
@@ -186,6 +188,47 @@ void main() {
             }
           }
           await _finish(tester);
+        });
+      }
+    }
+  });
+
+  group('eased moves', () {
+    // Every kind, both directions: exactly at rest at both ends, and
+    // starting / stopping with (near) zero speed, so nothing twitches.
+    for (final kind in AmbientKind.values) {
+      for (final d in TextDirection.values) {
+        test('$kind ($d) starts and ends at rest, with no jolt', () {
+          ({Offset offset, double angle, double scale}) at(double t) =>
+              AmbientMove.pose(kind, t, direction: d);
+          for (final t in [0.0, 1.0]) {
+            final p = at(t);
+            expect(p.offset.distance, closeTo(0, 1e-9));
+            expect(p.angle, closeTo(0, 1e-9));
+            expect(p.scale, closeTo(1, 1e-9));
+          }
+          double change(double a, double b) {
+            final pa = at(a), pb = at(b);
+            return (pa.offset - pb.offset).distance +
+                (pa.angle - pb.angle).abs() * 20 +
+                (pa.scale - pb.scale).abs() * 40;
+          }
+
+          const h = .01;
+          final edge = math.max(change(0, h), change(1 - h, 1));
+          var middle = 0.0;
+          for (var t = .2; t < .8; t += h) {
+            middle = math.max(middle, change(t, t + h));
+          }
+          expect(edge, lessThan(middle * .25),
+              reason: 'slow at the ends, faster in the middle');
+          // Small: at most 3 px, ~6 degrees of turn (ring ~10), 6 % scale.
+          for (var t = 0.0; t <= 1; t += h) {
+            final p = at(t);
+            expect(p.offset.distance, lessThanOrEqualTo(3.0001));
+            expect(p.angle.abs(), lessThanOrEqualTo(.18));
+            expect((p.scale - 1).abs(), lessThanOrEqualTo(.0601));
+          }
         });
       }
     }
