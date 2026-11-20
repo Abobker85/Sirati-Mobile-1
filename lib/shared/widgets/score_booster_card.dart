@@ -169,17 +169,13 @@ class ScoreBoosterCard extends StatelessWidget {
 
         return Padding(
           padding: margin,
+          // Borderless, unshadowed card on the page's own card fill.
           child: Material(
-            color: c.surface,
+            color: PageSurface.fillOf(context),
             elevation: 0,
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
+            borderRadius: AppRadius.cardAll,
+            child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: c.border),
-                boxShadow: AppShadows.of(c, elevation: AppElevation.card),
-              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -157,12 +157,13 @@ void main() {
           expectAllIconsNonTextAa(label);
           expectPaintedControlsAa(label);
           // Both the score and the remaining portion must stay visible.
+          // The ring sits on the result page's grey card fill (ticket 16).
           final c = context.sirati;
-          expect(AppContrast.ratio(c.primaryInk, c.surface),
+          expect(AppContrast.ratio(c.primaryInk, c.cardFill),
               greaterThanOrEqualTo(3));
           expect(AppContrast.ratio(c.primaryInk, c.borderStrong),
               greaterThanOrEqualTo(3));
-          expect(AppContrast.ratio(c.borderStrong, c.surface),
+          expect(AppContrast.ratio(c.borderStrong, c.cardFill),
               greaterThanOrEqualTo(1.3));
           // Fact confirmation paints on the warning container.
           expect(AppContrast.ratio(c.onWarningContainer, c.warningLight),

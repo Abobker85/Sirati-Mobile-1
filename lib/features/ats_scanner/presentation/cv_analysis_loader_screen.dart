@@ -67,7 +67,7 @@ class _CvAnalysisLoaderScreenState
           final apiError = error is ApiException ? error : null;
           child = Scaffold(
             key: const ValueKey('analysis-loader-error'),
-            backgroundColor: context.sirati.background,
+            backgroundColor: context.sirati.pageBackground,
             appBar: AppBar(),
             body: AppErrorState(
               english: english,
@@ -83,10 +83,10 @@ class _CvAnalysisLoaderScreenState
         } else {
           child = Scaffold(
             key: const ValueKey('analysis-loader-loading'),
-            backgroundColor: context.sirati.background,
+            backgroundColor: context.sirati.pageBackground,
             appBar: AppBar(
-              // Same as the page: a transparent bar over `background`.
-              backgroundColor: context.sirati.background,
+              // Same as the result page it fades into.
+              backgroundColor: context.sirati.pageBackground,
               elevation: 0,
             ),
             body: const Center(child: BrandedLoader()),

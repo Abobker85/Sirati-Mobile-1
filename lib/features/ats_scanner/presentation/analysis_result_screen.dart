@@ -67,12 +67,10 @@ class AnalysisResultScreen extends ConsumerWidget {
               ],
             ),
           ),
-          bottomNavigationBar: DecoratedBox(
+          // The page colour, no edge: the button carries its own fill.
+          bottomNavigationBar: ColoredBox(
             key: AnalysisResultScreen.actionBarKey,
-            decoration: BoxDecoration(
-              color: c.pageBackground,
-              border: Border(top: BorderSide(color: c.separator, width: 0.5)),
-            ),
+            color: c.pageBackground,
             child: SafeArea(
               top: false,
               child: Padding(
@@ -82,7 +80,8 @@ class AnalysisResultScreen extends ConsumerWidget {
                   loadingLabel: l.atsGenerating,
                   isLoading: isGenerating,
                   icon: Icons.auto_awesome_rounded,
-                  onPressed: isGenerating ? null : () => _generate(context, ref),
+                  onPressed:
+                      isGenerating ? null : () => _generate(context, ref),
                 ),
               ),
             ),
