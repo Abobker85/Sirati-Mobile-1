@@ -263,7 +263,7 @@ class AnimatedScoreRingState extends State<AnimatedScoreRing>
                 key: AnimatedScoreRing.ringKey,
                 painter: ScoreRingPainter(
                   value: value,
-                  track: c.border,
+                  track: c.pressed(PageSurface.fillOf(context)),
                   // Warms from the grey track into each band's colour in
                   // turn, ending on the score's own colour.
                   color: Color.lerp(

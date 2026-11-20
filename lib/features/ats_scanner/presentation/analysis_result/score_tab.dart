@@ -34,6 +34,15 @@ class ScoreTab extends StatelessWidget {
   /// The last scan's score for the same CV and job, if any.
   final int? previousScore;
 
+  /// The score card at the top.
+  static const heroKey = ValueKey('analysis-score-hero');
+
+  /// The score band's icon in the grade badge.
+  static const bandIconKey = ValueKey('analysis-score-band-icon');
+
+  /// A criterion band's icon in its percentage chip.
+  static const criterionIconKey = ValueKey('analysis-criterion-band-icon');
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -119,13 +128,9 @@ class _ScoreHero extends StatelessWidget {
       english: english,
     );
 
-    return Container(
+    return AppCard(
+      key: ScoreTab.heroKey,
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.border),
-      ),
       child: Column(
         children: [
           if (analysis.hasScore) ...[
@@ -147,14 +152,28 @@ class _ScoreHero extends StatelessWidget {
                       color: band.container(c),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text(
-                      AppLocalizations.of(context)
-                          .atsGradeLabel(AtsGrade.of(analysis.scoreTotal).label),
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: band.onContainer(c),
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          band.icon,
+                          key: ScoreTab.bandIconKey,
+                          size: 18,
+                          color: band.onContainer(c),
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            AppLocalizations.of(context).atsGradeLabel(
+                                AtsGrade.of(analysis.scoreTotal).label),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: band.onContainer(c),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -196,7 +215,7 @@ class _ScoreHero extends StatelessWidget {
               style: TextStyle(color: c.textSecondary),
             ),
           const SizedBox(height: 16),
-          const Divider(),
+          Divider(height: 1, thickness: 0.5, color: c.separator),
           const SizedBox(height: 14),
           Row(
             children: [
@@ -245,7 +264,6 @@ class _ScoreHero extends StatelessWidget {
             AnimatedAtsScoreBar(
               value: jobMatch / 100,
               color: c.primaryInk,
-              trackColor: c.surface,
               height: 7,
               borderRadius: 6,
               // Primary score: haptic the moment the elastic fill settles.
@@ -263,14 +281,8 @@ class _ScoreHero extends StatelessWidget {
           ],
           if (category != null) ...[
             const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: c.background,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: c.border),
-              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
                   Icon(Icons.tune_rounded, size: 14, color: c.textSecondary),
@@ -382,13 +394,15 @@ class _CriteriaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.sirati;
     return AppCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(
         children: [
           for (var i = 0; i < criteria.length; i++) ...[
             _CriterionRow(criterion: criteria[i]),
-            if (i < criteria.length - 1) const Divider(height: 1),
+            if (i < criteria.length - 1)
+              Divider(height: 1, thickness: 0.5, color: c.separator),
           ],
         ],
       ),
@@ -440,13 +454,25 @@ class _CriterionRow extends StatelessWidget {
                     color: criterionBand.container(c),
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  child: Text(
-                    '${(ratio * 100).round()}%',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: criterionBand.onContainer(c),
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        criterionBand.icon,
+                        key: ScoreTab.criterionIconKey,
+                        size: 13,
+                        color: criterionBand.onContainer(c),
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${(ratio * 100).round()}%',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: criterionBand.onContainer(c),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -456,7 +482,6 @@ class _CriterionRow extends StatelessWidget {
           AnimatedAtsScoreBar(
             value: ratio,
             color: barColor,
-            trackColor: c.surface,
             height: 6,
             borderRadius: 6,
           ),
@@ -493,7 +518,7 @@ class _KeywordsCard extends StatelessWidget {
           const SizedBox(height: 10),
           KeywordGroup(keywords: found, found: true, english: english),
           const SizedBox(height: 16),
-          const Divider(),
+          Divider(height: 1, thickness: 0.5, color: c.separator),
           const SizedBox(height: 14),
           _KeywordHeading(
             dotColor: c.red,

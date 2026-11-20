@@ -171,7 +171,10 @@ class _AnimatedAtsScoreBarState extends State<AnimatedAtsScoreBar>
 
   @override
   Widget build(BuildContext context) {
-    final track = widget.trackColor ?? context.sirati.border;
+    // Default track: the surrounding card fill, pressed one step darker
+    // (lighter in dark mode), so it reads on a grey card and a white one.
+    final track = widget.trackColor ??
+        context.sirati.pressed(PageSurface.fillOf(context));
     final clamped = widget.value.clamp(0.0, 1.0);
     final anim = _animation;
 

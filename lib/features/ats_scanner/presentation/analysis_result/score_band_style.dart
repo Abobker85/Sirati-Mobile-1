@@ -28,6 +28,14 @@ extension ScoreBandStyle on ScoreBand {
         ScoreBand.weak => c.onErrorContainer,
       };
 
+  /// Shape cue for the band, so it never rests on colour alone.
+  IconData get icon => switch (this) {
+        ScoreBand.excellent => Icons.verified_rounded,
+        ScoreBand.veryGood => Icons.thumb_up_alt_rounded,
+        ScoreBand.fair => Icons.trending_up_rounded,
+        ScoreBand.weak => Icons.priority_high_rounded,
+      };
+
   String description(AppLocalizations l) => switch (this) {
         ScoreBand.excellent => l.atsBandExcellent,
         ScoreBand.veryGood => l.atsBandVeryGood,
@@ -42,6 +50,14 @@ extension CriterionBandStyle on CriterionBand {
         CriterionBand.strong => c.teal,
         CriterionBand.good => c.primary,
         CriterionBand.needsWork => c.amber,
+      };
+
+  /// Shape cue next to the percentage, so the band never rests on colour
+  /// alone.
+  IconData get icon => switch (this) {
+        CriterionBand.strong => Icons.check_circle_rounded,
+        CriterionBand.good => Icons.trending_up_rounded,
+        CriterionBand.needsWork => Icons.error_outline_rounded,
       };
 
   /// Percentage chip: gated container / on-container pairs.
