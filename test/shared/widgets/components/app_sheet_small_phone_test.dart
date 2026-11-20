@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/keyword_group.dart';
+import 'package:sirati/features/cv_builder/presentation/my_cvs/cv_template_picker.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
+import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/components/glass_surface.dart';
@@ -43,6 +45,39 @@ void _expectFits(WidgetTester tester) {
   expect(close.top, greaterThanOrEqualTo(glass.top));
 }
 
+final _templates = [
+  for (var i = 0; i < 6; i++)
+    CvTemplate(
+      id: i,
+      slug: 'design-$i',
+      name: 'Design $i',
+      nameAr: 'Design $i',
+      nameEn: 'Design $i',
+      previewImageUrl: null,
+      languageDirection: 'ltr',
+      supportedLanguages: const ['ar', 'en'],
+      supportedSections: const [],
+      isDefault: i == 0,
+    ),
+];
+
+Widget _templateOpener(void Function(CvTemplate?) onResult) => Builder(
+      builder: (context) => TextButton(
+        // Opened the way the CV screens open it: capped, not scroll
+        // controlled, default top.
+        onPressed: () async => onResult(
+          await showGlassBottomSheet<CvTemplate>(
+            context: context,
+            builder: (_) => CvTemplatePicker(
+              templates: _templates,
+              english: Localizations.localeOf(context).languageCode == 'en',
+            ),
+          ),
+        ),
+        child: const Text('open'),
+      ),
+    );
+
 void main() {
   for (final locale in const [Locale('ar'), Locale('en')]) {
     for (final textScale in const [1.0, 1.3]) {
@@ -78,6 +113,66 @@ void main() {
         await tester.tap(gotIt);
         await tester.pumpAndSettle();
         expect(find.byKey(const ValueKey('sheet-close')), findsNothing);
+      });
+
+      testWidgets('$label: CV template picker scrolls to its last design',
+          (tester) async {
+        CvTemplate? picked;
+        var returned = false;
+        await _pump(
+          tester,
+          _templateOpener((t) {
+            picked = t;
+            returned = true;
+          }),
+          locale: locale,
+          textScale: textScale,
+        );
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+        _expectFits(tester);
+
+        final last = find.text('Design 5');
+        // A finger on the list itself scrolls the sheet down to the last
+        // design.
+        final listPoint = tester.getCenter(find.text('Design 1'));
+        expect(tester.getRect(last).bottom, greaterThan(568),
+            reason: 'starts below the screen, so scrolling is needed');
+        for (var i = 0; i < 20 && tester.getRect(last).bottom > 560; i++) {
+          await tester.dragFrom(listPoint, const Offset(0, -120));
+          await tester.pumpAndSettle();
+        }
+        expect(tester.getRect(last).bottom, lessThanOrEqualTo(568));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await tester.tap(last);
+        await tester.pumpAndSettle();
+        expect(returned, isTrue);
+        expect(picked?.slug, 'design-5');
+        expect(find.byType(CvTemplatePicker), findsNothing);
+      });
+
+      testWidgets('$label: CV template picker closes with the X',
+          (tester) async {
+        CvTemplate? picked = _templates.first;
+        var returned = false;
+        await _pump(
+          tester,
+          _templateOpener((t) {
+            picked = t;
+            returned = true;
+          }),
+          locale: locale,
+          textScale: textScale,
+        );
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+        _expectFits(tester);
+        await tester.tap(find.byKey(const ValueKey('sheet-close')));
+        await tester.pumpAndSettle();
+        expect(returned, isTrue);
+        expect(picked, isNull);
+        expect(find.byType(CvTemplatePicker), findsNothing);
       });
 
       testWidgets('$label: default sheet fits', (tester) async {

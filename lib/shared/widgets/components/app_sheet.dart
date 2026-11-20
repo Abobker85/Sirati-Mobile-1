@@ -96,10 +96,18 @@ Future<T?> showGlassBottomSheet<T>({
             Flexible(
               child: isScrollControlled
                   ? builder(context)
-                  // Not primary: a caller's own list may claim that.
+                  // One scroll for the whole sheet. Lists inside that do
+                  // not pick their own physics stop scrolling (and stop
+                  // taking the drag), so a finger on them moves the sheet's
+                  // content. Not primary: a caller's list may claim that.
                   : SingleChildScrollView(
                       primary: false,
-                      child: builder(context),
+                      child: ScrollConfiguration(
+                        behavior: ScrollConfiguration.of(context).copyWith(
+                          physics: const NeverScrollableScrollPhysics(),
+                        ),
+                        child: builder(context),
+                      ),
                     ),
             ),
           ],
