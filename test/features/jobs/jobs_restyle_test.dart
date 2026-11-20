@@ -303,9 +303,36 @@ void main() {
             expectAllTextAa('chips $variant');
             expectAllIconsAa('chips $variant');
 
-            // Hold every pill in turn: the fill darkens, inks stay AA.
+            // Hold every pill in turn. The darker fill is an ink highlight
+            // the probe cannot see, so check the inks against the pressed
+            // fill explicitly, and check the highlight paints exactly it.
             for (final e in pills.evaluate().toList()) {
               final pill = find.byElementPredicate((x) => x == e);
+              final fill = (e.widget as Material).color!;
+              final pressed = c.pressed(fill);
+              final ink = tester.widget<InkWell>(
+                  find.descendant(of: pill, matching: find.byType(InkWell)));
+              expect(
+                  Color.alphaBlend(
+                      ink.overlayColor!.resolve({WidgetState.pressed})!, fill),
+                  pressed);
+              for (final t in find
+                  .descendant(of: pill, matching: find.byType(Text))
+                  .evaluate()) {
+                final color =
+                    paragraphOf(t.findRenderObject()!).text.style!.color!;
+                expect(AppContrast.ratio(color, pressed),
+                    greaterThanOrEqualTo(4.5),
+                    reason: 'label on pressed $fill ($variant)');
+              }
+              for (final i in find
+                  .descendant(of: pill, matching: find.byType(Icon))
+                  .evaluate()) {
+                final color = (i.widget as Icon).color!;
+                expect(
+                    AppContrast.ratio(color, pressed), greaterThanOrEqualTo(3),
+                    reason: 'icon on pressed $fill ($variant)');
+              }
               await tester.ensureVisible(pill);
               await tester.pumpAndSettle();
               final gesture = await tester.startGesture(tester.getCenter(pill));

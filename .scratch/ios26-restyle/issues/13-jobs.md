@@ -22,7 +22,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 
 ## Outcome (2026-11-20)
 
-- **Commits:** `7f0f9b6` (code and tests), plus this ticket close (branch `swarm/jobs`).
+- **Commits:** `7f0f9b6` (code and tests), `4c2a239` (ticket close), plus the follow-up that checks chip inks against the pressed fill (branch `swarm/jobs`).
 - **Files:**
   - `lib/features/jobs/presentation/widgets/job_pressable_card.dart` (new): `JobPressSurface` (grey page fill, 18dp corners, no edge or shadow, `pressed()` fill and a spring to 0.96 while held, no scale with reduced motion, focus ring outside), `JobPressableCard`, and `JobCardInk` (no splash or highlight). Jobs may not import dashboard (layering test), so this mirrors `HomePressableCard` instead of importing it.
   - `lib/features/jobs/presentation/widgets/job_news_card.dart`: `JobNewsCard` on `JobPressableCard`. `JobChip` is a borderless capsule with a `fill` (the page colour inside a grey card; the emphasis chip is `primaryLight` + `primaryInk`).
@@ -56,7 +56,12 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
     - Filters, every preset selected × AR/EN × light/dark:
       - all pills are filled capsules with no side;
       - exactly one preset and one region are selected, each with a checkmark;
-      - every pill is held in turn with text and icons checked.
+      - every pill's ink highlight paints exactly `pressed(fill)`;
+      - its label is ≥ 4.5:1 and its icon ≥ 3:1 on that pressed fill (checked explicitly, since the probe cannot see ink highlights).
+    - Filter behaviour is also covered by existing tests:
+      - `job_news_controllers_test` "clear resets preset, region and query";
+      - `job_news_states_test` "no results for the filters offers clearing them" and "Set job title opens the profile" (the matched note);
+      - the contrast/reflow real empty-feed sweep over every preset, region and query, and its 48dp chip-tap test.
     - Detail, link/email/none × AR/EN × light/dark:
       - grouped scaffold and `PageSurface`;
       - 5 sections with their headers;
@@ -67,7 +72,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
     - Latin digits: 6 dates (relative and absolute, leap day, year end) × AR/EN on the cards and the detail. No Arabic-Indic digits are rendered, and the salary digits are shown as sent.
 - **Tests:**
   - `flutter test test/features/jobs test/features/dashboard` plus the contrast/reflow, shipped-weights and architecture suites: all green.
-  - Full `flutter test`: 3408 passed, 1 skipped. The only failure was an `app_metrics` doc-comment hit, fixed in `7f0f9b6`; `app_metrics` + jobs then reran with 170 passed.
+  - Full `flutter test` after the last change: 3409 passed, 1 skipped (pre-existing), 0 failed.
   - `flutter analyze`: no issues.
   - No schema change, no new dependency, no ARB change.
 - **Not covered by a test:** none of the criteria. Notes:
