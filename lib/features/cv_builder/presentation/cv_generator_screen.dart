@@ -715,16 +715,24 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           // Only the app bar, the step header and the footer are pinned; the
           // draft offer scrolls with the step, so a small phone with the
           // keyboard open still has room for the field being typed in.
-          body: Column(
+          // Footer at the bottom, header on top with the room left over
+          // (it folds its dot row when that room is short), the step in
+          // between.
+          body: CustomMultiChildLayout(
+            delegate: _WizardLayout(),
             children: [
-              WizardHeader(
-                step: _step,
-                english: english,
-                onStepTap: _goToStep,
-                // Read above the Scaffold, which hides the inset from its body.
-                keyboardOpen: keyboardOpen,
+              LayoutId(
+                id: _WizardSlot.header,
+                child: WizardHeader(
+                  step: _step,
+                  english: english,
+                  onStepTap: _goToStep,
+                  // Read above the Scaffold, which hides the inset from its body.
+                  keyboardOpen: keyboardOpen,
+                ),
               ),
-              Expanded(
+              LayoutId(
+                id: _WizardSlot.content,
                 child: MotionStepSwitcher(
                   stepKey: _step,
                   direction: _stepDirection,
@@ -752,14 +760,17 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
                   ),
                 ),
               ),
-              WizardFooter(
-                english: english,
-                step: _step,
-                stepCount: _stepCount,
-                isEditMode: _isEditMode,
-                isLoading: isGenerating,
-                onBack: () => _goToStep(_step - 1),
-                onPrimary: _onPrimaryAction,
+              LayoutId(
+                id: _WizardSlot.footer,
+                child: WizardFooter(
+                  english: english,
+                  step: _step,
+                  stepCount: _stepCount,
+                  isEditMode: _isEditMode,
+                  isLoading: isGenerating,
+                  onBack: () => _goToStep(_step - 1),
+                  onPrimary: _onPrimaryAction,
+                ),
               ),
             ],
           ),
@@ -767,4 +778,39 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       ),
     );
   }
+}
+
+enum _WizardSlot { header, content, footer }
+
+/// Lays out the wizard: footer (natural height) at the bottom, header
+/// (natural height, at most what the footer leaves) on top, the step's
+/// scroll view filling the rest.
+class _WizardLayout extends MultiChildLayoutDelegate {
+  @override
+  void performLayout(Size size) {
+    final footer = layoutChild(
+      _WizardSlot.footer,
+      BoxConstraints.tightFor(width: size.width),
+    );
+    final header = layoutChild(
+      _WizardSlot.header,
+      BoxConstraints(
+        minWidth: size.width,
+        maxWidth: size.width,
+        maxHeight: (size.height - footer.height).clamp(0.0, size.height),
+      ),
+    );
+    final content =
+        (size.height - header.height - footer.height).clamp(0.0, size.height);
+    layoutChild(
+      _WizardSlot.content,
+      BoxConstraints.tightFor(width: size.width, height: content),
+    );
+    positionChild(_WizardSlot.header, Offset.zero);
+    positionChild(_WizardSlot.content, Offset(0, header.height));
+    positionChild(_WizardSlot.footer, Offset(0, size.height - footer.height));
+  }
+
+  @override
+  bool shouldRelayout(_WizardLayout oldDelegate) => false;
 }

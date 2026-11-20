@@ -285,14 +285,19 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    display,
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w600,
-                                      // primaryInk: AA on primaryLight in both
-                                      // themes (primaryDark is 3.7:1 in dark).
-                                      color: c.primaryInk,
+                                  // Flexible: a long skill wraps inside its
+                                  // chip instead of running off the card.
+                                  Flexible(
+                                    child: Text(
+                                      display,
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                        // primaryInk: AA on primaryLight in
+                                        // both themes (primaryDark is 3.7:1
+                                        // in dark).
+                                        color: c.primaryInk,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 4),

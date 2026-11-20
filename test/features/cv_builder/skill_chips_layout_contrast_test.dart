@@ -32,14 +32,37 @@ const _titles = [
 String _manySkills(int n) =>
     [for (var i = 0; i < n; i++) i.isEven ? 'Skill $i' : 'مهارة $i'].join(', ');
 
+/// Selected-skill lists of every shape, with how many skills each holds:
+/// many short ones, and single skills longer than any chip row (Latin,
+/// Arabic, one unbroken word).
+final _skillSets = <String, (String, int)>{
+  'many': (_manySkills(120), 120),
+  'long-en': (
+    'Designing and operating resilient payment microservices for retail '
+        'clients across the region',
+    1,
+  ),
+  'long-ar': (
+    'تصميم وتشغيل خدمات الدفع المصغرة الموثوقة لعملاء التجزئة في جميع أنحاء '
+        'المنطقة مع مراقبة الأداء',
+    1,
+  ),
+  'one-word': ('Supercalifragilisticexpialidocious' * 4, 1),
+};
+
 void main() {
   for (final language in ['ar', 'en']) {
     for (final dark in [false, true]) {
       for (final grouped in [false, true]) {
         for (final width in [320.0, 390.0]) {
-          for (final scale in [1.0, 1.3]) {
+          for (final (scale, set) in [
+            for (final s in [1.0, 1.3, 2.0])
+              for (final k in _skillSets.keys) (s, k),
+          ]) {
+            final (skills, count) = _skillSets[set]!;
             final tag = '$language ${dark ? 'dark' : 'light'} '
-                '${grouped ? 'grouped' : 'plain'} ${width.toInt()} x$scale';
+                '${grouped ? 'grouped' : 'plain'} ${width.toInt()} x$scale '
+                '$set';
             testWidgets('$tag: no overflow, chip labels AA', (tester) async {
               AppLocale.languageCode.value = language;
               tester.view.physicalSize = Size(width, 2400);
@@ -48,7 +71,7 @@ void main() {
               addTearDown(tester.view.reset);
               addTearDown(
                   tester.platformDispatcher.clearTextScaleFactorTestValue);
-              final controller = TextEditingController(text: _manySkills(120));
+              final controller = TextEditingController(text: skills);
               addTearDown(controller.dispose);
               final english = language == 'en';
               Widget page = Scaffold(
@@ -80,7 +103,7 @@ void main() {
               final l10n = AppLocalizations.of(
                   tester.element(find.byType(SkillChipsSelector)));
               expect(
-                  find.text(l10n.cvSkillsSelectedCount(120)), findsOneWidget);
+                  find.text(l10n.cvSkillsSelectedCount(count)), findsOneWidget);
               // Selected chips and suggested (unselected) chips are both on
               // screen, so the walk below covers both kinds of label.
               expect(find.byKey(const ValueKey('selected_skill_0')),

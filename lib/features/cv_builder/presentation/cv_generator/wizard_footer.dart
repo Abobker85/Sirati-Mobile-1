@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_header.dart';
 import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_widgets.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/widgets/components/glass_surface.dart';
@@ -43,58 +44,62 @@ class WizardFooter extends StatelessWidget {
     final showBack = step > 0;
     const gap = 12.0;
 
-    return GlassSurface(
-      key: glassKey,
-      borderRadius: BorderRadius.zero,
-      elevated: false,
-      child: SafeArea(
-        top: false,
-        child: NestedFillScope(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final fullWidth = constraints.maxWidth;
-                final backTargetWidth =
-                    ((fullWidth - gap) / 3).clamp(0.0, double.infinity);
+    // Capped like the header (WizardHeader.maxChromeTextScale).
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: WizardHeader.maxChromeTextScale,
+      child: GlassSurface(
+        key: glassKey,
+        borderRadius: BorderRadius.zero,
+        elevated: false,
+        child: SafeArea(
+          top: false,
+          child: NestedFillScope(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final fullWidth = constraints.maxWidth;
+                  final backTargetWidth =
+                      ((fullWidth - gap) / 3).clamp(0.0, double.infinity);
 
-                Widget buildRow(double t) {
-                  final clamped = t.clamp(0.0, 1.0);
-                  final backSlotWidth = backTargetWidth * clamped;
-                  final gapWidth = gap * clamped;
-                  final primaryWidth = (fullWidth - backSlotWidth - gapWidth)
-                      .clamp(0.0, fullWidth);
+                  Widget buildRow(double t) {
+                    final clamped = t.clamp(0.0, 1.0);
+                    final backSlotWidth = backTargetWidth * clamped;
+                    final gapWidth = gap * clamped;
+                    final primaryWidth = (fullWidth - backSlotWidth - gapWidth)
+                        .clamp(0.0, fullWidth);
 
-                  return Row(
-                    children: [
-                      if (clamped > 0.0)
-                        ClipRect(
-                          child: Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            widthFactor: clamped,
-                            child: SizedBox(
-                              width: backTargetWidth,
-                              child: Opacity(
-                                opacity: clamped,
-                                child: IgnorePointer(
-                                  ignoring: !showBack,
-                                  child: PressScale(
-                                    enabled: showBack,
-                                    child: OutlinedButton.icon(
-                                      onPressed: showBack ? onBack : null,
-                                      icon: const DirectionalIcon(
-                                        Icons.arrow_back_rounded,
-                                        size: 18,
-                                      ),
-                                      // One line: a narrow cell at large
-                                      // text trims the label rather than
-                                      // growing the bar (the full word is
-                                      // still read out).
-                                      label: Text(
-                                        AppLocalizations.of(context).back,
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        overflow: TextOverflow.ellipsis,
+                    return Row(
+                      children: [
+                        if (clamped > 0.0)
+                          ClipRect(
+                            child: Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              widthFactor: clamped,
+                              child: SizedBox(
+                                width: backTargetWidth,
+                                child: Opacity(
+                                  opacity: clamped,
+                                  child: IgnorePointer(
+                                    ignoring: !showBack,
+                                    child: PressScale(
+                                      enabled: showBack,
+                                      child: OutlinedButton.icon(
+                                        onPressed: showBack ? onBack : null,
+                                        icon: const DirectionalIcon(
+                                          Icons.arrow_back_rounded,
+                                          size: 18,
+                                        ),
+                                        // One line: a narrow cell at large
+                                        // text trims the label rather than
+                                        // growing the bar (the full word is
+                                        // still read out).
+                                        label: Text(
+                                          AppLocalizations.of(context).back,
+                                          maxLines: 1,
+                                          softWrap: false,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -102,44 +107,44 @@ class WizardFooter extends StatelessWidget {
                               ),
                             ),
                           ),
-                        ),
-                      if (gapWidth > 0.0) SizedBox(width: gapWidth),
-                      SizedBox(
-                        width: primaryWidth,
-                        child: MotionStateSwitcher(
-                          stateKey: isLast,
-                          child: SubmitButton(
-                            label: isLast
-                                ? (isEditMode
-                                    ? AppLocalizations.of(context)
-                                        .cvWizardUpdate
-                                    : AppLocalizations.of(context)
-                                        .cvWizardGenerate)
-                                : AppLocalizations.of(context).next,
-                            loadingLabel:
-                                AppLocalizations.of(context).cvWizardGenerating,
-                            isLoading: isLoading,
-                            icon: isLast
-                                ? Icons.auto_awesome
-                                : Icons.arrow_forward_rounded,
-                            onPressed: onPrimary,
+                        if (gapWidth > 0.0) SizedBox(width: gapWidth),
+                        SizedBox(
+                          width: primaryWidth,
+                          child: MotionStateSwitcher(
+                            stateKey: isLast,
+                            child: SubmitButton(
+                              label: isLast
+                                  ? (isEditMode
+                                      ? AppLocalizations.of(context)
+                                          .cvWizardUpdate
+                                      : AppLocalizations.of(context)
+                                          .cvWizardGenerate)
+                                  : AppLocalizations.of(context).next,
+                              loadingLabel: AppLocalizations.of(context)
+                                  .cvWizardGenerating,
+                              isLoading: isLoading,
+                              icon: isLast
+                                  ? Icons.auto_awesome
+                                  : Icons.arrow_forward_rounded,
+                              onPressed: onPrimary,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                }
+                      ],
+                    );
+                  }
 
-                if (reduce) {
-                  return buildRow(showBack ? 1.0 : 0.0);
-                }
-                return TweenAnimationBuilder<double>(
-                  tween: Tween<double>(end: showBack ? 1.0 : 0.0),
-                  duration: MotionDurations.medium,
-                  curve: MotionCurves.enter,
-                  builder: (_, t, __) => buildRow(t),
-                );
-              },
+                  if (reduce) {
+                    return buildRow(showBack ? 1.0 : 0.0);
+                  }
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween<double>(end: showBack ? 1.0 : 0.0),
+                    duration: MotionDurations.medium,
+                    curve: MotionCurves.enter,
+                    builder: (_, t, __) => buildRow(t),
+                  );
+                },
+              ),
             ),
           ),
         ),

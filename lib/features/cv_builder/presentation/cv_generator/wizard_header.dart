@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -46,6 +47,13 @@ class WizardHeader extends StatelessWidget {
   /// Key of the dot row, present only while the keyboard is closed.
   static const dotsKey = ValueKey('wizard-step-dots');
 
+  /// Largest text scale the header and footer chrome follow.
+  static const maxChromeTextScale = 1.5;
+
+  /// Height kept for the step's content below the header before the dot row
+  /// is shown.
+  static const minContentHeight = 160.0;
+
   /// Key of the announced title + count line.
   static const statusKey = ValueKey('wizard-step-status');
 
@@ -59,68 +67,93 @@ class WizardHeader extends StatelessWidget {
     final keyboardOpen =
         this.keyboardOpen ?? MediaQuery.viewInsetsOf(context).bottom > 0;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-      child: Column(
-        children: [
-          // One announcement per step change: "Step 2 of 4, Skills".
-          Semantics(
-            key: statusKey,
-            container: true,
-            liveRegion: true,
-            label: '$count, ${steps[step]}',
-            child: ExcludeSemantics(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Expanded(
-                    child: Text(
-                      steps[step],
-                      // While typing the header is one line; the full title
-                      // is in the announced label.
-                      maxLines: keyboardOpen ? 1 : null,
-                      overflow: keyboardOpen ? TextOverflow.ellipsis : null,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: c.textPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    count,
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: c.textSecondary,
-                    ),
-                  ),
-                ],
+    final dots = MotionExpandSlot(
+      child: keyboardOpen
+          ? const SizedBox(
+              key: ValueKey('wizard-step-dots-folded'),
+              width: double.infinity,
+            )
+          : Padding(
+              key: dotsKey,
+              padding: const EdgeInsets.only(top: 14),
+              child: _StepDots(
+                steps: steps,
+                step: step,
+                onStepTap: onStepTap,
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          WizardProgressBar(progress: progress),
-          MotionExpandSlot(
-            child: keyboardOpen
-                ? const SizedBox(
-                    key: ValueKey('wizard-step-dots-folded'),
-                    width: double.infinity,
-                  )
-                : Padding(
-                    key: dotsKey,
-                    padding: const EdgeInsets.only(top: 14),
-                    child: _StepDots(
-                      steps: steps,
-                      step: step,
-                      onStepTap: onStepTap,
-                    ),
+    );
+
+    // Bar chrome caps its text at [maxChromeTextScale], as iOS bars do: at
+    // the largest sizes on a small phone the step itself keeps the room.
+    // The announced label always carries the full text.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: maxChromeTextScale,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+        // With a height limit (the wizard gives one), the dot row shows only
+        // when it fits and still leaves [minContentHeight] for the step: at
+        // large text on a small phone it steps aside instead of overflowing.
+        child: LayoutBuilder(
+          builder: (context, constraints) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // One announcement per step change: "Step 2 of 4, Skills".
+              Semantics(
+                key: statusKey,
+                container: true,
+                liveRegion: true,
+                label: '$count, ${steps[step]}',
+                child: ExcludeSemantics(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          steps[step],
+                          // While typing the header is one line; the full title
+                          // is in the announced label.
+                          maxLines: keyboardOpen ? 1 : null,
+                          overflow: keyboardOpen ? TextOverflow.ellipsis : null,
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: c.textPrimary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Flexible: at large text the count wraps instead of
+                      // pushing the row past the edge.
+                      Flexible(
+                        child: Text(
+                          count,
+                          textAlign: TextAlign.end,
+                          maxLines: keyboardOpen ? 1 : null,
+                          overflow: keyboardOpen ? TextOverflow.ellipsis : null,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: c.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              WizardProgressBar(progress: progress),
+              if (constraints.hasBoundedHeight)
+                Flexible(
+                  child: _FitOrHide(reserve: minContentHeight, child: dots),
+                )
+              else
+                dots,
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -342,5 +375,70 @@ class _WizardProgressBarState extends State<WizardProgressBar> {
         ),
       ),
     );
+  }
+}
+
+/// Shows [child] at its natural height only when that fits in the height on
+/// offer minus [reserve]; otherwise takes no room and is neither painted,
+/// hit-tested nor announced.
+class _FitOrHide extends SingleChildRenderObjectWidget {
+  const _FitOrHide({required this.reserve, required super.child});
+
+  final double reserve;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderFitOrHide(reserve);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderFitOrHide renderObject) {
+    renderObject.reserve = reserve;
+  }
+}
+
+class _RenderFitOrHide extends RenderProxyBox {
+  _RenderFitOrHide(this._reserve);
+
+  double _reserve;
+  set reserve(double value) {
+    if (value == _reserve) return;
+    _reserve = value;
+    markNeedsLayout();
+  }
+
+  bool _shown = true;
+
+  @override
+  void performLayout() {
+    final child = this.child;
+    if (child == null) {
+      size = constraints.smallest;
+      return;
+    }
+    child.layout(
+      BoxConstraints(
+        minWidth: constraints.minWidth,
+        maxWidth: constraints.maxWidth,
+      ),
+      parentUsesSize: true,
+    );
+    _shown = child.size.height <= constraints.maxHeight - _reserve;
+    size = constraints.constrain(
+      _shown ? child.size : Size(child.size.width, 0),
+    );
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (_shown) super.paint(context, offset);
+  }
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) =>
+      _shown && super.hitTest(result, position: position);
+
+  @override
+  void visitChildrenForSemantics(RenderObjectVisitor visitor) {
+    if (_shown) super.visitChildrenForSemantics(visitor);
   }
 }

@@ -101,8 +101,7 @@ Future<void> _pump(
   await tester.pumpWidget(ProviderScope(
     overrides: [
       cvApiServiceProvider.overrideWithValue(_FakeApi()),
-      cvDraftStoreProvider
-          .overrideWithValue(store ?? _FakeDraftStore(draft)),
+      cvDraftStoreProvider.overrideWithValue(store ?? _FakeDraftStore(draft)),
     ],
     child: MaterialApp(
       theme: dark
@@ -431,8 +430,40 @@ void main() {
       }
     }
 
+    // The general case: every text scale up to 2.0, keyboard up or down,
+    // every step scrolled end to end. Nothing overflows (header, step or
+    // footer), the footer's primary button stays on screen and takes taps.
     for (final language in ['ar', 'en']) {
-      testWidgets('$language: keyboard closed, dots back, every step fits',
+      for (final scale in [1.0, 1.3, 1.5, 2.0]) {
+        for (final kb in [0.0, keyboard]) {
+          testWidgets(
+              '$language x$scale ${kb > 0 ? 'keyboard open' : 'keyboard closed'}: '
+              'every step fits', (tester) async {
+            for (var step = 0; step < 4; step++) {
+              await _pump(tester,
+                  language: language,
+                  dark: false,
+                  draft: step == 0 ? null : _draftAt(language, step),
+                  size: size,
+                  textScale: scale,
+                  keyboard: kb);
+              if (step > 0) await _restoreTo(tester, step);
+              expect(tester.takeException(), isNull, reason: 'step $step');
+              await _scrollThrough(tester, (stop) {
+                expect(tester.takeException(), isNull,
+                    reason: 'step ${step + 1} stop $stop');
+                final button = find.byType(SubmitButton).last;
+                expect(button.hitTestable(), findsOneWidget);
+                final rect = tester.getRect(button);
+                expect(rect.top, greaterThanOrEqualTo(0));
+                expect(rect.bottom, lessThanOrEqualTo(size.height - kb));
+              });
+            }
+          });
+        }
+      }
+
+      testWidgets('$language: keyboard closed at x1.3, the dots are shown',
           (tester) async {
         for (var step = 0; step < 4; step++) {
           await _pump(tester,
@@ -442,13 +473,15 @@ void main() {
               size: size,
               textScale: 1.3);
           if (step > 0) await _restoreTo(tester, step);
-          expect(find.byKey(WizardHeader.dotsKey), findsOneWidget);
-          await _scrollThrough(tester, (stop) {
-            expect(tester.takeException(), isNull,
-                reason: 'step ${step + 1} stop $stop');
-            expect(
-                find.byType(SubmitButton).last.hitTestable(), findsOneWidget);
-          });
+          // Shown means painted and tappable, not just in the tree.
+          final dotIcons = find.descendant(
+              of: find.byKey(WizardHeader.dotsKey),
+              matching: find.byType(Icon));
+          expect(dotIcons, findsNWidgets(4));
+          for (final e in dotIcons.evaluate()) {
+            expect(find.byWidget(e.widget).hitTestable(), findsOneWidget,
+                reason: 'step ${step + 1}');
+          }
         }
       });
     }
