@@ -14,6 +14,7 @@ import 'package:sirati/shared/widgets/auth_hero_page.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/password_visibility_toggle.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -102,7 +103,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         title: l10n.welcomeToSirati,
         subtitle: l10n.authLoginSubtitle,
         markHeroTag: 'sirati-brand-mark',
-        breathing: true,
         card: MotionReveal(
           order: 0,
           child: _buildForm(context, l10n, isLoading),
@@ -177,13 +177,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onFieldSubmitted: (_) => unawaited(_login()),
               hintText: '••••••••',
               prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                tooltip:
-                    _obscurePassword ? l10n.showPassword : l10n.hidePassword,
-                icon: Icon(_obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined),
-                onPressed: () =>
+              suffixIcon: PasswordVisibilityToggle(
+                obscured: _obscurePassword,
+                onToggle: () =>
                     setState(() => _obscurePassword = !_obscurePassword),
               ),
               // Presence only: the server has no length rule for

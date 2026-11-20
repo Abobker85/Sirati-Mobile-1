@@ -14,10 +14,9 @@ import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
-import 'package:sirati/shared/widgets/directional_icon.dart';
+import 'package:sirati/shared/widgets/auth_hero_page.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/form_reveal.dart';
-import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
@@ -193,26 +192,15 @@ class _EmailVerificationScreenState
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 12, 0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => unawaited(_leave()),
-                        tooltip: l10n.authVerifyBackToSignIn,
-                        icon: DirectionalIcon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: context.sirati.textPrimary,
-                          size: 18,
-                        ),
-                      ),
-                      const Spacer(),
-                      const LanguageToggle(),
-                    ],
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: AuthTopBar(
+                    onBack: () => unawaited(_leave()),
+                    backTooltip: l10n.authVerifyBackToSignIn,
                   ),
                 ),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -220,14 +208,15 @@ class _EmailVerificationScreenState
                         children: [
                           MotionReveal(
                             order: 0,
-                            child: Center(
+                            child: Align(
+                              alignment: AlignmentDirectional.centerStart,
                               child: AnimatedContainer(
                                 duration: MotionSettings.reduce(context)
                                     ? Duration.zero
                                     : MotionDurations.medium,
                                 curve: MotionCurves.state,
-                                width: 72,
-                                height: 72,
+                                width: 64,
+                                height: 64,
                                 decoration: BoxDecoration(
                                   color: _verified
                                       ? context.sirati.successLight
@@ -240,7 +229,7 @@ class _EmailVerificationScreenState
                                     _verified
                                         ? Icons.verified_rounded
                                         : Icons.mark_email_unread_outlined,
-                                    size: 36,
+                                    size: 32,
                                     color: _verified
                                         ? context.sirati.onSuccessContainer
                                         : context.sirati.primaryInk,
@@ -253,35 +242,41 @@ class _EmailVerificationScreenState
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          Text(
-                            l10n.authVerifyTitle,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: context.sirati.textPrimary,
+                          const SizedBox(height: AppSpacing.md),
+                          Semantics(
+                            header: true,
+                            child: Text(
+                              l10n.authVerifyTitle,
+                              textAlign: TextAlign.start,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.largeTitle,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: AppSpacing.xs),
                           Text(
                             l10n.authVerifyCodeSentTo,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              height: 1.5,
+                            textAlign: TextAlign.start,
+                            style: AppTypography.of(
+                              context,
+                              AppTypography.bodyLg,
                               color: context.sirati.textSecondary,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            email,
-                            textAlign: TextAlign.center,
-                            textDirection: TextDirection.ltr,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: context.sirati.primaryInk,
+                          // The address reads left to right in both
+                          // languages but sits on the start side.
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              email,
+                              textDirection: TextDirection.ltr,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: context.sirati.primaryInk,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 28),
@@ -442,9 +437,8 @@ class _OtpProgressDots extends StatelessWidget {
                     ? c.primary
                     : (active ? c.primaryLight : c.borderStrong),
                 borderRadius: BorderRadius.circular(999),
-                border: active
-                    ? Border.all(color: c.primaryInk, width: 1.2)
-                    : null,
+                border:
+                    active ? Border.all(color: c.primaryInk, width: 1.2) : null,
               ),
             );
           }),

@@ -45,7 +45,7 @@ class PasswordStrengthMeter extends StatelessWidget {
       PasswordStrength.strong => 3,
     };
     final color = switch (level) {
-      PasswordStrength.empty => context.sirati.border,
+      PasswordStrength.empty => context.sirati.separator,
       PasswordStrength.weak => context.sirati.error,
       PasswordStrength.medium => context.sirati.warning,
       PasswordStrength.strong => context.sirati.success,
@@ -85,7 +85,7 @@ class PasswordStrengthMeter extends StatelessWidget {
                       curve: MotionCurves.state,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: filled ? color : context.sirati.border,
+                        color: filled ? color : context.sirati.separator,
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
