@@ -216,7 +216,7 @@ class _NavButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: selected
                   ? DashboardNavigationBar.pillFill(c)
-                  : Colors.transparent,
+                  : null,
               borderRadius: AppRadius.capsuleAll,
             ),
             child: ConstrainedBox(
