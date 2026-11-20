@@ -23,8 +23,8 @@ Widget _wrap(
     supportedLocales: AppLocalizations.supportedLocales,
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     builder: (context, body) => MediaQuery(
-      data: MediaQuery.of(context)
-          .copyWith(disableAnimations: disableAnimations),
+      data:
+          MediaQuery.of(context).copyWith(disableAnimations: disableAnimations),
       child: body!,
     ),
     home: Scaffold(body: child),
@@ -159,14 +159,41 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      // The header pill has no chevron since the iOS 26 restyle.
-      expect(find.byType(DirectionalIcon), findsWidgets);
+      // The header pill has no chevron since the iOS 26 restyle. The
+      // fixture's chevrons: one on the start card (flipped), one on View all.
+      final flipped = find.byWidgetPredicate(
+        (w) => w is Transform && w.transform.storage[0] == -1.0,
+      );
       expect(
-        find.byWidgetPredicate(
-          (w) => w is Transform && w.transform.storage[0] == -1.0,
-        ),
+        find.descendant(
+            of: find.byType(HomeViewAllButton),
+            matching: find.byType(DirectionalIcon)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: find.byType(HomeStartCard), matching: flipped),
         findsWidgets,
       );
+      // Every chevron on screen points the reading way: inside a
+      // DirectionalIcon or a horizontal flip, never a bare Icon.
+      final chevrons = find.byWidgetPredicate(
+        (w) => w is Icon && w.icon == Icons.chevron_right_rounded,
+      );
+      expect(chevrons, findsNWidgets(2));
+      for (final chevron in chevrons.evaluate()) {
+        expect(
+          find.ancestor(
+            of: find.byWidget(chevron.widget),
+            matching: find.byWidgetPredicate(
+              (w) =>
+                  w is DirectionalIcon ||
+                  w is Transform && w.transform.storage[0] == -1.0,
+            ),
+          ),
+          findsWidgets,
+          reason: 'chevron ${chevron.widget}',
+        );
+      }
     });
   });
 }
