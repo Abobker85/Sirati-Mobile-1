@@ -18,6 +18,9 @@ import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_list_tile.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -428,6 +431,103 @@ void main() {
           expect(AppContrast.ratio(thumb, track), greaterThanOrEqualTo(3.0),
               reason: 'switch thumb vs track ($mode)');
         }
+      });
+    }
+    // Ticket 05: inset-grouped Settings in AR/EN x light/dark.
+    for (final (mode, language) in [
+      ('light', 'en'),
+      ('light', 'ar'),
+      ('dark', 'en'),
+      ('dark', 'ar'),
+    ]) {
+      testWidgets(
+          'rows sit in grouped cards and read AA, pressed too '
+          '($mode, $language)', (tester) async {
+        AppLocale.languageCode.value = language;
+        final arabic = language == 'ar';
+        final theme = mode == 'light'
+            ? AppTheme.lightFor(arabic: arabic)
+            : AppTheme.darkFor(arabic: arabic);
+        final c = theme.extension<SiratiColors>()!;
+        tester.view.physicalSize = const Size(1080, 6000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(app(
+          _FakeAuth()
+            ..user =
+                const AuthUser(id: 1, name: 'سارة Sara', email: 'sara@x.io'),
+          theme: theme,
+          language: language,
+        ));
+        await tester.pumpAndSettle();
+
+        expect(
+          tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+          c.groupedBackground,
+        );
+        final tiles = find.byType(AppListTile);
+        expect(tiles, findsWidgets);
+        // Every row lives in a section card, none floats on the page.
+        expect(
+          find.descendant(of: find.byType(AppListSection), matching: tiles),
+          findsNWidgets(tiles.evaluate().length),
+        );
+        expect(
+          find.descendant(
+            of: find.byType(AppListSection),
+            matching: find.byType(SwitchListTile),
+          ),
+          findsNWidgets(2),
+        );
+
+        final pressed = c.pressed(c.groupedCard);
+        final rtl = language == 'ar';
+        for (final tile in tester.widgetList<AppListTile>(tiles)) {
+          final row = find.byWidget(tile);
+          // Text of a tappable row stays AA while the row is pressed.
+          if (tile.onTap != null) {
+            for (final e in find
+                .descendant(of: row, matching: find.byType(Text))
+                .evaluate()) {
+              final text = e.widget as Text;
+              final ink = DefaultTextStyle.of(e).style.merge(text.style).color!;
+              expect(AppContrast.ratio(ink, pressed), greaterThanOrEqualTo(4.5),
+                  reason: '"${text.data}" pressed ($mode, $language)');
+            }
+          }
+          final chevron =
+              find.descendant(of: row, matching: find.byType(DirectionalIcon));
+          if (chevron.evaluate().isEmpty) continue;
+          final title = tester.getRect(
+              find.descendant(of: row, matching: find.text(tile.title)));
+          final arrow = tester.getRect(chevron);
+          // Chevron at the end side: left in Arabic, right in English.
+          expect(rtl ? arrow.right <= title.left : arrow.left >= title.right,
+              isTrue,
+              reason: '${tile.title} chevron ($mode, $language)');
+        }
+        expectAllTextAa('settings $mode $language');
+        expectAllIconsAa('settings $mode $language');
+
+        // The sign-out confirmation keeps AA on the themed dialog.
+        final l10n = await AppLocalizations.delegate.load(Locale(language));
+        await tester.tap(find.text(l10n.logOut));
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expectAllTextAa('sign-out dialog $mode $language');
+        final confirm = tester.widget<TextButton>(find.ancestor(
+          of: find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text(l10n.logOut),
+          ),
+          matching: find.byType(TextButton),
+        ));
+        final ink = confirm.style!.foregroundColor!.resolve({})!;
+        expect(AppContrast.ratio(ink, c.pressed(c.groupedCard)),
+            greaterThanOrEqualTo(4.5));
+        await tester.tap(find.text(l10n.cancel));
+        await tester.pumpAndSettle();
+        AppLocale.languageCode.value = 'en';
       });
     }
   });
