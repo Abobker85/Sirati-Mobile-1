@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/core/utils/app_locale.dart';
@@ -433,10 +432,12 @@ class AppTheme {
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
+          // One transition everywhere: a full slide along the reading
+          // direction, with the back swipe from the start edge.
           TargetPlatform.android: SiratiPageTransitionsBuilder(),
-          // Native transition, with the edge swipe back iOS users expect.
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: SiratiPageTransitionsBuilder(),
+          TargetPlatform.macOS: SiratiPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: SiratiPageTransitionsBuilder(),
           TargetPlatform.windows: SiratiPageTransitionsBuilder(),
           TargetPlatform.linux: SiratiPageTransitionsBuilder(),
         },
