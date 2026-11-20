@@ -115,8 +115,9 @@ class _ChipRow extends StatelessWidget {
   }
 }
 
-/// A 48dp-tall pill. Selected = dark brand fill + check icon, so the state
-/// never relies on colour alone.
+/// A 48dp-tall filled capsule, like the theme's chips: grey at rest; when
+/// selected the teal tint with primary ink and a checkmark, so the state
+/// never relies on colour alone. Pressing darkens the fill and springs.
 class _FilterPill extends StatelessWidget {
   const _FilterPill({
     required this.label,
@@ -136,8 +137,9 @@ class _FilterPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.sirati;
     final reduce = MotionSettings.reduce(context);
-    // brandSurface keeps white text at AA in both themes (primary does not).
-    final fg = selected ? c.onBrandSurface : c.textPrimary;
+    final fill = selected ? c.primaryLight : PageSurface.fillOf(context);
+    final fg = AppTheme.chipLabelColor(c)
+        .resolve({if (selected) WidgetState.selected});
 
     return Semantics(
       button: true,
@@ -145,16 +147,19 @@ class _FilterPill extends StatelessWidget {
       child: PressScale(
         pressedScale: 0.96,
         child: Material(
-          color: selected ? c.brandSurface : c.surface,
+          color: fill,
           animationDuration: reduce ? Duration.zero : MotionDurations.fast,
-          shape: StadiumBorder(
-            side: BorderSide(color: selected ? c.brandSurface : c.border),
-          ),
+          shape: const StadiumBorder(),
           child: InkWell(
             onTap: onTap,
             customBorder: const StadiumBorder(),
-            splashFactory: reduce ? NoSplash.splashFactory : null,
-            highlightColor: reduce ? c.surface.withValues(alpha: 0) : null,
+            // The darker fill is the feedback; no ripple.
+            splashFactory: NoSplash.splashFactory,
+            overlayColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.pressed)
+                  ? c.pressOverlay(fill)
+                  : fill.withValues(alpha: 0),
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
               child: Padding(
@@ -168,7 +173,7 @@ class _FilterPill extends StatelessWidget {
                       child: Icon(
                         selected ? Icons.check_rounded : icon,
                         size: 18,
-                        color: selected ? fg : iconColor,
+                        color: selected ? fg : _legibleTint(c, fill),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -190,6 +195,17 @@ class _FilterPill extends StatelessWidget {
       ),
     );
   }
+}
+
+/// [_FilterPill.iconColor] when it holds 3:1 on [fill] resting and
+/// pressed; otherwise the grey icon ink (light amber on the grey capsule is
+/// under 3:1). The label carries the meaning, the tint is only a cue.
+extension on _FilterPill {
+  Color _legibleTint(SiratiColors c, Color fill) =>
+      AppContrast.ratio(iconColor, fill) >= 3 &&
+              AppContrast.ratio(iconColor, c.pressed(fill)) >= 3
+          ? iconColor
+          : c.textSecondary;
 }
 
 class JobSearchBar extends StatelessWidget {
@@ -262,22 +278,8 @@ class JobSearchBar extends StatelessWidget {
               // field (left) in both locales — matches the current screenshots.
               prefixIcon: english ? searchIcon : clearButton,
               suffixIcon: english ? clearButton : searchIcon,
-              filled: true,
-              fillColor: c.surface,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: c.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: c.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: c.primary, width: 1.4),
-              ),
+              // The theme's filled field: page fill, no resting outline,
+              // primary focus ring.
             ),
             style: TextStyle(
               fontSize: 14,

@@ -30,8 +30,7 @@ class MatchedPresetNote extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: c.primaryLight,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: c.borderStrong),
+          borderRadius: BorderRadius.circular(AppRadius.card),
         ),
         child: Row(
           children: [

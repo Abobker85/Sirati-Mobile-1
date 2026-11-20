@@ -1,9 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:sirati/core/utils/safe_url.dart';
 import 'package:sirati/features/jobs/domain/apply_destination.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/job_news.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 
 /// Opens [destination] for [item]: the employer page, or the mail app with
@@ -36,3 +37,19 @@ Future<void> copyApplicationEmail(BuildContext context, String address) async {
     AppSnackBar.success(context, AppLocalizations.of(context).jobsEmailCopied);
   }
 }
+
+/// The teal capsule for applying (and the detail page's primary action).
+/// The brand surface, not primary: white text needs the darker
+/// teal to stay at AA in both themes. Pressing deepens it to
+/// the deep brand surface, which only raises the label's contrast.
+ButtonStyle jobApplyButtonStyle(SiratiColors c) => ButtonStyle(
+      backgroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.pressed)
+            ? c.brandSurfaceDeep
+            : c.brandSurface,
+      ),
+      foregroundColor: WidgetStatePropertyAll(c.onBrandSurface),
+      overlayColor: WidgetStatePropertyAll(c.brandSurface.withValues(alpha: 0)),
+      shape: const WidgetStatePropertyAll(StadiumBorder()),
+      elevation: const WidgetStatePropertyAll(0),
+    );
