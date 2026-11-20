@@ -99,16 +99,13 @@ class UploadDropZone extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.sirati;
-    final radius = BorderRadius.circular(14);
+    final radius = AppRadius.cardAll;
     return Semantics(
       button: true,
       child: PressScale(
         child: Material(
           color: colors.primaryLight,
-          shape: RoundedRectangleBorder(
-            borderRadius: radius,
-            side: BorderSide(color: colors.primaryInk, width: 1.5),
-          ),
+          borderRadius: radius,
           child: InkWell(
             onTap: onTap,
             borderRadius: radius,
@@ -121,7 +118,7 @@ class UploadDropZone extends StatelessWidget {
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: colors.surface,
+                        color: PageSurface.fillOf(context),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -176,8 +173,7 @@ class SelectedFileTile extends StatelessWidget {
       padding: const EdgeInsetsDirectional.only(start: 14, top: 4, bottom: 4),
       decoration: BoxDecoration(
         color: colors.successLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.success.withValues(alpha: .4)),
+        borderRadius: AppRadius.cardAll,
       ),
       child: Row(
         children: [
@@ -221,15 +217,14 @@ class OrDivider extends StatelessWidget {
     final colors = context.sirati;
     return Row(
       children: [
-        Expanded(child: Divider(color: colors.border)),
+        Expanded(child: Divider(thickness: 0.5, color: colors.separator)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: colors.background,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colors.border),
+              color: PageSurface.fillOf(context),
+              borderRadius: BorderRadius.circular(AppRadius.capsule),
             ),
             child: Text(
               AppLocalizations.of(context).atsOr,
@@ -237,7 +232,7 @@ class OrDivider extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(child: Divider(color: colors.border)),
+        Expanded(child: Divider(thickness: 0.5, color: colors.separator)),
       ],
     );
   }

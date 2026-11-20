@@ -33,6 +33,7 @@ import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -308,7 +309,7 @@ void main() {
               ),
             );
             await tester.pumpAndSettle();
-            expect(find.byType(Tab), findsNWidgets(2));
+            expect(_segments, findsNWidgets(2));
             await checkScroll(tester, '$label score=$score');
             final keywordSummary = find.byKey(
               const ValueKey('ats-result-keyword-summary'),
@@ -329,8 +330,8 @@ void main() {
                 analysis(score).keywordsMissing.length,
               ),
             );
-            await tester.ensureVisible(find.byType(Tab).last);
-            await tester.tap(find.byType(Tab).last);
+            await tester.ensureVisible(_segments.last);
+            await tester.tap(_segments.last);
             await tester.pumpAndSettle();
             await checkScroll(tester, '$label recommendations=$score');
             expect(find.byType(Checkbox), findsNothing);
@@ -704,10 +705,30 @@ void expectRenderedControls(WidgetTester tester, String label) {
         .evaluate()
         .first;
     final widget = material.widget as Material;
-    contrast(
-      (widget.shape! as OutlinedBorder).side.color,
-      material,
-      background: widget.color,
+    // Filled capsules carry no side (ticket 10); a side that is drawn must
+    // still hold 3:1. Either way the label carries the state at AA on the
+    // button's own fill.
+    final side = (widget.shape! as OutlinedBorder).side;
+    if (side.style != BorderStyle.none && side.width > 0) {
+      contrast(side.color, material, background: widget.color);
+    }
+    for (final text in find
+        .descendant(of: find.byWidget(button.widget), matching: find.byType(Text))
+        .evaluate()) {
+      final ink = paragraphOf(text.findRenderObject()!).text.style!.color!;
+      expect(
+        AppContrast.ratio(ink, widget.color!),
+        greaterThanOrEqualTo(4.5),
+        reason: '$label ${text.widget} on ${widget.color}',
+      );
+    }
+  }
+  // The chosen CV source is marked by a check, not by its tint alone.
+  if (find.byKey(const ValueKey(AnalysisCvSource.saved)).evaluate().isNotEmpty) {
+    expect(
+      find.byKey(CvAnalysisScreen.selectedSourceCheckKey),
+      findsOneWidget,
+      reason: '$label selected source check',
     );
   }
   for (final element in find
@@ -715,8 +736,7 @@ void expectRenderedControls(WidgetTester tester, String label) {
         (w) =>
             w is ButtonStyleButton ||
             w is HomePressableCard ||
-            w is ListTile && w.onTap != null ||
-            w is Tab,
+            w is ListTile && w.onTap != null,
       )
       .evaluate()) {
     final box = element.findRenderObject();
@@ -731,6 +751,16 @@ void expectRenderedControls(WidgetTester tester, String label) {
       greaterThanOrEqualTo(48),
       reason: '$label height ${element.widget}',
     );
+  }
+  // Segmented tabs: the whole track is the tap target row; every segment
+  // gets an equal share of it.
+  for (final element in find.byType(SegmentedTrack).evaluate()) {
+    final track = element.widget as SegmentedTrack;
+    final box = element.findRenderObject()! as RenderBox;
+    expect(box.size.height, greaterThanOrEqualTo(48),
+        reason: '$label segmented track height');
+    expect(box.size.width / track.labels.length, greaterThanOrEqualTo(48),
+        reason: '$label segment width');
   }
 }
 
@@ -1358,3 +1388,8 @@ void additionalTests() {
     },
   );
 }
+
+final _segments = find.descendant(
+  of: find.byType(AppSegmentedTabBar),
+  matching: find.byType(Text),
+);

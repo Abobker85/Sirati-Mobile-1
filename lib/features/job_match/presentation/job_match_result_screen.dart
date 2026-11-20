@@ -22,6 +22,9 @@ import 'package:sirati/shared/widgets/motion.dart';
 class JobMatchResultScreen extends ConsumerWidget {
   const JobMatchResultScreen({super.key});
 
+  /// The docked apply bar.
+  static const applyBarKey = ValueKey('jm-apply-bar');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
@@ -381,7 +384,8 @@ class _ApplyBar extends ConsumerWidget {
         style: ElevatedButton.styleFrom(
           // Change fill and foreground together when entering busy/disabled state.
           animationDuration: Duration.zero,
-          disabledBackgroundColor: c.surface,
+          // The grey capsule on the white bar.
+          disabledBackgroundColor: c.cardFill,
           disabledForegroundColor: c.textSecondary,
         ),
         onPressed: busy || count == 0 ? null : () => _apply(context, ref),
@@ -419,11 +423,10 @@ class _ApplyBar extends ConsumerWidget {
       ),
     );
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: c.surface,
-        border: Border(top: BorderSide(color: c.textSecondary, width: 2)),
-      ),
+    // The page colour, no edge: the button carries its own fill.
+    return ColoredBox(
+      key: JobMatchResultScreen.applyBarKey,
+      color: c.pageBackground,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -483,82 +486,76 @@ class _AdviceFailedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
-    return DecoratedBox(
+    return JobMatchSection(
       key: const ValueKey('jm-advice-failed'),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.textSecondary),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Icon(Icons.cloud_off_rounded, size: 36, color: c.textSecondary),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 36, color: c.textSecondary),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l.jobMatchFailedTitle,
+            textAlign: TextAlign.center,
+            style: AppTypography.of(context, AppTypography.titleMd),
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            l.jobMatchAiFailed,
+            textAlign: TextAlign.center,
+            style: AppTypography.of(
+              context,
+              AppTypography.bodySm,
+              color: c.textSecondary,
+            ),
+          ),
+          if (retryFailure != null) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              l.jobMatchFailedTitle,
-              textAlign: TextAlign.center,
-              style: AppTypography.of(context, AppTypography.titleMd),
-            ),
-            const SizedBox(height: AppSpacing.xxs),
-            Text(
-              l.jobMatchAiFailed,
-              textAlign: TextAlign.center,
-              style: AppTypography.of(
-                context,
-                AppTypography.bodySm,
-                color: c.textSecondary,
-              ),
-            ),
-            if (retryFailure != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              JobMatchNotice(
-                tone: JobMatchTone.error,
-                message: l.jobMatchFailureMessage(retryFailure!),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.xs),
-            ElevatedButton(
-              key: const ValueKey('jm-retry-advice'),
-              onPressed: retrying ? null : onRetry,
-              style: ElevatedButton.styleFrom(
-                // Change fill and foreground together when entering busy state.
-                animationDuration: Duration.zero,
-                disabledBackgroundColor: c.surface,
-                disabledForegroundColor: c.textSecondary,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (retrying) ...[
-                    SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(
-                        key: const ValueKey('jm-retry-progress'),
-                        strokeWidth: 2,
-                        color: c.primaryInk,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                  ],
-                  Flexible(
-                    child: Text(
-                      l.jobMatchRetrySuggestions,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
             JobMatchNotice(
-              tone: JobMatchTone.info,
-              message: l.jobMatchFailedManualHint,
+              tone: JobMatchTone.error,
+              message: l.jobMatchFailureMessage(retryFailure!),
             ),
           ],
-        ),
+          const SizedBox(height: AppSpacing.xs),
+          ElevatedButton(
+            key: const ValueKey('jm-retry-advice'),
+            onPressed: retrying ? null : onRetry,
+            style: ElevatedButton.styleFrom(
+              // Change fill and foreground together when entering busy state.
+              animationDuration: Duration.zero,
+              // One step darker than the card, so the capsule keeps its
+              // shape while busy.
+              disabledBackgroundColor: c.pressed(PageSurface.fillOf(context)),
+              disabledForegroundColor: c.textSecondary,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (retrying) ...[
+                  SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(
+                      key: const ValueKey('jm-retry-progress'),
+                      strokeWidth: 2,
+                      color: c.primaryInk,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
+                Flexible(
+                  child: Text(
+                    l.jobMatchRetrySuggestions,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          JobMatchNotice(
+            tone: JobMatchTone.info,
+            message: l.jobMatchFailedManualHint,
+          ),
+        ],
       ),
     );
   }

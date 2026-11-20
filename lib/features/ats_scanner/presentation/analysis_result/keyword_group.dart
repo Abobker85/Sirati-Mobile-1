@@ -95,11 +95,6 @@ class _KeywordChip extends StatelessWidget {
         // Gated container pairs (missing on red was ~4.2:1).
         color: found ? c.successLight : c.errorLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: found
-              ? c.tealDark.withValues(alpha: .18)
-              : c.red.withValues(alpha: .18),
-        ),
       ),
       child: Text(
         label,

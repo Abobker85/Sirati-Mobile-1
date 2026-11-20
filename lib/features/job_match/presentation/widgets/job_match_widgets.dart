@@ -34,7 +34,9 @@ class JobMatchContentText extends StatelessWidget {
   }
 }
 
-/// Neutral surface card used for every result/form section.
+/// Borderless card filled with the page's own card fill: grey on a plain
+/// page, white on a grouped one. [highlighted] adds a primary ring (a
+/// selected suggestion; its checkbox carries the state as well).
 class JobMatchSection extends StatelessWidget {
   const JobMatchSection({
     super.key,
@@ -55,12 +57,9 @@ class JobMatchSection extends StatelessWidget {
       duration: reduce ? Duration.zero : MotionDurations.fast,
       curve: MotionCurves.state,
       decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(
-          color: highlighted ? c.primaryInk : c.textSecondary,
-          width: highlighted ? 1.5 : 1,
-        ),
+        color: PageSurface.fillOf(context),
+        borderRadius: AppRadius.cardAll,
+        border: highlighted ? Border.all(color: c.primaryInk, width: 2) : null,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),

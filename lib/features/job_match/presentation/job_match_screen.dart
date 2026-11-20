@@ -67,53 +67,55 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
       jobMatchControllerProvider.select((s) => s.match != null),
     );
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l.jobMatchTitle)),
-      body: entitlement.when(
-        skipLoadingOnRefresh: false,
-        // The form's own shape while access is checked, not a spinner.
-        loading: () => const ListScreenSkeleton(itemCount: 4),
-        error: (_, __) => _GateView(
-          icon: Icons.cloud_off_rounded,
-          title: l.jobMatchEntitlementLoadFailed,
-          actionLabel: l.jobMatchRetry,
-          onAction: _refreshEntitlement,
+    return GroupedSurface(
+      child: Scaffold(
+        appBar: AppBar(title: Text(l.jobMatchTitle)),
+        body: entitlement.when(
+          skipLoadingOnRefresh: false,
+          // The form's own shape while access is checked, not a spinner.
+          loading: () => const ListScreenSkeleton(itemCount: 4),
+          error: (_, __) => _GateView(
+            icon: Icons.cloud_off_rounded,
+            title: l.jobMatchEntitlementLoadFailed,
+            actionLabel: l.jobMatchRetry,
+            onAction: _refreshEntitlement,
+          ),
+          data: (access) => switch (access.access) {
+            JobMatchAccess.allowed =>
+              _form(context, access, submitting, hasResult),
+            JobMatchAccess.subscriptionRequired => _GateView(
+                icon: Icons.workspace_premium_outlined,
+                title: l.jobMatchPaywallTitle,
+                body: l.jobMatchPaywallBody,
+                detail: access.trialDays > 0
+                    ? l.jobMatchPaywallTrial(access.trialDays)
+                    : null,
+                benefits: [
+                  l.premiumGateJobMatchBenefitScore,
+                  l.premiumGateJobMatchBenefitKeywords,
+                  l.premiumGateJobMatchBenefitEdits,
+                ],
+                primaryLabel: l.premiumGateJobMatchSeePlans,
+                onPrimary: _openPlans,
+                actionLabel: l.jobMatchPaywallRefresh,
+                onAction: _refreshEntitlement,
+              ),
+            JobMatchAccess.quotaReached => _GateView(
+                icon: Icons.hourglass_bottom_rounded,
+                title: l.jobMatchQuotaTitle,
+                body: l.jobMatchQuotaBody,
+                actionLabel: l.jobMatchRetry,
+                onAction: _refreshEntitlement,
+              ),
+            JobMatchAccess.unavailable => _GateView(
+                icon: Icons.lock_outline_rounded,
+                title: l.jobMatchUnavailableTitle,
+                body: l.jobMatchUnavailableBody,
+                actionLabel: l.jobMatchRetry,
+                onAction: _refreshEntitlement,
+              ),
+          },
         ),
-        data: (access) => switch (access.access) {
-          JobMatchAccess.allowed =>
-            _form(context, access, submitting, hasResult),
-          JobMatchAccess.subscriptionRequired => _GateView(
-              icon: Icons.workspace_premium_outlined,
-              title: l.jobMatchPaywallTitle,
-              body: l.jobMatchPaywallBody,
-              detail: access.trialDays > 0
-                  ? l.jobMatchPaywallTrial(access.trialDays)
-                  : null,
-              benefits: [
-                l.premiumGateJobMatchBenefitScore,
-                l.premiumGateJobMatchBenefitKeywords,
-                l.premiumGateJobMatchBenefitEdits,
-              ],
-              primaryLabel: l.premiumGateJobMatchSeePlans,
-              onPrimary: _openPlans,
-              actionLabel: l.jobMatchPaywallRefresh,
-              onAction: _refreshEntitlement,
-            ),
-          JobMatchAccess.quotaReached => _GateView(
-              icon: Icons.hourglass_bottom_rounded,
-              title: l.jobMatchQuotaTitle,
-              body: l.jobMatchQuotaBody,
-              actionLabel: l.jobMatchRetry,
-              onAction: _refreshEntitlement,
-            ),
-          JobMatchAccess.unavailable => _GateView(
-              icon: Icons.lock_outline_rounded,
-              title: l.jobMatchUnavailableTitle,
-              body: l.jobMatchUnavailableBody,
-              actionLabel: l.jobMatchRetry,
-              onAction: _refreshEntitlement,
-            ),
-        },
       ),
     );
   }
@@ -157,7 +159,8 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
           ),
           const SizedBox(height: AppSpacing.md),
         ],
-        JobMatchSection(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -191,7 +194,10 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
         const SizedBox(height: AppSpacing.md),
         ErrorShake(
           errorKey: _inputError,
-          child: JobMatchSection(
+          // Fields sit on the grouped page: their own fill is the white
+          // row, so no card goes around them.
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -322,7 +328,14 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final cv in list)
+            for (final (i, cv) in list.indexed) ...[
+              if (i > 0)
+                Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  indent: _CvOption.separatorIndent,
+                  color: context.sirati.separator,
+                ),
               _CvOption(
                 key: JobMatchScreen.cvOptionKey(cv.id),
                 cv: cv,
@@ -333,6 +346,7 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
                   _cvPreparing = false;
                 }),
               ),
+            ],
             MotionExpandSlot(
               child: _pickError
                   ? JobMatchNotice(
@@ -483,101 +497,102 @@ class _GateView extends StatelessWidget {
       children: [
         MotionReveal(
           order: 0,
-          child: JobMatchSection(
+          child: Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-              Center(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: c.primaryLight,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Icon(icon, size: 32, color: c.primaryInk),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: AppTypography.of(context, AppTypography.headlineMd),
-              ),
-              if (body != null) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  body!,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.of(
-                    context,
-                    AppTypography.bodyMd,
-                    color: c.textSecondary,
-                  ),
-                ),
-              ],
-              if (benefits.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.md),
-                for (final benefit in benefits)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.check_circle_rounded,
-                          size: 20,
-                          color: c.primaryInk,
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Expanded(
-                          child: Text(
-                            benefit,
-                            style: AppTypography.of(
-                              context,
-                              AppTypography.bodyMd,
-                            ),
-                          ),
-                        ),
-                      ],
+                Center(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: c.primaryLight,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Icon(icon, size: 32, color: c.primaryInk),
                     ),
                   ),
-              ],
-              if (detail != null) ...[
-                const SizedBox(height: AppSpacing.xs),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 Text(
-                  detail!,
+                  title,
                   textAlign: TextAlign.center,
-                  style: AppTypography.of(
-                    context,
-                    AppTypography.labelLg,
-                    color: c.primaryInk,
+                  style: AppTypography.of(context, AppTypography.headlineMd),
+                ),
+                if (body != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    body!,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.bodyMd,
+                      color: c.textSecondary,
+                    ),
                   ),
-                ),
+                ],
+                if (benefits.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  for (final benefit in benefits)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 20,
+                            color: c.primaryInk,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: Text(
+                              benefit,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.bodyMd,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+                if (detail != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    detail!,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.labelLg,
+                      color: c.primaryInk,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                if (hasPrimary) ...[
+                  ElevatedButton(
+                    key: const ValueKey('jm-gate-plans'),
+                    onPressed: onPrimary,
+                    child: Text(primaryLabel!),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  OutlinedButton(
+                    key: const ValueKey('jm-gate-action'),
+                    onPressed: onAction,
+                    child: Text(actionLabel, textAlign: TextAlign.center),
+                  ),
+                ] else
+                  ElevatedButton(
+                    key: const ValueKey('jm-gate-action'),
+                    onPressed: onAction,
+                    child: Text(actionLabel),
+                  ),
               ],
-              const SizedBox(height: AppSpacing.lg),
-              if (hasPrimary) ...[
-                ElevatedButton(
-                  key: const ValueKey('jm-gate-plans'),
-                  onPressed: onPrimary,
-                  child: Text(primaryLabel!),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                OutlinedButton(
-                  key: const ValueKey('jm-gate-action'),
-                  onPressed: onAction,
-                  child: Text(actionLabel, textAlign: TextAlign.center),
-                ),
-              ] else
-                ElevatedButton(
-                  key: const ValueKey('jm-gate-action'),
-                  onPressed: onAction,
-                  child: Text(actionLabel),
-                ),
-            ],
+            ),
           ),
-        ),
         ),
       ],
     );
@@ -677,6 +692,9 @@ class _CvOption extends StatelessWidget {
     required this.onTap,
   });
 
+  /// Separator start: under the title, past the radio.
+  static const separatorIndent = 24 + AppSpacing.sm;
+
   final GeneratedCv cv;
   final bool selected;
   final VoidCallback onTap;
@@ -692,72 +710,61 @@ class _CvOption extends StatelessWidget {
         : (name.isNotEmpty ? name : l.jobMatchUntitledCv);
     final subtitle = jobTitle.isNotEmpty && name.isNotEmpty ? name : null;
 
-    final reduce = MotionSettings.reduce(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Semantics(
-        selected: selected,
-        inMutuallyExclusiveGroup: true,
-        button: true,
-        child: PressScale(
-          pressedScale: 0.985,
-          child: AnimatedContainer(
-            duration: reduce ? Duration.zero : MotionDurations.fast,
-            curve: MotionCurves.state,
-            decoration: BoxDecoration(
-              color: c.surface,
-              borderRadius: AppRadius.mdAll,
-              border: Border.all(
-                color: selected ? c.primaryInk : c.textSecondary,
-                width: selected ? 2 : 1,
+    final fill = PageSurface.fillOf(context);
+    return Semantics(
+      selected: selected,
+      inMutuallyExclusiveGroup: true,
+      button: true,
+      child: PressScale(
+        pressedScale: 0.985,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: AppRadius.mdAll,
+            highlightColor: c.pressOverlay(fill),
+            splashFactory: NoSplash.splashFactory,
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.sm,
               ),
-            ),
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                borderRadius: AppRadius.mdAll,
-                onTap: onTap,
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  child: Row(
-                    children: [
-                      MotionMorph(
-                        morphKey: selected,
-                        pop: false,
-                        child: Icon(
-                          selected
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_unchecked,
-                          color: selected ? c.primaryInk : c.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            JobMatchContentText(
-                              title,
-                              style: AppTypography.of(
-                                context,
-                                AppTypography.titleSm,
-                              ),
-                            ),
-                            if (subtitle != null)
-                              JobMatchContentText(
-                                subtitle,
-                                style: AppTypography.of(
-                                  context,
-                                  AppTypography.bodySm,
-                                  color: c.textSecondary,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
+              child: Row(
+                children: [
+                  MotionMorph(
+                    morphKey: selected,
+                    pop: false,
+                    child: Icon(
+                      selected
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: selected ? c.primaryInk : c.textSecondary,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        JobMatchContentText(
+                          title,
+                          style: AppTypography.of(
+                            context,
+                            AppTypography.titleSm,
+                          ),
+                        ),
+                        if (subtitle != null)
+                          JobMatchContentText(
+                            subtitle,
+                            style: AppTypography.of(
+                              context,
+                              AppTypography.bodySm,
+                              color: c.textSecondary,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -149,7 +149,8 @@ class _ItemList extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (i < items.length - 1) const Divider(height: 1),
+                  if (i < items.length - 1)
+                    Divider(height: 1, thickness: 0.5, color: c.separator),
                 ],
                 if (hidden > 0)
                   Padding(
@@ -339,8 +340,7 @@ class _UpgradeCta extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: c.primaryLight,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.primaryMid),
+        borderRadius: AppRadius.cardAll,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
