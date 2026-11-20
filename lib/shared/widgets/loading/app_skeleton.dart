@@ -8,6 +8,9 @@ import 'package:sirati/shared/widgets/motion.dart';
 /// Uses one shared [AnimationController] from an ancestor [AppSkeletonScope]
 /// when nested; otherwise a local controller. Sweep direction follows
 /// [Directionality] (start → end). Reduced motion → static bone.
+///
+/// Bones are the grey card fill (`cardFill`) of the iOS 26 restyle; the
+/// shimmer sweeps its pressed shade, so it never leaves the grey family.
 class AppSkeleton extends StatefulWidget {
   final double? width;
   final double height;
@@ -19,6 +22,16 @@ class AppSkeleton extends StatefulWidget {
     this.height = 14,
     this.radius = 10,
   });
+
+  /// Shimmer gradient stops: resting fill at the edges, pressed shade at the
+  /// travelling highlight.
+  static List<Color> shimmerColors(SiratiColors c) => [
+        c.cardFill,
+        c.cardFill,
+        c.cardFillPressed,
+        c.cardFill,
+        c.cardFill,
+      ];
 
   @override
   State<AppSkeleton> createState() => _AppSkeletonState();
@@ -38,14 +51,7 @@ class _AppSkeletonState extends State<AppSkeleton>
     super.didChangeDependencies();
     _scope = AppSkeletonScope.maybeOf(context);
     _reduce = MotionSettings.reduce(context);
-    final c = context.sirati;
-    _shimmerColors = [
-      c.surfaceHigh,
-      c.surfaceLow,
-      c.surface,
-      c.surfaceLow,
-      c.surfaceHigh,
-    ];
+    _shimmerColors = AppSkeleton.shimmerColors(context.sirati);
 
     if (_reduce || _scope != null) {
       _local?.stop();
@@ -70,11 +76,11 @@ class _AppSkeletonState extends State<AppSkeleton>
   @override
   Widget build(BuildContext context) {
     if (_reduce) {
-      return _bone(staticOpacity: 0.7);
+      return _bone();
     }
 
     final controller = _scope?.controller ?? _local;
-    if (controller == null) return _bone(staticOpacity: 0.7);
+    if (controller == null) return _bone();
 
     final rtl = Directionality.of(context) == TextDirection.rtl;
 
@@ -91,22 +97,15 @@ class _AppSkeletonState extends State<AppSkeleton>
     );
   }
 
-  Widget _bone({double? staticOpacity, double? shimmerCenter}) {
+  Widget _bone({double? shimmerCenter}) {
     final c = context.sirati;
-    final colors = _shimmerColors ??
-        [
-          c.surfaceHigh,
-          c.surfaceLow,
-          c.surface,
-          c.surfaceLow,
-          c.surfaceHigh,
-        ];
-    final child = Container(
+    final colors = _shimmerColors ?? AppSkeleton.shimmerColors(c);
+    return Container(
       width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(widget.radius),
-        color: staticOpacity != null ? c.surfaceHigh : null,
+        color: shimmerCenter == null ? c.cardFill : null,
         gradient: shimmerCenter == null
             ? null
             : LinearGradient(
@@ -117,11 +116,6 @@ class _AppSkeletonState extends State<AppSkeleton>
               ),
       ),
     );
-
-    if (staticOpacity != null) {
-      return Opacity(opacity: staticOpacity, child: child);
-    }
-    return child;
   }
 }
 
