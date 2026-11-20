@@ -96,18 +96,15 @@ Future<T?> showGlassBottomSheet<T>({
             Flexible(
               child: isScrollControlled
                   ? builder(context)
-                  // One scroll for the whole sheet. Lists inside that do
-                  // not pick their own physics stop scrolling (and stop
-                  // taking the drag), so a finger on them moves the sheet's
-                  // content. Not primary: a caller's list may claim that.
+                  // One scroll for the whole sheet. A vertical list inside
+                  // that does not pick its own controller or `primary` gives
+                  // the drag to the sheet when it has nothing of its own to
+                  // scroll (see _SheetPrimaryScroll); horizontal lists and
+                  // text fields keep scrolling on their own. Not primary: the
+                  // sheet's lists claim the primary controller below.
                   : SingleChildScrollView(
                       primary: false,
-                      child: ScrollConfiguration(
-                        behavior: ScrollConfiguration.of(context).copyWith(
-                          physics: const NeverScrollableScrollPhysics(),
-                        ),
-                        child: builder(context),
-                      ),
+                      child: _SheetPrimaryScroll(child: builder(context)),
                     ),
             ),
           ],
@@ -115,6 +112,60 @@ Future<T?> showGlassBottomSheet<T>({
       ),
     ),
   );
+}
+
+/// Hands the vertical lists inside a capped sheet a primary scroll
+/// controller that drops the "always scrollable" physics a [ScrollView] gives
+/// itself when it is primary (vertical, no controller, `primary` not set).
+/// With it, a shrink-wrapped list has no extent of its own, refuses the drag
+/// and the sheet's own scroll takes it (the CV template picker reaches its
+/// last design). A list held to a height shorter than its content still
+/// scrolls itself. Horizontal lists and text fields never inherit a primary
+/// controller, so they keep their own scrolling; a list given its own
+/// controller or physics keeps those too.
+class _SheetPrimaryScroll extends StatefulWidget {
+  const _SheetPrimaryScroll({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_SheetPrimaryScroll> createState() => _SheetPrimaryScrollState();
+}
+
+class _SheetPrimaryScrollState extends State<_SheetPrimaryScroll> {
+  final _controller = _NotAlwaysScrollableController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => PrimaryScrollController(
+        controller: _controller,
+        automaticallyInheritForPlatforms: TargetPlatform.values.toSet(),
+        child: widget.child,
+      );
+}
+
+/// A scroll controller for any number of lists whose positions keep the
+/// physics under a top-level [AlwaysScrollableScrollPhysics], so a list
+/// only takes a drag when it has room to scroll.
+class _NotAlwaysScrollableController extends ScrollController {
+  @override
+  ScrollPosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition,
+  ) =>
+      super.createScrollPosition(
+        physics is AlwaysScrollableScrollPhysics
+            ? physics.parent ?? const ScrollPhysics()
+            : physics,
+        context,
+        oldPosition,
+      );
 }
 
 /// Space above the close button.
