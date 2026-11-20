@@ -180,7 +180,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 child: Row(
                   children: [
-                    const LanguageToggle(),
+                    LanguageToggle(
+                      backgroundColor: PageSurface.fillOf(context),
+                    ),
                     // Back to the previous page (SIRATI-100). Hidden on page 1
                     // so it never appears when there is nowhere to go.
                     AnimatedSwitcher(
@@ -228,8 +230,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ),
                       child: !last
-                          // Skip pill — textHint failed AA at 12sp; textSecondary
-                          // with a subtle outline is legible and looks tappable.
+                          // Skip: the theme's grey filled capsule; the label
+                          // is textSecondary (textHint failed AA at 12sp).
                           ? OutlinedButton(
                               key: const ValueKey('onboarding-skip'),
                               onPressed: _finishing
@@ -237,11 +239,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   : () => unawaited(_finish(skipped: true)),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: context.sirati.textSecondary,
-                                side: BorderSide(color: context.sirati.border),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 14, vertical: 6),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(999)),
                                 minimumSize: const Size(48, 48),
                                 tapTargetSize: MaterialTapTargetSize.padded,
                               ),
@@ -278,7 +277,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         return _OnboardingPageView(
                           page: pages[i],
                           active: i == _index,
-                          delta: reduce ? 0.0 : (pageOffset - i).clamp(-1.0, 1.0),
+                          delta:
+                              reduce ? 0.0 : (pageOffset - i).clamp(-1.0, 1.0),
                         );
                       },
                     );
@@ -538,11 +538,7 @@ class _OnboardingHeroState extends State<_OnboardingHero>
             height: widget.size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: context.sirati.surface,
-              border: Border.all(
-                color: widget.page.accent.withValues(alpha: 0.18),
-              ),
-              boxShadow: context.sirati.softShadow,
+              color: context.sirati.cardFill,
             ),
             child: const Center(
               child: SiratiMark(size: 56, elevated: true),
@@ -556,10 +552,6 @@ class _OnboardingHeroState extends State<_OnboardingHero>
               // Circular like the SiratiMark on page 2 so all three heroes
               // share one geometry (SIRATI-99/100).
               shape: BoxShape.circle,
-              border: Border.all(
-                color: widget.page.accent.withValues(alpha: 0.14),
-              ),
-              boxShadow: context.sirati.softShadow,
             ),
             child: Icon(
               widget.page.icon,
@@ -620,7 +612,8 @@ class _PageDots extends StatelessWidget {
         final width = lerpDouble(8, 22, proximity)!;
         final label = l10n.settingsOnboardingPageOf(i + 1, count);
         final dot = AnimatedContainer(
-          duration: reduce || page != null ? Duration.zero : MotionDurations.medium,
+          duration:
+              reduce || page != null ? Duration.zero : MotionDurations.medium,
           curve: MotionCurves.state,
           margin: const EdgeInsets.symmetric(horizontal: 2),
           width: width,

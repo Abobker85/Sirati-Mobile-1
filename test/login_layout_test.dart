@@ -11,56 +11,75 @@ import 'package:sirati/shared/widgets/submit_button.dart';
 
 import 'support/contrast_probe.dart';
 
+/// The iOS 26 header (ticket 12): no gradient hero. The mark and a
+/// start-aligned large title sit on the plain page, the status-bar icons
+/// follow the theme, and every text reads at AA on what it is painted over.
 void expectHeaderPaint(WidgetTester tester) {
-  final mark = tester.element(find.byType(SiratiMark));
-  // The mark sits in a full-bleed hero painted with a gradient whose bottom
-  // corners round into the form card.
-  final heroes = <BoxDecoration>[];
-  mark.visitAncestorElements((ancestor) {
-    final widget = ancestor.widget;
-    if (widget is DecoratedBox) {
-      final decoration = widget.decoration;
-      if (decoration is BoxDecoration && decoration.gradient != null) {
-        heroes.add(decoration);
+  final context = tester.element(find.byType(LoginScreen));
+  final c = context.sirati;
+  final rtl = Directionality.of(context) == TextDirection.rtl;
+  final titleText = AppLocalizations.of(context).welcomeToSirati;
+  final title = find.text(titleText);
+  expect(title, findsOneWidget);
+
+  // Nothing above the mark or the title paints a gradient or a shadowed
+  // card: they sit straight on the page colour.
+  for (final element in [
+    tester.element(find.byType(SiratiMark)),
+    tester.element(title),
+  ]) {
+    element.visitAncestorElements((ancestor) {
+      final widget = ancestor.widget;
+      if (widget is DecoratedBox && widget.decoration is BoxDecoration) {
+        final d = widget.decoration as BoxDecoration;
+        expect(d.gradient, isNull, reason: 'gradient above ${element.widget}');
+        expect(d.boxShadow, isNull, reason: 'shadow above ${element.widget}');
       }
-    }
-    return true;
-  });
-  expect(heroes, hasLength(1));
-  final hero = heroes.single;
-  final radius = hero.borderRadius! as BorderRadius;
-  expect(radius.bottomLeft.x, greaterThan(0));
-  expect(radius.bottomRight.x, greaterThan(0));
-  // The hero's copy is white, so every stop must keep white at AA.
-  for (final stop in hero.gradient!.colors) {
-    expect(AppContrast.ratio(Colors.white, stop), greaterThanOrEqualTo(4.5),
-        reason: 'white on hero stop $stop');
+      return true;
+    });
+    expect(paintedBackgroundsOf(element), [c.pageBackground]);
   }
-  final heroBox = tester.getRect(find.ancestor(
-    of: find.byType(SiratiMark),
-    matching: find.byWidgetPredicate(
-        (w) => w is DecoratedBox && identical(w.decoration, hero)),
-  ));
-  final scrollBox = tester.getRect(find.byType(SingleChildScrollView));
-  expect(heroBox.left, scrollBox.left);
-  expect(heroBox.right, scrollBox.right);
-  // Every text in the hero passes AA on what it is painted over.
-  for (final element in find
-      .descendant(
-          of: find.byWidgetPredicate(
-              (w) => w is DecoratedBox && identical(w.decoration, hero)),
-          matching: find.byType(Text))
-      .evaluate()) {
-    final ink =
-        (element.findRenderObject()! as RenderParagraph).text.style!.color!;
-    for (final background in paintedBackgroundsOf(element)) {
-      expect(
-        AppContrast.ratio(Color.alphaBlend(ink, background), background),
-        greaterThanOrEqualTo(4.5),
-        reason: '"${(element.widget as Text).data}" on $background',
-      );
-    }
+
+  // Large title on the start side, under the mark.
+  final style = tester.renderObject<RenderParagraph>(title).text.style!;
+  final viewHeight =
+      tester.view.physicalSize.height / tester.view.devicePixelRatio;
+  final compact = viewHeight -
+          tester.view.viewInsets.bottom / tester.view.devicePixelRatio <
+      520;
+  expect(
+    style.fontSize,
+    compact ? AppTypography.sectionTitle.size : AppTypography.largeTitle.size,
+  );
+  expect(style.fontWeight, FontWeight.w700);
+  expect(tester.widget<Text>(title).textAlign, TextAlign.start);
+  final markRect = tester.getRect(find.byType(SiratiMark));
+  final titleRect = tester.getRect(title);
+  expect(markRect.bottom, lessThanOrEqualTo(titleRect.top));
+  if (rtl) {
+    expect(markRect.right, closeTo(titleRect.right, 0.5));
+  } else {
+    expect(markRect.left, closeTo(titleRect.left, 0.5));
   }
+
+  // Dark icons on the light page, light icons on the dark one.
+  final region = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+    find
+        .ancestor(
+          of: title,
+          matching: find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+        )
+        .first,
+  );
+  expect(
+    region.value.statusBarIconBrightness,
+    Theme.of(context).brightness == Brightness.dark
+        ? Brightness.light
+        : Brightness.dark,
+  );
+
+  expectAllTextAa('login header');
+
   final markPaint = tester.renderObject<RenderDecoratedBox>(find.descendant(
       of: find.byType(SiratiMark), matching: find.byType(DecoratedBox)));
   final decoration = markPaint.decoration as BoxDecoration;
@@ -89,7 +108,7 @@ void main() {
     );
   });
 
-  testWidgets('login centers the brand header and start-aligns fields',
+  testWidgets('login start-aligns the large title, subtitle and fields',
       (tester) async {
     await tester.pumpWidget(ProviderScope(
       child: MaterialApp(
@@ -106,10 +125,10 @@ void main() {
     expect(find.text('Sign in to continue'), findsOneWidget);
 
     final title = tester.widget<Text>(find.text('Welcome to Siratie'));
-    expect(title.textAlign, TextAlign.center);
+    expect(title.textAlign, TextAlign.start);
 
     final subtitle = tester.widget<Text>(find.text('Sign in to continue'));
-    expect(subtitle.textAlign, TextAlign.center);
+    expect(subtitle.textAlign, TextAlign.start);
 
     final emailLabel = tester.widget<Text>(find.text('Email'));
     expect(emailLabel.textAlign, TextAlign.start);

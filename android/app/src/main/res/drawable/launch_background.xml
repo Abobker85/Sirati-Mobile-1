@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Brand cream + centered mark — matches Flutter SplashScreen bootstrap. -->
+<!-- Page white + centered mark: matches the Flutter SplashScreen first frame. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_background" />
     <item>

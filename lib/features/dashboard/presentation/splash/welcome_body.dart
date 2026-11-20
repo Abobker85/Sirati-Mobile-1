@@ -7,7 +7,7 @@ import 'package:sirati/shared/widgets/submit_button.dart';
 
 /// Signed-out landing, as agreed in Salem's review (2026-10-24): logo, name
 /// and brand slogan, one value card, then the two account actions and the
-/// privacy link — on the same gradient hero as Login and Register.
+/// privacy link. Same large-title page as Login and Register.
 class WelcomeBody extends StatelessWidget {
   final VoidCallback onRegister;
   final VoidCallback onLogin;
@@ -58,9 +58,9 @@ class WelcomeBody extends StatelessWidget {
       subtitle: slogan(l10n),
       markKey: logoKey,
       markHeroTag: 'sirati-brand-mark',
-      breathing: true,
       subtitleKey: sloganKey,
       cardKey: valueCardKey,
+      boxedCard: true,
       card: MotionReveal(
         order: 1,
         child: _ValueCard(

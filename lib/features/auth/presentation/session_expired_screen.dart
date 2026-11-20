@@ -6,8 +6,8 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
-import 'package:sirati/shared/widgets/components/brand_gradient_button.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/submit_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Shown once when the server rejects the session (HTTP 401), before sign-in.
@@ -97,7 +97,7 @@ class SessionExpiredScreen extends StatelessWidget {
                                 textAlign: TextAlign.center,
                                 style: AppTypography.of(
                                   context,
-                                  AppTypography.displayMd,
+                                  AppTypography.largeTitle,
                                   color: c.textPrimary,
                                 ),
                               ),
@@ -128,7 +128,7 @@ class SessionExpiredScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            BrandGradientButton(
+                            SubmitButton(
                               label: l10n.authSessionExpiredSignIn,
                               icon: Icons.login_rounded,
                               onPressed: () => _signIn(context),
@@ -197,9 +197,8 @@ class _Pill extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: c.surfaceLow,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: c.border),
+        color: c.cardFill,
+        borderRadius: AppRadius.capsuleAll,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -237,8 +236,7 @@ class _Chip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: c.tealLight,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: c.teal.withValues(alpha: 0.3)),
+        borderRadius: AppRadius.capsuleAll,
       ),
       child: Text(
         label,
@@ -264,10 +262,8 @@ class _ReassuranceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.border),
-        boxShadow: c.softShadow,
+        color: c.cardFill,
+        borderRadius: AppRadius.cardAll,
       ),
       child: Row(
         children: [
@@ -326,14 +322,7 @@ class _ShieldIllustration extends StatelessWidget {
             Icon(
               Icons.shield_rounded,
               size: 140,
-              color: c.surface,
-              shadows: c.softShadow
-                  .map((s) => Shadow(
-                        color: s.color,
-                        blurRadius: s.blurRadius,
-                        offset: s.offset,
-                      ))
-                  .toList(),
+              color: c.pageBackground,
             ),
             const _CvPage(),
             PositionedDirectional(
@@ -359,7 +348,7 @@ class _ShieldIllustration extends StatelessWidget {
               top: 92,
               child: _Badge(
                 size: 34,
-                color: c.surface,
+                color: c.cardFill,
                 child: Icon(
                   Icons.check_rounded,
                   size: 20,
@@ -394,7 +383,7 @@ class _CvPage extends StatelessWidget {
       height: 58,
       padding: const EdgeInsets.all(AppSpacing.xs),
       decoration: BoxDecoration(
-        color: c.surfaceLow,
+        color: c.cardFill,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: c.borderStrong),
       ),
@@ -434,8 +423,7 @@ class _Badge extends StatelessWidget {
         shape: BoxShape.circle,
         color: color,
         gradient: gradient == null ? null : LinearGradient(colors: gradient!),
-        border: Border.all(color: c.surface, width: 3),
-        boxShadow: c.softShadow,
+        border: Border.all(color: c.pageBackground, width: 3),
       ),
       child: Center(child: child),
     );

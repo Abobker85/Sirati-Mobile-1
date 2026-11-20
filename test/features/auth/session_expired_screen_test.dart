@@ -4,7 +4,7 @@ import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/features/auth/presentation/session_expired_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/components/brand_gradient_button.dart';
+import 'package:sirati/shared/widgets/submit_button.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -94,7 +94,7 @@ void main() {
 
           // Content never runs wider than the readable column, and the call
           // to action stays reachable by scrolling on short screens.
-          final button = find.byType(BrandGradientButton);
+          final button = find.byType(SubmitButton);
           expect(tester.getSize(button).width, lessThanOrEqualTo(440));
           await tester.ensureVisible(button);
           await tester.pumpAndSettle();
@@ -107,7 +107,7 @@ void main() {
   testWidgets('sign in again clears the stack and opens sign-in',
       (tester) async {
     await _pump(tester, english: true, dark: false);
-    await tester.tap(find.byType(BrandGradientButton));
+    await tester.tap(find.byType(SubmitButton));
     await tester.pumpAndSettle();
     expect(find.byType(SessionExpiredScreen), findsNothing);
     expect(find.text('route ${AppRoutes.login}'), findsOneWidget);

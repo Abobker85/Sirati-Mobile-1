@@ -271,7 +271,8 @@ void main() {
           find.text('Enter your email and we will send a 6-digit reset code.'));
       final emailLabel = tester.widget<Text>(find.text('Email Address'));
 
-      expect(instructions.style?.color, SiratiColors.dark.textPrimary);
+      // The instructions are the large title's subtitle (iOS 26 restyle).
+      expect(instructions.style?.color, SiratiColors.dark.textSecondary);
       expect(emailLabel.style?.color, SiratiColors.dark.textSecondary);
 
       assertDarkAaContrast(
