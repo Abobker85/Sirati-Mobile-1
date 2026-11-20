@@ -143,6 +143,20 @@ void main() {
           await tester.pumpAndSettle();
         }
         expect(tester.getRect(last).bottom, lessThanOrEqualTo(568));
+        // It is the sheet that moved, and no list drifted past its end.
+        final glass = find.byType(GlassSurface).last;
+        final sheetScroll = tester.state<ScrollableState>(
+          find.descendant(of: glass, matching: find.byType(Scrollable)).first,
+        );
+        expect(sheetScroll.position.pixels, greaterThan(0));
+        for (final s in tester.stateList<ScrollableState>(
+          find.descendant(of: glass, matching: find.byType(Scrollable)),
+        )) {
+          expect(
+              s.position.pixels,
+              inInclusiveRange(
+                  s.position.minScrollExtent, s.position.maxScrollExtent));
+        }
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         await tester.tap(last);
