@@ -9,8 +9,10 @@ import 'package:sirati/shared/widgets/motion.dart';
 /// when nested; otherwise a local controller. Sweep direction follows
 /// [Directionality] (start → end). Reduced motion → static bone.
 ///
-/// Bones are the grey card fill (`cardFill`) of the iOS 26 restyle; the
-/// shimmer sweeps its pressed shade, so it never leaves the grey family.
+/// Bones are the page's control fill ([PageSurface.fillOf]: `cardFill` on a
+/// plain page, `groupedCard` on a grouped page, where `cardFill` would match
+/// the page), and the shimmer sweeps that fill's pressed shade, so it never
+/// leaves the grey family.
 class AppSkeleton extends StatefulWidget {
   final double? width;
   final double height;
@@ -25,12 +27,12 @@ class AppSkeleton extends StatefulWidget {
 
   /// Shimmer gradient stops: resting fill at the edges, pressed shade at the
   /// travelling highlight.
-  static List<Color> shimmerColors(SiratiColors c) => [
-        c.cardFill,
-        c.cardFill,
-        c.cardFillPressed,
-        c.cardFill,
-        c.cardFill,
+  static List<Color> shimmerColors(SiratiColors c, Color fill) => [
+        fill,
+        fill,
+        c.pressed(fill),
+        fill,
+        fill,
       ];
 
   @override
@@ -45,13 +47,15 @@ class _AppSkeletonState extends State<AppSkeleton>
   AppSkeletonScopeState? _scope;
   bool _reduce = false;
   List<Color>? _shimmerColors;
+  Color? _fill;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _scope = AppSkeletonScope.maybeOf(context);
     _reduce = MotionSettings.reduce(context);
-    _shimmerColors = AppSkeleton.shimmerColors(context.sirati);
+    _fill = PageSurface.fillOf(context);
+    _shimmerColors = AppSkeleton.shimmerColors(context.sirati, _fill);
 
     if (_reduce || _scope != null) {
       _local?.stop();
@@ -99,13 +103,14 @@ class _AppSkeletonState extends State<AppSkeleton>
 
   Widget _bone({double? shimmerCenter}) {
     final c = context.sirati;
-    final colors = _shimmerColors ?? AppSkeleton.shimmerColors(c);
+    final fill = _fill ?? PageSurface.fillOf(context);
+    final colors = _shimmerColors ?? AppSkeleton.shimmerColors(c, fill);
     return Container(
       width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(widget.radius),
-        color: shimmerCenter == null ? c.cardFill : null,
+        color: shimmerCenter == null ? fill : null,
         gradient: shimmerCenter == null
             ? null
             : LinearGradient(
