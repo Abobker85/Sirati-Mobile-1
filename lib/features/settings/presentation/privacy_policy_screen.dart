@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
@@ -12,7 +13,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
+    // iOS 26 grouped page: each policy part is a grouped section.
+    return GroupedSurface(
+        child: Scaffold(
       appBar: AppBar(
         title: Text(l10n.settingsPrivacyTitle),
         actions: const [
@@ -47,7 +50,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 
@@ -59,39 +62,22 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: context.sirati.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.sirati.border.withValues(alpha: .7)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    // The header is announced as a heading by AppListSection.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+      child: AppListSection(
+        header: title,
         children: [
-          Semantics(
-            header: true,
+          Padding(
+            padding: const EdgeInsets.all(AppListSection.rowPadding),
             child: Text(
-              title,
+              body,
               textAlign: TextAlign.start,
               style: TextStyle(
-                fontSize: 18,
-                height: 1.3,
-                fontWeight: FontWeight.w700,
-                // 18px bold is below the large-text size: needs 4.5:1.
-                color: context.sirati.primaryInk,
+                fontSize: 15,
+                height: 1.7,
+                color: context.sirati.textPrimary,
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            body,
-            textAlign: TextAlign.start,
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.7,
-              color: context.sirati.textPrimary,
             ),
           ),
         ],
