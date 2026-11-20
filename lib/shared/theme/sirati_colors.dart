@@ -52,6 +52,11 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     required this.inkSurface,
     required this.onWhitePill,
     required this.softShadow,
+    required this.pageBackground,
+    required this.groupedBackground,
+    required this.cardFill,
+    required this.groupedCard,
+    required this.separator,
   });
 
   final Color primary;
@@ -117,6 +122,48 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   /// Dark ink for text and icons on white pills in either theme.
   final Color onWhitePill;
   final List<BoxShadow> softShadow;
+
+  // ── iOS 26 surfaces (restyle ticket 01) ──
+  // Two page patterns: a plain page ([pageBackground]) whose cards are filled
+  // with [cardFill], and a grouped page ([groupedBackground]) whose inset
+  // lists sit on [groupedCard]. Every text ink holds AA on all four, and on
+  // their pressed fills (checked in AppContrast.pairs).
+
+  /// Plain page background (light: white).
+  final Color pageBackground;
+
+  /// Grouped page background for detail pages, settings and sheets.
+  final Color groupedBackground;
+
+  /// Unshadowed card fill on [pageBackground].
+  final Color cardFill;
+
+  /// Inset-grouped list card on [groupedBackground].
+  final Color groupedCard;
+
+  /// Hairline row separator. Decorative: not a control boundary, so it has
+  /// no contrast floor (use [outline] for boundaries).
+  final Color separator;
+
+  /// Share of the press overlay laid on a fill: black in light, white in dark.
+  ///
+  /// The design asks for ~14% black; that drops [textHint] and [primaryInk]
+  /// under 4.5:1 on [cardFill]. 10% / 6% are the largest overlays that keep
+  /// every ink at AA, so contrast wins over the sampled value.
+  static const pressedOverlayLight = .10;
+  static const pressedOverlayDark = .06;
+
+  /// [fill] as it looks while pressed.
+  Color pressed(Color fill) {
+    final light = fill.computeLuminance() > .5;
+    final overlay = light
+        ? const Color(0xFF000000).withValues(alpha: pressedOverlayLight)
+        : const Color(0xFFFFFFFF).withValues(alpha: pressedOverlayDark);
+    return Color.alphaBlend(overlay, fill);
+  }
+
+  /// [cardFill] while pressed.
+  Color get cardFillPressed => pressed(cardFill);
 
   /// Semantic aliases (SIRATI-17). Prefer these names in new widgets.
   Color get onSurface => textPrimary;
@@ -225,6 +272,11 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     softShadow: [
       BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 4)),
     ],
+    pageBackground: Color(0xFFFFFFFF),
+    groupedBackground: Color(0xFFF2F2F7),
+    cardFill: Color(0xFFF2F2F7),
+    groupedCard: Color(0xFFFFFFFF),
+    separator: Color(0xFFE5E5EA),
   );
 
   /// Dark palette — teal brand, WCAG-minded text/surface pairs.
@@ -277,6 +329,13 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     softShadow: [
       BoxShadow(color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 2)),
     ],
+    // Derived: the grouped page sits darker than the plain page, cards sit
+    // lighter than both. No pure black (design rule).
+    pageBackground: Color(0xFF121614),
+    groupedBackground: Color(0xFF0C0F0E),
+    cardFill: Color(0xFF1F2522),
+    groupedCard: Color(0xFF1A201D),
+    separator: Color(0xFF2E3632),
   );
 
   @override
@@ -327,6 +386,11 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     Color? inkSurface,
     Color? onWhitePill,
     List<BoxShadow>? softShadow,
+    Color? pageBackground,
+    Color? groupedBackground,
+    Color? cardFill,
+    Color? groupedCard,
+    Color? separator,
   }) {
     return SiratiColors(
       primary: primary ?? this.primary,
@@ -375,6 +439,11 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       inkSurface: inkSurface ?? this.inkSurface,
       onWhitePill: onWhitePill ?? this.onWhitePill,
       softShadow: softShadow ?? this.softShadow,
+      pageBackground: pageBackground ?? this.pageBackground,
+      groupedBackground: groupedBackground ?? this.groupedBackground,
+      cardFill: cardFill ?? this.cardFill,
+      groupedCard: groupedCard ?? this.groupedCard,
+      separator: separator ?? this.separator,
     );
   }
 
@@ -429,6 +498,11 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
       inkSurface: l(inkSurface, other.inkSurface),
       onWhitePill: l(onWhitePill, other.onWhitePill),
       softShadow: t < 0.5 ? softShadow : other.softShadow,
+      pageBackground: l(pageBackground, other.pageBackground),
+      groupedBackground: l(groupedBackground, other.groupedBackground),
+      cardFill: l(cardFill, other.cardFill),
+      groupedCard: l(groupedCard, other.groupedCard),
+      separator: l(separator, other.separator),
     );
   }
 }

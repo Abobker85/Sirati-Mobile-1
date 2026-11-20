@@ -323,10 +323,57 @@ class AppTheme {
         color: c.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.xlAll,
+          borderRadius: AppRadius.cardAll,
           side: BorderSide.none,
         ),
         margin: EdgeInsets.zero,
+      ),
+      // Inset-grouped rows: 17pt name, 13pt grey caption, ~54pt row.
+      listTileTheme: ListTileThemeData(
+        titleTextStyle: AppTypography.bodyXl.resolve(
+          arabic: arabic,
+          color: c.textPrimary,
+        ),
+        subtitleTextStyle: AppTypography.caption.resolve(
+          arabic: arabic,
+          color: c.textSecondary,
+        ),
+        leadingAndTrailingTextStyle: AppTypography.bodyXl.resolve(
+          arabic: arabic,
+          color: c.textSecondary,
+        ),
+        iconColor: c.textSecondary,
+        textColor: c.textPrimary,
+        selectedColor: c.primaryInk,
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        minTileHeight: 54,
+      ),
+      // iOS-style switch in Sirati teal. The off track uses [outline] so the
+      // control keeps 3:1 against any row fill (an iOS grey track does not).
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? c.onPrimary.withValues(alpha: .6)
+              : c.onPrimary,
+        ),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          final track =
+              states.contains(WidgetState.selected) ? c.primary : c.outline;
+          return states.contains(WidgetState.disabled)
+              ? track.withValues(alpha: .38)
+              : track;
+        }),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+      ),
+      // Sheets: large top corners and no grabber, on the grouped background.
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: c.groupedBackground,
+        modalBackgroundColor: c.groupedBackground,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: false,
+        elevation: AppElevation.sheet,
+        modalElevation: AppElevation.sheet,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.sheetTop),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: c.primaryLight,
@@ -338,7 +385,9 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide.none,
       ),
-      dividerTheme: DividerThemeData(color: c.border, thickness: 1, space: 0),
+      // Hairline separators: thickness 0 draws exactly one device pixel.
+      dividerTheme:
+          DividerThemeData(color: c.separator, thickness: 0, space: 0),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: c.surface,
         selectedItemColor: c.primaryInk,
@@ -360,8 +409,20 @@ class AppTheme {
         linearTrackColor: c.border,
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: c.surface,
+        backgroundColor: c.groupedCard,
         surfaceTintColor: Colors.transparent,
+        elevation: AppElevation.dialog,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sheet),
+        ),
+        titleTextStyle: AppTypography.headline.resolve(
+          arabic: arabic,
+          color: c.textPrimary,
+        ),
+        contentTextStyle: AppTypography.bodyMd.resolve(
+          arabic: arabic,
+          color: c.textSecondary,
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: isDark ? c.surfaceHigh : c.textPrimary,

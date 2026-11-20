@@ -130,6 +130,43 @@ class AppTypography {
     heightArabic: 1.4,
   );
 
+  // ── iOS 26 scale (restyle ticket 01): 34 / 22 / 17 / 13 ──
+
+  /// Page and large-sheet titles. w700: the family has no Heavy (800).
+  static const largeTitle = AppTypeToken(
+    size: 34,
+    weight: FontWeight.w700,
+    heightLatin: 1.2,
+    heightArabic: 1.4,
+  );
+
+  /// Section headers on a page.
+  static const sectionTitle = AppTypeToken(
+    size: 22,
+    weight: FontWeight.w700,
+    heightLatin: 1.27,
+    heightArabic: 1.48,
+  );
+
+  /// Emphasised 17pt: row names, dialog titles, collapsed bar titles.
+  static const headline = AppTypeToken(
+    size: 17,
+    weight: FontWeight.w600,
+    heightLatin: 1.3,
+    heightArabic: 1.52,
+  );
+
+  /// Body 17pt: list rows and reading text in the restyled screens.
+  static const bodyXl = AppTypeToken(
+    size: 17,
+    weight: FontWeight.w400,
+    heightLatin: 1.35,
+    heightArabic: 1.6,
+  );
+
+  /// Grey captions under row names and help text. Same metrics as [bodySm].
+  static const caption = bodySm;
+
   static const all = <AppTypeToken>[
     displayLg,
     displayMd,
@@ -144,6 +181,10 @@ class AppTypography {
     labelLg,
     labelMd,
     labelSm,
+    largeTitle,
+    sectionTitle,
+    headline,
+    bodyXl,
   ];
 
   static bool isArabic(BuildContext context) {
@@ -194,10 +235,21 @@ class AppRadius {
   static const xl = 18.0;
   static const pill = 24.0;
 
+  /// iOS 26 restyle (ticket 01): content cards, sheet top corners and fully
+  /// rounded capsule buttons. [capsule] is large enough to round any control
+  /// to a stadium; prefer [StadiumBorder] where a shape is taken.
+  static const card = 18.0;
+  static const sheet = 38.0;
+  static const capsule = 999.0;
+
   static BorderRadius get smAll => BorderRadius.circular(sm);
   static BorderRadius get mdAll => BorderRadius.circular(md);
   static BorderRadius get lgAll => BorderRadius.circular(lg);
   static BorderRadius get xlAll => BorderRadius.circular(xl);
+  static BorderRadius get cardAll => BorderRadius.circular(card);
+  static BorderRadius get capsuleAll => BorderRadius.circular(capsule);
+  static BorderRadius get sheetTop =>
+      const BorderRadius.vertical(top: Radius.circular(sheet));
 }
 
 /// Minimum accessible tap target (WCAG / Material).

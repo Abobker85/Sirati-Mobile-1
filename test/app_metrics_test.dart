@@ -14,6 +14,8 @@ void main() {
     expect(AppRadius.md, 14);
     expect(AppRadius.lg, 16);
     expect(AppRadius.xl, 18);
+    expect(AppRadius.card, 18);
+    expect(AppRadius.sheet, 38);
     expect(AppElevation.none, 0);
     expect(AppElevation.card, 0);
     expect(AppElevation.raised, 3);
@@ -61,8 +63,7 @@ void main() {
   /// The list may only shrink: adding a violation to a clean file fails, adding
   /// one to a debt file fails, and clearing a debt file fails until its entry is
   /// deleted here. Do not add new entries.
-  const legacyColorDebt = <String, int>{
-  };
+  const legacyColorDebt = <String, int>{};
 
   test(
       'no raw Color literals, Colors.*, or AppColors.* outside the theme layer',
