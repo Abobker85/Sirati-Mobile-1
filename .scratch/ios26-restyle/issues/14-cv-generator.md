@@ -22,11 +22,18 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 
 ## Outcome (2026-11-20)
 
-- **Commits:** `a7ea76e` (code and tests), plus the commit that closes this ticket.
+- **Commits** (rebased onto `feat/ios26-restyle` 1e599ba on 2026-11-21): `1ea1bd1` (code and tests), `f6af9d7` (ticket close), `0b83615` (fixes from checker2's review), plus the commit that updates this Outcome.
+- **Review round 1 (checker2, 2026-11-21): three overflows at 320×568, all fixed in `0b83615`:**
+  1. **Keyboard closed, text scale 1.5–2.0:** the wizard body overflowed (EN 14 px at 1.5, AR 156 / EN 171 px at 2.0). This was a regression from the header's dot row. Fixes:
+     - The body is now a `CustomMultiChildLayout` (`_WizardLayout`). The footer sits at the bottom and the header gets whatever height is left.
+     - The header's dot row is wrapped in `_FitOrHide`. It shows only when it fits and still leaves `WizardHeader.minContentHeight` (160 px) for the step. Otherwise it takes no room and is not painted, hit-tested or announced.
+  2. **Header status row at text scale 2.0:** it overflowed by 19–21 px on every step. The count Text is now `Flexible`, and both status texts drop to one line while typing.
+  3. **One long selected skill:** it overflowed the chip Row (`skill_chips_selector.dart`, then line 285). The chip label is now `Flexible`, so it wraps inside the chip.
 - **Decisions:**
+  - **Header and footer text is capped at text scale 1.5** (`WizardHeader.maxChromeTextScale`, via `MediaQuery.withClampedTextScaling`), as iOS bars are. The step's own content still scales fully, and the announced label carries the full text. Without the cap, at 2.0 with the keyboard open the header and footer alone took the whole 252 px left above the keyboard.
   - **Banner and sections use the grouped card fill, not grey.** That fill is white in light and `#1A201D` in dark. On the grouped page, grey is the page itself (`#F2F2F7`), so a grey card would vanish. The ticket's "grey card" is read as a neutral, borderless card.
   - **The step dots stay,** because jump-back navigation needs them. While the keyboard is open the dots fold away and the title shrinks to one line with an ellipsis. The announced label keeps the full text.
-  - **The footer is the last child of the Column, not an overlay.** It is a non-elevated `GlassSurface` with zero radius. An overlay would need measured list padding, or `validateAndReveal` would park fields under the bar.
+  - **The footer is laid out below the step, not as an overlay.** It is a non-elevated `GlassSurface` with zero radius. An overlay would need measured list padding, or `validateAndReveal` would park fields under the bar. Since `0b83615` the layout is done by `_WizardLayout`, not a Column.
 - **Files:**
   - `lib/features/cv_builder/presentation/cv_generator_screen.dart`:
     - Wraps the screen in `GroupedSurface`.
@@ -80,16 +87,20 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
     - **Behaviour:** autosave, Start fresh and restore still work.
     - **Small phone (320×568, text scale 1.3), keyboard open:** no overflow at any scroll stop on any step. The footer stays reachable and advances, or validates an empty form.
     - **Small phone, keyboard closed:** the dots come back and nothing overflows.
+    - **General case (added after review):** at 320×568 the test covers text scales 1.0, 1.3, 1.5 and 2.0, keyboard open and closed, AR and EN, all four steps. Each step is scrolled end to end with no overflow, and the footer's primary button stays on screen and takes taps. At ×1.3 with the keyboard closed, the four dot icons are painted and hit-testable.
   - `test/features/cv_builder/cv_generator_parts_restyle_test.dart` (new):
     - The exit dialogs are AA and return each choice.
     - On plain and grouped pages, the picker's fill is `PageSurface.fillOf`, its border is a `FilledFieldBorder` with no side, and its height equals an `AppTextFormField`'s.
     - The AI result card, with all sections, is borderless and AA.
   - `test/features/cv_builder/skill_chips_layout_contrast_test.dart` (new):
-    - Matrix: 320/390 px wide × text scale 1.0/1.3 × AR/EN × light/dark × plain/grouped, with 120 selected skills plus suggestions.
+    - Matrix: 320/390 px wide × text scale 1.0/1.3/2.0 × AR/EN × light/dark × plain/grouped. Skill sets: 120 selected skills, one long English skill, one long Arabic skill, and one unbroken 136-character word, each plus suggestions.
     - Asserts no overflow and AA on every selected and suggested chip label.
     - Asserts a borderless card and capsule chips with no side.
     - Asserts an add-skill field with no resting outline and a fill distinct from the card.
-- **Tests:** full `flutter test`: 3373 passed, 1 skipped (pre-existing), 0 failed. `flutter analyze`: no issues. No existing test was edited or loosened. No schema change, ARB change or new dependency.
+  - `test/features/cv_builder/cv_generator_scale_regression_test.dart` (new): checker2's review test, extended to every step. At 320×568, text scale 1.5/2.0, keyboard open and closed, AR and EN, no Flutter error is reported on any step.
+  - `cv_generator_screen.dart`, `wizard_header.dart`, `wizard_footer.dart`, `skill_chips_selector.dart`: changed again in `0b83615` for the review fixes listed above.
+- **Tests (after review, on 1e599ba):** full `flutter test`: 3839 passed, 1 skipped (pre-existing), 0 failed. `flutter analyze`: no issues.
+- **Tests (first round):** full `flutter test`: 3373 passed, 1 skipped (pre-existing), 0 failed. `flutter analyze`: no issues. No existing test was edited or loosened. No schema change, ARB change or new dependency.
 - **Not covered by a test:** none of the criteria.
 - **Durable learnings for `PROJECT_MEMORY.md`** (outside this ticket's files; main to add):
   - A `Scaffold` body's `MediaQuery` has the keyboard inset removed. Read `viewInsets` above the Scaffold and pass it down.
