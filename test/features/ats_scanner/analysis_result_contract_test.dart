@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -156,7 +157,7 @@ void main() {
       );
       expect(find.text(en.atsHiddenMore(5)), findsOneWidget);
 
-      await tester.tap(find.byType(Tab).at(1));
+      await tester.tap(find.descendant(of: find.byType(AppSegmentedTabBar), matching: find.byType(Text)).at(1));
       await tester.pump();
       await tester.pump(const Duration(seconds: 2));
       for (final n in [3, 4, 6]) {
@@ -170,7 +171,7 @@ void main() {
         ..['strengths'] = const []
         ..['weaknesses'] = const [];
       await _pump(tester, CvAnalysis.fromJson(json));
-      await tester.tap(find.byType(Tab).at(1));
+      await tester.tap(find.descendant(of: find.byType(AppSegmentedTabBar), matching: find.byType(Text)).at(1));
       await tester.pump();
       await tester.pump(const Duration(seconds: 2));
       expect(find.text(en.atsHiddenMore(2)), findsOneWidget);
@@ -186,7 +187,7 @@ void main() {
         )),
       );
       for (final tab in [0, 1]) {
-        await tester.tap(find.byType(Tab).at(tab));
+        await tester.tap(find.descendant(of: find.byType(AppSegmentedTabBar), matching: find.byType(Text)).at(tab));
         await tester.pump();
         await tester.pump(const Duration(seconds: 2));
         for (var n = 0; n <= 10; n++) {

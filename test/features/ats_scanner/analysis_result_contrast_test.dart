@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/utils/app_locale.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result/recommendations_tab.dart';
+import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_tab.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -64,11 +67,26 @@ void main() {
         await tester.pumpAndSettle();
         expectAllTextAa('analysis result $mode $score $source');
 
-        // Every tab, not just the first.
-        final tabs = find.byType(Tab);
-        for (var i = 1; i < tabs.evaluate().length; i++) {
-          await tester.tap(tabs.at(i));
+        // Every tab, not just the first: the segments of the shared
+        // segmented bar, tapped by their labels.
+        final l = AppLocalizations.of(tester.element(find.byType(ScoreTab)));
+        final labels = [l.atsTabScore, l.atsTabRecommendations];
+        for (final label in labels) {
+          expect(
+            find.descendant(
+              of: find.byType(AppSegmentedTabBar),
+              matching: find.text(label),
+            ),
+            findsOneWidget,
+          );
+        }
+        for (var i = 1; i < labels.length; i++) {
+          await tester.tap(find.descendant(
+            of: find.byType(AppSegmentedTabBar),
+            matching: find.text(labels[i]),
+          ));
           await tester.pumpAndSettle();
+          expect(find.byType(RecommendationsTab).hitTestable(), findsOneWidget);
           expectAllTextAa('analysis result $mode $score $source tab $i');
         }
       });

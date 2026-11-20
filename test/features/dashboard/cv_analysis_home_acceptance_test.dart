@@ -5,6 +5,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
@@ -308,7 +309,7 @@ void main() {
               ),
             );
             await tester.pumpAndSettle();
-            expect(find.byType(Tab), findsNWidgets(2));
+            expect(_segments, findsNWidgets(2));
             await checkScroll(tester, '$label score=$score');
             final keywordSummary = find.byKey(
               const ValueKey('ats-result-keyword-summary'),
@@ -329,8 +330,8 @@ void main() {
                 analysis(score).keywordsMissing.length,
               ),
             );
-            await tester.ensureVisible(find.byType(Tab).last);
-            await tester.tap(find.byType(Tab).last);
+            await tester.ensureVisible(_segments.last);
+            await tester.tap(_segments.last);
             await tester.pumpAndSettle();
             await checkScroll(tester, '$label recommendations=$score');
             expect(find.byType(Checkbox), findsNothing);
@@ -715,8 +716,7 @@ void expectRenderedControls(WidgetTester tester, String label) {
         (w) =>
             w is ButtonStyleButton ||
             w is HomePressableCard ||
-            w is ListTile && w.onTap != null ||
-            w is Tab,
+            w is ListTile && w.onTap != null,
       )
       .evaluate()) {
     final box = element.findRenderObject();
@@ -731,6 +731,16 @@ void expectRenderedControls(WidgetTester tester, String label) {
       greaterThanOrEqualTo(48),
       reason: '$label height ${element.widget}',
     );
+  }
+  // Segmented tabs: the whole track is the tap target row; every segment
+  // gets an equal share of it.
+  for (final element in find.byType(SegmentedTrack).evaluate()) {
+    final track = element.widget as SegmentedTrack;
+    final box = element.findRenderObject()! as RenderBox;
+    expect(box.size.height, greaterThanOrEqualTo(48),
+        reason: '$label segmented track height');
+    expect(box.size.width / track.labels.length, greaterThanOrEqualTo(48),
+        reason: '$label segment width');
   }
 }
 
@@ -1358,3 +1368,8 @@ void additionalTests() {
     },
   );
 }
+
+final _segments = find.descendant(
+  of: find.byType(AppSegmentedTabBar),
+  matching: find.byType(Text),
+);

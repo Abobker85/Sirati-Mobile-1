@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/core/errors/app_crash_view.dart';
 import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/core/network/api_config.dart';
@@ -459,7 +460,7 @@ final appScreens = <AppScreen>[
       'Analysis result recommendations (hidden items)', (tester, h) async {
     await h.pumpApp(tester,
         AnalysisResultScreen(analysis: _sampleAnalysis(h, locked: true)));
-    await tester.tap(find.byType(Tab).at(1));
+    await tester.tap(find.descendant(of: find.byType(AppSegmentedTabBar), matching: find.byType(Text)).at(1));
     await settleScreen(tester);
   }),
   AppScreen('job_match', 'Job match', (tester, h) {
