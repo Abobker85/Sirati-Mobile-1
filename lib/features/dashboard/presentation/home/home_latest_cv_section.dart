@@ -92,11 +92,7 @@ class HomeLatestCvSection extends ConsumerWidget {
             Expanded(
               child: Text(
                 l.homeMyCvTitle,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: c.textPrimary,
-                ),
+                style: AppTypography.of(context, AppTypography.sectionTitle),
               ),
             ),
             if (cv != null)
@@ -153,10 +149,10 @@ class _Frame extends StatelessWidget {
     final c = context.sirati;
     return Container(
       padding: const EdgeInsets.all(16),
+      // A grey, shadowless Home card.
       decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: c.border),
+        color: c.cardFill,
+        borderRadius: AppRadius.cardAll,
       ),
       child: child,
     );
@@ -205,7 +201,7 @@ class _CvCard extends ConsumerWidget {
     return Builder(
       builder: (cardContext) {
         Route<T> routeFor<T>(Widget screen) {
-          final origin = ExpandOrigin.of(cardContext, radius: 22);
+          final origin = ExpandOrigin.of(cardContext, radius: AppRadius.card);
           return origin != null
               ? ExpandPageRoute<T>(origin: origin, builder: (_) => screen)
               : MaterialPageRoute<T>(builder: (_) => screen);
@@ -274,8 +270,10 @@ class _CvCard extends ConsumerWidget {
                       key: HomeLatestCvSection.editKey,
                       style: buttonStyle,
                       onPressed: () async {
-                        final updated = await Navigator.of(context).push<GeneratedCv>(
-                          routeFor<GeneratedCv>(CvGeneratorScreen(initialCv: cv)),
+                        final updated =
+                            await Navigator.of(context).push<GeneratedCv>(
+                          routeFor<GeneratedCv>(
+                              CvGeneratorScreen(initialCv: cv)),
                         );
                         // Saved changes show on Home at once.
                         if (updated != null) {

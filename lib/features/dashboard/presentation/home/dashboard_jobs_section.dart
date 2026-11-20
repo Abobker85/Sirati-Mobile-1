@@ -48,11 +48,7 @@ class DashboardJobsSection extends ConsumerWidget {
             Expanded(
               child: Text(
                 l.homeJobsTitle,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: c.textPrimary,
-                ),
+                style: AppTypography.of(context, AppTypography.sectionTitle),
               ),
             ),
             HomeViewAllButton(key: viewAllKey, onPressed: onViewAll),
