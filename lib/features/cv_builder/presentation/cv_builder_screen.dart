@@ -54,6 +54,13 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
   /// route underneath this one.
   bool _leaving = false;
 
+  static const _tabBarPadding = EdgeInsets.fromLTRB(
+    AppSpacing.xs,
+    AppSpacing.xxs,
+    AppSpacing.xs,
+    AppSpacing.xs,
+  );
+
   static const _template = CvTemplate(
     id: 1,
     slug: 'ats-classic-professional',
@@ -323,6 +330,12 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
         builder: (context, _) {
           final doc = controller.document;
           final tabs = _ensureTabController();
+          final tabLabels = [
+            AppSegmentedTab(label: l10n.tabPersonal),
+            AppSegmentedTab(label: l10n.tabExperience),
+            AppSegmentedTab(label: l10n.tabSkills),
+            AppSegmentedTab(label: l10n.tabOrder),
+          ];
           // iOS 26 grouped form page; the bar stays white so the segmented
           // track keeps its grey-on-white look.
           return GroupedSurface(
@@ -373,18 +386,22 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                   onPressed: () => unawaited(_saveNow()),
                 ),
               ],
-              // Labels only: four segments are ~80dp each on a phone, and
-              // Arabic labels need all of it.
+              // Labels only, content-sized segments and tighter padding: on a
+              // 320dp phone at large text, long labels widen their segment or
+              // wrap, never cut off.
               bottom: AppSegmentedTabBar(
                 key: CvBuilderScreen.tabBarKey,
                 controller: tabs,
                 textScaler: MediaQuery.textScalerOf(context),
-                tabs: [
-                  AppSegmentedTab(label: l10n.tabPersonal),
-                  AppSegmentedTab(label: l10n.tabExperience),
-                  AppSegmentedTab(label: l10n.tabSkills),
-                  AppSegmentedTab(label: l10n.tabOrder),
-                ],
+                tabs: tabLabels,
+                padding: _tabBarPadding,
+                labelPadding: AppSpacing.xs,
+                height: AppSegmentedTabBar.heightFor(
+                  context,
+                  tabs: tabLabels,
+                  padding: _tabBarPadding,
+                  labelPadding: AppSpacing.xs,
+                ),
               ),
             ),
             body: LayoutBuilder(
