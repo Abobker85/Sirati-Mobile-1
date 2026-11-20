@@ -76,14 +76,15 @@ class DashboardJobsSection extends ConsumerWidget {
               // A job that is new since the last visit glints once.
               child: FreshGlint(
                 id: 'job:${item.id}',
-                radius: 18,
+                radius: AppRadius.card,
                 child: Builder(
                   builder: (cardContext) => JobNewsCard(
                     item: item,
                     english: english,
                     compact: true,
                     onTap: () {
-                      final origin = ExpandOrigin.of(cardContext, radius: 18);
+                      final origin =
+                          ExpandOrigin.of(cardContext, radius: AppRadius.card);
                       unawaited(
                         Navigator.of(context).push(
                           origin != null

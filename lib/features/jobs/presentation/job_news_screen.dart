@@ -325,7 +325,7 @@ class _JobNewsList extends ConsumerWidget {
                                   featured,
                                   origin: ExpandOrigin.of(
                                     cardContext,
-                                    radius: 24,
+                                    radius: AppRadius.card,
                                   ),
                                 ),
                               ),
@@ -375,7 +375,7 @@ class _JobNewsList extends ConsumerWidget {
                     order: index + 1,
                     child: FreshGlint(
                       id: 'job:${item.id}',
-                      radius: 18,
+                      radius: AppRadius.card,
                       child: Builder(
                         builder: (cardContext) => JobNewsCard(
                           item: item,
@@ -383,7 +383,8 @@ class _JobNewsList extends ConsumerWidget {
                           now: now,
                           onTap: () => onOpenJob(
                             item,
-                            origin: ExpandOrigin.of(cardContext, radius: 18),
+                            origin: ExpandOrigin.of(cardContext,
+                                radius: AppRadius.card),
                           ),
                         ),
                       ),
