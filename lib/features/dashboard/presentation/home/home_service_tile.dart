@@ -32,7 +32,6 @@ class HomeServiceTile extends StatelessWidget {
     return HomePressableCard(
       inkKey: inkKey,
       onTap: comingSoon ? null : onTap,
-      color: comingSoon ? c.surfaceLow : null,
       semanticsLabel: comingSoon ? l.homeServiceSoonA11y(label) : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),

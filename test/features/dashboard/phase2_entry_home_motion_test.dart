@@ -142,7 +142,6 @@ void main() {
             children: [
               DashboardHomeHeader(
                 name: 'سارة',
-                subtitle: 'ملفك جاهز',
                 unreadCount: 0,
                 onNotifications: () {},
                 onAvatarTap: () {},
@@ -160,7 +159,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byType(DirectionalIcon), findsAtLeastNWidgets(2));
+      // The header pill has no chevron since the iOS 26 restyle.
+      expect(find.byType(DirectionalIcon), findsWidgets);
       expect(
         find.byWidgetPredicate(
           (w) => w is Transform && w.transform.storage[0] == -1.0,

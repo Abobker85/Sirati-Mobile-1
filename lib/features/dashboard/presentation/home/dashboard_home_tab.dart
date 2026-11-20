@@ -14,6 +14,7 @@ import 'package:sirati/features/dashboard/presentation/home/dashboard_home_heade
 import 'package:sirati/features/dashboard/presentation/home/dashboard_jobs_section.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_glass_header.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_intro.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_large_title.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_latest_cv_section.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_premium_card.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_service_tile.dart';
@@ -34,9 +35,10 @@ import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/offline_cache_banner.dart';
 import 'package:sirati/shared/widgets/sirati_refresh_indicator.dart';
 
-/// Home tab, as on the approved board (option 3 with its changes): profile
-/// row, the create and ATS start cards, three services, latest jobs, and the
-/// latest CV with the honesty line.
+/// Home tab in the iOS 26 style: a white page with a large greeting that
+/// collapses into a small pinned title, a floating profile/notifications
+/// pill, then the create and ATS start cards, three services, latest jobs,
+/// and the latest CV with the honesty line, on grey shadowless cards.
 class DashboardHomeTab extends ConsumerWidget {
   const DashboardHomeTab({super.key, required this.onNavigate});
 
@@ -47,58 +49,63 @@ class DashboardHomeTab extends ConsumerWidget {
     final english = AppLocale.isEnglish(context);
     final summary = ref.watch(dashboardProvider(english));
 
-    // Bottom stays open: the list scrolls behind the floating bar.
-    return SafeArea(
-      top: false,
-      bottom: false,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxContentWidth = constraints.maxWidth >= 1100
-              ? 920.0
-              : constraints.maxWidth >= 780
-                  ? 760.0
-                  : constraints.maxWidth;
-          final horizontalPadding = AppSpacing.pageGutter(constraints.maxWidth);
+    // Bottom stays open: the list scrolls behind the floating bar. The plain
+    // page is painted here: the shell's background is the warm one.
+    return ColoredBox(
+      color: context.sirati.pageBackground,
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxContentWidth = constraints.maxWidth >= 1100
+                ? 920.0
+                : constraints.maxWidth >= 780
+                    ? 760.0
+                    : constraints.maxWidth;
+            final horizontalPadding =
+                AppSpacing.pageGutter(constraints.maxWidth);
 
-          Widget shell(Widget child) => Align(
-                alignment: Alignment.topCenter,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxContentWidth),
-                  child: child,
+            Widget shell(Widget child) => Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxContentWidth),
+                    child: child,
+                  ),
+                );
+
+            return AppAsyncBody<DashboardSummary>(
+              snapshot: summary.toSnapshot(),
+              english: english,
+              onRetry: () => ref.invalidate(dashboardProvider(english)),
+              errorMessage: (error) => error is ApiException
+                  ? error.displayMessage
+                  : AppLocalizations.of(context).dashboardHomeLoadFailed,
+              loading: SafeArea(
+                bottom: false,
+                child: shell(
+                  DashboardSkeleton(horizontalPadding: horizontalPadding),
                 ),
-              );
-
-          return AppAsyncBody<DashboardSummary>(
-            snapshot: summary.toSnapshot(),
-            english: english,
-            onRetry: () => ref.invalidate(dashboardProvider(english)),
-            errorMessage: (error) => error is ApiException
-                ? error.displayMessage
-                : AppLocalizations.of(context).dashboardHomeLoadFailed,
-            loading: SafeArea(
-              bottom: false,
-              child: shell(
-                DashboardSkeleton(horizontalPadding: horizontalPadding),
               ),
-            ),
-            builder: (data) => shell(
-              _DashboardList(
-                summary: data,
-                english: english,
-                horizontalPadding: horizontalPadding,
-                onRefresh: () async {
-                  await refreshDashboard(ref, english: english);
-                  await refreshMyCvs(ref, english: english);
-                  ref.invalidate(latestDashboardCvProvider(english));
-                  ref.invalidate(generatedCvsHistoryProvider);
-                  ref.invalidate(analysesHistoryProvider);
-                  ref.invalidate(homeLatestJobsProvider(english));
-                },
-                onNavigate: onNavigate,
+              builder: (data) => shell(
+                _DashboardList(
+                  summary: data,
+                  english: english,
+                  horizontalPadding: horizontalPadding,
+                  onRefresh: () async {
+                    await refreshDashboard(ref, english: english);
+                    await refreshMyCvs(ref, english: english);
+                    ref.invalidate(latestDashboardCvProvider(english));
+                    ref.invalidate(generatedCvsHistoryProvider);
+                    ref.invalidate(analysesHistoryProvider);
+                    ref.invalidate(homeLatestJobsProvider(english));
+                  },
+                  onNavigate: onNavigate,
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -138,6 +145,9 @@ class _DashboardListState extends State<_DashboardList>
   );
   bool _introStarted = false;
   int? _visit;
+
+  /// The large title, so the pinned bar knows when it has scrolled under.
+  final _largeTitleKey = GlobalKey();
 
   /// Coming back to Home plays a quicker version of the intro.
   static const _revisitIntro = Duration(milliseconds: 900);
@@ -197,10 +207,10 @@ class _DashboardListState extends State<_DashboardList>
         animation: _intro,
         begin: begin,
         end: end,
-        radius: 22,
+        radius: AppRadius.card,
         strength: HomeStartCard.shineStrength,
         child: AmbientShine(
-          radius: 22,
+          radius: AppRadius.card,
           strength: HomeStartCard.shineStrength,
           color: context.sirati.onBrandSurface,
           delay: shineDelay,
@@ -265,17 +275,18 @@ class _DashboardListState extends State<_DashboardList>
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          // The profile row stays pinned and turns to glass once the page
-          // scrolls under it.
+          // The pill stays pinned and the bar turns to glass once the page
+          // scrolls under it; the small title shows once the large one has
+          // gone under the bar.
           PinnedHeaderSliver(
             child: HomeGlassHeader(
+              collapseAfter: _largeTitleKey,
               child: _enter(
                 0,
                 .30,
                 motion: HomeIntroMotion.drop,
                 DashboardHomeHeader(
                   name: widget.summary.name,
-                  subtitle: l.homeProfileSubtitle,
                   unreadCount: widget.summary.unreadNotifications ??
                       SessionCache.instance.unreadCount,
                   onNotifications: () async {
@@ -288,6 +299,19 @@ class _DashboardListState extends State<_DashboardList>
                     await widget.onRefresh();
                   },
                   onAvatarTap: () => _push(context, const SettingsScreen()),
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: KeyedSubtree(
+              key: _largeTitleKey,
+              child: _enter(
+                .02,
+                .32,
+                HomeLargeTitle(
+                  name: widget.summary.name,
+                  subtitle: l.homeProfileSubtitle,
                 ),
               ),
             ),

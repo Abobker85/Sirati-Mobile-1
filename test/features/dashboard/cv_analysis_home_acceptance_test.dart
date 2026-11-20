@@ -17,6 +17,7 @@ import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_header.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_home_tab.dart';
 import 'package:sirati/features/dashboard/presentation/home/dashboard_jobs_section.dart';
+import 'package:sirati/features/dashboard/presentation/home/home_large_title.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_latest_cv_section.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_pressable_card.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_service_tile.dart';
@@ -800,8 +801,8 @@ void additionalTests() {
             tester.element(find.byType(DashboardHomeTab)),
           );
 
-          // Profile row: the server's name and the board's hint.
-          final header = find.byType(DashboardHomeHeader);
+          // Large title: the server's name and the board's hint.
+          final header = find.byType(HomeLargeTitle);
           expect(
             find.descendant(
               of: header,
@@ -1126,7 +1127,6 @@ void additionalTests() {
           home: Scaffold(
             body: DashboardHomeHeader(
               name: 'سارة',
-              subtitle: 'x',
               unreadCount: unread,
               onNotifications: () => opened++,
               onAvatarTap: () {},

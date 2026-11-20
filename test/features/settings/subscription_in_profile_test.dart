@@ -417,7 +417,6 @@ void main() {
           home: Scaffold(
             body: DashboardHomeHeader(
               name: 'Sara',
-              subtitle: 'hi',
               unreadCount: 0,
               onNotifications: () {},
               onAvatarTap: () {},
