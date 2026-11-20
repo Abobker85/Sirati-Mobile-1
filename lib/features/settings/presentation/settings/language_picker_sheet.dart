@@ -5,6 +5,8 @@ import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/components/app_sheet.dart';
 
 /// Native name of the selected app language (picker subtitle).
@@ -49,18 +51,25 @@ class LanguagePickerSheet extends StatelessWidget {
               ),
               child: Text(
                 l10n.language,
-                style: AppTypography.of(context, AppTypography.titleSm),
+                style: AppTypography.of(context, AppTypography.sectionTitle),
               ),
             ),
             Flexible(
               child: ListView(
                 shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 children: [
-                  for (final language in languages)
-                    _LanguageOption(
-                      language: language,
-                      selected: language.code == selected,
-                    ),
+                  // Opaque card: the rows do not depend on the sheet's glass.
+                  AppListSection(
+                    separatorIndent: AppListSection.textSeparatorIndent,
+                    children: [
+                      for (final language in languages)
+                        _LanguageOption(
+                          language: language,
+                          selected: language.code == selected,
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -79,24 +88,16 @@ class _LanguageOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.sirati;
-    return ListTile(
+    return AppListTile(
       key: ValueKey('language-option-${language.code}'),
       selected: selected,
-      title: Directionality(
-        textDirection: language.direction,
-        child: Text(
-          language.nativeName,
-          textAlign: TextAlign.start,
-          style: AppTypography.of(
-            context,
-            AppTypography.bodyMd,
-            color: colors.textPrimary,
-          ),
-        ),
-      ),
-      trailing:
-          selected ? Icon(Icons.check_rounded, color: colors.primaryInk) : null,
+      title: language.nativeName,
+      // The name in its own script and direction; the row keeps the app's.
+      titleDirection: language.direction,
+      showChevron: false,
+      trailing: selected
+          ? Icon(Icons.check_rounded, color: context.sirati.primaryInk)
+          : null,
       onTap: () => Navigator.of(context).pop(language.code),
     );
   }

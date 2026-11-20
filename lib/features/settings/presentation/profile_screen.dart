@@ -16,6 +16,8 @@ import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/job_titles_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
@@ -95,33 +97,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final choice = await showGlassBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              key: const ValueKey('profile-photo-gallery'),
-              leading: const Icon(Icons.photo_library_outlined),
-              title: Text(l10n.settingsPhotoGallery),
-              onTap: () => Navigator.of(context).pop('gallery'),
-            ),
-            ListTile(
-              key: const ValueKey('profile-photo-camera'),
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: Text(l10n.settingsPhotoCamera),
-              onTap: () => Navigator.of(context).pop('camera'),
-            ),
-            if (hasPhoto)
-              ListTile(
-                key: const ValueKey('profile-photo-remove'),
-                leading: Icon(Icons.delete_outline_rounded,
-                    color: context.sirati.error),
-                title: Text(
-                  l10n.settingsPhotoRemove,
-                  style: TextStyle(color: context.sirati.error),
-                ),
-                onTap: () => Navigator.of(context).pop('remove'),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+          child: AppListSection(
+            children: [
+              AppListTile(
+                key: const ValueKey('profile-photo-gallery'),
+                leadingIcon: Icons.photo_library_outlined,
+                title: l10n.settingsPhotoGallery,
+                showChevron: false,
+                onTap: () => Navigator.of(context).pop('gallery'),
               ),
-          ],
+              AppListTile(
+                key: const ValueKey('profile-photo-camera'),
+                leadingIcon: Icons.photo_camera_outlined,
+                title: l10n.settingsPhotoCamera,
+                showChevron: false,
+                onTap: () => Navigator.of(context).pop('camera'),
+              ),
+              if (hasPhoto)
+                AppListTile(
+                  key: const ValueKey('profile-photo-remove'),
+                  leadingIcon: Icons.delete_outline_rounded,
+                  leadingBackground: context.sirati.errorLight,
+                  leadingIconColor: context.sirati.onErrorContainer,
+                  title: l10n.settingsPhotoRemove,
+                  titleColor: context.sirati.onErrorContainer,
+                  showChevron: false,
+                  onTap: () => Navigator.of(context).pop('remove'),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -207,7 +214,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         decoration: BoxDecoration(
                           color: c.primary,
                           shape: BoxShape.circle,
-                          border: Border.all(color: c.background, width: 2),
+                          border:
+                              Border.all(color: c.groupedBackground, width: 2),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(6),
@@ -515,9 +523,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
     }
 
+    // Grouped grey page, like Settings: the white fields read as the
+    // inset cards of the design.
     return Scaffold(
-      backgroundColor: context.sirati.background,
-      appBar: AppBar(title: Text(l10n.settingsProfileTitle)),
+      backgroundColor: context.sirati.groupedBackground,
+      appBar: AppBar(
+        title: Text(l10n.settingsProfileTitle),
+        backgroundColor: context.sirati.groupedBackground,
+        surfaceTintColor: context.sirati.groupedBackground,
+        scrolledUnderElevation: 0,
+      ),
       body: body,
     );
   }
