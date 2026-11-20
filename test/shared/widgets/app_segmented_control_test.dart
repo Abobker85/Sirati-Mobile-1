@@ -10,7 +10,6 @@ import 'package:sirati/core/l10n/remote_localizations_delegate.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/theme/auth_hero_palette.dart';
 import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -40,7 +39,6 @@ Widget _host({
   TextDirection direction = TextDirection.ltr,
   bool reduceMotion = false,
   double textScale = 1,
-  Decoration? background,
 }) {
   return MaterialApp(
     theme: theme ?? AppTheme.lightFor(arabic: direction == TextDirection.rtl),
@@ -56,12 +54,9 @@ Widget _host({
     ),
     home: Scaffold(
       body: Center(
-        child: DecoratedBox(
-          decoration: background ?? const BoxDecoration(),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: child,
-          ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: child,
         ),
       ),
     ),
@@ -532,24 +527,6 @@ void main() {
               tester.element(find.byType(LanguageToggle)));
           expect(palette.selectedInk, isNot(palette.unselectedInk));
           expectAllTextAa('$suffix language toggle');
-        });
-
-        testWidgets('hero language toggle is AA on track and thumb ($suffix)',
-            (tester) async {
-          await tester.pumpWidget(_host(
-            theme: theme(),
-            direction: direction,
-            background: const BoxDecoration(
-              gradient: AuthHeroPalette.gradient,
-            ),
-            child: const LanguageToggle(
-              backgroundColor: AuthHeroPalette.pillBackground,
-              foregroundColor: AuthHeroPalette.onHero,
-              side: BorderSide(color: AuthHeroPalette.pillBorder),
-            ),
-          ));
-          _expectInksAaOnBothFills(tester, '$suffix hero');
-          expectAllTextAa('$suffix hero');
         });
 
         testWidgets('segments stay >= 44 tall and fit at 200% ($suffix)',
