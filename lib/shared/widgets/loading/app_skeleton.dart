@@ -54,8 +54,8 @@ class _AppSkeletonState extends State<AppSkeleton>
     super.didChangeDependencies();
     _scope = AppSkeletonScope.maybeOf(context);
     _reduce = MotionSettings.reduce(context);
-    _fill = PageSurface.fillOf(context);
-    _shimmerColors = AppSkeleton.shimmerColors(context.sirati, _fill);
+    final fill = _fill = PageSurface.fillOf(context);
+    _shimmerColors = AppSkeleton.shimmerColors(context.sirati, fill);
 
     if (_reduce || _scope != null) {
       _local?.stop();
