@@ -11,7 +11,7 @@ import 'package:sirati/shared/navigation/dashboard_tab.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/components/glass_surface.dart';
-import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 
 /// A shell like the real one: the glass bar floats over a long list that
 /// pads its end with [dashboardScrollEnd], and the bar folds while the list
@@ -115,14 +115,26 @@ Color _fill(WidgetTester tester, Finder of) => (tester
         .decoration as BoxDecoration)
     .color!;
 
-/// The pill as painted in the last frame, in global coordinates.
-Rect _pill(WidgetTester tester) => tester
-    .state<DashboardNavigationBarState>(find.byType(DashboardNavigationBar))
-    .paintedPill!;
-Offset _selectedIcon(WidgetTester tester) => tester.getCenter(
-      find.byWidgetPredicate((w) => w is MotionNavIcon && w.selected),
-    );
-Finder get _icons => find.byWidgetPredicate((w) => w is MotionNavIcon);
+/// The grey pill behind the selected tab, as laid out now.
+Rect _pill(WidgetTester tester) =>
+    tester.getRect(find.byKey(DashboardNavigationBar.pillKey));
+
+/// The selected tab's icon, as laid out now.
+Rect _selectedIcon(WidgetTester tester) => tester.getRect(find.descendant(
+      of: find.byKey(DashboardNavigationBar.pillKey),
+      matching: find.byType(LivelyIcon),
+    ));
+
+/// Whether the pill holds the whole selected icon.
+bool _pillHoldsIcon(WidgetTester tester) {
+  final pill = _pill(tester);
+  final icon = _selectedIcon(tester);
+  return pill.contains(icon.topLeft) && pill.contains(icon.bottomRight);
+}
+
+/// Tab icons, in [DashboardNavigationBar.order].
+Finder get _icons => find.descendant(
+    of: find.byType(DashboardNavigationBar), matching: find.byType(LivelyIcon));
 
 /// Drags the list by [dy] (negative scrolls the page down).
 Future<void> _drag(WidgetTester tester, double dy) async {
@@ -179,22 +191,17 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('the pill stretches while sliding and is back to size at rest',
+    testWidgets('the pill moves to a tapped tab in one frame, nothing slides',
         (tester) async {
       await _pump(tester, const _Shell(itemCount: 3));
       const order = DashboardNavigationBar.order;
       for (var to = 1; to < order.length; to++) {
         await tester.tap(_icons.at(to));
         await tester.pump();
-        await tester.pump();
-        await tester.pump(MotionDurations.navIndicator ~/ 2);
-        expect(_pill(tester).width,
-            greaterThan(DashboardNavigationBar.pillSize.width + 1));
-        expect(_pill(tester).height, DashboardNavigationBar.pillSize.height);
+        final first = _pill(tester);
+        expect(_pillHoldsIcon(tester), isTrue);
         await tester.pumpAndSettle();
-        expect(_pill(tester).size, DashboardNavigationBar.pillSize);
-        expect((_pill(tester).center - _selectedIcon(tester)).distance,
-            lessThan(.5));
+        expect(_pill(tester), first);
       }
     });
   });
@@ -249,9 +256,8 @@ void main() {
       expect(folded.width, lessThan(open.width));
       expect(folded.height, lessThan(open.height));
       expect(labelHeight(), 0);
-      // The pill still sits on the selected icon in the folded bar.
-      expect((_pill(tester).center - _selectedIcon(tester)).distance,
-          lessThan(.5));
+      // The pill still holds the selected icon in the folded bar.
+      expect(_pillHoldsIcon(tester), isTrue);
 
       await _drag(tester, 120);
       expect(tester.getRect(_capsule).width, open.width);
@@ -266,8 +272,7 @@ void main() {
     });
 
     for (final locale in const [Locale('ar'), Locale('en')]) {
-      testWidgets(
-          '$locale: the pill stays on its icon in every frame of the fold',
+      testWidgets('$locale: the pill holds its icon in every frame of the fold',
           (tester) async {
         await _pump(tester, const _Shell(itemCount: 30), locale: locale);
         for (final tab in [0, 2]) {
@@ -278,11 +283,8 @@ void main() {
                 find.byKey(const ValueKey('list')), Offset(0, dy));
             for (var f = 0; f < 20; f++) {
               await tester.pump(const Duration(milliseconds: 16));
-              expect(
-                (_pill(tester).center - _selectedIcon(tester)).distance,
-                lessThan(.5),
-                reason: 'tab $tab, drag $dy, frame $f',
-              );
+              expect(_pillHoldsIcon(tester), isTrue,
+                  reason: 'tab $tab, drag $dy, frame $f');
             }
             await tester.pumpAndSettle();
           }
