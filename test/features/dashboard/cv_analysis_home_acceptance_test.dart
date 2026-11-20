@@ -5,7 +5,6 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
@@ -34,6 +33,7 @@ import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -705,10 +705,30 @@ void expectRenderedControls(WidgetTester tester, String label) {
         .evaluate()
         .first;
     final widget = material.widget as Material;
-    contrast(
-      (widget.shape! as OutlinedBorder).side.color,
-      material,
-      background: widget.color,
+    // Filled capsules carry no side (ticket 10); a side that is drawn must
+    // still hold 3:1. Either way the label carries the state at AA on the
+    // button's own fill.
+    final side = (widget.shape! as OutlinedBorder).side;
+    if (side.style != BorderStyle.none && side.width > 0) {
+      contrast(side.color, material, background: widget.color);
+    }
+    for (final text in find
+        .descendant(of: find.byWidget(button.widget), matching: find.byType(Text))
+        .evaluate()) {
+      final ink = paragraphOf(text.findRenderObject()!).text.style!.color!;
+      expect(
+        AppContrast.ratio(ink, widget.color!),
+        greaterThanOrEqualTo(4.5),
+        reason: '$label ${text.widget} on ${widget.color}',
+      );
+    }
+  }
+  // The chosen CV source is marked by a check, not by its tint alone.
+  if (find.byKey(const ValueKey(AnalysisCvSource.saved)).evaluate().isNotEmpty) {
+    expect(
+      find.byKey(CvAnalysisScreen.selectedSourceCheckKey),
+      findsOneWidget,
+      reason: '$label selected source check',
     );
   }
   for (final element in find

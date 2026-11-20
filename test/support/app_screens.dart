@@ -16,7 +16,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/core/errors/app_crash_view.dart';
 import 'package:sirati/core/l10n/remote_l10n_models.dart';
 import 'package:sirati/core/network/api_config.dart';
@@ -66,6 +65,7 @@ import 'package:sirati/shared/services/job_titles_provider.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 
 import '../features/job_match/job_match_test_support.dart' as job_match;
 import 'l10n_label_capture.dart';

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -9,6 +8,7 @@ import 'package:sirati/l10n/generated/app_localizations_ar.dart';
 import 'package:sirati/l10n/generated/app_localizations_en.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 
 /// Server contract for `GET /api/cv-analyses` (issues #16, #20).
 Map<String, dynamic> _json({
