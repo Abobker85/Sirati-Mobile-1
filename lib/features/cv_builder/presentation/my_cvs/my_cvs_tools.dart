@@ -3,6 +3,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/directional_icon.dart';
+import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/rolling_number.dart';
 
@@ -485,173 +486,22 @@ class MyCvsEmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.sirati;
     final l = AppLocalizations.of(context);
-    final buttonShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadius.pill),
-    );
-    final buttonText = AppTypography.of(context, AppTypography.labelLg);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: c.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const ExcludeSemantics(child: _EmptyIllustration()),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            l.cvListEmptyTitle,
-            textAlign: TextAlign.center,
-            style: AppTypography.of(context, AppTypography.titleLg),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            l.myCvsEmptyBody,
-            textAlign: TextAlign.center,
-            style: AppTypography.of(
-              context,
-              AppTypography.bodyMd,
-              color: c.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          FilledButton.icon(
-            key: createKey,
-            onPressed: onCreate,
-            icon: const Icon(Icons.add_rounded, size: 20),
-            label: Text(l.myCvsEmptyCreate),
-            style: FilledButton.styleFrom(
-              backgroundColor: c.brandSurface,
-              foregroundColor: c.onBrandSurface,
-              minimumSize: const Size.fromHeight(52),
-              shape: buttonShape,
-              textStyle: buttonText,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            key: uploadKey,
-            onPressed: onUpload,
-            icon: const Icon(Icons.upload_file_rounded, size: 20),
-            label: Text(l.myCvsEmptyUpload),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: c.primaryInk,
-              side: BorderSide(color: c.primaryInk, width: 1.5),
-              minimumSize: const Size.fromHeight(52),
-              shape: buttonShape,
-              textStyle: buttonText,
-            ),
-          ),
-        ],
-      ),
+    // The shared calm state. Create and upload are the two equal ways to a
+    // first CV, so upload stays as the quieter second action.
+    return AppEmptyState(
+      icon: Icons.description_outlined,
+      title: l.cvListEmptyTitle,
+      subtitle: l.myCvsEmptyBody,
+      actionKey: createKey,
+      actionLabel: l.myCvsEmptyCreate,
+      onAction: onCreate,
+      actionIcon: Icons.add_rounded,
+      secondaryActionKey: uploadKey,
+      secondaryActionLabel: l.myCvsEmptyUpload,
+      onSecondaryAction: onUpload,
+      secondaryActionIcon: Icons.upload_file_rounded,
+      scrollable: false,
     );
   }
-}
-
-/// Dashed document page with a plus badge and two sparkles.
-class _EmptyIllustration extends StatelessWidget {
-  const _EmptyIllustration();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.sirati;
-    return SizedBox(
-      height: 112,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 132,
-            height: 76,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: c.borderStrong, width: 1.5),
-            ),
-          ),
-          CustomPaint(
-            size: const Size(78, 100),
-            painter: _DashedPagePainter(
-              border: c.primaryInk,
-              fill: c.surface,
-              lines: c.textHint,
-            ),
-          ),
-          Positioned(
-            bottom: 6,
-            child: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: c.brandSurface,
-                shape: BoxShape.circle,
-                border: Border.all(color: c.surface, width: 3),
-              ),
-              child: Icon(Icons.add_rounded, size: 20, color: c.onBrandSurface),
-            ),
-          ),
-          PositionedDirectional(
-            start: 0,
-            end: 0,
-            top: 34,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.auto_awesome, size: 22, color: c.primaryInk),
-                const SizedBox(width: 172),
-                Icon(Icons.auto_awesome, size: 22, color: c.primaryInk),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DashedPagePainter extends CustomPainter {
-  _DashedPagePainter({
-    required this.border,
-    required this.fill,
-    required this.lines,
-  });
-
-  final Color border;
-  final Color fill;
-  final Color lines;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      const Radius.circular(10),
-    );
-    canvas.drawRRect(rect, Paint()..color = fill);
-    final stroke = Paint()
-      ..color = border
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    for (final metric in (Path()..addRRect(rect)).computeMetrics()) {
-      for (var d = 0.0; d < metric.length; d += 10) {
-        canvas.drawPath(metric.extractPath(d, d + 6), stroke);
-      }
-    }
-    final line = Paint()
-      ..color = lines
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-    for (final (y, w) in [(20.0, 44.0), (32.0, 32.0), (44.0, 38.0)]) {
-      final x = (size.width - w) / 2;
-      canvas.drawLine(Offset(x, y), Offset(x + w, y), line);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedPagePainter old) =>
-      old.border != border || old.fill != fill || old.lines != lines;
 }

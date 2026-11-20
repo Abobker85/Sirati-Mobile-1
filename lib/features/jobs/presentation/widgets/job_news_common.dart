@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/empty_state.dart';
 
 class MetaChip extends StatelessWidget {
   final String text;
@@ -65,7 +66,6 @@ class EmptyJobNews extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final c = context.sirati;
     final region = regionLabel;
     final title = region != null
         ? l.jobsEmptyRegionTitle(region)
@@ -78,65 +78,17 @@ class EmptyJobNews extends StatelessWidget {
             ? (l.clearFilters, onClearFilters!)
             : null;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: c.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ExcludeSemantics(
-            child: Center(
-              child: Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: c.primaryLight,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  region != null
-                      ? Icons.location_off_outlined
-                      : Icons.work_off_outlined,
-                  size: 34,
-                  color: c.primaryInk,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.titleMd(c),
-          ),
-          if (region != null) ...[
-            const SizedBox(height: 6),
-            Text(
-              l.jobsEmptyRegionBody,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 13.5, height: 1.5, color: c.textSecondary),
-            ),
-          ],
-          if (action != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            FilledButton(
-              onPressed: action.$2,
-              style: FilledButton.styleFrom(
-                backgroundColor: c.brandSurface,
-                foregroundColor: c.onBrandSurface,
-                minimumSize: const Size.fromHeight(48),
-                shape: const StadiumBorder(),
-              ),
-              child: Text(action.$1),
-            ),
-          ],
-        ],
-      ),
+    // The shared calm state; no card of its own.
+    return AppEmptyState(
+      icon: region != null
+          ? Icons.location_off_outlined
+          : Icons.work_off_outlined,
+      title: title,
+      subtitle: region != null ? l.jobsEmptyRegionBody : null,
+      actionLabel: action?.$1,
+      onAction: action?.$2,
+      actionIcon: null,
+      scrollable: false,
     );
   }
 }

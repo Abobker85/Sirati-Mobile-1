@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components/brand_gradient_button.dart';
+import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 /// Full-screen "no internet" state with retry and automatic recovery.
@@ -150,7 +151,14 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Spacer(),
-                ExcludeSemantics(child: _OfflineIllustration(pings: _pings)),
+                // The same grey circle as every other state; it pings on each
+                // reconnect attempt.
+                Center(
+                  child: OfflinePing(
+                    trigger: _pings,
+                    child: const AppStateIcon(Icons.wifi_off_rounded),
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 if (widget.onRetry != null) ...[
                   Center(
@@ -169,7 +177,7 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
                     textAlign: TextAlign.center,
                     style: AppTypography.of(
                       context,
-                      AppTypography.headlineLg,
+                      AppTypography.titleLg,
                       color: c.textPrimary,
                     ),
                   ),
@@ -440,109 +448,6 @@ class _TipsCard extends StatelessWidget {
   }
 }
 
-/// CV page with a "wifi off" badge on soft tinted shapes. Widgets only, so
-/// it follows the theme in dark mode.
-class _OfflineIllustration extends StatelessWidget {
-  const _OfflineIllustration({required this.pings});
-
-  final int pings;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.sirati;
-    Widget line(double width, Color color) => Container(
-          width: width,
-          height: 6,
-          margin: const EdgeInsets.only(top: 8),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        );
-
-    return Center(
-      child: SizedBox(
-        width: 200,
-        height: 168,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: c.tealLight,
-              ),
-            ),
-            PositionedDirectional(
-              end: 22,
-              top: 30,
-              child: Transform.rotate(
-                angle: MotionAxis.endSign(context) * 0.12,
-                child: Container(
-                  width: 80,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: c.surfaceContainer,
-                    borderRadius: AppRadius.mdAll,
-                  ),
-                ),
-              ),
-            ),
-            Container(
-              width: 96,
-              height: 124,
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: c.surface,
-                borderRadius: AppRadius.mdAll,
-                border: Border.all(color: c.border),
-                boxShadow: c.softShadow,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  line(36, c.primaryInk),
-                  line(56, c.border),
-                  const SizedBox(height: 4),
-                  line(60, c.teal.withValues(alpha: 0.45)),
-                  line(46, c.teal.withValues(alpha: 0.45)),
-                  line(52, c.border),
-                ],
-              ),
-            ),
-            PositionedDirectional(
-              end: 34,
-              bottom: 8,
-              child: OfflinePing(
-                trigger: pings,
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [c.brandSurface, c.brandSurfaceDeep],
-                    ),
-                    border: Border.all(color: c.surface, width: 4),
-                    boxShadow: c.softShadow,
-                  ),
-                  child: Icon(
-                    Icons.wifi_off_rounded,
-                    size: 26,
-                    color: c.onBrandSurface,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Each time [trigger] changes (a reconnect attempt starts), a ring goes
 /// out from [child] and the child hops once, as if calling out. It moves
 /// only on an attempt, never by itself; with reduced motion it is still.
@@ -602,8 +507,8 @@ class _OfflinePingState extends State<OfflinePing>
               IgnorePointer(
                 child: Container(
                   key: OfflinePing.ringKey,
-                  width: 56 + 44 * ring,
-                  height: 56 + 44 * ring,
+                  width: AppStateIcon.size + 44 * ring,
+                  height: AppStateIcon.size + 44 * ring,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
