@@ -153,9 +153,20 @@ void main() {
             inDivider = a.widget is Divider;
             return !inDivider;
           });
-          if (d is BoxDecoration && !inDivider) {
-            expect(d.border, isNull,
-                reason: 'bordered box on $screen ($label): $d');
+          final border = d is BoxDecoration ? d.border : null;
+          if (border is Border && !inDivider) {
+            // Any styled side paints: width 0 is a hairline, not nothing.
+            for (final side in [
+              border.top,
+              border.right,
+              border.bottom,
+              border.left,
+            ]) {
+              expect(side.style == BorderStyle.none, isTrue,
+                  reason: 'bordered box on $screen ($label): $d');
+            }
+          } else if (border != null && !inDivider) {
+            fail('unexpected border type on $screen ($label): $d');
           }
         }
 
