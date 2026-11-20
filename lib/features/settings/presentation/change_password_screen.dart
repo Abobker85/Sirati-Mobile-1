@@ -7,6 +7,7 @@ import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/form_reveal.dart';
@@ -102,8 +103,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         ? AutovalidateMode.onUserInteraction
         : AutovalidateMode.disabled;
 
-    return Scaffold(
-      backgroundColor: context.sirati.background,
+    // iOS 26 grouped form page: grey caption headers over filled fields.
+    return GroupedSurface(
+        child: Scaffold(
       appBar: AppBar(
         title: Text(l10n.changePassword),
       ),
@@ -123,7 +125,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             else
               const SizedBox.shrink(),
             _Label(l10n.settingsCurrentPasswordLabel),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.xs + 2),
             AppTextFormField(
               controller: _currentCtrl,
               autovalidateMode: auto,
@@ -152,9 +154,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 }
               },
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.lg),
             _Label(l10n.authNewPasswordLabel),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.xs + 2),
             AppTextFormField(
               controller: _newCtrl,
               autovalidateMode: auto,
@@ -189,9 +191,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             ),
             const SizedBox(height: AppSpacing.xs),
             PasswordStrengthMeter(password: _newCtrl.text, english: en),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.lg),
             _Label(l10n.settingsConfirmNewPasswordLabel),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.xs + 2),
             AppTextFormField(
               key: _confirmKey,
               controller: _confirmCtrl,
@@ -229,21 +231,32 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 
+/// Grey section header above a field, in the [AppListSection] header style.
 class _Label extends StatelessWidget {
   final String text;
   const _Label(this.text);
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      textAlign: TextAlign.start,
-      style: AppTextStyles.titleSm(context.sirati)
-          .copyWith(color: context.sirati.textSecondary),
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: AppListSection.rowPadding),
+      child: Semantics(
+        header: true,
+        child: Text(
+          text,
+          textAlign: TextAlign.start,
+          style: AppTypography.of(
+            context,
+            AppTypography.caption,
+            color: context.sirati.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 }

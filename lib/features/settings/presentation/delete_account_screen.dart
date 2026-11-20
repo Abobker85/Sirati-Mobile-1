@@ -13,12 +13,13 @@ import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/services/provider_reauth.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/components/app_dialog.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/password_visibility_toggle.dart';
-import 'package:sirati/shared/widgets/submit_button.dart';
 
 /// Providers this screen can re-authenticate with, in display order.
 const _reauthProviders = ['google', 'apple'];
@@ -77,7 +78,10 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: context.sirati.error),
+            // Destructive ink, as in Settings' sign-out dialog (AA pressed).
+            style: TextButton.styleFrom(
+              foregroundColor: context.sirati.onErrorContainer,
+            ),
             child: Text(l10n.settingsDeleteForever),
           ),
         ],
@@ -197,95 +201,151 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     final l10n = AppLocalizations.of(context);
     final providers = _providers;
 
-    return Scaffold(
-      backgroundColor: context.sirati.background,
-      appBar: AppBar(
-        title: Text(l10n.deleteAccount),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: context.sirati.errorLight,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: context.sirati.error.withValues(alpha: .25)),
-              ),
-              child: Text(
-                l10n.settingsDeleteWarning,
-                textAlign: TextAlign.start,
-                style: AppTextStyles.bodySm(context.sirati).copyWith(
-                  // Gated pair: onErrorContainer on errorLight.
-                  color: context.sirati.onErrorContainer,
-                  fontWeight: FontWeight.w600,
-                  height: 1.5,
+    final c = context.sirati;
+    final captionStyle = AppTypography.of(
+      context,
+      AppTypography.caption,
+      color: c.textSecondary,
+    );
+
+    // iOS 26 grouped page: the warning card, then the confirmation field or
+    // provider rows, and the delete action as a destructive grouped row.
+    return GroupedSurface(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.deleteAccount),
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
+            children: [
+              Material(
+                color: c.errorLight,
+                borderRadius: AppRadius.cardAll,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Text(
+                    l10n.settingsDeleteWarning,
+                    textAlign: TextAlign.start,
+                    style: AppTextStyles.bodySm(c).copyWith(
+                      // Gated pair: onErrorContainer on errorLight.
+                      color: c.onErrorContainer,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            if (providers.isNotEmpty) ...[
-              Text(
-                l10n.settingsDeleteConfirmWithProvider,
-                textAlign: TextAlign.start,
-                style: AppTextStyles.titleSm(context.sirati)
-                    .copyWith(color: context.sirati.textSecondary),
-              ),
-              for (final provider in providers) ...[
-                const SizedBox(height: AppSpacing.md),
-                SubmitButton(
-                  label: l10n.settingsDeleteWithProvider(
-                      _providerName(provider, l10n)),
-                  loadingLabel: l10n.settingsDeleting,
-                  isLoading: _loading,
-                  icon: Icons.delete_forever_rounded,
-                  onPressed: () => unawaited(_deleteWithProvider(provider)),
-                ),
-              ],
-            ] else ...[
-              Text(
-                l10n.settingsDeleteConfirmWithPassword,
-                textAlign: TextAlign.start,
-                style: AppTextStyles.titleSm(context.sirati)
-                    .copyWith(color: context.sirati.textSecondary),
-              ),
-              const SizedBox(height: 6),
-              AppTextFormField(
-                controller: _passwordCtrl,
-                autovalidateMode: _submitted
-                    ? AutovalidateMode.onUserInteraction
-                    : AutovalidateMode.disabled,
-                obscureText: _obscure,
-                textDirection: TextDirection.ltr,
-                textAlign: TextAlign.start,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => unawaited(_deleteWithPassword()),
-                hintText: '••••••••',
-                prefixIcon: const Icon(Icons.lock_outline_rounded),
-                suffixIcon: PasswordVisibilityToggle(
-                  obscured: _obscure,
-                  onToggle: () => setState(() => _obscure = !_obscure),
-                ),
-                validator: (v) => (v == null || v.isEmpty)
-                    ? l10n.settingsDeletePasswordRequired
-                    : null,
               ),
               const SizedBox(height: AppSpacing.xl),
-              SubmitButton(
-                label: l10n.settingsDeleteMyAccount,
-                loadingLabel: l10n.settingsDeleting,
-                isLoading: _loading,
-                icon: Icons.delete_forever_rounded,
-                onPressed: () => unawaited(_deleteWithPassword()),
-              ),
+              if (providers.isNotEmpty)
+                AppListSection(
+                  header: l10n.settingsDeleteConfirmWithProvider,
+                  children: [
+                    for (final provider in providers)
+                      _DestructiveRow(
+                        label: l10n.settingsDeleteWithProvider(
+                            _providerName(provider, l10n)),
+                        loadingLabel: l10n.settingsDeleting,
+                        isLoading: _loading,
+                        onTap: () => unawaited(_deleteWithProvider(provider)),
+                      ),
+                  ],
+                )
+              else ...[
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    AppListSection.rowPadding,
+                    0,
+                    AppListSection.rowPadding,
+                    AppSpacing.xs + 2,
+                  ),
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      l10n.settingsDeleteConfirmWithPassword,
+                      textAlign: TextAlign.start,
+                      style: captionStyle,
+                    ),
+                  ),
+                ),
+                AppTextFormField(
+                  controller: _passwordCtrl,
+                  autovalidateMode: _submitted
+                      ? AutovalidateMode.onUserInteraction
+                      : AutovalidateMode.disabled,
+                  obscureText: _obscure,
+                  textDirection: TextDirection.ltr,
+                  textAlign: TextAlign.start,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => unawaited(_deleteWithPassword()),
+                  hintText: '••••••••',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: PasswordVisibilityToggle(
+                    obscured: _obscure,
+                    onToggle: () => setState(() => _obscure = !_obscure),
+                  ),
+                  validator: (v) => (v == null || v.isEmpty)
+                      ? l10n.settingsDeletePasswordRequired
+                      : null,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                AppListSection(
+                  children: [
+                    _DestructiveRow(
+                      label: l10n.settingsDeleteMyAccount,
+                      loadingLabel: l10n.settingsDeleting,
+                      isLoading: _loading,
+                      onTap: () => unawaited(_deleteWithPassword()),
+                    ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// The delete action as a grouped row: `onErrorContainer` title on an
+/// `errorLight` icon, like Settings' danger zone. While a request runs it
+/// shows [loadingLabel] with a spinner and does not respond to taps.
+class _DestructiveRow extends StatelessWidget {
+  const _DestructiveRow({
+    required this.label,
+    required this.loadingLabel,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  final String label;
+  final String loadingLabel;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return AppListTile(
+      leadingIcon: Icons.delete_forever_rounded,
+      leadingBackground: c.errorLight,
+      leadingIconColor: c.onErrorContainer,
+      title: isLoading ? loadingLabel : label,
+      titleColor: c.onErrorContainer,
+      showChevron: false,
+      trailing: isLoading
+          ? SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.2,
+                color: c.onErrorContainer,
+              ),
+            )
+          : null,
+      onTap: isLoading ? null : onTap,
     );
   }
 }
