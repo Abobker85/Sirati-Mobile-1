@@ -1,8 +1,48 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components.dart';
+import 'package:sirati/shared/widgets/motion.dart';
+
+/// Shared tactile lift decorator for [ReorderableListView] drag proxies.
+Widget reorderLiftProxyDecorator(
+  Widget child,
+  int index,
+  Animation<double> animation,
+) {
+  return Builder(
+    builder: (context) {
+      if (MotionSettings.reduce(context)) {
+        return Material(type: MaterialType.transparency, child: child);
+      }
+      final c = context.sirati;
+      return AnimatedBuilder(
+        animation: animation,
+        child: Material(type: MaterialType.transparency, child: child),
+        builder: (context, inner) {
+          final t = Curves.easeOut.transform(animation.value);
+          return Transform.scale(
+            scale: 1.0 + 0.02 * t,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                boxShadow: AppShadows.of(
+                  c,
+                  elevation: AppElevation.sheet * t,
+                ),
+              ),
+              child: inner,
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
 /// Generic card wrapper used across all CV builder section editors (SIRATI-36).
 ///
@@ -36,8 +76,37 @@ class SectionCardWrapper extends StatefulWidget {
   State<SectionCardWrapper> createState() => _SectionCardWrapperState();
 }
 
-class _SectionCardWrapperState extends State<SectionCardWrapper> {
+class _SectionCardWrapperState extends State<SectionCardWrapper>
+    with SingleTickerProviderStateMixin {
   late bool _expanded = widget.initialExpanded;
+  late final AnimationController _expandController = AnimationController(
+    vsync: this,
+    duration: MotionDurations.medium,
+    value: widget.initialExpanded ? 1.0 : 0.0,
+  );
+  late final Animation<double> _expandAnim = CurvedAnimation(
+    parent: _expandController,
+    curve: MotionCurves.enter,
+    reverseCurve: MotionCurves.exit,
+  );
+
+  @override
+  void dispose() {
+    _expandController.dispose();
+    super.dispose();
+  }
+
+  void _toggleExpanded() {
+    final next = !_expanded;
+    setState(() => _expanded = next);
+    if (MotionSettings.reduce(context)) {
+      _expandController.value = next ? 1.0 : 0.0;
+    } else if (next) {
+      unawaited(_expandController.forward());
+    } else {
+      unawaited(_expandController.reverse());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +119,13 @@ class _SectionCardWrapperState extends State<SectionCardWrapper> {
         children: [
           // Header
           InkWell(
-            onTap: () => setState(() => _expanded = !_expanded),
+            onTap: _toggleExpanded,
             borderRadius: BorderRadius.circular(AppRadius.md),
+            splashFactory:
+                MotionSettings.reduce(context) ? NoSplash.splashFactory : null,
+            highlightColor: MotionSettings.reduce(context)
+                ? c.surface.withValues(alpha: 0)
+                : null,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
               child: Row(
@@ -116,11 +190,16 @@ class _SectionCardWrapperState extends State<SectionCardWrapper> {
                       ],
                     ),
                   ),
-                  Icon(
-                    _expanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: c.textHint,
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0.0,
+                    duration: MotionSettings.reduce(context)
+                        ? Duration.zero
+                        : MotionDurations.fast,
+                    curve: MotionCurves.state,
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: c.textHint,
+                    ),
                   ),
                 ],
               ),
@@ -148,19 +227,38 @@ class _SectionCardWrapperState extends State<SectionCardWrapper> {
               ),
             ),
 
-          // Collapsible Content
-          if (_expanded) ...[
-            const Divider(height: AppSpacing.lg),
-            widget.child,
-            if (widget.onAdd != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              AppButton.secondary(
-                label: widget.addLabel ?? l10n.addItem,
-                icon: Icons.add,
-                onPressed: widget.onAdd,
+          // Collapsible Content: animate only on header toggle so child growth
+          // inside an already-open section never animates or clips.
+          SizeTransition(
+            sizeFactor: _expandAnim,
+            alignment: AlignmentDirectional.topStart,
+            child: FadeTransition(
+              opacity: _expandAnim,
+              child: AnimatedBuilder(
+                animation: _expandController,
+                builder: (context, _) {
+                  if (!_expanded && _expandController.isDismissed) {
+                    return const SizedBox.shrink();
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Divider(height: AppSpacing.lg),
+                      widget.child,
+                      if (widget.onAdd != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        AppButton.secondary(
+                          label: widget.addLabel ?? l10n.addItem,
+                          icon: Icons.add,
+                          onPressed: widget.onAdd,
+                        ),
+                      ],
+                    ],
+                  );
+                },
               ),
-            ],
-          ],
+            ),
+          ),
         ],
       ),
     );
@@ -192,6 +290,8 @@ class ReorderableEntryList<T> extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
+      proxyDecorator: reorderLiftProxyDecorator,
+      onReorderStart: (_) => unawaited(HapticFeedback.selectionClick()),
       // ignore: deprecated_member_use
       onReorder: onReorder,
       itemBuilder: (context, index) {

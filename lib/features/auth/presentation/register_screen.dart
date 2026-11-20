@@ -27,6 +27,7 @@ import 'package:sirati/shared/widgets/auth_hero_page.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/job_title_picker_field.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/password_strength_meter.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
@@ -197,16 +198,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         size: AuthHeroSize.compact,
         title: l10n.authRegisterHeroTitle,
         subtitle: l10n.authRegisterHeroSubtitle,
+        markHeroTag: 'sirati-brand-mark',
+        breathing: true,
         onBack: _handleBack,
-        card: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_showFormBanner)
-                AppFormErrorBanner(
-                  message: l10n.authFixHighlightedFields,
-                  onDismiss: () => setState(() => _showFormBanner = false),
+        card: MotionReveal(
+          order: 0,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                MotionExpandSlot(
+                  child: _showFormBanner
+                      ? AppFormErrorBanner(
+                          key: const ValueKey('register-form-error'),
+                          message: l10n.authFixHighlightedFields,
+                          onDismiss: () =>
+                              setState(() => _showFormBanner = false),
+                        )
+                      : const SizedBox.shrink(
+                          key: ValueKey('register-form-error-empty'),
+                        ),
                 ),
               FieldLabel(text: l10n.authFullNameLabel),
               AppTextFormField(
@@ -312,32 +324,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   _jobTitleOtherController.text = text;
                 }),
               ),
-              if (_isOther) ...[
-                const SizedBox(height: AppSpacing.md),
-                FieldLabel(
-                  text: l10n.authJobTitleOtherLabel,
-                ),
-                AppTextFormField(
-                  controller: _jobTitleOtherController,
-                  showSuccessWhenValid: true,
-                  successMessage: looksGood,
-                  autovalidateMode: _autovalidate,
-                  textAlign: TextAlign.start,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: next,
-                  maxLength: RegistrationRules.jobTitleOtherMax,
-                  hintText: l10n.authJobTitleOtherHint,
-                  prefixIcon: const Icon(Icons.edit_outlined),
-                  validator: _validator(
-                    (v) => RegistrationRules.jobTitleOther(
-                      v,
-                      isOther: _isOther,
-                    ),
-                    requiredText: otherRequired,
-                    max: RegistrationRules.jobTitleOtherMax,
-                  ),
-                ),
-              ],
+              MotionExpandSlot(
+                child: _isOther
+                    ? Column(
+                        key: const ValueKey('register-job-title-other'),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: AppSpacing.md),
+                          FieldLabel(
+                            text: l10n.authJobTitleOtherLabel,
+                          ),
+                          AppTextFormField(
+                            controller: _jobTitleOtherController,
+                            showSuccessWhenValid: true,
+                            successMessage: looksGood,
+                            autovalidateMode: _autovalidate,
+                            textAlign: TextAlign.start,
+                            textInputAction: TextInputAction.next,
+                            onFieldSubmitted: next,
+                            maxLength: RegistrationRules.jobTitleOtherMax,
+                            hintText: l10n.authJobTitleOtherHint,
+                            prefixIcon: const Icon(Icons.edit_outlined),
+                            validator: _validator(
+                              (v) => RegistrationRules.jobTitleOther(
+                                v,
+                                isOther: _isOther,
+                              ),
+                              requiredText: otherRequired,
+                              max: RegistrationRules.jobTitleOtherMax,
+                            ),
+                          ),
+                        ],
+                      )
+                    : const SizedBox.shrink(
+                        key: ValueKey('register-job-title-other-empty'),
+                      ),
+              ),
               const SizedBox(height: AppSpacing.md),
               FieldLabel(text: l10n.authPasswordLabel),
               AppTextFormField(
@@ -380,29 +402,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 onChanged: (value) => setState(() => _agreedToTerms = value),
               ),
               const SizedBox(height: AppSpacing.xs),
-              SubmitButton(
-                label: l10n.authCreateAccountButton,
-                loadingLabel: l10n.authCreatingAccount,
-                isLoading: isLoading,
-                onPressed: () => unawaited(_register()),
+              MotionReveal(
+                order: 1,
+                child: SubmitButton(
+                  label: l10n.authCreateAccountButton,
+                  loadingLabel: l10n.authCreatingAccount,
+                  isLoading: isLoading,
+                  onPressed: () => unawaited(_register()),
+                ),
               ),
-              const SocialSignInSection(),
+              const MotionReveal(
+                order: 2,
+                child: SocialSignInSection(),
+              ),
             ],
           ),
         ),
+        ),
         below: [
           const SizedBox(height: AppSpacing.md),
-          SignInPrompt(onTap: _goToLogin),
+          MotionReveal(
+            order: 3,
+            child: SignInPrompt(onTap: _goToLogin),
+          ),
           const SizedBox(height: AppSpacing.xxs),
-          TextButton(
-            // Preview mode: Home becomes the root route so Back
-            // doesn't return to the auth screens.
-            onPressed: () => AppRouter.openAfterAuth(context),
-            child: Text(
-              l10n.authContinueWithoutAccount,
-              style: TextStyle(
-                fontSize: 12.5,
-                color: context.sirati.textHint,
+          MotionReveal(
+            order: 3,
+            child: TextButton(
+              // Preview mode: Home becomes the root route so Back
+              // doesn't return to the auth screens.
+              onPressed: () => AppRouter.openAfterAuth(context),
+              child: Text(
+                l10n.authContinueWithoutAccount,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: context.sirati.textHint,
+                ),
               ),
             ),
           ),

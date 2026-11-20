@@ -76,6 +76,9 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
   /// AI text being written into a field, word by word, per field.
   final Map<String, WordWriteIn> _writeIns = {};
 
+  /// UI-only completion pulse counters per field after AI enhancement.
+  final Map<String, int> _enhanceBeats = {};
+
   // Captured in initState: ref cannot be used from dispose().
   late final CvDraftStore _draftStore;
 
@@ -549,7 +552,10 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           },
         );
         _markDirty();
-        setState(() => _fieldResults[field] = details);
+        setState(() {
+          _fieldResults[field] = details;
+          _enhanceBeats[field] = (_enhanceBeats[field] ?? 0) + 1;
+        });
         AppSnackBar.show(
           context,
           message: AppLocalizations.of(context).cvFieldEnhanced,
@@ -609,6 +615,10 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       case CvEnhanced(:final text):
         // A real edit: goes through dirty tracking and autosave.
         _fields.jobDescription.text = text;
+        setState(() {
+          _enhanceBeats['jobDescription'] =
+              (_enhanceBeats['jobDescription'] ?? 0) + 1;
+        });
         AppSnackBar.success(
           context,
           AppLocalizations.of(context).cvJobDescriptionEnhanced,
@@ -649,6 +659,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       onEnhance: (field) => unawaited(_enhanceField(field)),
       onDismissResult: (field) => setState(() => _fieldResults.remove(field)),
       onPrimaryAction: _onPrimaryAction,
+      enhanceBeats: _enhanceBeats,
     );
   }
 
@@ -678,7 +689,6 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     final isGenerating = ref.watch(cvGenerationControllerProvider);
     final enhancingField = ref.watch(cvFieldEnhancerProvider);
     final pendingDraft = _pendingDraft;
-    final reduceMotion = MotionSettings.reduce(context);
 
     // Clean form: back pops normally. Dirty: intercept and ask first.
     return PopScope(
@@ -701,40 +711,23 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         body: Column(
           children: [
             WizardHeader(step: _step, english: english, onStepTap: _goToStep),
-            if (pendingDraft != null && !_isEditMode)
-              DraftRestoreBanner(
-                english: english,
-                savedAt: pendingDraft.savedAt,
-                onStartFresh: () => unawaited(_startFresh()),
-                onRestore: _restoreDraft,
-              ),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: reduceMotion ? Duration.zero : MotionDurations.slow,
-                switchInCurve: MotionCurves.enter,
-                switchOutCurve: MotionCurves.exit,
-                transitionBuilder: (child, animation) {
-                  if (reduceMotion) return child;
-                  final curved = CurvedAnimation(
-                    parent: animation,
-                    curve: MotionCurves.enter,
-                    reverseCurve: MotionCurves.exit,
-                  );
-                  return FadeTransition(
-                    opacity: curved,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: MotionAxis.slideIn(
-                          context: context,
-                          distance: 0.05,
-                          direction: _stepDirection,
-                        ),
-                        end: Offset.zero,
-                      ).animate(curved),
-                      child: child,
+            MotionExpandSlot(
+              child: pendingDraft != null && !_isEditMode
+                  ? DraftRestoreBanner(
+                      key: const ValueKey('draft-restore-banner'),
+                      english: english,
+                      savedAt: pendingDraft.savedAt,
+                      onStartFresh: () => unawaited(_startFresh()),
+                      onRestore: _restoreDraft,
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey('draft-restore-empty'),
                     ),
-                  );
-                },
+            ),
+            Expanded(
+              child: MotionStepSwitcher(
+                stepKey: _step,
+                direction: _stepDirection,
                 // PageStorageKey: going back to a step returns to where
                 // the user was on it, not to the top.
                 child: ListView(

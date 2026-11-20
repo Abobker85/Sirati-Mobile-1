@@ -16,6 +16,7 @@ import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Background, hidden, or closing: persist pending edits now.
 bool savesOnLifecycle(AppLifecycleState state) =>
@@ -36,9 +37,10 @@ class CvBuilderScreen extends ConsumerStatefulWidget {
 }
 
 class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   CvBuilderController? _controller;
   late final TabController _tabController;
+  late final AnimationController _previewController;
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -67,12 +69,18 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 4, vsync: this);
+    _previewController = AnimationController(
+      vsync: this,
+      duration: MotionDurations.medium,
+      value: 0,
+    );
     unawaited(_initializeDocument());
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _previewController.dispose();
     _tabController.dispose();
     final controller = _controller;
     if (controller != null) {
@@ -310,8 +318,17 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                   ),
                   tooltip:
                       _showPreviewPane ? l10n.backToEdit : l10n.livePreview,
-                  onPressed: () =>
-                      setState(() => _showPreviewPane = !_showPreviewPane),
+                  onPressed: () {
+                    final next = !_showPreviewPane;
+                    setState(() => _showPreviewPane = next);
+                    if (MotionSettings.reduce(context)) {
+                      _previewController.value = next ? 1 : 0;
+                    } else if (next) {
+                      unawaited(_previewController.forward());
+                    } else {
+                      unawaited(_previewController.reverse());
+                    }
+                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.save_outlined),
@@ -367,16 +384,78 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                     ],
                   );
                 }
-                if (_showPreviewPane) {
-                  return ColoredBox(
-                    color: c.surfaceLow,
-                    child: CvLivePreviewPane(
-                      controller: controller,
-                      template: _template,
-                    ),
+                final reduce = MotionSettings.reduce(context);
+                if (reduce) {
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Visibility(
+                        visible: !_showPreviewPane,
+                        maintainState: true,
+                        child: editor,
+                      ),
+                      if (_showPreviewPane)
+                        ColoredBox(
+                          color: c.surfaceLow,
+                          child: CvLivePreviewPane(
+                            controller: controller,
+                            template: _template,
+                          ),
+                        ),
+                    ],
                   );
                 }
-                return editor;
+                final curved = CurvedAnimation(
+                  parent: _previewController,
+                  curve: MotionCurves.enter,
+                  reverseCurve: MotionCurves.exit,
+                );
+                return AnimatedBuilder(
+                  animation: curved,
+                  child: editor,
+                  builder: (context, editorChild) {
+                    final t = curved.value;
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Visibility(
+                          visible: t < 1,
+                          maintainState: true,
+                          child: IgnorePointer(
+                            ignoring: _showPreviewPane,
+                            child: ExcludeSemantics(
+                              excluding: _showPreviewPane,
+                              child: Opacity(
+                                opacity: (1 - t).clamp(0.0, 1.0),
+                                child: Transform.scale(
+                                  scale: 1.0 - 0.02 * t,
+                                  child: editorChild,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (t > 0)
+                          IgnorePointer(
+                            ignoring: !_showPreviewPane,
+                            child: Opacity(
+                              opacity: t.clamp(0.0, 1.0),
+                              child: Transform.scale(
+                                scale: 0.98 + 0.02 * t,
+                                child: ColoredBox(
+                                  color: c.surfaceLow,
+                                  child: CvLivePreviewPane(
+                                    controller: controller,
+                                    template: _template,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                );
               },
             ),
           );

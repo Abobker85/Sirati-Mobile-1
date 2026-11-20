@@ -120,7 +120,7 @@ class WizardHeader extends StatelessWidget {
 }
 
 /// Half of the line between two step dots; the first and last steps have
-/// no outer half.
+/// no outer half. Fills along the reading direction ([AlignmentDirectional.centerStart]).
 class _Connector extends StatelessWidget {
   const _Connector({required this.visible, required this.done});
 
@@ -132,10 +132,31 @@ class _Connector extends StatelessWidget {
     if (!visible) return const SizedBox(height: 2);
 
     final c = context.sirati;
+    final reduce = MotionSettings.reduce(context);
+    final target = done ? 1.0 : 0.0;
 
-    return Container(
+    Widget fill(double factor) => Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: FractionallySizedBox(
+            widthFactor: factor.clamp(0.0, 1.0),
+            heightFactor: 1,
+            child: ColoredBox(color: c.primaryContainer),
+          ),
+        );
+
+    return SizedBox(
       height: 2,
-      color: done ? c.primaryContainer : c.surfaceHigh,
+      child: ColoredBox(
+        color: c.surfaceHigh,
+        child: reduce
+            ? fill(target)
+            : TweenAnimationBuilder<double>(
+                tween: Tween<double>(end: target),
+                duration: MotionDurations.medium,
+                curve: MotionCurves.state,
+                builder: (_, value, __) => fill(value),
+              ),
+      ),
     );
   }
 }
@@ -178,13 +199,16 @@ class _StepDot extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           child: Center(
-            child: done
-                ? Icon(Icons.check_rounded, size: 16, color: c.onPrimary)
-                : Icon(
-                    wizardStepIcons[index],
-                    size: 16,
-                    color: active ? c.primaryDark : c.textHint,
-                  ),
+            child: MotionMorph(
+              morphKey: done ? 'done-$index' : 'step-$index',
+              child: done
+                  ? Icon(Icons.check_rounded, size: 16, color: c.onPrimary)
+                  : Icon(
+                      wizardStepIcons[index],
+                      size: 16,
+                      color: active ? c.primaryDark : c.textHint,
+                    ),
+            ),
           ),
         ),
       ),

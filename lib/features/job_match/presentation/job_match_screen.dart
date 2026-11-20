@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/features/job_match/application/job_match_controller.dart';
 import 'package:sirati/features/job_match/domain/job_match_entitlement.dart';
@@ -19,6 +20,8 @@ import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/submit_button.dart';
 
 /// Job Match entry: server-gated (paywall / quota / unavailable), then job
 /// details + CV choice → match → [JobMatchResultScreen].
@@ -186,40 +189,48 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        JobMatchSection(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              JobMatchFieldLabel(l.jobMatchJobTitleLabel),
-              _BidiField(
-                fieldKey: JobMatchScreen.titleFieldKey,
-                controller: _title,
-                hint: l.jobMatchJobTitleHint,
-                onChanged: _clearInputError,
-              ),
-              _CharCounter(controller: _title, max: JobMatchInput.titleMax),
-              const SizedBox(height: AppSpacing.sm),
-              JobMatchFieldLabel(l.jobMatchDescriptionLabel),
-              _BidiField(
-                fieldKey: JobMatchScreen.descriptionFieldKey,
-                controller: _description,
-                hint: l.jobMatchDescriptionHint,
-                multiline: true,
-                onChanged: _clearInputError,
-              ),
-              _CharCounter(
-                controller: _description,
-                max: JobMatchInput.descriptionMax,
-              ),
-              if (_inputError != null) ...[
-                const SizedBox(height: AppSpacing.xs),
-                JobMatchNotice(
-                  key: const ValueKey('jm-input-error'),
-                  tone: JobMatchTone.error,
-                  message: l.jobMatchInputMessage(_inputError!),
+        ErrorShake(
+          errorKey: _inputError,
+          child: JobMatchSection(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                JobMatchFieldLabel(l.jobMatchJobTitleLabel),
+                _BidiField(
+                  fieldKey: JobMatchScreen.titleFieldKey,
+                  controller: _title,
+                  hint: l.jobMatchJobTitleHint,
+                  onChanged: _clearInputError,
+                ),
+                _CharCounter(controller: _title, max: JobMatchInput.titleMax),
+                const SizedBox(height: AppSpacing.sm),
+                JobMatchFieldLabel(l.jobMatchDescriptionLabel),
+                _BidiField(
+                  fieldKey: JobMatchScreen.descriptionFieldKey,
+                  controller: _description,
+                  hint: l.jobMatchDescriptionHint,
+                  multiline: true,
+                  onChanged: _clearInputError,
+                ),
+                _CharCounter(
+                  controller: _description,
+                  max: JobMatchInput.descriptionMax,
+                ),
+                MotionExpandSlot(
+                  child: _inputError != null
+                      ? Padding(
+                          key: ValueKey(_inputError),
+                          padding: const EdgeInsets.only(top: AppSpacing.xs),
+                          child: JobMatchNotice(
+                            key: const ValueKey('jm-input-error'),
+                            tone: JobMatchTone.error,
+                            message: l.jobMatchInputMessage(_inputError!),
+                          ),
+                        )
+                      : const SizedBox.shrink(key: ValueKey('jm-input-ok')),
                 ),
               ],
-            ],
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.md),
@@ -253,14 +264,13 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
         ],
         if (hasCvs) ...[
           const SizedBox(height: AppSpacing.lg),
-          if (submitting)
-            _BusyRow(label: l.jobMatchSubmitting)
-          else
-            ElevatedButton(
-              key: JobMatchScreen.submitKey,
-              onPressed: _submit,
-              child: Text(l.jobMatchSubmit),
-            ),
+          SubmitButton(
+            key: JobMatchScreen.submitKey,
+            label: l.jobMatchSubmit,
+            loadingLabel: l.jobMatchSubmitting,
+            isLoading: submitting,
+            onPressed: _submit,
+          ),
         ] else if (submitting) ...[
           const SizedBox(height: AppSpacing.lg),
           _BusyRow(label: l.jobMatchSubmitting),
@@ -305,38 +315,44 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
   Widget _cvPicker(BuildContext context, List<GeneratedCv> list) {
     final l = AppLocalizations.of(context);
     final selected = _effectiveCvId(list);
-    return JobMatchSection(
-      title: l.jobMatchPickCvTitle,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final cv in list)
-            _CvOption(
-              key: JobMatchScreen.cvOptionKey(cv.id),
-              cv: cv,
-              selected: cv.id == selected,
-              onTap: () => setState(() {
-                _selectedCvId = cv.id;
-                _pickError = false;
-                _cvPreparing = false;
-              }),
+    return ErrorShake(
+      errorKey: _pickError ? 'pick-cv' : null,
+      child: JobMatchSection(
+        title: l.jobMatchPickCvTitle,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final cv in list)
+              _CvOption(
+                key: JobMatchScreen.cvOptionKey(cv.id),
+                cv: cv,
+                selected: cv.id == selected,
+                onTap: () => setState(() {
+                  _selectedCvId = cv.id;
+                  _pickError = false;
+                  _cvPreparing = false;
+                }),
+              ),
+            MotionExpandSlot(
+              child: _pickError
+                  ? JobMatchNotice(
+                      key: const ValueKey('jm-pick-error'),
+                      tone: JobMatchTone.error,
+                      message: l.jobMatchPickCvRequired,
+                    )
+                  : const SizedBox.shrink(key: ValueKey('jm-pick-ok')),
             ),
-          if (_pickError)
-            JobMatchNotice(
-              key: const ValueKey('jm-pick-error'),
-              tone: JobMatchTone.error,
-              message: l.jobMatchPickCvRequired,
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                key: JobMatchScreen.createTailoredKey,
+                onPressed: _createTailoredCv,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(l.jobMatchOrCreateTailored),
+              ),
             ),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: TextButton.icon(
-              key: JobMatchScreen.createTailoredKey,
-              onPressed: _createTailoredCv,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(l.jobMatchOrCreateTailored),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -401,7 +417,9 @@ class _JobMatchScreenState extends ConsumerState<JobMatchScreen> {
   }
 
   Future<void> _openResult() => Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(builder: (_) => const JobMatchResultScreen()),
+        FadeThroughPageRoute<void>(
+          builder: (_) => const JobMatchResultScreen(),
+        ),
       );
 
   /// Opens the CV generator prefilled with this job; when it hands the new
@@ -463,10 +481,12 @@ class _GateView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        JobMatchSection(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+        MotionReveal(
+          order: 0,
+          child: JobMatchSection(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               Center(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -557,6 +577,7 @@ class _GateView extends StatelessWidget {
                 ),
             ],
           ),
+        ),
         ),
       ],
     );
@@ -671,61 +692,71 @@ class _CvOption extends StatelessWidget {
         : (name.isNotEmpty ? name : l.jobMatchUntitledCv);
     final subtitle = jobTitle.isNotEmpty && name.isNotEmpty ? name : null;
 
+    final reduce = MotionSettings.reduce(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Semantics(
         selected: selected,
         inMutuallyExclusiveGroup: true,
         button: true,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: c.surface,
-            borderRadius: AppRadius.mdAll,
-            border: Border.all(
-              color: selected ? c.primaryInk : c.textSecondary,
-              width: selected ? 2 : 1,
-            ),
-          ),
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
+        child: PressScale(
+          pressedScale: 0.985,
+          child: AnimatedContainer(
+            duration: reduce ? Duration.zero : MotionDurations.fast,
+            curve: MotionCurves.state,
+            decoration: BoxDecoration(
+              color: c.surface,
               borderRadius: AppRadius.mdAll,
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                child: Row(
-                  children: [
-                    Icon(
-                      selected
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: selected ? c.primaryInk : c.textSecondary,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          JobMatchContentText(
-                            title,
-                            style: AppTypography.of(
-                              context,
-                              AppTypography.titleSm,
-                            ),
-                          ),
-                          if (subtitle != null)
+              border: Border.all(
+                color: selected ? c.primaryInk : c.textSecondary,
+                width: selected ? 2 : 1,
+              ),
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                borderRadius: AppRadius.mdAll,
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  child: Row(
+                    children: [
+                      MotionMorph(
+                        morphKey: selected,
+                        pop: false,
+                        child: Icon(
+                          selected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_unchecked,
+                          color: selected ? c.primaryInk : c.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             JobMatchContentText(
-                              subtitle,
+                              title,
                               style: AppTypography.of(
                                 context,
-                                AppTypography.bodySm,
-                                color: c.textSecondary,
+                                AppTypography.titleSm,
                               ),
                             ),
-                        ],
+                            if (subtitle != null)
+                              JobMatchContentText(
+                                subtitle,
+                                style: AppTypography.of(
+                                  context,
+                                  AppTypography.bodySm,
+                                  color: c.textSecondary,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

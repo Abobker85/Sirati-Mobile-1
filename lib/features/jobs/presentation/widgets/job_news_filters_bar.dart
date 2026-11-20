@@ -135,6 +135,7 @@ class _FilterPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
+    final reduce = MotionSettings.reduce(context);
     // brandSurface keeps white text at AA in both themes (primary does not).
     final fg = selected ? c.onBrandSurface : c.textPrimary;
 
@@ -145,12 +146,15 @@ class _FilterPill extends StatelessWidget {
         pressedScale: 0.96,
         child: Material(
           color: selected ? c.brandSurface : c.surface,
+          animationDuration: reduce ? Duration.zero : MotionDurations.fast,
           shape: StadiumBorder(
             side: BorderSide(color: selected ? c.brandSurface : c.border),
           ),
           child: InkWell(
             onTap: onTap,
             customBorder: const StadiumBorder(),
+            splashFactory: reduce ? NoSplash.splashFactory : null,
+            highlightColor: reduce ? c.surface.withValues(alpha: 0) : null,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
               child: Padding(
@@ -158,10 +162,14 @@ class _FilterPill extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      selected ? Icons.check_rounded : icon,
-                      size: 18,
-                      color: selected ? fg : iconColor,
+                    MotionMorph(
+                      morphKey: selected,
+                      pop: false,
+                      child: Icon(
+                        selected ? Icons.check_rounded : icon,
+                        size: 18,
+                        color: selected ? fg : iconColor,
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -198,40 +206,86 @@ class JobSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.sirati;
+    final reduce = MotionSettings.reduce(context);
+    const searchIcon = Icon(Icons.search_rounded, size: 20);
+
     return Material(
       type: MaterialType.transparency,
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        textAlign: TextAlign.start,
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          hintText: AppLocalizations.of(context).jobsSearchHint,
-          // Keep the search affordance on the physical leading edge of the field
-          // (left) in both locales — matches the current product screenshots.
-          prefixIcon:
-              english ? const Icon(Icons.search_rounded, size: 20) : null,
-          suffixIcon:
-              english ? null : const Icon(Icons.search_rounded, size: 20),
-          filled: true,
-          fillColor: context.sirati.surface,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: context.sirati.border),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: context.sirati.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: context.sirati.primary, width: 1.4),
-          ),
-        ),
-        style: TextStyle(
-            fontSize: 14, height: 1.3, color: context.sirati.textPrimary),
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, value, _) {
+          final hasText = value.text.isNotEmpty;
+          final clearButton = AnimatedSwitcher(
+            duration: reduce ? Duration.zero : MotionDurations.fast,
+            switchInCurve: MotionCurves.enter,
+            switchOutCurve: MotionCurves.exit,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.75, end: 1).animate(animation),
+                child: child,
+              ),
+            ),
+            child: hasText
+                ? IconButton(
+                    key: const ValueKey('jobs-search-clear'),
+                    tooltip:
+                        MaterialLocalizations.of(context).deleteButtonTooltip,
+                    onPressed: () {
+                      controller.clear();
+                      onChanged('');
+                    },
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: c.textSecondary,
+                    ),
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      splashFactory: reduce ? NoSplash.splashFactory : null,
+                      highlightColor:
+                          reduce ? c.surface.withValues(alpha: 0) : null,
+                    ),
+                  )
+                : const SizedBox.shrink(key: ValueKey('jobs-search-empty')),
+          );
+
+          return TextField(
+            controller: controller,
+            onChanged: onChanged,
+            textAlign: TextAlign.start,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: AppLocalizations.of(context).jobsSearchHint,
+              // Keep the search affordance on the physical leading edge of the
+              // field (left) in both locales — matches the current screenshots.
+              prefixIcon: english ? searchIcon : clearButton,
+              suffixIcon: english ? clearButton : searchIcon,
+              filled: true,
+              fillColor: c.surface,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: c.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: c.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: c.primary, width: 1.4),
+              ),
+            ),
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.3,
+              color: c.textPrimary,
+            ),
+          );
+        },
       ),
     );
   }

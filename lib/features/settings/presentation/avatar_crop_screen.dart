@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Side of the uploaded photo, in pixels.
 const avatarOutputSize = 512;
@@ -170,9 +171,29 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                                       child: SizedBox(
                                         width: image.width * scale,
                                         height: image.height * scale,
-                                        child: RawImage(
-                                          image: image,
-                                          fit: BoxFit.fill,
+                                        child: TweenAnimationBuilder<double>(
+                                          key: ValueKey(image),
+                                          tween: Tween(
+                                            begin:
+                                                MotionSettings.reduce(context)
+                                                    ? 1.0
+                                                    : 0.0,
+                                            end: 1.0,
+                                          ),
+                                          duration:
+                                              MotionSettings.reduce(context)
+                                                  ? Duration.zero
+                                                  : MotionDurations.medium,
+                                          curve: MotionCurves.enter,
+                                          builder: (context, opacity, child) =>
+                                              Opacity(
+                                            opacity: opacity,
+                                            child: child,
+                                          ),
+                                          child: RawImage(
+                                            image: image,
+                                            fit: BoxFit.fill,
+                                          ),
                                         ),
                                       ),
                                     ),

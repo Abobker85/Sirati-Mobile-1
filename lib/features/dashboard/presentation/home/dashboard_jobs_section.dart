@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/expand_page_route.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/dashboard/presentation/home/home_latest_cv_section.dart';
 import 'package:sirati/features/jobs/application/job_news_controllers.dart';
@@ -80,16 +81,28 @@ class DashboardJobsSection extends ConsumerWidget {
               child: FreshGlint(
                 id: 'job:${item.id}',
                 radius: 18,
-                child: JobNewsCard(
-                  item: item,
-                  english: english,
-                  compact: true,
-                  onTap: () => unawaited(
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => JobNewsDetailScreen(item: item),
-                      ),
-                    ),
+                child: Builder(
+                  builder: (cardContext) => JobNewsCard(
+                    item: item,
+                    english: english,
+                    compact: true,
+                    onTap: () {
+                      final origin = ExpandOrigin.of(cardContext, radius: 18);
+                      unawaited(
+                        Navigator.of(context).push(
+                          origin != null
+                              ? ExpandPageRoute<void>(
+                                  origin: origin,
+                                  builder: (_) =>
+                                      JobNewsDetailScreen(item: item),
+                                )
+                              : MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      JobNewsDetailScreen(item: item),
+                                ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),

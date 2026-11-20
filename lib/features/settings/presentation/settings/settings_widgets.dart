@@ -4,6 +4,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/profile_photo.dart';
 
 class SettingsSectionLabel extends StatelessWidget {
@@ -129,52 +130,23 @@ class ThemeModeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final c = context.sirati;
-    Widget option(ThemeMode m, String label) {
-      final selected = mode == m;
-      final radius = BorderRadius.circular(12);
-      return Expanded(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 3),
-          child: Semantics(
-            button: true,
-            selected: selected,
-            inMutuallyExclusiveGroup: true,
-            child: Material(
-              color: selected ? c.primaryLight : c.surfaceLow,
-              shape: RoundedRectangleBorder(
-                borderRadius: radius,
-                side: BorderSide(color: selected ? c.primary : c.border),
-              ),
-              child: InkWell(
-                borderRadius: radius,
-                onTap: () => onChanged(m),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  child: Center(
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        // primaryInk / primaryLight is the gated chip pair.
-                        color: selected ? c.primaryInk : c.textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+    return MotionSegmentedPill<ThemeMode>(
+      value: mode,
+      onChanged: onChanged,
+      semanticLabel: l10n.appearance,
+      options: [
+        MotionSegmentOption(
+          value: ThemeMode.system,
+          label: l10n.themeSystem,
         ),
-      );
-    }
-
-    return Row(
-      children: [
-        option(ThemeMode.system, l10n.themeSystem),
-        option(ThemeMode.light, l10n.themeLight),
-        option(ThemeMode.dark, l10n.themeDark),
+        MotionSegmentOption(
+          value: ThemeMode.light,
+          label: l10n.themeLight,
+        ),
+        MotionSegmentOption(
+          value: ThemeMode.dark,
+          label: l10n.themeDark,
+        ),
       ],
     );
   }

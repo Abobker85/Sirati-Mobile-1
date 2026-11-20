@@ -8,6 +8,7 @@ import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/premium/premium_feature.dart';
 import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Second tab: strengths, numbered quick wins, and the upgrade CTA.
 class RecommendationsTab extends StatelessWidget {
@@ -46,35 +47,54 @@ class RecommendationsTab extends StatelessWidget {
           HiddenItemsNote(count: hidden.weaknesses),
           const SizedBox(height: 24),
         ],
-        _SectionHeader(
-          icon: Icons.thumb_up_alt_rounded,
-          iconColor: c.tealDark,
-          iconBg: c.tealLight,
-          label: AppLocalizations.of(context).jobMatchStrengths,
-        ),
-        const SizedBox(height: 12),
-        _ItemList(
-          items: strengths,
-          hidden: hidden.strengths,
-          emptyText: AppLocalizations.of(context).atsNoStrengths,
-          markerBuilder: (context, _) => const _CheckMarker(),
+        MotionReveal(
+          order: 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SectionHeader(
+                icon: Icons.thumb_up_alt_rounded,
+                iconColor: c.tealDark,
+                iconBg: c.tealLight,
+                label: AppLocalizations.of(context).jobMatchStrengths,
+              ),
+              const SizedBox(height: 12),
+              _ItemList(
+                items: strengths,
+                hidden: hidden.strengths,
+                emptyText: AppLocalizations.of(context).atsNoStrengths,
+                markerBuilder: (context, _) => const _CheckMarker(),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 24),
-        _SectionHeader(
-          icon: Icons.bolt_rounded,
-          iconColor: c.onWarningContainer,
-          iconBg: c.amberLight,
-          label: AppLocalizations.of(context).atsQuickWins,
-        ),
-        const SizedBox(height: 12),
-        _ItemList(
-          items: quickWins,
-          hidden: hidden.quickWins,
-          emptyText: AppLocalizations.of(context).atsNoQuickWins,
-          markerBuilder: (context, i) => _NumberMarker(number: i + 1),
+        MotionReveal(
+          order: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SectionHeader(
+                icon: Icons.bolt_rounded,
+                iconColor: c.onWarningContainer,
+                iconBg: c.amberLight,
+                label: AppLocalizations.of(context).atsQuickWins,
+              ),
+              const SizedBox(height: 12),
+              _ItemList(
+                items: quickWins,
+                hidden: hidden.quickWins,
+                emptyText: AppLocalizations.of(context).atsNoQuickWins,
+                markerBuilder: (context, i) => _NumberMarker(number: i + 1),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 28),
-        _UpgradeCta(english: english),
+        MotionReveal(
+          order: 3,
+          child: _UpgradeCta(english: english),
+        ),
       ],
     );
   }

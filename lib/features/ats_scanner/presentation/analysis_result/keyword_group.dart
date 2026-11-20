@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components/app_sheet.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Wrap of keyword chips, capped at [initialVisibleCount] with a
 /// show-more / show-less toggle. Missing keywords open an advice sheet.
@@ -41,7 +42,7 @@ class _KeywordGroupState extends State<KeywordGroup> {
         ? widget.keywords
         : widget.keywords.take(KeywordGroup.initialVisibleCount);
 
-    return Wrap(
+    final wrap = Wrap(
       spacing: 6,
       runSpacing: 6,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -62,6 +63,14 @@ class _KeywordGroupState extends State<KeywordGroup> {
             onPressed: () => setState(() => _expanded = !_expanded),
           ),
       ],
+    );
+
+    if (MotionSettings.reduce(context)) return wrap;
+    return AnimatedSize(
+      duration: MotionDurations.medium,
+      curve: MotionCurves.enter,
+      alignment: AlignmentDirectional.topStart,
+      child: wrap,
     );
   }
 }
@@ -104,10 +113,12 @@ class _KeywordChip extends StatelessWidget {
 
     if (onTap == null) return chip;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: chip,
+    return PressScale(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: chip,
+      ),
     );
   }
 }

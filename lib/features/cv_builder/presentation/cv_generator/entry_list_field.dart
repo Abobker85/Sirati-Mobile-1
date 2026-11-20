@@ -8,6 +8,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components/app_dialog.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/form_reveal.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// A list of entry cards that reads and writes one wizard text field
 /// (Salem review, issue 3: experience and education like a job application).
@@ -129,12 +130,16 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
 
   /// One key per entry, to bring a newly added entry into view.
   final Map<int, GlobalKey> _cardKeys = {};
+  final Set<int> _justAddedIds = {};
 
   GlobalKey _cardKey(int id) => _cardKeys.putIfAbsent(id, GlobalKey.new);
 
   void _add() {
     final id = _nextId++;
-    setState(() => _entries = [..._entries, (id, widget.blank)]);
+    setState(() {
+      _justAddedIds.add(id);
+      _entries = [..._entries, (id, widget.blank)];
+    });
     HapticFeedback.selectionClick();
     // The new entry scrolls into view, ready to type in: adding is one tap,
     // not tap, scroll, tap.
@@ -146,6 +151,7 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
 
   void _remove(int id) {
     setState(() {
+      _justAddedIds.remove(id);
       _entries = [
         for (final entry in _entries)
           if (entry.$1 != id) entry,
@@ -197,6 +203,7 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
               key: ValueKey('entry-$id'),
               index: index,
               english: widget.english,
+              animateIn: _justAddedIds.contains(id),
               onRemove: _entries.length > 1 || !widget.isBlank(entry)
                   ? () => _remove(id)
                   : null,
@@ -214,24 +221,35 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
             ),
           ],
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            key: const ValueKey('entry-add'),
-            onPressed: _add,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              foregroundColor: c.primaryInk,
-              side: BorderSide(color: c.primaryInk),
+          PressScale(
+            child: OutlinedButton.icon(
+              key: const ValueKey('entry-add'),
+              onPressed: _add,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                foregroundColor: c.primaryInk,
+                side: BorderSide(color: c.primaryInk),
+              ),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(widget.addLabel),
             ),
-            icon: const Icon(Icons.add_rounded),
-            label: Text(widget.addLabel),
           ),
-          if (state.hasError) ...[
-            const SizedBox(height: 8),
-            Text(
-              state.errorText!,
-              style: TextStyle(color: c.error, fontSize: 13),
+          ErrorShake(
+            errorKey: state.errorText,
+            child: MotionExpandSlot(
+              alignment: AlignmentDirectional.topStart,
+              child: state.hasError
+                  ? Padding(
+                      key: ValueKey('entry-err-${state.errorText}'),
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        state.errorText!,
+                        style: TextStyle(color: c.error, fontSize: 13),
+                      ),
+                    )
+                  : const SizedBox.shrink(key: ValueKey('entry-err-none')),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -243,20 +261,23 @@ class _EntryCard extends StatelessWidget {
     super.key,
     required this.index,
     required this.english,
+    this.animateIn = false,
     required this.onRemove,
     required this.child,
   });
 
   final int index;
   final bool english;
+  final bool animateIn;
   final VoidCallback? onRemove;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
+    final reduce = MotionSettings.reduce(context);
     // Material, not a decorated box: the "currently" tile paints its ink on it.
-    return Material(
+    final card = Material(
       color: c.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
@@ -291,6 +312,21 @@ class _EntryCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+    if (!animateIn || reduce) return card;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: MotionDurations.medium,
+      curve: MotionCurves.enter,
+      builder: (context, t, inner) => Opacity(
+        opacity: t,
+        child: Transform.scale(
+          scale: 0.96 + 0.04 * t,
+          alignment: Alignment.topCenter,
+          child: inner,
+        ),
+      ),
+      child: card,
     );
   }
 }

@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sirati/features/cv_builder/controllers/cv_builder_controller.dart';
+import 'package:sirati/features/cv_builder/presentation/section_editor_framework.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -73,6 +77,9 @@ class SectionOrderTab extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: order.length,
+            proxyDecorator: reorderLiftProxyDecorator,
+            onReorderStart: (_) => unawaited(HapticFeedback.selectionClick()),
+            onReorderEnd: (_) => unawaited(HapticFeedback.selectionClick()),
             // ignore: deprecated_member_use
             onReorder: controller.reorderSections,
             itemBuilder: (context, index) {

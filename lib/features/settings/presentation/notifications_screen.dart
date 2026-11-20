@@ -14,6 +14,7 @@ import 'package:sirati/shared/services/notification_service.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
@@ -96,19 +97,28 @@ class NotificationsScreen extends ConsumerWidget {
         // Shown only when it can act: a greyed-out "Read all" over an empty
         // or fully read inbox is noise (and fails text contrast).
         actions: [
-          if (hasUnread)
-            TextButton(
-              onPressed: () async {
-                final ok = await ref
-                    .read(notificationsInboxProvider.notifier)
-                    .markAllRead();
-                if (!ok && context.mounted) _reportFailure(context);
-              },
-              style: TextButton.styleFrom(
-                minimumSize: const Size(48, 48),
-              ),
-              child: Text(l10n.settingsNotificationsReadAll),
-            ),
+          AnimatedSwitcher(
+            duration: MotionSettings.reduce(context)
+                ? Duration.zero
+                : MotionDurations.fast,
+            child: hasUnread
+                ? TextButton(
+                    key: const ValueKey('notifications-read-all'),
+                    onPressed: () async {
+                      final ok = await ref
+                          .read(notificationsInboxProvider.notifier)
+                          .markAllRead();
+                      if (!ok && context.mounted) _reportFailure(context);
+                    },
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                    ),
+                    child: Text(l10n.settingsNotificationsReadAll),
+                  )
+                : const SizedBox.shrink(
+                    key: ValueKey('notifications-read-all-empty'),
+                  ),
+          ),
         ],
       ),
       body: AppAsyncBody<List<NotificationItem>>(
@@ -232,44 +242,60 @@ class _NotificationInboxState extends State<NotificationInbox> {
               ),
             ),
           ),
-          if (groups.isEmpty)
-            SliverPadding(
-              padding: const EdgeInsets.all(AppSpacing.xxl),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  l10n.settingsNotificationsFilterEmpty,
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodySm(context.sirati)
-                      .copyWith(color: context.sirati.textSecondary),
-                ),
-              ),
-            ),
-          for (final group in groups) ...[
-            SliverToBoxAdapter(child: NotificationGroupHeader(group: group)),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              sliver: SliverList.separated(
-                itemCount: group.items.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppSpacing.sm),
-                itemBuilder: (context, index) {
-                  final item = group.items[index];
-                  // Keyed by the notification, so a refresh that adds rows
-                  // never moves a row's dot or reveal onto another item.
-                  return MotionReveal(
-                    key: ValueKey('notification-${item.id}'),
-                    order: index.clamp(0, 5),
-                    child: NotificationCard(
-                      key: ValueKey('notification-card-${item.id}'),
-                      item: item,
-                      order: index,
-                      onTap: () => widget.onOpen(item),
+          SliverToBoxAdapter(
+            child: MotionStateSwitcher(
+              stateKey: '$_unreadOnly-${category?.name ?? 'all'}',
+              child: groups.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppSpacing.xxl),
+                      child: Text(
+                        l10n.settingsNotificationsFilterEmpty,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.bodySm(context.sirati)
+                            .copyWith(color: context.sirati.textSecondary),
+                      ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final group in groups) ...[
+                          NotificationGroupHeader(group: group),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                for (var index = 0;
+                                    index < group.items.length;
+                                    index++) ...[
+                                  if (index > 0)
+                                    const SizedBox(height: AppSpacing.sm),
+                                  // Keyed by the notification, so a refresh that adds rows
+                                  // never moves a row's dot or reveal onto another item.
+                                  MotionReveal(
+                                    key: ValueKey(
+                                        'notification-${group.items[index].id}'),
+                                    order: index.clamp(0, 5),
+                                    child: NotificationCard(
+                                      key: ValueKey(
+                                          'notification-card-${group.items[index].id}'),
+                                      item: group.items[index],
+                                      order: index,
+                                      onTap: () =>
+                                          widget.onOpen(group.items[index]),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  );
-                },
-              ),
             ),
-          ],
+          ),
           const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
         ],
       ),
@@ -311,9 +337,8 @@ class NotificationFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    final shape = StadiumBorder(
-      side: BorderSide(color: selected ? c.primary : c.borderStrong),
-    );
+    final reduce = MotionSettings.reduce(context);
+    const shape = StadiumBorder();
     return Semantics(
       button: true,
       selected: selected,
@@ -321,45 +346,57 @@ class NotificationFilterChip extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
         child: Center(
           widthFactor: 1,
-          child: Material(
-            color: selected ? c.primary : c.surface,
-            shape: shape,
-            child: InkWell(
-              onTap: onTap,
-              customBorder: shape,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: AppTextStyles.labelMd(c).copyWith(
-                        color: selected ? c.onPrimary : c.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (count != null) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        constraints: const BoxConstraints(minWidth: 20),
-                        decoration: BoxDecoration(
-                          color: selected ? c.onPrimary : c.primary,
-                          borderRadius: BorderRadius.circular(10),
+          child: AnimatedContainer(
+            duration: reduce ? Duration.zero : MotionDurations.fast,
+            curve: MotionCurves.state,
+            decoration: BoxDecoration(
+              color: selected ? c.primary : c.surface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: selected ? c.primary : c.borderStrong),
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              shape: shape,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                customBorder: shape,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
+                        style: AppTextStyles.labelMd(c).copyWith(
+                          color: selected ? c.onPrimary : c.textPrimary,
+                          fontWeight: FontWeight.w600,
                         ),
-                        child: Text(
-                          count!,
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.labelMd(c).copyWith(
-                            color: selected ? c.primary : c.onPrimary,
-                            fontWeight: FontWeight.w700,
+                      ),
+                      if (count != null) ...[
+                        const SizedBox(width: 6),
+                        AnimatedContainer(
+                          duration: reduce ? Duration.zero : MotionDurations.fast,
+                          curve: MotionCurves.state,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          constraints: const BoxConstraints(minWidth: 20),
+                          decoration: BoxDecoration(
+                            color: selected ? c.onPrimary : c.primary,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            count!,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.labelMd(c).copyWith(
+                              color: selected ? c.primary : c.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -503,19 +540,25 @@ class NotificationCard extends StatelessWidget {
     final tile = notificationTileStyle(item, c);
     final radius = BorderRadius.circular(16);
     final unread = !item.isRead;
+    final reduce = MotionSettings.reduce(context);
+    final duration = reduce ? Duration.zero : MotionDurations.fast;
 
     return PressScale(
-      child: DecoratedBox(
-        decoration:
-            BoxDecoration(borderRadius: radius, boxShadow: c.softShadow),
-        child: Material(
+      child: AnimatedContainer(
+        duration: duration,
+        curve: MotionCurves.state,
+        decoration: BoxDecoration(
           color: unread ? c.primaryLight : c.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: radius,
-            side: BorderSide(
-              color: unread ? c.primary.withValues(alpha: .28) : c.border,
-            ),
+          borderRadius: radius,
+          border: Border.all(
+            color: unread ? c.primary.withValues(alpha: .28) : c.border,
           ),
+          boxShadow: c.softShadow,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          borderRadius: radius,
+          clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
             borderRadius: radius,
@@ -524,7 +567,9 @@ class NotificationCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
+                  AnimatedContainer(
+                    duration: duration,
+                    curve: MotionCurves.state,
                     width: 44,
                     height: 44,
                     // On the teal unread tint the light tile tints blend in;
@@ -567,11 +612,10 @@ class NotificationCard extends StatelessWidget {
                             ),
                             if (item.opensSomething) ...[
                               const SizedBox(width: 6),
-                              Icon(
+                              DirectionalIcon(
                                 Icons.chevron_right_rounded,
                                 size: 18,
                                 color: c.textSecondary,
-                                textDirection: Directionality.of(context),
                               ),
                             ],
                           ],

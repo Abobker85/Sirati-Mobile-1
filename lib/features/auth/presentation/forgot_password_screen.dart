@@ -39,6 +39,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   bool _isResending = false;
   bool _submitted = false;
   bool _codeSent = false;
+  int _stepDirection = 1;
 
   /// The code field gets focus as soon as its stage appears.
   final _codeFocus = FocusNode();
@@ -112,6 +113,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           );
       if (!mounted) return;
       setState(() {
+        _stepDirection = 1;
         _codeSent = true;
         _submitted = false;
       });
@@ -211,13 +213,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
             children: [
-              Text(
-                _codeSent
-                    ? l10n.authForgotCodeIntro
-                    : l10n.authForgotEmailIntro,
-                textAlign: TextAlign.start,
-                style: AppTextStyles.titleMd(context.sirati)
-                    .copyWith(fontSize: 17, height: 1.55),
+              MotionStateSwitcher(
+                stateKey: _codeSent,
+                child: Text(
+                  _codeSent
+                      ? l10n.authForgotCodeIntro
+                      : l10n.authForgotEmailIntro,
+                  textAlign: TextAlign.start,
+                  style: AppTextStyles.titleMd(context.sirati)
+                      .copyWith(fontSize: 17, height: 1.55),
+                ),
               ),
               const SizedBox(height: AppSpacing.xl),
               Text(
@@ -259,6 +264,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               // CV wizard's steps.
               MotionStepSwitcher(
                 stepKey: _codeSent,
+                direction: _stepDirection,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -429,6 +435,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                             ? null
                             : () {
                                 setState(() {
+                                  _stepDirection = -1;
                                   _codeSent = false;
                                   _submitted = false;
                                   _codeController.clear();

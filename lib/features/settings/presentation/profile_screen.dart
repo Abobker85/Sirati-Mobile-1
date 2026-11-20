@@ -23,6 +23,7 @@ import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/job_title_picker_field.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/profile_photo.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
@@ -431,26 +432,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ],
               ),
             ],
-            if (isOther) ...[
-              const SizedBox(height: AppSpacing.md),
-              label(l10n.authJobTitleOtherLabel),
-              AppTextFormField(
-                controller: _otherCtrl,
-                showSuccessWhenValid: true,
-                successMessage: l10n.authLooksGood,
-                autovalidateMode: autovalidate,
-                textAlign: TextAlign.start,
-                maxLength: ProfileRules.jobTitleOtherMax,
-                onChanged: (_) => _jobTitleEdited = true,
-                hintText: l10n.authJobTitleOtherHint,
-                prefixIcon: const Icon(Icons.edit_outlined),
-                validator: (v) => _errorText(
-                  ProfileRules.jobTitleOther(v, isOther: isOther),
-                  requiredText: l10n.authJobTitleOtherRequired,
-                  max: ProfileRules.jobTitleOtherMax,
-                ),
-              ),
-            ],
+            MotionExpandSlot(
+              child: isOther
+                  ? Column(
+                      key: const ValueKey('profile-job-title-other'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: AppSpacing.md),
+                        label(l10n.authJobTitleOtherLabel),
+                        AppTextFormField(
+                          controller: _otherCtrl,
+                          showSuccessWhenValid: true,
+                          successMessage: l10n.authLooksGood,
+                          autovalidateMode: autovalidate,
+                          textAlign: TextAlign.start,
+                          maxLength: ProfileRules.jobTitleOtherMax,
+                          onChanged: (_) => _jobTitleEdited = true,
+                          hintText: l10n.authJobTitleOtherHint,
+                          prefixIcon: const Icon(Icons.edit_outlined),
+                          validator: (v) => _errorText(
+                            ProfileRules.jobTitleOther(v, isOther: isOther),
+                            requiredText: l10n.authJobTitleOtherRequired,
+                            max: ProfileRules.jobTitleOtherMax,
+                          ),
+                        ),
+                      ],
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey('profile-job-title-other-empty'),
+                    ),
+            ),
             const SizedBox(height: AppSpacing.md),
             label(l10n.emailLabel),
             readOnlyField(

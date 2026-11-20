@@ -29,37 +29,40 @@ class SkillsStep extends StatelessWidget {
           label: l10n.cvSkillsCore,
           // One editor for skills: the chips own the text the AI enhances,
           // so a second raw field would only show the same list twice.
-          child: AiCvField(
-            field: 'skills',
-            controller: f.skills,
-            english: english,
-            isLoading: props.isEnhancing('skills'),
-            helperText: l10n.cvSkillsHelper,
-            result: props.fieldResults['skills'],
-            onEnhance: () => props.onEnhance('skills'),
-            onDismissResult: () => props.onDismissResult('skills'),
-            child: FormField<String>(
-              validator: (_) =>
-                  f.skills.text.trim().isEmpty ? l10n.cvSkillsRequired : null,
-              builder: (state) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SkillChipsSelector(
-                    controller: f.skills,
-                    targetJobTitle: f.jobTitle.text,
-                    english: english,
-                    allJobTitles: jobTitles,
-                    enabled: !props.isEnhancing('skills'),
-                    onChanged: () => state.didChange(f.skills.text),
-                  ),
-                  if (state.hasError) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      state.errorText!,
-                      style: AppFormStyles.errorTextStyle(context.sirati),
+          child: AiEnhancedBeatFrame(
+            beat: props.enhanceBeats['skills'] ?? 0,
+            child: AiCvField(
+              field: 'skills',
+              controller: f.skills,
+              english: english,
+              isLoading: props.isEnhancing('skills'),
+              helperText: l10n.cvSkillsHelper,
+              result: props.fieldResults['skills'],
+              onEnhance: () => props.onEnhance('skills'),
+              onDismissResult: () => props.onDismissResult('skills'),
+              child: FormField<String>(
+                validator: (_) =>
+                    f.skills.text.trim().isEmpty ? l10n.cvSkillsRequired : null,
+                builder: (state) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkillChipsSelector(
+                      controller: f.skills,
+                      targetJobTitle: f.jobTitle.text,
+                      english: english,
+                      allJobTitles: jobTitles,
+                      enabled: !props.isEnhancing('skills'),
+                      onChanged: () => state.didChange(f.skills.text),
                     ),
+                    if (state.hasError) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        state.errorText!,
+                        style: AppFormStyles.errorTextStyle(context.sirati),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -67,23 +70,26 @@ class SkillsStep extends StatelessWidget {
         const SizedBox(height: 18),
         FieldGroup(
           label: l10n.cvSummaryLabel,
-          child: AiCvField(
-            field: 'summary',
-            controller: f.summary,
-            english: english,
-            isLoading: props.isEnhancing('summary'),
-            helperText: l10n.cvSummaryHelper,
-            result: props.fieldResults['summary'],
-            onEnhance: () => props.onEnhance('summary'),
-            onDismissResult: () => props.onDismissResult('summary'),
-            child: AppTextFormField(
+          child: AiEnhancedBeatFrame(
+            beat: props.enhanceBeats['summary'] ?? 0,
+            child: AiCvField(
+              field: 'summary',
               controller: f.summary,
-              textAlign: TextAlign.start,
-              maxLines: 4,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => props.onPrimaryAction(),
-              enabled: !props.isEnhancing('summary'),
-              hintText: l10n.cvSummaryHint,
+              english: english,
+              isLoading: props.isEnhancing('summary'),
+              helperText: l10n.cvSummaryHelper,
+              result: props.fieldResults['summary'],
+              onEnhance: () => props.onEnhance('summary'),
+              onDismissResult: () => props.onDismissResult('summary'),
+              child: AppTextFormField(
+                controller: f.summary,
+                textAlign: TextAlign.start,
+                maxLines: 4,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => props.onPrimaryAction(),
+                enabled: !props.isEnhancing('summary'),
+                hintText: l10n.cvSummaryHint,
+              ),
             ),
           ),
         ),

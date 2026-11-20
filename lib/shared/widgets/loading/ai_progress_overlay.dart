@@ -6,6 +6,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/branded_loader.dart';
+import 'package:sirati/shared/widgets/loading/cv_drafting_scene.dart';
 import 'package:sirati/shared/widgets/loading/scan_paper_scene.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -429,9 +430,9 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
               child: SizedBox(
                 height: 96,
                 child: Center(
-                  // A scan tells its story on a page; other jobs and reduced
-                  // motion keep the loader and tick.
-                  child: widget.kind == AiProgressKind.analysis && !reduce
+                  // A scan tells its story on a page; generation sketches the
+                  // CV; reduced motion keeps the loader and tick.
+                  child: !reduce && widget.kind == AiProgressKind.analysis
                       ? ScanPaperScene(
                           // After a long wait the beam slows down: the
                           // scene settles instead of racing.
@@ -440,9 +441,16 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
                               ? ScanStage.done
                               : ScanStage.values[step.clamp(0, 2)],
                         )
-                      : finished
-                          ? _DoneMark(reduce: reduce)
-                          : BrandedLoader(size: 56, halo: !reduce),
+                      : !reduce && widget.kind == AiProgressKind.generation
+                          ? CvDraftingScene(
+                              slow: _longWait,
+                              stage: finished
+                                  ? DraftStage.done
+                                  : DraftStage.values[step.clamp(0, 2)],
+                            )
+                          : finished
+                              ? _DoneMark(reduce: reduce)
+                              : BrandedLoader(size: 56, halo: !reduce),
                 ),
               ),
             ),

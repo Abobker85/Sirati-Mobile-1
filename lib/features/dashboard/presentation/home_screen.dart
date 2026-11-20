@@ -210,23 +210,35 @@ class _HomeScreenState extends State<HomeScreen> {
             // Built from the enum so page order always matches the nav bar.
             children: [
               for (final tab in DashboardTab.values)
-                // Account tabs wait for the session check, so a guest never
-                // calls their endpoints.
-                if (_needsAccount(tab) && _guest == null)
-                  const SizedBox.shrink()
-                else if (_needsAccount(tab) && _guest == true)
-                  SignInRequiredView(
-                    key: ValueKey('sign-in-required-${tab.name}'),
-                    onBrowseJobs: () => _setTab(DashboardTab.jobNews),
-                    showBack: false,
+                if (_needsAccount(tab))
+                  MotionStateSwitcher(
+                    stateKey: _guest == null
+                        ? 'boot'
+                        : (_guest == true ? 'guest' : 'user'),
+                    // Account tabs wait for the session check, so a guest never
+                    // calls their endpoints.
+                    child: _guest == null
+                        ? const SizedBox.shrink()
+                        : _guest == true
+                            ? SignInRequiredView(
+                                key: ValueKey('sign-in-required-${tab.name}'),
+                                onBrowseJobs: () =>
+                                    _setTab(DashboardTab.jobNews),
+                                showBack: false,
+                              )
+                            : switch (tab) {
+                                DashboardTab.home =>
+                                  DashboardHomeTab(onNavigate: _setTab),
+                                DashboardTab.myCvs => const MyCvsScreen(),
+                                _ => const SizedBox.shrink(),
+                              },
                   )
                 else
                   switch (tab) {
-                    DashboardTab.home => DashboardHomeTab(onNavigate: _setTab),
-                    DashboardTab.myCvs => const MyCvsScreen(),
                     DashboardTab.jobNews =>
                       JobNewsScreen(isActive: _tab == DashboardTab.jobNews),
                     DashboardTab.education => const EducationScreen(),
+                    _ => const SizedBox.shrink(),
                   },
             ],
           ),

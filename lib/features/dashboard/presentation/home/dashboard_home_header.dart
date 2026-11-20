@@ -5,6 +5,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/auth_session.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/greeting_reveal.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/profile_photo.dart';
@@ -111,7 +112,7 @@ class DashboardHomeHeader extends StatelessWidget {
                               ],
                             ),
                           ),
-                          Icon(
+                          DirectionalIcon(
                             Icons.chevron_right_rounded,
                             color: c.textSecondary,
                           ),

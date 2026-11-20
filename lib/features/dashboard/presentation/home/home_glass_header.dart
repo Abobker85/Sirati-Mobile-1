@@ -20,7 +20,10 @@ class HomeGlassHeader extends StatefulWidget {
 
 class _HomeGlassHeaderState extends State<HomeGlassHeader> {
   ScrollPosition? _position;
-  bool _scrolled = false;
+  double _strength = 0;
+
+  /// Scroll distance over which the glass header reaches full strength.
+  static const _scrollRamp = 24.0;
 
   @override
   void didChangeDependencies() {
@@ -34,11 +37,12 @@ class _HomeGlassHeaderState extends State<HomeGlassHeader> {
 
   void _onScroll() {
     final p = _position;
-    final scrolled = p != null &&
-        p.hasPixels &&
-        p.hasContentDimensions &&
-        p.pixels > p.minScrollExtent + .5;
-    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    final next = (p == null || !p.hasPixels || !p.hasContentDimensions)
+        ? 0.0
+        : ((p.pixels - p.minScrollExtent) / _scrollRamp).clamp(0.0, 1.0);
+    if ((next - _strength).abs() > 0.005 || (next == 0 && _strength != 0) || (next == 1 && _strength != 1)) {
+      setState(() => _strength = next);
+    }
   }
 
   @override
@@ -49,6 +53,7 @@ class _HomeGlassHeaderState extends State<HomeGlassHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.sirati;
     return Stack(
       children: [
         Positioned.fill(
@@ -56,18 +61,35 @@ class _HomeGlassHeaderState extends State<HomeGlassHeader> {
             // The glass itself fades in (tint and blur together); an opacity
             // over a blur would show tint first and pop the blur on at the end.
             child: TweenAnimationBuilder<double>(
-              tween: Tween(end: _scrolled ? 1 : 0),
+              tween: Tween(end: _strength),
               duration: MotionSettings.reduce(context)
                   ? Duration.zero
                   : MotionDurations.medium,
               curve: MotionCurves.standard,
-              builder: (context, strength, _) => GlassSurface(
-                key: HomeGlassHeader.glassKey,
-                strength: strength,
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(AppSpacing.xl),
+              builder: (context, strength, _) => DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(AppSpacing.xl),
+                  ),
+                  boxShadow: strength > 0
+                      ? [
+                          BoxShadow(
+                            color: c.glassShadow.first.color
+                                .withValues(alpha: c.glassShadow.first.color.a * strength),
+                            blurRadius: c.glassShadow.first.blurRadius * strength,
+                            offset: c.glassShadow.first.offset * strength,
+                          ),
+                        ]
+                      : null,
                 ),
-                child: const SizedBox.expand(),
+                child: GlassSurface(
+                  key: HomeGlassHeader.glassKey,
+                  strength: strength,
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(AppSpacing.xl),
+                  ),
+                  child: const SizedBox.expand(),
+                ),
               ),
             ),
           ),

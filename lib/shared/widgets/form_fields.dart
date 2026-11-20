@@ -194,8 +194,9 @@ class AppFormErrorBanner extends StatelessWidget {
   }
 
   Widget _banner(BuildContext context) {
+    final reduce = MotionSettings.reduce(context);
     return AnimatedSize(
-      duration: MotionDurations.fast,
+      duration: reduce ? Duration.zero : MotionDurations.fast,
       curve: MotionCurves.state,
       child: Container(
         width: double.infinity,
@@ -256,20 +257,21 @@ class AppFormSuccessBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduce = MotionSettings.reduce(context);
     return AnimatedSize(
-      duration: MotionDurations.fast,
+      duration: reduce ? Duration.zero : MotionDurations.fast,
       curve: MotionCurves.state,
       child: TweenAnimationBuilder<double>(
         key: ValueKey(message),
         tween: Tween(begin: 0, end: 1),
-        duration: MotionDurations.medium,
+        duration: reduce ? Duration.zero : MotionDurations.medium,
         curve: MotionCurves.enter,
         builder: (context, t, child) => Opacity(
-          opacity: MotionSettings.reduce(context) ? 1 : t,
+          opacity: reduce ? 1 : t,
           child: Transform.translate(
             offset: Offset(
               0,
-              MotionSettings.reduce(context) ? 0 : (1 - t) * -4,
+              reduce ? 0 : (1 - t) * -4,
             ),
             child: child,
           ),

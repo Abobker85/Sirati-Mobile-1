@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Card title used by every section of the analysis form.
 class AnalysisSectionTitle extends StatelessWidget {
@@ -39,6 +40,7 @@ class CollapsibleSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.sirati;
+    final reduce = MotionSettings.reduce(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -55,7 +57,9 @@ class CollapsibleSection extends StatelessWidget {
                   Expanded(child: AnalysisSectionTitle(title)),
                   AnimatedRotation(
                     turns: expanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 180),
+                    duration: reduce
+                        ? Duration.zero
+                        : const Duration(milliseconds: 180),
                     child: Icon(
                       Icons.keyboard_arrow_down_rounded,
                       color: colors.textSecondary,
@@ -67,7 +71,8 @@ class CollapsibleSection extends StatelessWidget {
           ),
         ),
         AnimatedCrossFade(
-          duration: const Duration(milliseconds: 200),
+          duration:
+              reduce ? Duration.zero : const Duration(milliseconds: 200),
           crossFadeState:
               expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
           firstChild: Padding(
@@ -97,52 +102,54 @@ class UploadDropZone extends StatelessWidget {
     final radius = BorderRadius.circular(14);
     return Semantics(
       button: true,
-      child: Material(
-        color: colors.primaryLight,
-        shape: RoundedRectangleBorder(
-          borderRadius: radius,
-          side: BorderSide(color: colors.primaryInk, width: 1.5),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: radius,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 12),
-            child: Column(
-              children: [
-                ExcludeSemantics(
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      shape: BoxShape.circle,
+      child: PressScale(
+        child: Material(
+          color: colors.primaryLight,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(color: colors.primaryInk, width: 1.5),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: radius,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 12),
+              child: Column(
+                children: [
+                  ExcludeSemantics(
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.cloud_upload_outlined,
+                        size: 28,
+                        color: colors.primaryInk,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.cloud_upload_outlined,
-                      size: 28,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    AppLocalizations.of(context).atsUploadTapHint,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      // primaryInk / primaryLight is the gated chip pair.
                       color: colors.primaryInk,
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  AppLocalizations.of(context).atsUploadTapHint,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    // primaryInk / primaryLight is the gated chip pair.
-                    color: colors.primaryInk,
+                  const SizedBox(height: 4),
+                  Text(
+                    AppLocalizations.of(context).atsUploadMaxSize,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: colors.primaryInk),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  AppLocalizations.of(context).atsUploadMaxSize,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: colors.primaryInk),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -43,11 +43,35 @@ class FadeThroughPageRoute<T> extends MaterialPageRoute<T> {
       curve: const Interval(fadeInStart, 1, curve: enterCurve),
       reverseCurve: Curves.easeInCubic,
     );
-    return FadeTransition(
+    final fadeOut = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: const Interval(0, fadeInStart, curve: Curves.easeInCubic),
+      reverseCurve: const Interval(0, fadeInStart),
+    );
+    final background = Theme.of(context).scaffoldBackgroundColor;
+    final incoming = FadeTransition(
       opacity: fade,
       child: ScaleTransition(
         scale: Tween<double>(begin: .98, end: 1).animate(fade),
         child: child,
+      ),
+    );
+    return AnimatedBuilder(
+      animation: fadeOut,
+      child: incoming,
+      builder: (context, c) => Stack(
+        fit: StackFit.passthrough,
+        children: [
+          c!,
+          if (fadeOut.value > 0)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: ColoredBox(
+                  color: background.withValues(alpha: fadeOut.value),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

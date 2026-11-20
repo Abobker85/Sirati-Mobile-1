@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/expand_page_route.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
@@ -17,6 +18,7 @@ import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/sirati_refresh_indicator.dart';
 
 /// Past analyses and generated CVs, one tab each.
@@ -81,7 +83,7 @@ class _HistoryTab<T> extends StatelessWidget {
   final VoidCallback onLoadMore;
   final Widget empty;
   final Widget Function(HistoryPage<T> page)? header;
-  final Widget Function(BuildContext context, T item) itemBuilder;
+  final Widget Function(BuildContext context, T item, int index) itemBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +132,7 @@ class _HistoryTab<T> extends StatelessWidget {
                         onPressed: onLoadMore,
                       );
                     }
-                    return itemBuilder(context, items[index]);
+                    return itemBuilder(context, items[index], index);
                   },
                 ),
         );
@@ -146,9 +148,11 @@ Future<void> _settle(Future<Object?> next) async {
   } catch (_) {}
 }
 
-void _push(BuildContext context, Widget screen) {
+void _push(BuildContext context, Widget screen, {ExpandOrigin? origin}) {
   unawaited(Navigator.of(context).push(
-    MaterialPageRoute(builder: (_) => screen),
+    origin != null
+        ? ExpandPageRoute<void>(origin: origin, builder: (_) => screen)
+        : MaterialPageRoute<void>(builder: (_) => screen),
   ));
 }
 
@@ -178,9 +182,19 @@ class _AnalysesTab extends ConsumerWidget {
         textAlign: TextAlign.start,
         style: AppTextStyles.bodySm(context.sirati),
       ),
-      itemBuilder: (context, analysis) => AnalysisHistoryCard(
-        analysis: analysis,
-        onTap: () => _push(context, AnalysisResultScreen(analysis: analysis)),
+      itemBuilder: (context, analysis, index) => MotionReveal(
+        key: ValueKey('history-analysis-${analysis.id}'),
+        order: index.clamp(0, MotionReveal.maxStaggerIndex),
+        child: Builder(
+          builder: (cardContext) => AnalysisHistoryCard(
+            analysis: analysis,
+            onTap: () => _push(
+              context,
+              AnalysisResultScreen(analysis: analysis),
+              origin: ExpandOrigin.of(cardContext, radius: 14),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -208,9 +222,19 @@ class _GeneratedCvsTab extends ConsumerWidget {
         scrollable: false,
       ),
       header: null,
-      itemBuilder: (context, cv) => GeneratedCvHistoryCard(
-        cv: cv,
-        onTap: () => _push(context, GeneratedCvScreen(generatedCv: cv)),
+      itemBuilder: (context, cv, index) => MotionReveal(
+        key: ValueKey('history-cv-${cv.id}'),
+        order: index.clamp(0, MotionReveal.maxStaggerIndex),
+        child: Builder(
+          builder: (cardContext) => GeneratedCvHistoryCard(
+            cv: cv,
+            onTap: () => _push(
+              context,
+              GeneratedCvScreen(generatedCv: cv),
+              origin: ExpandOrigin.of(cardContext, radius: 14),
+            ),
+          ),
+        ),
       ),
     );
   }

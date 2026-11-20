@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sirati/features/ats_scanner/domain/score_band.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/keyword_group.dart';
@@ -9,6 +11,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// First tab: score hero, per-criterion breakdown, and keyword coverage.
 class ScoreTab extends StatelessWidget {
@@ -54,18 +57,33 @@ class ScoreTab extends StatelessWidget {
             style: TextStyle(color: context.sirati.textSecondary),
           ),
         const SizedBox(height: 24),
-        SectionTitle(AppLocalizations.of(context).atsCriteriaDetails),
-        const SizedBox(height: 12),
-        _CriteriaCard(criteria: analysis.criteria),
+        MotionReveal(
+          order: 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SectionTitle(AppLocalizations.of(context).atsCriteriaDetails),
+              const SizedBox(height: 12),
+              _CriteriaCard(criteria: analysis.criteria),
+            ],
+          ),
+        ),
         const SizedBox(height: 24),
         if (analysis.hasKeywordSummary)
-          SectionTitle(AppLocalizations.of(context).atsKeywordsTitle),
-        const SizedBox(height: 12),
-        if (analysis.hasKeywordSummary)
-          _KeywordsCard(
-            found: analysis.keywordsFound,
-            missing: analysis.keywordsMissing,
-            english: english,
+          MotionReveal(
+            order: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SectionTitle(AppLocalizations.of(context).atsKeywordsTitle),
+                const SizedBox(height: 12),
+                _KeywordsCard(
+                  found: analysis.keywordsFound,
+                  missing: analysis.keywordsMissing,
+                  english: english,
+                ),
+              ],
+            ),
           ),
         if (analysis.hidden.keywordsMissing > 0) ...[
           const SizedBox(height: 8),
@@ -118,50 +136,60 @@ class _ScoreHero extends StatelessWidget {
               previousScore: previousScore,
             ),
             const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: band.container(c),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                AppLocalizations.of(context)
-                    .atsGradeLabel(AtsGrade.of(analysis.scoreTotal).label),
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: band.onContainer(c),
-                ),
+            _ScoreHeroRevealBeat(
+              reveal: reveal,
+              child: Column(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: band.container(c),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      AppLocalizations.of(context)
+                          .atsGradeLabel(AtsGrade.of(analysis.scoreTotal).label),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: band.onContainer(c),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    band.description(AppLocalizations.of(context)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: c.textSecondary,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (AnimatedScoreRing.deltaOf(
+                          analysis.scoreTotal, previousScore)
+                      case final delta?) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      delta > 0
+                          ? AppLocalizations.of(context)
+                              .atsScoreUpSinceLast(delta)
+                          : AppLocalizations.of(context)
+                              .atsScoreDownSinceLast(delta.abs()),
+                      key: const ValueKey('analysis-score-since-last'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: c.textSecondary,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              band.description(AppLocalizations.of(context)),
-              style: TextStyle(
-                fontSize: 12,
-                color: c.textSecondary,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (AnimatedScoreRing.deltaOf(analysis.scoreTotal, previousScore)
-                case final delta?) ...[
-              const SizedBox(height: 4),
-              Text(
-                delta > 0
-                    ? AppLocalizations.of(context).atsScoreUpSinceLast(delta)
-                    : AppLocalizations.of(context)
-                        .atsScoreDownSinceLast(delta.abs()),
-                key: const ValueKey('analysis-score-since-last'),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: c.textSecondary,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
           ] else
             Text(
               AppLocalizations.of(context).homeHeroScoreUnavailable,
@@ -268,6 +296,81 @@ class _ScoreHero extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Reveals the grade pill and delta explanation right as [AnimatedScoreRing]
+/// reaches its [AnimatedScoreRing.climbShare] landing beat.
+class _ScoreHeroRevealBeat extends StatefulWidget {
+  const _ScoreHeroRevealBeat({required this.reveal, required this.child});
+
+  final bool reveal;
+  final Widget child;
+
+  @override
+  State<_ScoreHeroRevealBeat> createState() => _ScoreHeroRevealBeatState();
+}
+
+class _ScoreHeroRevealBeatState extends State<_ScoreHeroRevealBeat>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: AnimatedScoreRing.duration,
+  );
+  late final Animation<double> _beat = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(
+      AnimatedScoreRing.climbShare * 0.9,
+      1.0,
+      curve: MotionCurves.enter,
+    ),
+  );
+  bool _triggered = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.reveal || MotionSettings.reduce(context)) {
+      _triggered = true;
+      _controller.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.reveal || MotionSettings.reduce(context)) {
+      return widget.child;
+    }
+    return RouteSettled(
+      builder: (context, settled) {
+        if (settled && !_triggered) {
+          _triggered = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(_controller.forward());
+          });
+        }
+        return AnimatedBuilder(
+          animation: _beat,
+          child: widget.child,
+          builder: (context, child) {
+            final t = _beat.value;
+            return Opacity(
+              opacity: t,
+              child: Transform.scale(
+                scale: 0.92 + 0.08 * t,
+                child: child,
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

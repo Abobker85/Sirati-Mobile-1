@@ -107,26 +107,31 @@ class GreetingRevealState extends State<GreetingReveal>
             Flexible(
               child: w >= 1
                   ? text
-                  : ShaderMask(
-                      blendMode: BlendMode.dstIn,
-                      shaderCallback: (rect) => LinearGradient(
-                        begin:
-                            rtl ? Alignment.centerRight : Alignment.centerLeft,
-                        end: rtl ? Alignment.centerLeft : Alignment.centerRight,
-                        // A soft edge that runs from the reading start to
-                        // past the end.
-                        stops: [0, w * 1.2, (w * 1.2 + .2).clamp(0, 1), 1]
-                            .map((s) => s.clamp(0.0, 1.0).toDouble())
-                            .toList(),
-                        // Only alpha matters to the mask.
-                        colors: [
-                          c.surface,
-                          c.surface,
-                          c.surface.withValues(alpha: 0),
-                          c.surface.withValues(alpha: 0),
-                        ],
-                      ).createShader(rect),
-                      child: text,
+                  : RepaintBoundary(
+                      child: ShaderMask(
+                        blendMode: BlendMode.dstIn,
+                        shaderCallback: (rect) => LinearGradient(
+                          begin: rtl
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          end: rtl
+                              ? Alignment.centerLeft
+                              : Alignment.centerRight,
+                          // A soft edge that runs from the reading start to
+                          // past the end.
+                          stops: [0, w * 1.2, (w * 1.2 + .2).clamp(0, 1), 1]
+                              .map((s) => s.clamp(0.0, 1.0).toDouble())
+                              .toList(),
+                          // Only alpha matters to the mask.
+                          colors: [
+                            c.surface,
+                            c.surface,
+                            c.surface.withValues(alpha: 0),
+                            c.surface.withValues(alpha: 0),
+                          ],
+                        ).createShader(rect),
+                        child: text,
+                      ),
                     ),
             ),
             const SizedBox(width: 6),

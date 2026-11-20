@@ -35,7 +35,7 @@ class SiratiAddButton extends StatelessWidget {
                 width: size,
                 height: size,
                 child: Icon(Icons.add_rounded,
-                    color: context.sirati.textPrimary, size: 30),
+                    color: context.sirati.onAmberAccent, size: 30),
               ),
             ),
           ),

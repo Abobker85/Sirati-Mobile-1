@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -12,8 +15,9 @@ class SplashBootBody extends StatefulWidget {
 }
 
 class _SplashBootBodyState extends State<SplashBootBody>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _controller;
+  late final AnimationController _dotsPulse;
   late final Animation<double> _wordmarkOpacity;
   late final Animation<Offset> _wordmarkSlide;
   late final Animation<double> _wordmarkScale;
@@ -27,6 +31,11 @@ class _SplashBootBodyState extends State<SplashBootBody>
   late final Animation<double> _statusOpacity;
   late final Animation<Offset> _statusSlide;
   late final Animation<double> _dotsProgress;
+  bool _started = false;
+  bool _introCompleted = false;
+
+  /// Bounded gentle wait-wave cycles if session bootstrap exceeds 860ms.
+  static const _maxWaitCycles = 8;
 
   @override
   void initState() {
@@ -34,6 +43,10 @@ class _SplashBootBodyState extends State<SplashBootBody>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 860),
+    )..addStatusListener(_onIntroStatus);
+    _dotsPulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
 
     _wordmarkOpacity = TweenSequence<double>([
@@ -118,13 +131,54 @@ class _SplashBootBodyState extends State<SplashBootBody>
       parent: _controller,
       curve: const Interval(0.70, 1.0, curve: Curves.easeInOut),
     );
+  }
 
-    _controller.forward();
+  void _onIntroStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed || !mounted) return;
+    _introCompleted = true;
+    _syncWaitPulse();
+  }
+
+  void _syncWaitPulse() {
+    if (!mounted) return;
+    final allow = _introCompleted &&
+        !MotionSettings.reduce(context) &&
+        TickerMode.valuesOf(context).enabled;
+    if (allow) {
+      if (!_dotsPulse.isAnimating) {
+        unawaited(_dotsPulse.repeat(count: _maxWaitCycles, reverse: true));
+      }
+    } else if (_dotsPulse.isAnimating || _dotsPulse.value != 0) {
+      _dotsPulse
+        ..stop()
+        ..value = 0;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduce = MotionSettings.reduce(context);
+    if (!_started) {
+      _started = true;
+      if (reduce) {
+        _controller.value = 1;
+        _introCompleted = true;
+      } else {
+        unawaited(_controller.forward());
+      }
+    } else if (reduce && _controller.isAnimating) {
+      _controller.value = 1;
+      _introCompleted = true;
+    }
+    _syncWaitPulse();
   }
 
   @override
   void dispose() {
+    _controller.removeStatusListener(_onIntroStatus);
     _controller.dispose();
+    _dotsPulse.dispose();
     super.dispose();
   }
 
@@ -279,9 +333,15 @@ class _SplashBootBodyState extends State<SplashBootBody>
                             children: [
                               status,
                               const SizedBox(height: 8),
-                              _SplashDotsWave(
-                                animationValue: _dotsProgress.value,
-                                color: context.sirati.primary,
+                              AnimatedBuilder(
+                                animation: _dotsPulse,
+                                builder: (context, _) => _SplashDotsWave(
+                                  animationValue: _dotsProgress.value,
+                                  pulseValue: _dotsPulse.isAnimating
+                                      ? _dotsPulse.value
+                                      : null,
+                                  color: context.sirati.primary,
+                                ),
                               ),
                             ],
                           ),
@@ -301,10 +361,12 @@ class _SplashBootBodyState extends State<SplashBootBody>
 
 class _SplashDotsWave extends StatelessWidget {
   final double animationValue;
+  final double? pulseValue;
   final Color color;
 
   const _SplashDotsWave({
     required this.animationValue,
+    this.pulseValue,
     required this.color,
   });
 
@@ -313,9 +375,18 @@ class _SplashDotsWave extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(3, (i) {
-        final phase = ((animationValue * 2.5) - (i * 0.4)).clamp(0.0, 1.0);
-        final scale = 0.75 + (0.35 * phase);
-        final alpha = 0.25 + (0.75 * phase);
+        final double scale;
+        final double alpha;
+        if (pulseValue != null) {
+          final wave =
+              0.5 + 0.5 * math.sin((pulseValue! * math.pi) - (i * 0.65));
+          scale = 0.84 + (0.28 * wave);
+          alpha = 0.45 + (0.55 * wave);
+        } else {
+          final phase = ((animationValue * 2.5) - (i * 0.4)).clamp(0.0, 1.0);
+          scale = 0.75 + (0.35 * phase);
+          alpha = 0.25 + (0.75 * phase);
+        }
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 3.5),
           child: Transform.scale(

@@ -4,6 +4,7 @@ import 'package:sirati/features/job_match/presentation/job_match_messages.dart';
 import 'package:sirati/features/job_match/presentation/widgets/job_match_widgets.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// One proposed edit with its before/after, reason and selection state.
 class JobMatchSuggestionCard extends StatelessWidget {
@@ -67,27 +68,31 @@ class JobMatchSuggestionCard extends StatelessWidget {
                   style: AppTypography.of(context, AppTypography.titleSm),
                 ),
               ),
-              if (applied)
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: c.successLight,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: 2,
-                    ),
-                    child: Text(
-                      l.jobMatchAppliedBadge,
-                      style: AppTypography.of(
-                        context,
-                        AppTypography.labelSm,
-                        color: c.onSuccessContainer,
-                      ),
-                    ),
-                  ),
-                ),
+              MotionMorph(
+                morphKey: applied,
+                child: applied
+                    ? DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: c.successLight,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs,
+                            vertical: 2,
+                          ),
+                          child: Text(
+                            l.jobMatchAppliedBadge,
+                            style: AppTypography.of(
+                              context,
+                              AppTypography.labelSm,
+                              color: c.onSuccessContainer,
+                            ),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(key: ValueKey('jm-not-applied')),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),

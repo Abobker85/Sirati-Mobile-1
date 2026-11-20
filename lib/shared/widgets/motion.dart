@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
 
@@ -559,18 +560,24 @@ class MotionMorph extends StatelessWidget {
 }
 
 /// Swaps the content of a multi-step flow: the new step fades in while
-/// sliding a little from the reading end (left in Arabic, right in English),
-/// so "next" looks the same in every flow. Reduced motion swaps at once.
+/// sliding along the reading axis according to [direction] (`+1` forward,
+/// `-1` back). Forward enters from the reading end (left in Arabic, right in
+/// English) while the outgoing step exits toward the start; back reverses
+/// both. Reduced motion swaps at once.
 class MotionStepSwitcher extends StatelessWidget {
   const MotionStepSwitcher({
     super.key,
     required this.stepKey,
     required this.child,
+    this.direction = 1,
   });
 
   /// Changes when the step changes.
   final Object stepKey;
   final Widget child;
+
+  /// `+1` for forward navigation, `-1` for backward navigation.
+  final int direction;
 
   /// How far the new step slides in, as a share of its width.
   static const slide = .05;
@@ -580,6 +587,7 @@ class MotionStepSwitcher extends StatelessWidget {
     final keyed = KeyedSubtree(key: ValueKey(stepKey), child: child);
     if (MotionSettings.reduce(context)) return keyed;
     final end = MotionAxis.endSign(context);
+    final dir = direction >= 0 ? 1.0 : -1.0;
     return AnimatedSwitcher(
       duration: MotionDurations.step,
       reverseDuration: MotionDurations.fast,
@@ -593,17 +601,241 @@ class MotionStepSwitcher extends StatelessWidget {
           if (current != null) current,
         ],
       ),
-      transitionBuilder: (child, animation) => FadeTransition(
-        opacity: animation,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: Offset(end * slide, 0),
-            end: Offset.zero,
-          ).animate(animation),
-          child: child,
+      transitionBuilder: (child, animation) {
+        final isIncoming = child.key == keyed.key;
+        final offsetX = (isIncoming ? 1.0 : -1.0) * end * dir * slide;
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(offsetX, 0),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child: keyed,
+    );
+  }
+}
+
+/// Smoothly expands/collapses and cross-fades conditional slot content.
+///
+/// Uses [AnimatedSize] (`MotionDurations.medium`, top-start aligned) wrapping
+/// [AnimatedSwitcher] (`MotionDurations.fast`), collapsing both to
+/// [Duration.zero] under [MotionSettings.reduce].
+class MotionExpandSlot extends StatelessWidget {
+  const MotionExpandSlot({
+    super.key,
+    required this.child,
+    this.alignment = AlignmentDirectional.topCenter,
+  });
+
+  final Widget child;
+  final AlignmentGeometry alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = MotionSettings.reduce(context);
+    if (reduce) return child;
+    return AnimatedSize(
+      duration: MotionDurations.medium,
+      curve: MotionCurves.enter,
+      alignment: alignment,
+      child: AnimatedSwitcher(
+        duration: MotionDurations.fast,
+        switchInCurve: MotionCurves.enter,
+        switchOutCurve: MotionCurves.exit,
+        child: child,
+      ),
+    );
+  }
+}
+
+/// One selectable option in a [MotionSegmentedPill].
+@immutable
+class MotionSegmentOption<T> {
+  const MotionSegmentOption({
+    required this.value,
+    required this.label,
+    this.icon,
+    this.key,
+  });
+
+  final T value;
+  final String label;
+  final IconData? icon;
+  final Key? key;
+}
+
+/// Direction-aware segmented selector with a sliding pill indicator.
+///
+/// Enforces `>= 48dp` touch targets, avoids `FontWeight` interpolation
+/// (fixed shipped `w700` via [AppTypography.labelLg]), maintains WCAG AA
+/// contrast in light and dark modes, and snaps under [MotionSettings.reduce].
+class MotionSegmentedPill<T> extends StatelessWidget {
+  const MotionSegmentedPill({
+    super.key,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+    this.semanticLabel,
+    this.enabled = true,
+  }) : assert(options.length >= 2, 'MotionSegmentedPill requires >= 2 options');
+
+  final List<MotionSegmentOption<T>> options;
+  final T value;
+  final ValueChanged<T> onChanged;
+  final String? semanticLabel;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    final reduce = MotionSettings.reduce(context);
+    final count = options.length;
+    final found = options.indexWhere((o) => o.value == value);
+    final selectedIndex = found < 0 ? 0 : found;
+    final alignX = -1.0 + (2.0 * selectedIndex / (count - 1));
+    final duration = reduce ? Duration.zero : MotionDurations.medium;
+
+    final pill = FractionallySizedBox(
+      widthFactor: 1 / count,
+      heightFactor: 1,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: AppRadius.mdAll,
+          border: Border.all(color: c.primaryInk),
+          boxShadow: AppShadows.of(
+            c,
+            elevation: AppElevation.raised,
+          ),
         ),
       ),
-      child: keyed,
+    );
+
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: Container(
+        decoration: BoxDecoration(
+          color: c.surfaceLow,
+          borderRadius: AppRadius.lgAll,
+          border: Border.all(color: c.outline),
+        ),
+        padding: const EdgeInsets.all(AppSpacing.xxs),
+        child: LayoutBuilder(
+          builder: (context, _) => Stack(
+            children: [
+              Positioned.fill(
+                child: reduce
+                    ? Align(
+                        alignment: AlignmentDirectional(alignX, 0),
+                        child: pill,
+                      )
+                    : AnimatedAlign(
+                        duration: duration,
+                        curve: MotionCurves.state,
+                        alignment: AlignmentDirectional(alignX, 0),
+                        child: pill,
+                      ),
+              ),
+              Material(
+                type: MaterialType.transparency,
+                child: Row(
+                  children: [
+                    for (var i = 0; i < count; i++)
+                      Expanded(
+                        child: _MotionSegmentButton<T>(
+                          option: options[i],
+                          selected: i == selectedIndex,
+                          enabled: enabled,
+                          reduce: reduce,
+                          onTap: () {
+                            if (options[i].value != value) {
+                              unawaited(HapticFeedback.selectionClick());
+                              onChanged(options[i].value);
+                            }
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MotionSegmentButton<T> extends StatelessWidget {
+  const _MotionSegmentButton({
+    required this.option,
+    required this.selected,
+    required this.enabled,
+    required this.reduce,
+    required this.onTap,
+  });
+
+  final MotionSegmentOption<T> option;
+  final bool selected;
+  final bool enabled;
+  final bool reduce;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    final fg = selected ? c.primaryInk : c.textSecondary;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      enabled: enabled,
+      label: option.label,
+      excludeSemantics: true,
+      child: InkWell(
+        key: option.key,
+        borderRadius: AppRadius.mdAll,
+        splashFactory: reduce ? NoSplash.splashFactory : null,
+        onTap: enabled ? onTap : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.xs,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (option.icon != null) ...[
+                  Icon(option.icon, size: 18, color: fg),
+                  const SizedBox(width: AppSpacing.xxs),
+                ],
+                Flexible(
+                  child: Text(
+                    option.label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.labelLg,
+                      color: fg,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

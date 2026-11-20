@@ -79,7 +79,8 @@ class SubmitButton extends StatelessWidget {
                 double.infinity,
                 height.clamp(AppTouchTarget.min, double.infinity),
               ),
-              disabledForegroundColor: context.sirati.primaryInk,
+              disabledForegroundColor:
+                  isLoading ? c.primaryInk : c.textSecondary,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             child: content,

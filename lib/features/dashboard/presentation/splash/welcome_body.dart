@@ -57,6 +57,8 @@ class WelcomeBody extends StatelessWidget {
       title: l10n.welcomeToSirati,
       subtitle: slogan(l10n),
       markKey: logoKey,
+      markHeroTag: 'sirati-brand-mark',
+      breathing: true,
       subtitleKey: sloganKey,
       cardKey: valueCardKey,
       card: MotionReveal(
@@ -131,40 +133,43 @@ class _ValueCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         for (final (i, point) in points.indexed)
-          Padding(
-            padding: EdgeInsets.only(
-                bottom: i == points.length - 1 ? 0 : AppSpacing.sm + 2),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: c.primaryLight,
-                    borderRadius: BorderRadius.circular(10),
+          MotionReveal(
+            order: i.clamp(0, MotionReveal.maxStaggerIndex),
+            child: Padding(
+              padding: EdgeInsets.only(
+                  bottom: i == points.length - 1 ? 0 : AppSpacing.sm + 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: c.primaryLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      WelcomeBody.pointIcons[i % WelcomeBody.pointIcons.length],
+                      size: 20,
+                      color: c.primaryInk,
+                    ),
                   ),
-                  child: Icon(
-                    WelcomeBody.pointIcons[i % WelcomeBody.pointIcons.length],
-                    size: 20,
-                    color: c.primaryInk,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      point,
-                      textAlign: TextAlign.start,
-                      style: AppTextStyles.bodySm(c).copyWith(
-                        height: 1.6,
-                        color: c.textPrimary,
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        point,
+                        textAlign: TextAlign.start,
+                        style: AppTextStyles.bodySm(c).copyWith(
+                          height: 1.6,
+                          color: c.textPrimary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
       ],

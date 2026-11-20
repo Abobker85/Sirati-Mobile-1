@@ -29,7 +29,18 @@ class _BrandedLoaderState extends State<BrandedLoader>
     _controller = AnimationController(
       vsync: this,
       duration: MotionDurations.skeleton + const Duration(milliseconds: 300),
-    )..repeat(reverse: true);
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionSettings.reduce(context)) {
+      _controller.stop();
+      _controller.value = 0;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
   }
 
   @override
@@ -44,7 +55,8 @@ class _BrandedLoaderState extends State<BrandedLoader>
       return SiratiMark(size: widget.size, elevated: true);
     }
 
-    return AnimatedBuilder(
+    return RepaintBoundary(
+      child: AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
         final t = Curves.easeInOut.transform(_controller.value);
@@ -79,6 +91,7 @@ class _BrandedLoaderState extends State<BrandedLoader>
         );
       },
       child: SiratiMark(size: widget.size, elevated: true),
+    ),
     );
   }
 }

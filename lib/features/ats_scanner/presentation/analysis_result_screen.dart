@@ -121,13 +121,18 @@ class AnalysisResultScreen extends ConsumerWidget {
     final outcome = await controller.generate(
       isCancelled: () => progress.isCancelled,
     );
-    await progress.dismiss();
-    if (!context.mounted) return;
+    if (!context.mounted) {
+      await progress.dismiss();
+      return;
+    }
 
     switch (outcome) {
       case ImprovedCvCancelled():
+        await progress.dismiss();
         return;
       case ImprovedCvFailed(:final error):
+        await progress.dismiss();
+        if (!context.mounted) return;
         if (error is ApiException) {
           AppSnackBar.fromException(context, error);
         } else {
@@ -142,6 +147,11 @@ class AnalysisResultScreen extends ConsumerWidget {
           :final aiFailed,
           :final aiError,
         ):
+        if (!timedOut && !aiFailed) await progress.complete();
+        if (!context.mounted) {
+          await progress.dismiss();
+          return;
+        }
         if (timedOut) {
           AppSnackBar.warning(
             context,
@@ -156,7 +166,16 @@ class AnalysisResultScreen extends ConsumerWidget {
             onAction: () => _generate(context, ref),
           );
         }
-        unawaited(Navigator.of(context).pushNamed(AppRoutes.cv(generatedCvId)));
+        final navigator = Navigator.of(context);
+        final route = navigator.widget.onGenerateRoute?.call(
+          RouteSettings(name: AppRoutes.cv(generatedCvId)),
+        );
+        if (route != null) {
+          unawaited(progress.handOff<dynamic>(navigator, route));
+        } else {
+          await progress.dismiss();
+          unawaited(navigator.pushNamed(AppRoutes.cv(generatedCvId)));
+        }
     }
   }
 }

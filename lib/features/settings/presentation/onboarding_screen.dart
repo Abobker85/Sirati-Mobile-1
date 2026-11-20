@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/storage/preference_store.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/rolling_number.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
 /// First-run product tour (3 pages). Shown once for logged-out users.
@@ -93,18 +97,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       unawaited(_finish(skipped: false));
       return;
     }
+    if (MotionSettings.reduce(context)) {
+      _pageController.jumpToPage(_index + 1);
+      return;
+    }
     unawaited(_pageController.nextPage(
-      duration:
-          MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
+      duration: MotionDurations.slow,
       curve: MotionCurves.enter,
     ));
   }
 
   void _previous() {
     if (_index <= 0) return;
+    if (MotionSettings.reduce(context)) {
+      _pageController.jumpToPage(_index - 1);
+      return;
+    }
     unawaited(_pageController.previousPage(
-      duration:
-          MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
+      duration: MotionDurations.slow,
       curve: MotionCurves.enter,
     ));
   }
@@ -112,10 +122,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _jumpTo(int i) {
     if (i == _index || i < 0 || i >= _pageCount) return;
     HapticFeedback.selectionClick();
+    if (MotionSettings.reduce(context)) {
+      _pageController.jumpToPage(i);
+      return;
+    }
     unawaited(_pageController.animateToPage(
       i,
-      duration:
-          MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
+      duration: MotionDurations.slow,
       curve: MotionCurves.enter,
     ));
   }
@@ -125,11 +138,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     HapticFeedback.selectionClick();
   }
 
+  /// Current fractional page position from [_pageController], falling back to
+  /// [_index] before the controller attaches.
+  double get _currentPage {
+    if (!_pageController.hasClients ||
+        !_pageController.position.hasContentDimensions) {
+      return _index.toDouble();
+    }
+    return _pageController.page ?? _index.toDouble();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final pages = _pages(l10n);
     final last = _index >= _pageCount - 1;
+    final reduce = MotionSettings.reduce(context);
+    final switchDuration = reduce ? Duration.zero : MotionDurations.fast;
 
     // No Scaffold here — host [SplashScreen] already provides one.
     // Overlay style matches global theme (edge-to-edge + icon brightness).
@@ -158,61 +183,104 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     const LanguageToggle(),
                     // Back to the previous page (SIRATI-100). Hidden on page 1
                     // so it never appears when there is nowhere to go.
-                    if (_index > 0)
-                      Padding(
-                        padding: const EdgeInsetsDirectional.only(
-                            start: AppSpacing.xs),
-                        child: IconButton(
-                          onPressed: _finishing ? null : _previous,
-                          // matchTextDirection mirrors this in RTL automatically.
-                          icon: Icon(
-                            Icons.arrow_back_rounded,
-                            color: context.sirati.textSecondary,
-                          ),
-                          tooltip: l10n.settingsOnboardingPrevious,
+                    AnimatedSwitcher(
+                      duration: switchDuration,
+                      switchInCurve: MotionCurves.enter,
+                      switchOutCurve: MotionCurves.exit,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: ScaleTransition(
+                          scale: Tween<double>(begin: 0.85, end: 1)
+                              .animate(animation),
+                          child: child,
                         ),
                       ),
+                      child: _index > 0
+                          ? Padding(
+                              key: const ValueKey('onboarding-back'),
+                              padding: const EdgeInsetsDirectional.only(
+                                  start: AppSpacing.xs),
+                              child: IconButton(
+                                onPressed: _finishing ? null : _previous,
+                                // matchTextDirection mirrors this in RTL automatically.
+                                icon: Icon(
+                                  Icons.arrow_back_rounded,
+                                  color: context.sirati.textSecondary,
+                                ),
+                                tooltip: l10n.settingsOnboardingPrevious,
+                              ),
+                            )
+                          : const SizedBox.shrink(
+                              key: ValueKey('onboarding-back-empty'),
+                            ),
+                    ),
                     const Spacer(),
-                    if (!last)
-                      // Skip pill — textHint failed AA at 12sp; textSecondary
-                      // with a subtle outline is legible and looks tappable.
-                      OutlinedButton(
-                        onPressed: _finishing
-                            ? null
-                            : () => unawaited(_finish(skipped: true)),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: context.sirati.textSecondary,
-                          side: BorderSide(color: context.sirati.border),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 6),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(999)),
-                          minimumSize: const Size(48, 48),
-                          tapTargetSize: MaterialTapTargetSize.padded,
-                        ),
-                        child: Text(
-                          l10n.settingsOnboardingSkip,
-                          style: AppTextStyles.labelMd(context.sirati).copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: context.sirati.textSecondary,
-                          ),
+                    AnimatedSwitcher(
+                      duration: switchDuration,
+                      switchInCurve: MotionCurves.enter,
+                      switchOutCurve: MotionCurves.exit,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: ScaleTransition(
+                          scale: Tween<double>(begin: 0.92, end: 1)
+                              .animate(animation),
+                          child: child,
                         ),
                       ),
+                      child: !last
+                          // Skip pill — textHint failed AA at 12sp; textSecondary
+                          // with a subtle outline is legible and looks tappable.
+                          ? OutlinedButton(
+                              key: const ValueKey('onboarding-skip'),
+                              onPressed: _finishing
+                                  ? null
+                                  : () => unawaited(_finish(skipped: true)),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: context.sirati.textSecondary,
+                                side: BorderSide(color: context.sirati.border),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(999)),
+                                minimumSize: const Size(48, 48),
+                                tapTargetSize: MaterialTapTargetSize.padded,
+                              ),
+                              child: Text(
+                                l10n.settingsOnboardingSkip,
+                                style: AppTextStyles.labelMd(context.sirati)
+                                    .copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: context.sirati.textSecondary,
+                                ),
+                              ),
+                            )
+                          : const SizedBox(
+                              key: ValueKey('onboarding-skip-empty'),
+                              height: 48,
+                            ),
+                    ),
                   ],
                 ),
               ),
               Expanded(
-                child: PageView.builder(
-                  // No `reverse`: PageView already follows Directionality, so
-                  // in Arabic the next page enters from the left, matching the
-                  // mirrored Back arrow.
-                  controller: _pageController,
-                  itemCount: _pageCount,
-                  onPageChanged: _onPageChanged,
-                  itemBuilder: (context, i) {
-                    return _OnboardingPageView(
-                      page: pages[i],
-                      active: i == _index,
+                child: AnimatedBuilder(
+                  animation: _pageController,
+                  builder: (context, _) {
+                    final pageOffset = _currentPage;
+                    return PageView.builder(
+                      // No `reverse`: PageView already follows Directionality, so
+                      // in Arabic the next page enters from the left, matching the
+                      // mirrored Back arrow.
+                      controller: _pageController,
+                      itemCount: _pageCount,
+                      onPageChanged: _onPageChanged,
+                      itemBuilder: (context, i) {
+                        return _OnboardingPageView(
+                          page: pages[i],
+                          active: i == _index,
+                          delta: reduce ? 0.0 : (pageOffset - i).clamp(-1.0, 1.0),
+                        );
+                      },
                     );
                   },
                 ),
@@ -226,21 +294,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 child: Column(
                   children: [
-                    Text(
-                      _stepCounterLabel(index: _index, count: _pageCount),
+                    _OnboardingStepCounter(
+                      index: _index,
+                      count: _pageCount,
                       style: AppTextStyles.labelMd(context.sirati).copyWith(
                         color: context.sirati.textSecondary,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    _PageDots(
-                      count: _pageCount,
-                      index: _index,
-                      // One ink tone for the active dot: >= 3:1 on the page
-                      // background in both themes (WCAG 1.4.11).
-                      activeColor: context.sirati.primaryInk,
-                      onTap: _finishing ? null : _jumpTo,
+                    AnimatedBuilder(
+                      animation: _pageController,
+                      builder: (context, _) => _PageDots(
+                        count: _pageCount,
+                        index: _index,
+                        page: reduce ? _index.toDouble() : _currentPage,
+                        // One ink tone for the active dot: >= 3:1 on the page
+                        // background in both themes (WCAG 1.4.11).
+                        activeColor: context.sirati.primaryInk,
+                        onTap: _finishing ? null : _jumpTo,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     SubmitButton(
@@ -278,17 +351,56 @@ class _OnboardingPage {
   });
 }
 
+class _OnboardingStepCounter extends StatelessWidget {
+  const _OnboardingStepCounter({
+    required this.index,
+    required this.count,
+    required this.style,
+  });
+
+  final int index;
+  final int count;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: _OnboardingScreenState._stepCounterLabel(
+        index: index,
+        count: count,
+      ),
+      excludeSemantics: true,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RollingNumber(value: index + 1, style: style),
+            Text(' / $count', style: style),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _OnboardingPageView extends StatelessWidget {
   final _OnboardingPage page;
   final bool active;
+  final double delta;
 
   const _OnboardingPageView({
     required this.page,
     required this.active,
+    this.delta = 0,
   });
 
   @override
   Widget build(BuildContext context) {
+    final reduce = MotionSettings.reduce(context);
+    final end = MotionAxis.endSign(context);
+    final parallax = reduce ? 0.0 : delta * end;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxHeight < 280;
@@ -305,31 +417,43 @@ class _OnboardingPageView extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _OnboardingHero(
-                  page: page,
-                  active: active,
-                  size: iconSize,
-                  glyphSize: iconGlyphSize,
+                Transform.translate(
+                  offset: Offset(parallax * 24, 0),
+                  child: Transform.scale(
+                    scale: reduce ? 1.0 : (1 - 0.08 * delta.abs()),
+                    child: _OnboardingHero(
+                      page: page,
+                      active: active,
+                      size: iconSize,
+                      glyphSize: iconGlyphSize,
+                    ),
+                  ),
                 ),
                 SizedBox(height: heroGap),
-                Text(
-                  page.title,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: titleSize,
-                    fontWeight: FontWeight.w700,
-                    height: 1.25,
-                    color: context.sirati.textPrimary,
+                Transform.translate(
+                  offset: Offset(parallax * -10, 0),
+                  child: Text(
+                    page.title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: titleSize,
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
+                      color: context.sirati.textPrimary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text(
-                  page.body,
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodyMd(context.sirati).copyWith(
-                    height: compact ? 1.55 : 1.7,
-                    color: context.sirati.textSecondary,
-                    fontSize: bodySize,
+                Transform.translate(
+                  offset: Offset(parallax * -18, 0),
+                  child: Text(
+                    page.body,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyMd(context.sirati).copyWith(
+                      height: compact ? 1.55 : 1.7,
+                      color: context.sirati.textSecondary,
+                      fontSize: bodySize,
+                    ),
                   ),
                 ),
               ],
@@ -444,11 +568,20 @@ class _OnboardingHeroState extends State<_OnboardingHero>
             ),
           );
 
+    final framed = widget.active
+        ? AmbientMove(
+            kind: AmbientKind.float,
+            delay: const Duration(seconds: 2),
+            rest: const Duration(seconds: 12),
+            child: hero,
+          )
+        : hero;
+
     if (MotionSettings.reduce(context)) return hero;
 
     return FadeTransition(
       opacity: _opacity,
-      child: ScaleTransition(scale: _scale, child: hero),
+      child: ScaleTransition(scale: _scale, child: framed),
     );
   }
 }
@@ -456,6 +589,7 @@ class _OnboardingHeroState extends State<_OnboardingHero>
 class _PageDots extends StatelessWidget {
   final int count;
   final int index;
+  final double? page;
   final Color activeColor;
 
   /// Optional handler that fires when a dot is tapped. When null the dots
@@ -467,6 +601,7 @@ class _PageDots extends StatelessWidget {
     required this.count,
     required this.index,
     required this.activeColor,
+    this.page,
     this.onTap,
   });
 
@@ -474,16 +609,21 @@ class _PageDots extends StatelessWidget {
   Widget build(BuildContext context) {
     final reduce = MotionSettings.reduce(context);
     final l10n = AppLocalizations.of(context);
+    final currentPage = page ?? index.toDouble();
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (i) {
         final active = i == index;
+        final proximity = reduce
+            ? (active ? 1.0 : 0.0)
+            : (1.0 - (currentPage - i).abs()).clamp(0.0, 1.0);
+        final width = lerpDouble(8, 22, proximity)!;
         final label = l10n.settingsOnboardingPageOf(i + 1, count);
         final dot = AnimatedContainer(
-          duration: reduce ? Duration.zero : MotionDurations.medium,
+          duration: reduce || page != null ? Duration.zero : MotionDurations.medium,
           curve: MotionCurves.state,
           margin: const EdgeInsets.symmetric(horizontal: 2),
-          width: active ? 22 : 8,
+          width: width,
           height: 8,
           decoration: BoxDecoration(
             color: active

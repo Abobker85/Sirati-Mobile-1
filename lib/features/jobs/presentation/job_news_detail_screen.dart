@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/utils/app_locale.dart';
@@ -16,17 +17,51 @@ import 'package:sirati/shared/models/cv_target_job.dart';
 import 'package:sirati/shared/models/job_news.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// One posting: facts, how to apply, the text, and where it came from. The
 /// bottom bar's primary action is the real application (link or email);
 /// without one, tailoring the CV is primary and nothing pretends to apply.
-class JobNewsDetailScreen extends StatelessWidget {
+class JobNewsDetailScreen extends StatefulWidget {
   final JobNews item;
 
   const JobNewsDetailScreen({super.key, required this.item});
 
   @override
+  State<JobNewsDetailScreen> createState() => _JobNewsDetailScreenState();
+}
+
+class _JobNewsDetailScreenState extends State<JobNewsDetailScreen> {
+  final _scrollController = ScrollController();
+  bool _barElevated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_syncBarElevation);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncBarElevation());
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_syncBarElevation)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _syncBarElevation() {
+    if (!mounted || !_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    final elevated = pos.maxScrollExtent > 0 && pos.extentAfter > 4;
+    if (elevated != _barElevated) {
+      setState(() => _barElevated = elevated);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
     final english = AppLocale.isEnglish(context);
     final l = AppLocalizations.of(context);
     final c = context.sirati;
@@ -46,103 +81,131 @@ class JobNewsDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: _ActionBar(item: item, destination: destination),
+      bottomNavigationBar: _ActionBar(
+        item: item,
+        destination: destination,
+        elevated: _barElevated,
+      ),
       body: SelectionArea(
         child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           children: [
-            if (jobSourceTypeLabel(l, item) case final label?) ...[
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: JobChip(
-                  label: label,
-                  icon: jobSourceTypeIcon(item),
-                  emphasis: true,
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            JobTitleDisplay(
-              title: item.title,
-              language: item.language,
-              maxLines: null,
-              style: TextStyle(
-                fontSize: 24,
-                height: 1.4,
-                fontWeight: FontWeight.w700,
-                color: c.textPrimary,
+            MotionReveal(
+              order: 0,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (jobSourceTypeLabel(l, item) case final label?) ...[
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: JobChip(
+                        label: label,
+                        icon: jobSourceTypeIcon(item),
+                        emphasis: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  JobTitleDisplay(
+                    title: item.title,
+                    language: item.language,
+                    maxLines: null,
+                    style: TextStyle(
+                      fontSize: 24,
+                      height: 1.4,
+                      fontWeight: FontWeight.w700,
+                      color: c.textPrimary,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if ((item.company ?? '').trim().isNotEmpty)
-                  MetaChip(
-                    icon: Icons.apartment_rounded,
-                    text: LocaleFormat.mixedTitle(item.company!.trim(),
-                        english: english),
-                  ),
-                if ((item.location ?? '').trim().isNotEmpty)
-                  MetaChip(
-                      icon: Icons.location_on_outlined,
-                      text: item.location!.trim()),
-                if (item.isRemote)
-                  MetaChip(
-                      icon: Icons.laptop_mac_rounded, text: l.jobsRemoteChip),
-                if ((item.salaryRange ?? '').isNotEmpty)
-                  MetaChip(
-                    icon: Icons.payments_outlined,
-                    text: item.salaryRange!,
-                    highlight: true,
-                  ),
-                if (published.isNotEmpty)
-                  MetaChip(icon: Icons.schedule_rounded, text: published),
-                if (deadline.isNotEmpty)
-                  MetaChip(
-                    icon: Icons.event_rounded,
-                    text: deadline,
-                    highlight: true,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _HowToApplyCard(item: item, destination: destination),
-            if (item.skillsRequired.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              Text(l.jobsSkillsRequired, style: AppTextStyles.titleMd(c)),
-              const SizedBox(height: 10),
-              Wrap(
+            MotionReveal(
+              order: 1,
+              child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final skill in item.skillsRequired)
-                    JobChip(label: skill),
+                  if ((item.company ?? '').trim().isNotEmpty)
+                    MetaChip(
+                      icon: Icons.apartment_rounded,
+                      text: LocaleFormat.mixedTitle(item.company!.trim(),
+                          english: english),
+                    ),
+                  if ((item.location ?? '').trim().isNotEmpty)
+                    MetaChip(
+                        icon: Icons.location_on_outlined,
+                        text: item.location!.trim()),
+                  if (item.isRemote)
+                    MetaChip(
+                        icon: Icons.laptop_mac_rounded, text: l.jobsRemoteChip),
+                  if ((item.salaryRange ?? '').isNotEmpty)
+                    MetaChip(
+                      icon: Icons.payments_outlined,
+                      text: item.salaryRange!,
+                      highlight: true,
+                    ),
+                  if (published.isNotEmpty)
+                    MetaChip(icon: Icons.schedule_rounded, text: published),
+                  if (deadline.isNotEmpty)
+                    MetaChip(
+                      icon: Icons.event_rounded,
+                      text: deadline,
+                      highlight: true,
+                    ),
                 ],
               ),
-            ],
-            const SizedBox(height: 24),
-            Text(l.jobsDescriptionTitle, style: AppTextStyles.titleMd(c)),
-            const SizedBox(height: 8),
-            // The server stores the language the post is written in;
-            // aggregated posts show in both apps, so the body follows the
-            // post, not the app.
-            Text(
-              LocaleFormat.mixedBody(item.body,
-                  english: AppLocale.baseLanguageOf(item.language) == 'en'),
-              textDirection: AppLocale.directionOf(item.language),
-              textAlign: TextAlign.start,
-              style:
-                  TextStyle(fontSize: 15.5, height: 1.8, color: c.textPrimary),
             ),
-            if ((item.sourceName ?? '').isNotEmpty ||
-                parseSafeExternalUrl(item.url) != null) ...[
-              const SizedBox(height: 20),
-              Divider(color: c.border, height: 1),
-              const SizedBox(height: 8),
-              _SourceRow(item: item),
-            ],
+            const SizedBox(height: 20),
+            MotionReveal(
+              order: 2,
+              child: _HowToApplyCard(item: item, destination: destination),
+            ),
+            MotionReveal(
+              order: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (item.skillsRequired.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text(l.jobsSkillsRequired, style: AppTextStyles.titleMd(c)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final skill in item.skillsRequired)
+                          JobChip(label: skill),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  Text(l.jobsDescriptionTitle, style: AppTextStyles.titleMd(c)),
+                  const SizedBox(height: 8),
+                  // The server stores the language the post is written in;
+                  // aggregated posts show in both apps, so the body follows the
+                  // post, not the app.
+                  Text(
+                    LocaleFormat.mixedBody(item.body,
+                        english:
+                            AppLocale.baseLanguageOf(item.language) == 'en'),
+                    textDirection: AppLocale.directionOf(item.language),
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                        fontSize: 15.5, height: 1.8, color: c.textPrimary),
+                  ),
+                  if ((item.sourceName ?? '').isNotEmpty ||
+                      parseSafeExternalUrl(item.url) != null) ...[
+                    const SizedBox(height: 20),
+                    Divider(color: c.border, height: 1),
+                    const SizedBox(height: 8),
+                    _SourceRow(item: item),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -150,6 +213,7 @@ class JobNewsDetailScreen extends StatelessWidget {
   }
 
   Future<void> _share(BuildContext context, ApplyDestination destination) {
+    final item = widget.item;
     final english = AppLocale.isEnglish(context);
     final meta = jobMetaLine(item, english: english);
     final link = switch (destination) {
@@ -163,16 +227,44 @@ class JobNewsDetailScreen extends StatelessWidget {
   }
 }
 
-class _HowToApplyCard extends StatelessWidget {
+class _HowToApplyCard extends StatefulWidget {
   const _HowToApplyCard({required this.item, required this.destination});
 
   final JobNews item;
   final ApplyDestination destination;
 
   @override
+  State<_HowToApplyCard> createState() => _HowToApplyCardState();
+}
+
+class _HowToApplyCardState extends State<_HowToApplyCard> {
+  bool _copied = false;
+  Timer? _copyResetTimer;
+
+  @override
+  void dispose() {
+    _copyResetTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handleCopyEmail(String address) {
+    unawaited(copyApplicationEmail(context, address));
+    if (!MotionSettings.reduce(context)) {
+      unawaited(HapticFeedback.lightImpact());
+    }
+    setState(() => _copied = true);
+    _copyResetTimer?.cancel();
+    _copyResetTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _copied = false);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
+    final destination = widget.destination;
+    final item = widget.item;
 
     final (icon, headline, detail) = switch (destination) {
       ApplyLink(:final displayHost) => (
@@ -249,9 +341,14 @@ class _HowToApplyCard extends StatelessWidget {
             Align(
               alignment: AlignmentDirectional.centerEnd,
               child: TextButton.icon(
-                onPressed: () =>
-                    unawaited(copyApplicationEmail(context, address)),
-                icon: const Icon(Icons.copy_rounded, size: 18),
+                onPressed: () => _handleCopyEmail(address),
+                icon: MotionMorph(
+                  morphKey: _copied,
+                  child: Icon(
+                    _copied ? Icons.check_rounded : Icons.copy_rounded,
+                    size: 18,
+                  ),
+                ),
                 label: Text(l.jobsCopyEmail),
                 style: TextButton.styleFrom(
                   foregroundColor: c.primaryInk,
@@ -311,15 +408,21 @@ class _SourceRow extends StatelessWidget {
 }
 
 class _ActionBar extends StatelessWidget {
-  const _ActionBar({required this.item, required this.destination});
+  const _ActionBar({
+    required this.item,
+    required this.destination,
+    this.elevated = false,
+  });
 
   final JobNews item;
   final ApplyDestination destination;
+  final bool elevated;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
+    final reduce = MotionSettings.reduce(context);
 
     void tailorCv() => unawaited(Navigator.of(context).pushNamed(
           AppRoutes.createCv,
@@ -364,10 +467,15 @@ class _ActionBar extends StatelessWidget {
         ),
     };
 
-    return DecoratedBox(
+    return AnimatedContainer(
+      duration: reduce ? Duration.zero : MotionDurations.fast,
+      curve: MotionCurves.state,
       decoration: BoxDecoration(
         color: c.surface,
         border: Border(top: BorderSide(color: c.border)),
+        boxShadow: elevated
+            ? AppShadows.of(c, elevation: AppElevation.raised)
+            : const [],
       ),
       child: SafeArea(
         top: false,

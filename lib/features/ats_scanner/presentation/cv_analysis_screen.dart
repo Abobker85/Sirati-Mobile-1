@@ -24,6 +24,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
 /// Polling waits while the app is not in the foreground; background time
@@ -461,43 +462,54 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
                   children: [
                     LayoutBuilder(
                       builder: (context, constraints) {
+                        final reduce = MotionSettings.reduce(context);
                         final stacked =
                             MediaQuery.textScalerOf(context).scale(14) > 21;
                         final buttons = [
                           for (final source in AnalysisCvSource.values)
                             Semantics(
                               selected: _source == source,
-                              child: OutlinedButton(
-                                key: ValueKey(source),
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(48, 48),
-                                  backgroundColor: _source == source
-                                      ? c.primaryLight
-                                      : c.surface,
-                                  foregroundColor: _source == source
-                                      ? c.primaryInk
-                                      : c.textSecondary,
-                                  side: BorderSide(
-                                    color: _source == source
+                              child: PressScale(
+                                enabled: !_isLoading,
+                                child: OutlinedButton(
+                                  key: ValueKey(source),
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size(48, 48),
+                                    backgroundColor: _source == source
+                                        ? c.primaryLight
+                                        : c.surface,
+                                    foregroundColor: _source == source
                                         ? c.primaryInk
                                         : c.textSecondary,
+                                    side: BorderSide(
+                                      color: _source == source
+                                          ? c.primaryInk
+                                          : c.textSecondary,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 12,
+                                    ),
+                                  ).copyWith(
+                                    animationDuration: reduce
+                                        ? Duration.zero
+                                        : MotionDurations.medium,
+                                    splashFactory: reduce
+                                        ? NoSplash.splashFactory
+                                        : null,
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 12,
-                                  ),
+                                  onPressed: _isLoading
+                                      ? null
+                                      : () => setState(() => _source = source),
+                                  child: Text(
+                                      switch (source) {
+                                        AnalysisCvSource.saved =>
+                                          l.atsInputSavedCv,
+                                        AnalysisCvSource.upload =>
+                                          l.atsInputUploadFile,
+                                      },
+                                      textAlign: TextAlign.center),
                                 ),
-                                onPressed: _isLoading
-                                    ? null
-                                    : () => setState(() => _source = source),
-                                child: Text(
-                                    switch (source) {
-                                      AnalysisCvSource.saved =>
-                                        l.atsInputSavedCv,
-                                      AnalysisCvSource.upload =>
-                                        l.atsInputUploadFile,
-                                    },
-                                    textAlign: TextAlign.center),
                               ),
                             ),
                         ];
@@ -518,59 +530,81 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
                       },
                     ),
                     const SizedBox(height: 16),
-                    if (_source == AnalysisCvSource.saved) ...[
-                      if (saved.isLoading) Text(l.savedCvsLoading),
-                      if (saved.hasError) ...[
-                        Text(l.atsInputSavedCvsError),
-                        TextButton(onPressed: retry, child: Text(l.retry)),
-                      ] else if (!saved.isLoading && rows.isEmpty)
-                        Text(l.atsInputNoSavedCvs),
-                      if (rows.isNotEmpty) ...[
-                        DropdownButtonFormField<int>(
-                          key: ValueKey(selectedId),
-                          initialValue: selectedId,
-                          isExpanded: true,
-                          itemHeight: null,
-                          decoration: decoration(l.atsInputSelectCv),
-                          items: [
-                            for (final cv in rows)
-                              DropdownMenuItem(
-                                value: cv.id,
-                                child: Text(
-                                  cv.title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
-                          onChanged: _isLoading
-                              ? null
-                              : (id) => setState(() => _selectedCvId = id),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          l.atsInputSavedCvHint,
-                          style: TextStyle(color: c.textSecondary),
-                        ),
-                        if (detail?.isLoading == true) Text(l.savedCvsLoading),
-                        if (detail?.hasError == true) ...[
-                          Text(l.atsInputSavedCvsError),
-                          TextButton(onPressed: retry, child: Text(l.retry)),
-                        ] else if (detail?.value?.generatedMarkdown
-                                .trim()
-                                .isEmpty ==
-                            true)
-                          Text(l.atsInputCvTextUnavailable),
-                      ],
-                    ],
-                    if (_source == AnalysisCvSource.upload)
-                      if (file == null)
-                        UploadDropZone(onTap: () => unawaited(_pickFile()))
-                      else
-                        SelectedFileTile(
-                          fileName: file.name,
-                          onRemove: () => setState(() => _uploadedFile = null),
-                        ),
+                    MotionExpandSlot(
+                      alignment: AlignmentDirectional.topStart,
+                      child: _source == AnalysisCvSource.saved
+                          ? Column(
+                              key: const ValueKey('ats-source-saved'),
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (saved.isLoading) Text(l.savedCvsLoading),
+                                if (saved.hasError) ...[
+                                  Text(l.atsInputSavedCvsError),
+                                  TextButton(
+                                    onPressed: retry,
+                                    child: Text(l.retry),
+                                  ),
+                                ] else if (!saved.isLoading && rows.isEmpty)
+                                  Text(l.atsInputNoSavedCvs),
+                                if (rows.isNotEmpty) ...[
+                                  DropdownButtonFormField<int>(
+                                    key: ValueKey(selectedId),
+                                    initialValue: selectedId,
+                                    isExpanded: true,
+                                    itemHeight: null,
+                                    decoration:
+                                        decoration(l.atsInputSelectCv),
+                                    items: [
+                                      for (final cv in rows)
+                                        DropdownMenuItem(
+                                          value: cv.id,
+                                          child: Text(
+                                            cv.title,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                    ],
+                                    onChanged: _isLoading
+                                        ? null
+                                        : (id) =>
+                                            setState(() => _selectedCvId = id),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    l.atsInputSavedCvHint,
+                                    style: TextStyle(color: c.textSecondary),
+                                  ),
+                                  if (detail?.isLoading == true)
+                                    Text(l.savedCvsLoading),
+                                  if (detail?.hasError == true) ...[
+                                    Text(l.atsInputSavedCvsError),
+                                    TextButton(
+                                      onPressed: retry,
+                                      child: Text(l.retry),
+                                    ),
+                                  ] else if (detail?.value?.generatedMarkdown
+                                          .trim()
+                                          .isEmpty ==
+                                      true)
+                                    Text(l.atsInputCvTextUnavailable),
+                                ],
+                              ],
+                            )
+                          : (file == null
+                              ? UploadDropZone(
+                                  key: const ValueKey('ats-source-upload-drop'),
+                                  onTap: () => unawaited(_pickFile()),
+                                )
+                              : SelectedFileTile(
+                                  key: ValueKey(
+                                    'ats-source-upload-file-${file.name}',
+                                  ),
+                                  fileName: file.name,
+                                  onRemove: () =>
+                                      setState(() => _uploadedFile = null),
+                                )),
+                    ),
                   ],
                 ),
               ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/routing/expand_page_route.dart';
 import 'package:sirati/core/utils/app_format.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/presentation/cv_analysis_screen.dart';
@@ -11,7 +12,9 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/score_ring.dart';
 
 /// Select by real update timestamps; a missing score is never shown as zero.
@@ -134,7 +137,7 @@ class HomeViewAllButton extends StatelessWidget {
       onPressed: onPressed,
       style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
       iconAlignment: IconAlignment.end,
-      icon: const Icon(Icons.chevron_right_rounded, size: 18),
+      icon: const DirectionalIcon(Icons.chevron_right_rounded, size: 18),
       label: Text(AppLocalizations.of(context).homeJobsViewAll),
     );
   }
@@ -199,98 +202,111 @@ class _CvCard extends ConsumerWidget {
       ),
     );
 
-    return _Frame(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+    return Builder(
+      builder: (cardContext) {
+        Route<T> routeFor<T>(Widget screen) {
+          final origin = ExpandOrigin.of(cardContext, radius: 22);
+          return origin != null
+              ? ExpandPageRoute<T>(origin: origin, builder: (_) => screen)
+              : MaterialPageRoute<T>(builder: (_) => screen);
+        }
+
+        return _Frame(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: c.primaryLight,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: LivelyIcon(
-                  Icons.description_outlined,
-                  color: c.primaryInk,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      cv.targetJobTitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: c.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: c.primaryLight,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    if (edited.isNotEmpty)
-                      Text(
-                        edited,
-                        style: TextStyle(color: c.textSecondary, fontSize: 12),
-                      ),
-                  ],
-                ),
-              ),
-              if (score != null) ...[
-                const SizedBox(width: 12),
-                ScoreRing(
-                  key: HomeLatestCvSection.scoreKey,
-                  score: score,
-                  semanticLabel: l.cvCardScore(score),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              OutlinedButton.icon(
-                key: HomeLatestCvSection.editKey,
-                style: buttonStyle,
-                onPressed: () async {
-                  final updated = await Navigator.of(context).push<GeneratedCv>(
-                    MaterialPageRoute(
-                      builder: (_) => CvGeneratorScreen(initialCv: cv),
-                    ),
-                  );
-                  // Saved changes show on Home at once.
-                  if (updated != null) {
-                    ref.invalidate(myCvsProvider(english));
-                    ref.invalidate(latestDashboardCvProvider(english));
-                  }
-                },
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: Text(l.homeMyCvEdit),
-              ),
-              OutlinedButton.icon(
-                key: HomeLatestCvSection.checkKey,
-                style: buttonStyle,
-                onPressed: () => unawaited(
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CvAnalysisScreen(initialCvId: cv.id),
+                    child: LivelyIcon(
+                      Icons.description_outlined,
+                      color: c.primaryInk,
+                      size: 22,
                     ),
                   ),
-                ),
-                icon: const Icon(Icons.document_scanner_outlined, size: 18),
-                label: Text(l.homeMyCvCheck),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          cv.targetJobTitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: c.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        if (edited.isNotEmpty)
+                          Text(
+                            edited,
+                            style:
+                                TextStyle(color: c.textSecondary, fontSize: 12),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (score != null) ...[
+                    const SizedBox(width: 12),
+                    ScoreRing(
+                      key: HomeLatestCvSection.scoreKey,
+                      score: score,
+                      semanticLabel: l.cvCardScore(score),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  PressScale(
+                    child: OutlinedButton.icon(
+                      key: HomeLatestCvSection.editKey,
+                      style: buttonStyle,
+                      onPressed: () async {
+                        final updated = await Navigator.of(context).push<GeneratedCv>(
+                          routeFor<GeneratedCv>(CvGeneratorScreen(initialCv: cv)),
+                        );
+                        // Saved changes show on Home at once.
+                        if (updated != null) {
+                          ref.invalidate(myCvsProvider(english));
+                          ref.invalidate(latestDashboardCvProvider(english));
+                        }
+                      },
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: Text(l.homeMyCvEdit),
+                    ),
+                  ),
+                  PressScale(
+                    child: OutlinedButton.icon(
+                      key: HomeLatestCvSection.checkKey,
+                      style: buttonStyle,
+                      onPressed: () => unawaited(
+                        Navigator.of(context).push(
+                          routeFor<void>(CvAnalysisScreen(initialCvId: cv.id)),
+                        ),
+                      ),
+                      icon:
+                          const Icon(Icons.document_scanner_outlined, size: 18),
+                      label: Text(l.homeMyCvCheck),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -339,16 +355,18 @@ class _EmptyCv extends StatelessWidget {
             style: TextStyle(color: c.textSecondary, fontSize: 13, height: 1.5),
           ),
           const SizedBox(height: 14),
-          FilledButton.icon(
-            key: HomeLatestCvSection.createKey,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(0, 48),
-              shape: const StadiumBorder(),
+          PressScale(
+            child: FilledButton.icon(
+              key: HomeLatestCvSection.createKey,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 48),
+                shape: const StadiumBorder(),
+              ),
+              onPressed: () =>
+                  unawaited(Navigator.pushNamed(context, AppRoutes.createCv)),
+              icon: const Icon(Icons.note_add_outlined, size: 18),
+              label: Text(l.homeHeroCreateYourCv),
             ),
-            onPressed: () =>
-                unawaited(Navigator.pushNamed(context, AppRoutes.createCv)),
-            icon: const Icon(Icons.note_add_outlined, size: 18),
-            label: Text(l.homeHeroCreateYourCv),
           ),
         ],
       ),

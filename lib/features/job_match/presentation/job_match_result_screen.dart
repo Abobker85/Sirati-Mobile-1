@@ -13,6 +13,8 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Score, keyword coverage, gaps and selectable edits for the match held by
 /// [jobMatchControllerProvider]. Pushed by `JobMatchScreen`, which keeps the
@@ -38,7 +40,10 @@ class JobMatchResultScreen extends ConsumerWidget {
                 AppSpacing.xxl,
               ),
               children: [
-                _ScoreCard(match: match),
+                _ScoreCard(
+                  key: ValueKey('jm-score-${match.id}'),
+                  match: match,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 _KeywordsCard(match: match),
                 const SizedBox(height: AppSpacing.md),
@@ -173,28 +178,27 @@ class JobMatchResultScreen extends ConsumerWidget {
           child: Semantics(
             label: l.jobMatchAiPreparing,
             child: ExcludeSemantics(
-              child: SizedBox(
-                key: const ValueKey('jm-suggestions-skeleton'),
-                height: 220,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final width in [0.55, 1.0, 0.85, 1.0, 0.7])
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: FractionallySizedBox(
-                          alignment: AlignmentDirectional.centerStart,
-                          widthFactor: width,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: context.sirati.border,
-                              borderRadius: AppRadius.smAll,
+              child: AppSkeletonScope(
+                child: SizedBox(
+                  key: const ValueKey('jm-suggestions-skeleton'),
+                  height: 220,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final width in [0.55, 1.0, 0.85, 1.0, 0.7])
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: FractionallySizedBox(
+                            alignment: AlignmentDirectional.centerStart,
+                            widthFactor: width,
+                            child: const AppSkeleton(
+                              height: 22,
+                              radius: AppRadius.sm,
                             ),
-                            child: const SizedBox(height: 22),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -206,46 +210,63 @@ class JobMatchResultScreen extends ConsumerWidget {
     final c = context.sirati;
     final suggestions = match.suggestions;
     return [
-      JobMatchSection(
-        title: l.jobMatchSuggestionsTitle,
-        child: Text(
-          suggestions.isEmpty
-              ? l.jobMatchNoSuggestions
-              : l.jobMatchSuggestionsHint,
-          style: AppTypography.of(
-            context,
-            AppTypography.bodySm,
-            color: c.textSecondary,
+      MotionReveal(
+        order: 0,
+        child: JobMatchSection(
+          title: l.jobMatchSuggestionsTitle,
+          child: Text(
+            suggestions.isEmpty
+                ? l.jobMatchNoSuggestions
+                : l.jobMatchSuggestionsHint,
+            style: AppTypography.of(
+              context,
+              AppTypography.bodySm,
+              color: c.textSecondary,
+            ),
           ),
         ),
       ),
-      for (final suggestion in suggestions) ...[
+      for (var i = 0; i < suggestions.length; i++) ...[
         const SizedBox(height: AppSpacing.sm),
-        JobMatchSuggestionCard(
-          suggestion: suggestion,
-          selected: state.selected.contains(suggestion.key),
-          applied: match.appliedSuggestionKeys.contains(suggestion.key),
-          enabled: !state.applying,
-          factConfirmed: state.confirmedFactKeys.contains(suggestion.key),
-          onConfirmFact: (confirmed) => ref
-              .read(jobMatchControllerProvider.notifier)
-              .confirmFact(suggestion.key, confirmed),
-          onToggle: () => ref
-              .read(jobMatchControllerProvider.notifier)
-              .toggle(suggestion.key),
+        MotionReveal(
+          order: i + 1,
+          child: JobMatchSuggestionCard(
+            suggestion: suggestions[i],
+            selected: state.selected.contains(suggestions[i].key),
+            applied: match.appliedSuggestionKeys.contains(suggestions[i].key),
+            enabled: !state.applying,
+            factConfirmed: state.confirmedFactKeys.contains(suggestions[i].key),
+            onConfirmFact: (confirmed) => ref
+                .read(jobMatchControllerProvider.notifier)
+                .confirmFact(suggestions[i].key, confirmed),
+            onToggle: () => ref
+                .read(jobMatchControllerProvider.notifier)
+                .toggle(suggestions[i].key),
+          ),
         ),
       ],
     ];
   }
 }
 
-class _ScoreCard extends StatelessWidget {
-  const _ScoreCard({required this.match});
+class _ScoreCard extends StatefulWidget {
+  const _ScoreCard({super.key, required this.match});
 
   final JobMatch match;
 
   @override
+  State<_ScoreCard> createState() => _ScoreCardState();
+}
+
+class _ScoreCardState extends State<_ScoreCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
+    final match = widget.match;
     final l = AppLocalizations.of(context);
     final c = context.sirati;
     final secondary = AppTypography.of(
@@ -358,6 +379,8 @@ class _ApplyBar extends ConsumerWidget {
       child: ElevatedButton(
         key: const ValueKey('jm-apply'),
         style: ElevatedButton.styleFrom(
+          // Change fill and foreground together when entering busy/disabled state.
+          animationDuration: Duration.zero,
           disabledBackgroundColor: c.surface,
           disabledForegroundColor: c.textSecondary,
         ),

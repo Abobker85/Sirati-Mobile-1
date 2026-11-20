@@ -279,7 +279,7 @@ class _LivePillState extends State<_LivePill>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final reduce = MotionSettings.reduce(context);
     if (reduce) {
       _pulse.stop();
       _pulse.value = 0;
@@ -479,7 +479,7 @@ class _OfflineIllustration extends StatelessWidget {
               end: 22,
               top: 30,
               child: Transform.rotate(
-                angle: 0.12,
+                angle: MotionAxis.endSign(context) * 0.12,
                 child: Container(
                   width: 80,
                   height: 100,

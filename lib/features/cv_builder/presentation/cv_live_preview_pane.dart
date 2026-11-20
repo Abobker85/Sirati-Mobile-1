@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/features/cv_builder/controllers/cv_builder_controller.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/shared/models/cv_template.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 abstract final class _PaperPalette {
   static const Color paperBg =
@@ -63,9 +64,15 @@ class CvLivePreviewPane extends StatefulWidget {
   State<CvLivePreviewPane> createState() => _CvLivePreviewPaneState();
 }
 
-class _CvLivePreviewPaneState extends State<CvLivePreviewPane> {
+class _CvLivePreviewPaneState extends State<CvLivePreviewPane>
+    with SingleTickerProviderStateMixin {
   Timer? _debounceTimer;
   late CvDocument _debouncedDocument;
+  late final AnimationController _settleController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 180),
+    value: 1.0,
+  );
 
   @override
   void initState() {
@@ -75,10 +82,25 @@ class _CvLivePreviewPaneState extends State<CvLivePreviewPane> {
   }
 
   @override
+  void didUpdateWidget(covariant CvLivePreviewPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.languageOverride != widget.languageOverride ||
+        oldWidget.template.slug != widget.template.slug) {
+      _pulseSettle();
+    }
+  }
+
+  @override
   void dispose() {
     _debounceTimer?.cancel();
+    _settleController.dispose();
     widget.controller.removeListener(_onControllerDocumentChanged);
     super.dispose();
+  }
+
+  void _pulseSettle() {
+    if (!mounted || MotionSettings.reduce(context)) return;
+    unawaited(_settleController.forward(from: 0));
   }
 
   void _onControllerDocumentChanged() {
@@ -88,6 +110,7 @@ class _CvLivePreviewPaneState extends State<CvLivePreviewPane> {
         setState(() {
           _debouncedDocument = widget.controller.document;
         });
+        _pulseSettle();
       }
     });
   }
@@ -117,25 +140,36 @@ class _CvLivePreviewPaneState extends State<CvLivePreviewPane> {
           child: Stack(
             children: [
               // A4 Sheet Container
-              Container(
-                width: 595 * widget.scale,
-                constraints: BoxConstraints(
-                  minHeight: 842 * widget.scale,
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
-                decoration: BoxDecoration(
-                  color: _PaperPalette.paperBg,
-                  borderRadius: BorderRadius.circular(4),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: _PaperPalette.shadow,
-                      blurRadius: 12,
-                      offset: Offset(0, 4),
+              RepaintBoundary(
+                child: AnimatedBuilder(
+                  animation: _settleController,
+                  builder: (context, sheet) {
+                    if (MotionSettings.reduce(context)) return sheet!;
+                    final t = Curves.easeOut.transform(_settleController.value);
+                    return Opacity(
+                      opacity: 0.78 + 0.22 * t,
+                      child: sheet,
+                    );
+                  },
+                  child: Container(
+                    width: 595 * widget.scale,
+                    constraints: BoxConstraints(
+                      minHeight: 842 * widget.scale,
                     ),
-                  ],
-                ),
-                child: Column(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
+                    decoration: BoxDecoration(
+                      color: _PaperPalette.paperBg,
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: _PaperPalette.shadow,
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Candidate Identity Header
@@ -245,6 +279,8 @@ class _CvLivePreviewPaneState extends State<CvLivePreviewPane> {
                       const SizedBox(height: 16),
                     ],
                   ],
+                ),
+              ),
                 ),
               ),
 

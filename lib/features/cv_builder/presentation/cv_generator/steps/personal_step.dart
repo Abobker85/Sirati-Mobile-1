@@ -130,12 +130,15 @@ class PersonalStep extends StatelessWidget {
         const SizedBox(height: 14),
         FieldGroup(
           label: l10n.cvPersonalJobDescription,
-          child: _JobDescriptionField(
-            controller: f.jobDescription,
-            english: english,
-            isEnhancing: isEnhancingJobDescription,
-            onEnhance: onEnhanceJobDescription,
-            onDone: props.onPrimaryAction,
+          child: AiEnhancedBeatFrame(
+            beat: props.enhanceBeats['jobDescription'] ?? 0,
+            child: _JobDescriptionField(
+              controller: f.jobDescription,
+              english: english,
+              isEnhancing: isEnhancingJobDescription,
+              onEnhance: onEnhanceJobDescription,
+              onDone: props.onPrimaryAction,
+            ),
           ),
         ),
         const SizedBox(height: 18),

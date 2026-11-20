@@ -1,9 +1,9 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/animated_score_ring.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Text whose paragraph direction follows its own first strong character
 /// (server content and keywords can be Arabic in an English UI and vice
@@ -50,7 +50,10 @@ class JobMatchSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    return DecoratedBox(
+    final reduce = MotionSettings.reduce(context);
+    return AnimatedContainer(
+      duration: reduce ? Duration.zero : MotionDurations.fast,
+      curve: MotionCurves.state,
       decoration: BoxDecoration(
         color: c.surface,
         borderRadius: AppRadius.lgAll,
@@ -285,73 +288,32 @@ class JobMatchScoreRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    final l = AppLocalizations.of(context);
-    final textScale =
-        MediaQuery.textScalerOf(context).scale(AppTypography.displayMd.size) /
-            AppTypography.displayMd.size;
-    return Semantics(
-      label: l.jobMatchScoreSemantics(score),
-      excludeSemantics: true,
-      child: SizedBox.square(
-        dimension: size * textScale.clamp(1.0, double.infinity),
-        child: CustomPaint(
-          painter: _RingPainter(
-            progress: score.clamp(0, 100) / 100,
-            track: c.borderStrong,
-            arc: c.primaryInk,
-          ),
-          child: Center(
-            child: Text(
-              '$score',
-              style: AppTypography.of(
-                context,
-                AppTypography.displayMd,
-                color: c.textPrimary,
-              ),
-            ),
+    final l = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    return AnimatedScoreRing(
+      score: score,
+      size: size,
+      strokeWidth: 10,
+      strokeCap: StrokeCap.butt,
+      arcColor: c.primaryInk,
+      trackColor: c.borderStrong,
+      duration: const Duration(milliseconds: 300),
+      waitForRoute: false,
+      scaleWithText: true,
+      semanticLabel: l?.jobMatchScoreSemantics(score) ?? '$score',
+      // Keep the deterministic score text immediately readable while the arc sweeps.
+      centerBuilder: (context, _) => Directionality(
+        textDirection: TextDirection.ltr,
+        child: Text(
+          '$score',
+          style: AppTypography.of(
+            context,
+            AppTypography.displayMd,
+            color: c.textPrimary,
           ),
         ),
       ),
     );
   }
-}
-
-class _RingPainter extends CustomPainter {
-  _RingPainter({
-    required this.progress,
-    required this.track,
-    required this.arc,
-  });
-
-  final double progress;
-  final Color track;
-  final Color arc;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const stroke = 10.0;
-    final rect = Offset.zero & size;
-    final ring = rect.deflate(stroke / 2);
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      // Keep even a one-point remainder visible near a complete score.
-      ..strokeCap = StrokeCap.butt;
-    canvas.drawArc(ring, 0, math.pi * 2, false, paint..color = track);
-    if (progress > 0) {
-      canvas.drawArc(
-        ring,
-        -math.pi / 2,
-        math.pi * 2 * progress,
-        false,
-        paint..color = arc,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter old) =>
-      old.progress != progress || old.track != track || old.arc != arc;
 }
 
 /// Bulleted list of server-authored lines.

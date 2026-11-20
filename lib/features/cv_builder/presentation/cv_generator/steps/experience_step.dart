@@ -38,7 +38,9 @@ class ExperienceStep extends StatelessWidget {
       children: [
         FieldGroup(
           label: AppLocalizations.of(context).cvExperienceLabel,
-          child: AiCvField(
+          child: AiEnhancedBeatFrame(
+            beat: props.enhanceBeats['experience'] ?? 0,
+            child: AiCvField(
             field: 'experience',
             controller: props.fields.experience,
             english: english,
@@ -92,6 +94,7 @@ class ExperienceStep extends StatelessWidget {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ],

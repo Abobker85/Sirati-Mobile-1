@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/l10n/remote_l10n.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 enum AppButtonVariant { primary, secondary, text, destructive }
@@ -94,7 +95,9 @@ class AppButton extends StatelessWidget {
             ),
           )
         else if (icon != null)
-          Icon(icon, size: 18, color: foreground),
+          DirectionalIcon.isDirectional(icon!)
+              ? DirectionalIcon(icon!, size: 18, color: foreground)
+              : Icon(icon, size: 18, color: foreground),
         if (isLoading || icon != null) const SizedBox(width: AppSpacing.xs),
         Flexible(
           child: Text(

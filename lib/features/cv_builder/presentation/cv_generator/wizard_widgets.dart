@@ -3,6 +3,7 @@ import 'package:sirati/features/cv_builder/presentation/cv_generator/cv_form_con
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Everything a wizard step needs from the screen, bundled so each step's
 /// constructor stays small and steps never reach into screen state.
@@ -19,6 +20,7 @@ class WizardStepProps {
     required this.onEnhance,
     required this.onDismissResult,
     required this.onPrimaryAction,
+    this.enhanceBeats = const {},
   });
 
   final bool english;
@@ -38,6 +40,10 @@ class WizardStepProps {
 
   /// Next / Generate — also fired by keyboard Done on a step's last field.
   final VoidCallback onPrimaryAction;
+
+  /// Monotonic UI-only counters incremented when an AI enhancement completes
+  /// for a field, used to trigger a brief visual confirmation pulse.
+  final Map<String, int> enhanceBeats;
 
   AutovalidateMode get autovalidateMode => submitted
       ? AutovalidateMode.onUserInteraction
@@ -159,6 +165,52 @@ class FieldGroup extends StatelessWidget {
         const SizedBox(height: 6),
         child,
       ],
+    );
+  }
+}
+
+/// Smoothly resizes around AI enhancement result cards and pulses an AA-safe
+/// confirmation border whenever [beat] increments, without mutating form text.
+class AiEnhancedBeatFrame extends StatelessWidget {
+  const AiEnhancedBeatFrame({
+    super.key,
+    required this.beat,
+    required this.child,
+  });
+
+  final int beat;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = MotionSettings.reduce(context);
+    final c = context.sirati;
+    final sized = reduce
+        ? child
+        : AnimatedSize(
+            duration: MotionDurations.medium,
+            curve: MotionCurves.enter,
+            alignment: AlignmentDirectional.topStart,
+            child: child,
+          );
+    if (reduce || beat <= 0) return sized;
+
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('ai-beat-$beat'),
+      tween: Tween<double>(begin: 1.0, end: 0.0),
+      duration: MotionDurations.morph,
+      curve: MotionCurves.settle,
+      builder: (context, glow, inner) => DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: c.primaryInk.withValues(alpha: glow * 0.45),
+            width: 1.5,
+          ),
+        ),
+        child: inner,
+      ),
+      child: sized,
     );
   }
 }

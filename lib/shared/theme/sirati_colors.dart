@@ -154,6 +154,14 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     return error.computeLuminance() > 0.18 ? darkInk : Colors.white;
   }
 
+  /// Text/icons sitting on [amberAccent] fills (e.g. [SiratiAddButton]).
+  /// Picks dark ink when [amberAccent] is bright so contrast holds AA in both
+  /// light and dark themes.
+  Color get onAmberAccent {
+    const darkInk = Color(0xFF171D1B);
+    return amberAccent.computeLuminance() > 0.18 ? darkInk : Colors.white;
+  }
+
   /// Light palette — mirrors historical [AppColors] constants.
   ///
   /// Consistency invariants (SIRATI-101) — do not diverge these values by

@@ -26,18 +26,39 @@ class AppSkeleton extends StatefulWidget {
 
 class _AppSkeletonState extends State<AppSkeleton>
     with SingleTickerProviderStateMixin {
+  static const _shimmerStops = [0.0, 0.35, 0.5, 0.65, 1.0];
+
   AnimationController? _local;
+  AppSkeletonScopeState? _scope;
+  bool _reduce = false;
+  List<Color>? _shimmerColors;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final scope = AppSkeletonScope.maybeOf(context);
-    if (scope != null) return;
+    _scope = AppSkeletonScope.maybeOf(context);
+    _reduce = MotionSettings.reduce(context);
+    final c = context.sirati;
+    _shimmerColors = [
+      c.surfaceHigh,
+      c.surfaceLow,
+      c.surface,
+      c.surfaceLow,
+      c.surfaceHigh,
+    ];
+
+    if (_reduce || _scope != null) {
+      _local?.stop();
+      return;
+    }
 
     _local ??= AnimationController(
       vsync: this,
       duration: MotionDurations.skeleton,
-    )..repeat();
+    );
+    if (!_local!.isAnimating) {
+      _local!.repeat();
+    }
   }
 
   @override
@@ -48,47 +69,51 @@ class _AppSkeletonState extends State<AppSkeleton>
 
   @override
   Widget build(BuildContext context) {
-    if (MotionSettings.reduce(context)) {
+    if (_reduce) {
       return _bone(staticOpacity: 0.7);
     }
 
-    final scope = AppSkeletonScope.maybeOf(context);
-    final controller = scope?.controller ?? _local;
+    final controller = _scope?.controller ?? _local;
     if (controller == null) return _bone(staticOpacity: 0.7);
 
     final rtl = Directionality.of(context) == TextDirection.rtl;
 
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) {
-        final t = MotionCurves.skeleton.transform(controller.value);
-        // Highlight travels start → end (mirrors in RTL via AlignmentDirectional).
-        final start = rtl ? 1.0 - (t * 2 - 0.5) : (t * 2 - 0.5);
-        return _bone(shimmerCenter: start);
-      },
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: controller,
+        builder: (context, _) {
+          final t = MotionCurves.skeleton.transform(controller.value);
+          // Highlight travels start → end (mirrors in RTL via AlignmentDirectional).
+          final start = rtl ? 1.0 - (t * 2 - 0.5) : (t * 2 - 0.5);
+          return _bone(shimmerCenter: start);
+        },
+      ),
     );
   }
 
   Widget _bone({double? staticOpacity, double? shimmerCenter}) {
+    final c = context.sirati;
+    final colors = _shimmerColors ??
+        [
+          c.surfaceHigh,
+          c.surfaceLow,
+          c.surface,
+          c.surfaceLow,
+          c.surfaceHigh,
+        ];
     final child = Container(
       width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(widget.radius),
-        color: staticOpacity != null ? context.sirati.surfaceHigh : null,
+        color: staticOpacity != null ? c.surfaceHigh : null,
         gradient: shimmerCenter == null
             ? null
             : LinearGradient(
                 begin: Alignment(-1.0 + shimmerCenter * 2, 0),
                 end: Alignment(1.0 + shimmerCenter * 2, 0),
-                colors: [
-                  context.sirati.surfaceHigh,
-                  context.sirati.surfaceLow,
-                  context.sirati.surface,
-                  context.sirati.surfaceLow,
-                  context.sirati.surfaceHigh,
-                ],
-                stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+                colors: colors,
+                stops: _shimmerStops,
               ),
       ),
     );

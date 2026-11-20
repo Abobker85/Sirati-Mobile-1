@@ -4,8 +4,10 @@ import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/components/brand_gradient_button.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Shown once when the server rejects the session (HTTP 401), before sign-in.
@@ -63,74 +65,100 @@ class SessionExpiredScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Center(
-                        child: _Pill(
-                          icon: Icons.shield_outlined,
-                          label: l10n.authSessionExpiredBadge,
+                      MotionReveal(
+                        order: 0,
+                        child: Center(
+                          child: _Pill(
+                            icon: Icons.shield_outlined,
+                            label: l10n.authSessionExpiredBadge,
+                          ),
                         ),
                       ),
                       const Spacer(),
                       const SizedBox(height: AppSpacing.xl),
-                      const ExcludeSemantics(child: _ShieldIllustration()),
-                      const SizedBox(height: AppSpacing.xl),
-                      Center(
-                        child: _Chip(label: l10n.authSessionExpiredChip),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          l10n.authSessionExpiredTitle,
-                          textAlign: TextAlign.center,
-                          style: AppTypography.of(
-                            context,
-                            AppTypography.displayMd,
-                            color: c.textPrimary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        l10n.authSessionExpiredBody,
-                        textAlign: TextAlign.center,
-                        style: AppTypography.of(
-                          context,
-                          AppTypography.bodyLg,
-                          color: c.textSecondary,
-                        ),
+                      const MotionReveal(
+                        order: 0,
+                        child: ExcludeSemantics(child: _ShieldIllustration()),
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      _ReassuranceCard(text: l10n.authSessionExpiredDataSafe),
+                      MotionReveal(
+                        order: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Center(
+                              child: _Chip(label: l10n.authSessionExpiredChip),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Semantics(
+                              header: true,
+                              child: Text(
+                                l10n.authSessionExpiredTitle,
+                                textAlign: TextAlign.center,
+                                style: AppTypography.of(
+                                  context,
+                                  AppTypography.displayMd,
+                                  color: c.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              l10n.authSessionExpiredBody,
+                              textAlign: TextAlign.center,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.bodyLg,
+                                color: c.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      MotionReveal(
+                        order: 2,
+                        child: _ReassuranceCard(
+                            text: l10n.authSessionExpiredDataSafe),
+                      ),
                       const Spacer(),
                       const SizedBox(height: AppSpacing.xl),
-                      BrandGradientButton(
-                        label: l10n.authSessionExpiredSignIn,
-                        icon: Icons.login_rounded,
-                        onPressed: () => _signIn(context),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Center(
-                        child: TextButton(
-                          onPressed: () => _contactSupport(context),
-                          style: TextButton.styleFrom(
-                            foregroundColor: c.primaryInk,
-                            minimumSize: const Size(
-                              AppTouchTarget.min,
-                              AppTouchTarget.min,
+                      MotionReveal(
+                        order: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            BrandGradientButton(
+                              label: l10n.authSessionExpiredSignIn,
+                              icon: Icons.login_rounded,
+                              onPressed: () => _signIn(context),
                             ),
-                          ),
-                          child: Text(
-                            l10n.authSessionExpiredHelp,
-                            textAlign: TextAlign.center,
-                            style: AppTypography.of(
-                              context,
-                              AppTypography.bodyMd,
-                              color: c.primaryInk,
-                            ).copyWith(
-                              decoration: TextDecoration.underline,
-                              decorationColor: c.primaryInk,
+                            const SizedBox(height: AppSpacing.sm),
+                            Center(
+                              child: TextButton(
+                                onPressed: () => _contactSupport(context),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: c.primaryInk,
+                                  minimumSize: const Size(
+                                    AppTouchTarget.min,
+                                    AppTouchTarget.min,
+                                  ),
+                                ),
+                                child: Text(
+                                  l10n.authSessionExpiredHelp,
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.of(
+                                    context,
+                                    AppTypography.bodyMd,
+                                    color: c.primaryInk,
+                                  ).copyWith(
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: c.primaryInk,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ],
@@ -311,13 +339,18 @@ class _ShieldIllustration extends StatelessWidget {
             PositionedDirectional(
               end: 14,
               bottom: 18,
-              child: _Badge(
-                size: 54,
-                gradient: [c.brandSurface, c.brandSurfaceDeep],
-                child: Icon(
-                  Icons.schedule_rounded,
-                  size: 28,
-                  color: c.onBrandSurface,
+              child: AmbientMove(
+                kind: AmbientKind.pulse,
+                delay: const Duration(seconds: 2),
+                rest: const Duration(seconds: 10),
+                child: _Badge(
+                  size: 54,
+                  gradient: [c.brandSurface, c.brandSurfaceDeep],
+                  child: Icon(
+                    Icons.schedule_rounded,
+                    size: 28,
+                    color: c.onBrandSurface,
+                  ),
                 ),
               ),
             ),

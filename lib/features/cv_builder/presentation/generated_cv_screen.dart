@@ -528,14 +528,11 @@ class _CollapsiblePreviewState extends State<_CollapsiblePreview> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final reduce = MotionSettings.reduce(context);
     final showToggle = widget.expanded || _overflows;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (widget.expanded)
-          widget.child
-        else
-          NotificationListener<ScrollMetricsNotification>(
+    final preview = widget.expanded
+        ? widget.child
+        : NotificationListener<ScrollMetricsNotification>(
             onNotification: _onMetrics,
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -547,6 +544,18 @@ class _CollapsiblePreviewState extends State<_CollapsiblePreview> {
                 child: widget.child,
               ),
             ),
+          );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (reduce)
+          preview
+        else
+          AnimatedSize(
+            duration: MotionDurations.medium,
+            curve: MotionCurves.enter,
+            alignment: AlignmentDirectional.topStart,
+            child: preview,
           ),
         if (showToggle)
           Align(
@@ -554,10 +563,11 @@ class _CollapsiblePreviewState extends State<_CollapsiblePreview> {
             child: TextButton.icon(
               key: GeneratedCvScreen.previewToggleKey,
               onPressed: widget.onToggle,
-              icon: Icon(
-                widget.expanded
-                    ? Icons.expand_less_rounded
-                    : Icons.expand_more_rounded,
+              icon: AnimatedRotation(
+                turns: widget.expanded ? 0.5 : 0.0,
+                duration: reduce ? Duration.zero : MotionDurations.fast,
+                curve: MotionCurves.state,
+                child: const Icon(Icons.expand_more_rounded),
               ),
               label: Text(
                 widget.expanded ? l.cvHubShowLess : l.cvHubShowFull,
@@ -692,95 +702,97 @@ class _NextStepCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    return Semantics(
-      button: true,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: AppRadius.lgAll,
-          border: Border.all(color: c.textSecondary),
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onTap,
+    return PressScale(
+      child: Semantics(
+        button: true,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: c.surface,
             borderRadius: AppRadius.lgAll,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: c.primaryLight,
-                      borderRadius: AppRadius.mdAll,
+            border: Border.all(color: c.textSecondary),
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: AppRadius.lgAll,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: c.primaryLight,
+                        borderRadius: AppRadius.mdAll,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.xs),
+                        child: Icon(icon, size: 22, color: c.primaryInk),
+                      ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.xs),
-                      child: Icon(icon, size: 22, color: c.primaryInk),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: AppSpacing.xs,
-                          runSpacing: AppSpacing.xxs,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              title,
-                              style: AppTypography.of(
-                                context,
-                                AppTypography.titleSm,
-                              ),
-                            ),
-                            if (tag != null)
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: c.primaryLight,
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadius.pill),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: AppSpacing.xs,
+                            runSpacing: AppSpacing.xxs,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(
+                                title,
+                                style: AppTypography.of(
+                                  context,
+                                  AppTypography.titleSm,
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.xs,
-                                    vertical: 2,
+                              ),
+                              if (tag != null)
+                                DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: c.primaryLight,
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.pill),
                                   ),
-                                  child: Text(
-                                    tag!,
-                                    style: AppTypography.of(
-                                      context,
-                                      AppTypography.labelSm,
-                                      color: c.primaryInk,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.xs,
+                                      vertical: 2,
+                                    ),
+                                    child: Text(
+                                      tag!,
+                                      style: AppTypography.of(
+                                        context,
+                                        AppTypography.labelSm,
+                                        color: c.primaryInk,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          body,
-                          style: AppTypography.of(
-                            context,
-                            AppTypography.bodySm,
-                            color: c.textSecondary,
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            body,
+                            style: AppTypography.of(
+                              context,
+                              AppTypography.bodySm,
+                              color: c.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Icon(
-                    Directionality.of(context) == TextDirection.rtl
-                        ? Icons.chevron_left_rounded
-                        : Icons.chevron_right_rounded,
-                    color: c.textSecondary,
-                  ),
-                ],
+                    const SizedBox(width: AppSpacing.xs),
+                    Icon(
+                      Directionality.of(context) == TextDirection.rtl
+                          ? Icons.chevron_left_rounded
+                          : Icons.chevron_right_rounded,
+                      color: c.textSecondary,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

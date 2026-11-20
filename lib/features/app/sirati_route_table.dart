@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/routing/app_router.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/core/storage/guest_session.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/ats_scanner/application/saved_analysis_cvs.dart';
@@ -50,7 +51,7 @@ class CvHubAtsCheckArguments {
 }
 
 Future<void> openCvHubAtsCheck(BuildContext context, GeneratedCv cv) async {
-  await Navigator.of(context).push<void>(MaterialPageRoute<void>(
+  await Navigator.of(context).push<void>(FadeThroughPageRoute<void>(
     settings: RouteSettings(
         arguments: CvHubAtsCheckArguments(
       cvId: cv.id,
