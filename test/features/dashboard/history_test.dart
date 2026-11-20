@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,26 +10,32 @@ import 'package:sirati/features/dashboard/application/history_controllers.dart';
 import 'package:sirati/features/dashboard/domain/history_page.dart';
 import 'package:sirati/features/dashboard/presentation/history/history_cards.dart';
 import 'package:sirati/features/dashboard/presentation/history_screen.dart';
+import 'package:sirati/features/settings/domain/notification_groups.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
 
 import '../../support/contrast_probe.dart';
 
-CvAnalysis _analysis(int id, {int score = 70, String method = 'paste'}) =>
+CvAnalysis _analysis(int id,
+        {int score = 70, String method = 'paste', DateTime? at}) =>
     CvAnalysis.fromJson({
       'id': id,
+      'created_at': at?.toIso8601String(),
       'target_job_title': 'Role $id',
       'score_total': score,
       'grade': 'B',
       'input_method': method,
     });
 
-GeneratedCv _cv(int id, {int score = 70}) => GeneratedCv.fromJson({
+GeneratedCv _cv(int id, {int score = 70, DateTime? at}) =>
+    GeneratedCv.fromJson({
       'id': id,
+      'created_at': at?.toIso8601String(),
       'full_name': 'Sara $id',
       'target_job_title': 'Role $id',
       'score_total': score,
@@ -48,6 +55,9 @@ class _PagedApi extends CvApiService {
   /// Ids per page; overridable to simulate shifting pages.
   List<int> Function(int page)? idsFor;
 
+  /// When each id happened; undated by default.
+  DateTime? Function(int id)? dateFor;
+
   List<int> _ids(int page) =>
       idsFor?.call(page) ??
       [for (var i = 0; i < perPage; i++) (page - 1) * perPage + i + 1];
@@ -58,7 +68,9 @@ class _PagedApi extends CvApiService {
     await gate?.future;
     if (analysesError != null) throw analysesError!;
     return PagedList(
-      items: [for (final id in _ids(page)) _analysis(id)],
+      items: [
+        for (final id in _ids(page)) _analysis(id, at: dateFor?.call(id)),
+      ],
       currentPage: page,
       lastPage: lastPage,
     );
@@ -69,7 +81,7 @@ class _PagedApi extends CvApiService {
     requests.add('c$page');
     if (cvsError != null) throw cvsError!;
     return PagedList(
-      items: [for (final id in _ids(page)) _cv(id)],
+      items: [for (final id in _ids(page)) _cv(id, at: dateFor?.call(id))],
       currentPage: page,
       lastPage: lastPage,
     );
@@ -77,6 +89,32 @@ class _PagedApi extends CvApiService {
 }
 
 void main() {
+  group('historySections', () {
+    test('keeps every item once, in order, in runs of one period', () {
+      final now = DateTime(2026, 11, 20, 9);
+      final random = Random(7);
+      for (var round = 0; round < 200; round++) {
+        final dates = [
+          for (var i = 0; i < random.nextInt(25); i++)
+            random.nextInt(6) == 0
+                ? null
+                : now.subtract(Duration(hours: random.nextInt(24 * 20))),
+        ];
+        final sections = historySections(dates, (d) => d, now);
+        // Flattened, the sections are the list itself with its indices.
+        expect([for (final s in sections) ...s.items],
+            [for (final (i, d) in dates.indexed) (i, d)]);
+        for (final (i, section) in sections.indexed) {
+          expect(section.items, isNotEmpty);
+          for (final (_, d) in section.items) {
+            expect(notificationPeriodOf(d, now), section.period);
+          }
+          if (i > 0) expect(sections[i - 1].period, isNot(section.period));
+        }
+      }
+    });
+  });
+
   group('HistoryPage.append', () {
     test('never duplicates an id and keeps first-seen order', () {
       for (final (first, next) in <(List<int>, List<int>)>[
@@ -222,6 +260,84 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(GeneratedCvHistoryCard), findsWidgets);
     });
+
+    for (final language in ['en', 'ar']) {
+      for (final dark in [false, true]) {
+        final mode = '$language ${dark ? 'dark' : 'light'}';
+        testWidgets(
+            'each tab is date headers over white cards on the grey page, '
+            'and Load more still adds rows ($mode)', (tester) async {
+          tester.view.physicalSize = const Size(800, 3000);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          AppLocale.languageCode.value = language;
+          final now = DateTime.now();
+          final dates = <int, DateTime?>{
+            1: now,
+            2: now,
+            3: now.subtract(const Duration(days: 1)),
+            4: now.subtract(const Duration(days: 30)),
+            5: null,
+            6: now.subtract(const Duration(days: 40)),
+          };
+          final api = _PagedApi()..dateFor = (id) => dates[id];
+          await tester.pumpWidget(ProviderScope(
+            overrides: [cvApiServiceProvider.overrideWithValue(api)],
+            child: MaterialApp(
+              theme: dark
+                  ? AppTheme.darkFor(arabic: language == 'ar')
+                  : AppTheme.lightFor(arabic: language == 'ar'),
+              locale: Locale(language),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: const HistoryScreen(),
+            ),
+          ));
+          await tester.pumpAndSettle();
+          final context = tester.element(find.byType(HistoryScreen));
+          final c = context.sirati;
+          final l10n = AppLocalizations.of(context);
+          expect(tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+              c.groupedBackground);
+
+          void expectTab(Type rowType, List<int> ids) {
+            final sections =
+                historySections(ids, (id) => dates[id], DateTime.now());
+            final found = find.byType(AppListSection);
+            expect(found, findsNWidgets(sections.length));
+            for (final (i, section) in sections.indexed) {
+              final widget = tester.widget<AppListSection>(found.at(i));
+              expect(widget.header, historyPeriodLabel(l10n, section.period));
+              final card = find.descendant(
+                  of: found.at(i),
+                  matching: find.byKey(AppListSection.cardKey));
+              expect(tester.widget<Material>(card).color, c.groupedCard);
+              expect(find.descendant(of: card, matching: find.byType(rowType)),
+                  findsNWidgets(section.items.length));
+              expect(find.descendant(of: card, matching: find.byType(Divider)),
+                  findsNWidgets(section.items.length - 1));
+            }
+            expectAllTextAa('history $mode $rowType');
+          }
+
+          expectTab(AnalysisHistoryCard, [1, 2]);
+          await tester.tap(find.byType(LoadMoreFooter));
+          await tester.pumpAndSettle();
+          expect(api.requests, contains('a2'));
+          expectTab(AnalysisHistoryCard, [1, 2, 3, 4]);
+
+          await tester.tap(find.text(l10n.dashboardHistoryGeneratedCvsTab));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byType(LoadMoreFooter));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byType(LoadMoreFooter));
+          await tester.pumpAndSettle();
+          expectTab(GeneratedCvHistoryCard, [1, 2, 3, 4, 5, 6]);
+          expect(find.byType(LoadMoreFooter), findsNothing);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
 
     for (final (mode, theme) in [
       ('light', AppTheme.lightFor(arabic: false)),

@@ -12,8 +12,10 @@ import 'package:sirati/features/cv_builder/presentation/generated_cv_screen.dart
 import 'package:sirati/features/dashboard/application/history_controllers.dart';
 import 'package:sirati/features/dashboard/domain/history_page.dart';
 import 'package:sirati/features/dashboard/presentation/history/history_cards.dart';
+import 'package:sirati/features/settings/domain/notification_groups.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
@@ -30,11 +32,16 @@ class HistoryScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final c = context.sirati;
 
+    // Grouped grey page: each date section is one white inset card.
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: c.groupedBackground,
         appBar: AppBar(
           title: Text(l10n.dashboardHistory),
+          backgroundColor: c.groupedBackground,
+          surfaceTintColor: c.groupedBackground,
+          scrolledUnderElevation: 0,
           automaticallyImplyLeading: Navigator.of(context).canPop(),
           actions: [
             IconButton(
@@ -74,7 +81,9 @@ class _HistoryTab<T> extends StatelessWidget {
     required this.onLoadMore,
     required this.empty,
     required this.header,
+    required this.dateOf,
     required this.itemBuilder,
+    this.now,
   });
 
   final AsyncValue<HistoryPage<T>> value;
@@ -84,6 +93,12 @@ class _HistoryTab<T> extends StatelessWidget {
   final Widget empty;
   final Widget Function(HistoryPage<T> page)? header;
   final Widget Function(BuildContext context, T item, int index) itemBuilder;
+
+  /// When an item happened, for its date section.
+  final DateTime? Function(T item) dateOf;
+
+  /// Clock for the date sections; tests pin it.
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +117,6 @@ class _HistoryTab<T> extends StatelessWidget {
       builder: (page) {
         final items = page.items;
         final headerWidget = header?.call(page);
-        final leading = headerWidget == null ? 0 : 1;
         return SiratiRefreshIndicator(
           onRefresh: onRefresh,
           child: items.isEmpty
@@ -117,29 +131,88 @@ class _HistoryTab<T> extends StatelessWidget {
                     ),
                   ),
                 )
-              : ListView.separated(
+              : ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  itemCount: leading + items.length + (page.hasMore ? 1 : 0),
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) {
-                    if (headerWidget != null && i == 0) return headerWidget;
-                    final index = i - leading;
-                    if (index >= items.length) {
-                      return LoadMoreFooter(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg,
+                      AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
+                  children: [
+                    if (headerWidget != null)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(
+                          start: AppListSection.rowPadding,
+                          end: AppListSection.rowPadding,
+                          bottom: AppSpacing.xs,
+                        ),
+                        child: headerWidget,
+                      ),
+                    for (final (i, section) in historySections(
+                      items,
+                      dateOf,
+                      now ?? DateTime.now(),
+                    ).indexed) ...[
+                      if (i > 0 || headerWidget != null)
+                        const SizedBox(height: AppSpacing.lg),
+                      AppListSection(
+                        header: historyPeriodLabel(
+                          AppLocalizations.of(context),
+                          section.period,
+                        ),
+                        separatorIndent: historySeparatorIndent,
+                        children: [
+                          for (final (index, item) in section.items)
+                            itemBuilder(context, item, index),
+                        ],
+                      ),
+                    ],
+                    if (page.hasMore) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      LoadMoreFooter(
                         loading: page.loadingMore,
                         failed: page.loadMoreFailed,
                         onPressed: onLoadMore,
-                      );
-                    }
-                    return itemBuilder(context, items[index], index);
-                  },
+                      ),
+                    ],
+                  ],
                 ),
         );
       },
     );
   }
 }
+
+/// One date section of a history list: its period and its items, each with
+/// its place in the whole list.
+typedef HistorySection<T> = ({
+  NotificationPeriod period,
+  List<(int, T)> items,
+});
+
+/// Splits [items] into date sections in list order (newest first from the
+/// server): a new section starts whenever the period changes, so no item
+/// ever moves out of order.
+List<HistorySection<T>> historySections<T>(
+  List<T> items,
+  DateTime? Function(T item) dateOf,
+  DateTime now,
+) {
+  final sections = <HistorySection<T>>[];
+  for (final (index, item) in items.indexed) {
+    final period = notificationPeriodOf(dateOf(item), now);
+    if (sections.isEmpty || sections.last.period != period) {
+      sections.add((period: period, items: []));
+    }
+    sections.last.items.add((index, item));
+  }
+  return sections;
+}
+
+String historyPeriodLabel(AppLocalizations l10n, NotificationPeriod period) =>
+    switch (period) {
+      NotificationPeriod.today => l10n.settingsNotificationsToday,
+      NotificationPeriod.yesterday => l10n.settingsNotificationsYesterday,
+      NotificationPeriod.thisWeek => l10n.settingsNotificationsThisWeek,
+      NotificationPeriod.earlier => l10n.settingsNotificationsEarlier,
+    };
 
 /// Completes when the refetch settles; errors surface through the provider.
 Future<void> _settle(Future<Object?> next) async {
@@ -177,6 +250,7 @@ class _AnalysesTab extends ConsumerWidget {
         onAction: () => _push(context, const CvAnalysisScreen()),
         scrollable: false,
       ),
+      dateOf: (analysis) => analysis.createdAt,
       header: (page) => Text(
         l10n.analysisCount(page.items.length),
         textAlign: TextAlign.start,
@@ -191,7 +265,7 @@ class _AnalysesTab extends ConsumerWidget {
             onTap: () => _push(
               context,
               AnalysisResultScreen(analysis: analysis),
-              origin: ExpandOrigin.of(cardContext, radius: 14),
+              origin: ExpandOrigin.of(cardContext, radius: 0),
             ),
           ),
         ),
@@ -222,6 +296,7 @@ class _GeneratedCvsTab extends ConsumerWidget {
         scrollable: false,
       ),
       header: null,
+      dateOf: (cv) => cv.createdAt,
       itemBuilder: (context, cv, index) => MotionReveal(
         key: ValueKey('history-cv-${cv.id}'),
         order: index.clamp(0, MotionReveal.maxStaggerIndex),
@@ -231,7 +306,7 @@ class _GeneratedCvsTab extends ConsumerWidget {
             onTap: () => _push(
               context,
               GeneratedCvScreen(generatedCv: cv),
-              origin: ExpandOrigin.of(cardContext, radius: 14),
+              origin: ExpandOrigin.of(cardContext, radius: 0),
             ),
           ),
         ),

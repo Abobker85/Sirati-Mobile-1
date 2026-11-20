@@ -14,6 +14,7 @@ import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/services/notification_service.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -242,12 +243,16 @@ void main() {
         locale: Locale(language),
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: Scaffold(
-          body: NotificationInbox(
-            items: items,
-            now: now,
-            onRefresh: () async {},
-            onOpen: (item) => opened?.add(item),
+        // The grey grouped page, as NotificationsScreen paints it.
+        home: Builder(
+          builder: (context) => Scaffold(
+            backgroundColor: context.sirati.groupedBackground,
+            body: NotificationInbox(
+              items: items,
+              now: now,
+              onRefresh: () async {},
+              onOpen: (item) => opened?.add(item),
+            ),
           ),
         ),
       );
@@ -399,10 +404,103 @@ void main() {
     }
   }
 
-  test('unread dot is a visible graphic on the unread row (>= 3:1)', () {
+  test(
+      'unread dot is a visible graphic on the row, resting and pressed '
+      '(>= 3:1)', () {
     for (final c in [SiratiColors.light, SiratiColors.dark]) {
-      expect(AppContrast.ratio(c.primaryInk, c.primaryLight),
-          greaterThanOrEqualTo(3));
+      for (final row in [c.groupedCard, c.pressed(c.groupedCard)]) {
+        expect(AppContrast.ratio(c.primaryInk, row), greaterThanOrEqualTo(3));
+      }
+    }
+  });
+
+  for (final language in ['en', 'ar']) {
+    for (final dark in [false, true]) {
+      final mode = '$language ${dark ? 'dark' : 'light'}';
+      testWidgets(
+          'each date is a header over one white card of its rows, with '
+          'separators and no shadows, under every filter ($mode)',
+          (tester) async {
+        tallView(tester);
+        AppLocale.languageCode.value = language;
+        final items = mixed();
+        await tester.pumpWidget(inbox(items, language: language, dark: dark));
+        await tester.pumpAndSettle();
+        final context = tester.element(find.byType(NotificationInbox));
+        final c = context.sirati;
+        final l10n = AppLocalizations.of(context);
+
+        void expectGrouped(List<NotificationItem> shown) {
+          final groups = groupNotifications(shown, now);
+          final sections = find.byType(AppListSection);
+          expect(sections, findsNWidgets(groups.length));
+          for (final (i, group) in groups.indexed) {
+            final section = sections.at(i);
+            final card = find.descendant(
+                of: section, matching: find.byKey(AppListSection.cardKey));
+            expect(tester.widget<Material>(card).color, c.groupedCard);
+            // Rows in the server's order, each one inside this card.
+            final rows = find.descendant(
+                of: card, matching: find.byType(NotificationCard));
+            expect(
+                tester.widgetList<NotificationCard>(rows).map((r) => r.item.id),
+                group.items.map((i) => i.id));
+            // A hairline between rows, none before the first.
+            expect(find.descendant(of: card, matching: find.byType(Divider)),
+                findsNWidgets(group.items.length - 1));
+            // The date header sits right above its card.
+            final header = find.byType(NotificationGroupHeader).at(i);
+            expect(tester.widget<NotificationGroupHeader>(header).group.period,
+                group.period);
+            final headerRect = tester.getRect(header);
+            final cardRect = tester.getRect(card);
+            expect(headerRect.bottom, lessThanOrEqualTo(cardRect.top));
+            expect(cardRect.top - headerRect.bottom, lessThan(16));
+            // Flat rows: nothing inside the card paints a shadow.
+            for (final box in tester.widgetList<DecoratedBox>(find.descendant(
+                of: card, matching: find.byType(DecoratedBox)))) {
+              final d = box.decoration;
+              if (d is BoxDecoration) {
+                expect(d.boxShadow, anyOf(isNull, isEmpty));
+              }
+            }
+          }
+        }
+
+        expectGrouped(items);
+        await tester.tap(find.widgetWithText(
+            NotificationFilterChip, l10n.settingsNotificationsUnread));
+        await tester.pumpAndSettle();
+        expectGrouped(items.where((i) => !i.isRead).toList());
+        expectAllTextAa('grouped unread $mode');
+        await tester.tap(find.widgetWithText(
+            NotificationFilterChip, l10n.settingsNotificationsFilterAll));
+        await tester.pumpAndSettle();
+        expectGrouped(items);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
+  testWidgets('a pressed row keeps every ink readable on the pressed fill',
+      (tester) async {
+    tallView(tester);
+    AppLocale.languageCode.value = 'en';
+    for (final dark in [false, true]) {
+      await tester.pumpWidget(inbox(mixed(), dark: dark));
+      await tester.pumpAndSettle();
+      final c = tester.element(find.byType(NotificationInbox)).sirati;
+      final row = find.byType(NotificationCard).first;
+      final ink = tester.widget<InkWell>(
+          find.descendant(of: row, matching: find.byType(InkWell)).first);
+      final pressed = ink.overlayColor!.resolve({WidgetState.pressed})!;
+      expect(pressed, c.pressed(c.groupedCard));
+      for (final text in tester.widgetList<Text>(
+          find.descendant(of: row, matching: find.byType(Text)))) {
+        final color = text.style?.color ?? c.textPrimary;
+        expect(AppContrast.ratio(color, pressed), greaterThanOrEqualTo(4.5),
+            reason: '"${text.data}" pressed (dark=$dark)');
+      }
     }
   });
 
