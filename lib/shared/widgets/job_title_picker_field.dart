@@ -41,7 +41,7 @@ class JobTitlePickerField extends StatelessWidget {
     final selected = await showGlassBottomSheet<JobTitle?>(
       context: context,
       isScrollControlled: true,
-      // The sheet draws its own grab bar.
+      // The sheet draws its own top (no grab bar, no X).
       showDragHandle: false,
       builder: (ctx) => _JobTitlePickerSheet(
         titles: titles,
@@ -247,15 +247,6 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
           height: MediaQuery.sizeOf(context).height * 0.72,
           child: Column(
             children: [
-              const SizedBox(height: 10),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.sirati.borderStrong,
-                  borderRadius: BorderRadius.circular(99),
-                ),
-              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Row(

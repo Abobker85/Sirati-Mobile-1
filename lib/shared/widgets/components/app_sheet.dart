@@ -13,6 +13,10 @@ const appSheetDuration = Duration(milliseconds: 400);
 /// How far the screen behind an open sheet shrinks.
 const appSheetBackgroundScale = 0.95;
 
+/// Height of a sheet that is not scroll controlled, as a share of the
+/// screen, before its close row is added (Flutter's own cap).
+const appSheetContentHeightRatio = 9 / 16;
+
 /// Corner radius the screen behind an open sheet takes on as it shrinks.
 const appSheetBackgroundRadius = 12.0;
 
@@ -27,6 +31,10 @@ const appSheetBackgroundRadius = 12.0;
 /// standard sheet top", which is the close button at the end side (left in
 /// Arabic, right in English). Callers that draw their own top pass false.
 /// [showCloseButton], when given, decides on its own.
+///
+/// A sheet that is not scroll controlled keeps 9/16 of the screen for its
+/// content, with the close row on top of that, and scrolls when its content
+/// is taller (small phones, large text) instead of overflowing.
 Future<T?> showGlassBottomSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -37,6 +45,11 @@ Future<T?> showGlassBottomSheet<T>({
   final c = context.sirati;
   final closeButton = showCloseButton ?? showDragHandle;
   final navigator = Navigator.of(context);
+  final screenHeight = MediaQuery.sizeOf(context).height;
+  final maxHeightRatio = closeButton && screenHeight > 0
+      ? (appSheetContentHeightRatio + _closeRowHeight / screenHeight)
+          .clamp(appSheetContentHeightRatio, 1.0)
+      : appSheetContentHeightRatio;
   final localizations = MaterialLocalizations.of(context);
   return navigator.push(
     _GlassSheetRoute<T>(
@@ -45,6 +58,7 @@ Future<T?> showGlassBottomSheet<T>({
         to: navigator.context,
       ),
       isScrollControlled: isScrollControlled,
+      scrollControlDisabledMaxHeightRatio: maxHeightRatio,
       barrierLabel: localizations.scrimLabel,
       barrierOnTapHint:
           localizations.scrimOnTapHint(localizations.bottomSheetLabel),
@@ -70,7 +84,7 @@ Future<T?> showGlassBottomSheet<T>({
             if (closeButton)
               const Padding(
                 padding: EdgeInsetsDirectional.only(
-                  top: AppSpacing.md,
+                  top: _closeRowTop,
                   start: AppSpacing.md,
                   end: AppSpacing.md,
                 ),
@@ -79,13 +93,27 @@ Future<T?> showGlassBottomSheet<T>({
                   child: SheetCloseButton(),
                 ),
               ),
-            Flexible(child: builder(context)),
+            Flexible(
+              child: isScrollControlled
+                  ? builder(context)
+                  // Not primary: a caller's own list may claim that.
+                  : SingleChildScrollView(
+                      primary: false,
+                      child: builder(context),
+                    ),
+            ),
           ],
         ),
       ),
     ),
   );
 }
+
+/// Space above the close button.
+const _closeRowTop = AppSpacing.md;
+
+/// The close row: its top space plus the button's 48 tap target.
+const _closeRowHeight = _closeRowTop + kMinInteractiveDimension;
 
 /// The bottom sheet route, plus the transition it hands to the screen below:
 /// that screen shrinks and rounds its corners while the sheet is up. The
@@ -95,6 +123,7 @@ class _GlassSheetRoute<T> extends ModalBottomSheetRoute<T> {
     required super.builder,
     required super.capturedThemes,
     required super.isScrollControlled,
+    required super.scrollControlDisabledMaxHeightRatio,
     required super.barrierLabel,
     required super.barrierOnTapHint,
     required super.backgroundColor,

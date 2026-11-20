@@ -78,7 +78,7 @@ class AchievementBuilderSheet extends StatefulWidget {
     return showGlassBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      // The sheet draws its own grab bar.
+      // The sheet draws its own top, with its own close button.
       showDragHandle: false,
       builder: (ctx) => AchievementBuilderSheet(
         english: english,
@@ -228,19 +228,6 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── Handle bar ───────────────────────────────────────────────
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: c.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
               // ── Header ───────────────────────────────────────────────────
               Row(
                 children: [
