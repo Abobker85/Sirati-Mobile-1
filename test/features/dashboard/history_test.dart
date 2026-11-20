@@ -18,6 +18,7 @@ import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -339,6 +340,76 @@ void main() {
           await tester.pumpAndSettle();
           expectTab(GeneratedCvHistoryCard, [1, 2, 3, 4, 5, 6]);
           expect(find.byType(LoadMoreFooter), findsNothing);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+
+    for (final language in ['en', 'ar']) {
+      for (final reduce in [false, true]) {
+        testWidgets(
+            'tabs are the shared segmented control on the grouped page '
+            '($language, reduced motion: $reduce)', (tester) async {
+          AppLocale.languageCode.value = language;
+          await tester.pumpWidget(ProviderScope(
+            overrides: [cvApiServiceProvider.overrideWithValue(_PagedApi())],
+            child: MaterialApp(
+              theme: AppTheme.lightFor(arabic: language == 'ar'),
+              locale: Locale(language),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              builder: (context, child) => MediaQuery(
+                data:
+                    MediaQuery.of(context).copyWith(disableAnimations: reduce),
+                child: child!,
+              ),
+              home: const HistoryScreen(),
+            ),
+          ));
+          await tester.pumpAndSettle();
+          final context = tester.element(find.byType(TabBarView));
+          final l10n = AppLocalizations.of(context);
+          expect(Directionality.of(context),
+              language == 'ar' ? TextDirection.rtl : TextDirection.ltr);
+          expect(PageSurface.of(context), PageSurfaceKind.grouped,
+              reason: 'the control follows the grouped page palette');
+          expect(find.byType(TabBar), findsNothing);
+          final bar = tester
+              .widget<AppSegmentedTabBar>(find.byType(AppSegmentedTabBar));
+          expect(bar.textScaler, MediaQuery.textScalerOf(context));
+          final controller = DefaultTabController.of(context);
+          expect(controller.animationDuration,
+              reduce ? Duration.zero : isNot(Duration.zero));
+
+          // The page strip behind the tabs: page i rests at i page widths.
+          final pages = tester.state<ScrollableState>(find
+              .descendant(
+                  of: find.byType(TabBarView),
+                  matching: find.byType(Scrollable))
+              .first);
+          final width = tester.getSize(find.byType(TabBarView)).width;
+          final analyses = find.byType(AnalysisHistoryCard).first;
+
+          for (final (target, label) in [
+            (1, l10n.dashboardHistoryGeneratedCvsTab),
+            (0, l10n.analyses),
+          ]) {
+            await tester.tap(find.text(label));
+            await tester.pump();
+            final offset = pages.position.pixels;
+            if (reduce) {
+              // One frame later the pages have jumped, not slid.
+              expect(offset, target * width, reason: 'to $label');
+            } else {
+              expect(offset, isNot(target * width), reason: 'to $label slides');
+            }
+            await tester.pumpAndSettle();
+            expect(pages.position.pixels, target * width);
+            expect(controller.index, target);
+          }
+          expect(analyses.hitTestable(), findsOneWidget);
+          expect(
+              find.byType(GeneratedCvHistoryCard).hitTestable(), findsNothing);
           expect(tester.takeException(), isNull);
         });
       }

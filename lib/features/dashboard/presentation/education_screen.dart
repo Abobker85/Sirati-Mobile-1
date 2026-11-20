@@ -9,12 +9,20 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/navigation/dashboard_scroll_end.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/screen_header.dart';
 
 class EducationScreen extends ConsumerWidget {
   const EducationScreen({super.key});
+
+  /// The grey grouped page behind the tab, for tests.
+  static const pageKey = ValueKey('education-page');
+
+  /// The "What's coming" section, for tests.
+  static const upcomingKey = ValueKey('education-upcoming');
 
   Future<void> _onNotifyMe(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context);
@@ -34,109 +42,125 @@ class EducationScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final notified = ref.watch(educationInterestProvider).value ?? false;
 
-    // Bottom stays open: the list scrolls behind the floating bar.
-    return SafeArea(
-      bottom: false,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxContentWidth = constraints.maxWidth >= 1100
-              ? 920.0
-              : constraints.maxWidth >= 780
-                  ? 760.0
-                  : constraints.maxWidth;
-          final horizontalPadding = AppSpacing.pageGutter(constraints.maxWidth);
+    // Grouped grey page (iOS 26 inset-grouped pattern): the upcoming
+    // features are one white section. Bottom stays open: the list scrolls
+    // behind the floating bar.
+    return ColoredBox(
+      key: EducationScreen.pageKey,
+      color: context.sirati.groupedBackground,
+      child: GroupedSurface(
+        child: SafeArea(
+          bottom: false,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxContentWidth = constraints.maxWidth >= 1100
+                  ? 920.0
+                  : constraints.maxWidth >= 780
+                      ? 760.0
+                      : constraints.maxWidth;
+              final horizontalPadding =
+                  AppSpacing.pageGutter(constraints.maxWidth);
 
-          return Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxContentWidth),
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  18,
-                  horizontalPadding,
-                  dashboardScrollEnd(context),
+              return Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxContentWidth),
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      18,
+                      horizontalPadding,
+                      dashboardScrollEnd(context),
+                    ),
+                    children: [
+                      ScreenHeader(
+                        english: english,
+                        title: l10n.dashboardEducationTitle,
+                        subtitle: l10n.dashboardEducationSubtitle,
+                        icon: Icons.school_rounded,
+                        unreadCount: SessionCache.instance.unreadCount,
+                        // Named routes, so guests get the sign-in invitation.
+                        onNotifications: () => Navigator.of(context)
+                            .pushNamed(AppRoutes.notifications),
+                        onAvatarTap: () =>
+                            Navigator.of(context).pushNamed(AppRoutes.settings),
+                      ),
+                      const SizedBox(height: 18),
+                      MotionReveal(
+                        order: 0,
+                        child: _ComingSoonHero(
+                          notified: notified,
+                          onNotify: () => unawaited(_onNotifyMe(context, ref)),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Three upcoming features as one inset-grouped section,
+                      // each icon routed through a palette pair (icon
+                      // foreground + soft container) so they adapt to dark mode
+                      // and inherit any brand re-tune (SIRATI-101).
+                      MotionReveal(
+                        order: 1,
+                        child: AppListSection(
+                          key: EducationScreen.upcomingKey,
+                          header: l10n.dashboardEducationWhatsComing,
+                          children: [
+                            _UpcomingFeatureRow(
+                              icon: Icons.auto_stories_rounded,
+                              iconColor: context.sirati.info,
+                              iconBg: context.sirati.infoLight,
+                              title: l10n.dashboardEducationCoursesTitle,
+                              description: l10n.dashboardEducationCoursesBody,
+                            ),
+                            _UpcomingFeatureRow(
+                              icon: Icons.record_voice_over_rounded,
+                              iconColor: context.sirati.primaryInk,
+                              iconBg: context.sirati.primaryLight,
+                              title: l10n.dashboardEducationInterviewTitle,
+                              description: l10n.dashboardEducationInterviewBody,
+                            ),
+                            _UpcomingFeatureRow(
+                              icon: Icons.verified_rounded,
+                              iconColor: context.sirati.tertiary,
+                              iconBg: context.sirati.tertiaryLight,
+                              title: l10n.dashboardEducationAtsGuidesTitle,
+                              description: l10n.dashboardEducationAtsGuidesBody,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const MotionReveal(
+                        order: 2,
+                        child: _CvCtaCard(),
+                      ),
+                    ],
+                  ),
                 ),
-                children: [
-                  ScreenHeader(
-                    english: english,
-                    title: l10n.dashboardEducationTitle,
-                    subtitle: l10n.dashboardEducationSubtitle,
-                    icon: Icons.school_rounded,
-                    unreadCount: SessionCache.instance.unreadCount,
-                    // Named routes, so guests get the sign-in invitation.
-                    onNotifications: () => Navigator.of(context)
-                        .pushNamed(AppRoutes.notifications),
-                    onAvatarTap: () =>
-                        Navigator.of(context).pushNamed(AppRoutes.settings),
-                  ),
-                  const SizedBox(height: 18),
-                  MotionReveal(
-                    order: 0,
-                    child: _ComingSoonHero(
-                      notified: notified,
-                      onNotify: () => unawaited(_onNotifyMe(context, ref)),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  MotionReveal(
-                    order: 1,
-                    child: Text(
-                      l10n.dashboardEducationWhatsComing,
-                      textAlign: TextAlign.start,
-                      style: AppTextStyles.titleMd(context.sirati),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Three upcoming-feature cards, each routed through a
-                  // palette pair (icon foreground + soft container) so they
-                  // adapt to dark mode and inherit any brand re-tune from
-                  // sirati_colors.dart. Previous hardcoded Tailwind hexes
-                  // (#0284C7 sky, #0D9488 teal, #7C3AED violet) drifted
-                  // off-brand and were static across themes (SIRATI-101).
-                  MotionReveal(
-                    order: 2,
-                    child: _UpcomingFeatureCard(
-                      icon: Icons.auto_stories_rounded,
-                      iconColor: context.sirati.info,
-                      iconBg: context.sirati.infoLight,
-                      title: l10n.dashboardEducationCoursesTitle,
-                      description: l10n.dashboardEducationCoursesBody,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  MotionReveal(
-                    order: 3,
-                    child: _UpcomingFeatureCard(
-                      icon: Icons.record_voice_over_rounded,
-                      iconColor: context.sirati.primaryInk,
-                      iconBg: context.sirati.primaryLight,
-                      title: l10n.dashboardEducationInterviewTitle,
-                      description: l10n.dashboardEducationInterviewBody,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  MotionReveal(
-                    order: 4,
-                    child: _UpcomingFeatureCard(
-                      icon: Icons.verified_rounded,
-                      iconColor: context.sirati.tertiary,
-                      iconBg: context.sirati.tertiaryLight,
-                      title: l10n.dashboardEducationAtsGuidesTitle,
-                      description: l10n.dashboardEducationAtsGuidesBody,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const MotionReveal(
-                    order: 5,
-                    child: _CvCtaCard(),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
+    );
+  }
+}
+
+/// Borderless, unshadowed card in the page's fill (white on the grouped
+/// page), the iOS 26 card shape.
+class _GroupedCard extends StatelessWidget {
+  const _GroupedCard({required this.padding, required this.child});
+
+  final EdgeInsetsGeometry padding;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: PageSurface.fillOf(context),
+        borderRadius: AppRadius.cardAll,
+      ),
+      child: Padding(padding: padding, child: child),
     );
   }
 }
@@ -153,23 +177,8 @@ class _ComingSoonHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Container(
+    return _GroupedCard(
       padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            context.sirati.primaryLight.withValues(alpha: 0.4),
-            context.sirati.surface,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: context.sirati.primary.withValues(alpha: 0.2),
-        ),
-        boxShadow: context.sirati.softShadow,
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -179,13 +188,6 @@ class _ComingSoonHero extends StatelessWidget {
             decoration: BoxDecoration(
               color: context.sirati.primary,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: context.sirati.primary.withValues(alpha: 0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
             ),
             child: Icon(
               Icons.school_rounded,
@@ -239,9 +241,7 @@ class _ComingSoonHero extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 minimumSize: const Size(0, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                // The theme's teal capsule.
               ),
               // The button turns into its confirmation: the bell pops into
               // a tick and the label cross-fades.
@@ -272,14 +272,16 @@ class _ComingSoonHero extends StatelessWidget {
   }
 }
 
-class _UpcomingFeatureCard extends StatelessWidget {
+/// One flat row of the "What's coming" section: icon box, title and the
+/// full description (never truncated; it is the only copy).
+class _UpcomingFeatureRow extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final Color iconBg;
   final String title;
   final String description;
 
-  const _UpcomingFeatureCard({
+  const _UpcomingFeatureRow({
     required this.icon,
     required this.iconColor,
     required this.iconBg,
@@ -289,49 +291,42 @@ class _UpcomingFeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.sirati.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.sirati.border),
-        boxShadow: context.sirati.softShadow,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(12),
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: AppListSection.rowPadding,
+          vertical: 12,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ExcludeSemantics(
+              child: AppListIcon(icon, background: iconBg, color: iconColor),
             ),
-            child: Icon(icon, color: iconColor, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  textAlign: TextAlign.start,
-                  style: AppTextStyles.titleSm(context.sirati),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  textAlign: TextAlign.start,
-                  style: AppTextStyles.bodySm(context.sirati).copyWith(
-                    color: context.sirati.textSecondary,
-                    height: 1.45,
+            const SizedBox(width: AppListTileMetrics.gap),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    textAlign: TextAlign.start,
+                    style: AppTextStyles.titleSm(context.sirati),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    textAlign: TextAlign.start,
+                    style: AppTextStyles.bodySm(context.sirati).copyWith(
+                      color: context.sirati.textSecondary,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -343,15 +338,8 @@ class _CvCtaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Container(
+    return _GroupedCard(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: context.sirati.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: context.sirati.primary.withValues(alpha: 0.3),
-        ),
-      ),
       child: Wrap(
         alignment: WrapAlignment.spaceBetween,
         crossAxisAlignment: WrapCrossAlignment.center,
@@ -387,9 +375,6 @@ class _CvCtaCard extends StatelessWidget {
                 backgroundColor: context.sirati.primary,
                 foregroundColor: context.sirati.onPrimary,
                 minimumSize: const Size(0, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
               ),
               child: Text(l10n.dashboardCreateCv),
             ),
