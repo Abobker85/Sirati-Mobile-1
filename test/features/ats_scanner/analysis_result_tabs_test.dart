@@ -1,5 +1,6 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
-import 'dart:ui' show SemanticsFlag;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/utils/app_locale.dart';
@@ -70,7 +71,7 @@ int _selectedSegment(WidgetTester tester, List<String> labels) {
   final selected = <int>[];
   for (var i = 0; i < labels.length; i++) {
     final data = tester.getSemantics(_segment(labels[i])).getSemanticsData();
-    if (data.hasFlag(SemanticsFlag.isSelected)) selected.add(i);
+    if (data.flagsCollection.isSelected == Tristate.isTrue) selected.add(i);
   }
   expect(selected, hasLength(1), reason: 'exactly one selected segment');
   return selected.single;
