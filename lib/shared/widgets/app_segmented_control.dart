@@ -103,8 +103,9 @@ class AppSegmentedControl<T> extends StatefulWidget {
 
   final List<AppSegment<T>> segments;
 
-  /// The selected segment's value; must match one of [segments].
-  final T value;
+  /// The selected segment's value. Null, or a value no segment carries,
+  /// selects nothing: the thumb hides and every segment is tappable.
+  final T? value;
 
   /// Called with the tapped segment's value. Null disables the control.
   final ValueChanged<T>? onChanged;
@@ -144,23 +145,26 @@ class AppSegmentedControl<T> extends StatefulWidget {
 
 class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>>
     with SingleTickerProviderStateMixin {
-  late double _target = _index.toDouble();
+  late double _target = math.max(_index, 0).toDouble();
   late final AnimationController _position =
       AnimationController.unbounded(vsync: this, value: _target);
 
-  int get _index {
-    final i = widget.segments.indexWhere((s) => s.value == widget.value);
-    assert(i >= 0, 'value ${widget.value} is not one of the segments');
-    return math.max(i, 0);
-  }
+  /// Index of the selected segment, or -1 when nothing is selected.
+  int get _index => widget.value == null
+      ? -1
+      : widget.segments.indexWhere((s) => s.value == widget.value);
 
   @override
   void didUpdateWidget(covariant AppSegmentedControl<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final target = _index.toDouble();
+    final index = _index;
+    if (index < 0) return;
+    final target = index.toDouble();
     if (target == _target) return;
+    final appearing = oldWidget.value == null ||
+        !oldWidget.segments.any((s) => s.value == oldWidget.value);
     _target = target;
-    if (MotionSettings.reduce(context)) {
+    if (appearing || MotionSettings.reduce(context)) {
       _position.value = target;
     } else {
       _position.animateTo(
@@ -207,7 +211,13 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>>
 ///
 /// Uses [controller] or, when null, the ambient [DefaultTabController]. The
 /// thumb follows the controller's animation, so a [TabBarView] swipe drags it
-/// along and a tap animates the pages (or jumps, under reduced motion).
+/// along and a tap animates the pages.
+///
+/// Reduced motion: a tap jumps the thumb, and the [TabBarView] jumps only if
+/// the controller's `animationDuration` is zero (the view reads nothing
+/// else). Build the controller, or [DefaultTabController], with
+/// `animationDuration: AppSegmentedTabBar.pageDuration(context)`; a debug
+/// build reports a controller that would still slide the pages.
 ///
 /// [preferredSize] grows with [textScaler]: pass
 /// `MediaQuery.textScalerOf(context)` so an app bar reserves enough height.
@@ -232,9 +242,14 @@ class AppSegmentedTabBar extends StatefulWidget implements PreferredSizeWidget {
   final EdgeInsets padding;
   final TextScaler textScaler;
 
+  /// Page-change duration for the [TabController] behind this bar: zero
+  /// under reduced motion, so pages jump with the thumb.
+  static Duration pageDuration(BuildContext context) =>
+      MotionSettings.reduce(context) ? Duration.zero : kTabScrollDuration;
+
   @override
-  Size get preferredSize =>
-      Size.fromHeight(AppSegmentedControl.heightFor(textScaler) + padding.vertical);
+  Size get preferredSize => Size.fromHeight(
+      AppSegmentedControl.heightFor(textScaler) + padding.vertical);
 
   @override
   State<AppSegmentedTabBar> createState() => _AppSegmentedTabBarState();
@@ -281,6 +296,19 @@ class _AppSegmentedTabBarState extends State<AppSegmentedTabBar> {
     final controller = _controller!;
     if (i == controller.index) return;
     if (MotionSettings.reduce(context)) {
+      assert(() {
+        if (controller.animationDuration != Duration.zero) {
+          FlutterError.reportError(FlutterErrorDetails(
+            exception: FlutterError(
+              'Reduced motion is on but the TabController animates pages '
+              'for ${controller.animationDuration}. Create it with '
+              'animationDuration: AppSegmentedTabBar.pageDuration(context).',
+            ),
+            library: 'app_segmented_control',
+          ));
+        }
+        return true;
+      }());
       controller.index = i;
     } else {
       controller.animateTo(i);
@@ -330,7 +358,8 @@ class SegmentedTrack extends StatelessWidget {
   /// sliding or while a tab view is being swiped.
   final Animation<double> position;
 
-  /// The selected segment for semantics.
+  /// The selected segment for semantics; -1 selects nothing and hides the
+  /// thumb.
   final int selectedIndex;
   final ValueChanged<int>? onTap;
   final AppSegmentedPalette colors;
@@ -358,29 +387,31 @@ class SegmentedTrack extends StatelessWidget {
           animation: position,
           builder: (context, _) {
             final pos = position.value.clamp(0.0, (n - 1).toDouble());
-            final inkIndex = pos.round();
+            final hasSelection = selectedIndex >= 0;
+            final inkIndex = hasSelection ? pos.round() : -1;
             return Stack(
               children: [
-                Positioned.fill(
-                  child: ExcludeSemantics(
-                    child: FractionallySizedBox(
-                      widthFactor: 1 / n,
-                      alignment: AlignmentDirectional(
-                        n == 1 ? 0 : -1 + 2 * pos / (n - 1),
-                        0,
-                      ),
-                      child: DecoratedBox(
-                        key: thumbKey,
-                        decoration: BoxDecoration(
-                          color: colors.thumb,
-                          borderRadius: capsule,
-                          border: Border.fromBorderSide(colors.thumbBorder),
-                          boxShadow: colors.thumbShadow,
+                if (hasSelection)
+                  Positioned.fill(
+                    child: ExcludeSemantics(
+                      child: FractionallySizedBox(
+                        widthFactor: 1 / n,
+                        alignment: AlignmentDirectional(
+                          n == 1 ? 0 : -1 + 2 * pos / (n - 1),
+                          0,
+                        ),
+                        child: DecoratedBox(
+                          key: thumbKey,
+                          decoration: BoxDecoration(
+                            color: colors.thumb,
+                            borderRadius: capsule,
+                            border: Border.fromBorderSide(colors.thumbBorder),
+                            boxShadow: colors.thumbShadow,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
                 Row(
                   children: [
                     for (var i = 0; i < n; i++)

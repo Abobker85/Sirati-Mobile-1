@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sirati/core/l10n/remote_l10n_models.dart';
+import 'package:sirati/core/l10n/remote_l10n_repository.dart';
+import 'package:sirati/core/l10n/remote_localizations_delegate.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
@@ -67,7 +70,8 @@ Widget _host({
 
 /// Value-mode control whose selection is owned by the test.
 class _ValueHarness extends StatefulWidget {
-  const _ValueHarness({super.key, required this.labels, this.initial = 0, this.log});
+  const _ValueHarness(
+      {super.key, required this.labels, this.initial = 0, this.log});
 
   final List<String> labels;
   final int initial;
@@ -104,8 +108,8 @@ Finder _segment(String label) => find
     .ancestor(of: find.text(label), matching: find.byType(GestureDetector))
     .first;
 
-void _expectThumbUnder(WidgetTester tester, List<String> labels, int index,
-    String reason) {
+void _expectThumbUnder(
+    WidgetTester tester, List<String> labels, int index, String reason) {
   final thumb = _thumb(tester);
   for (var i = 0; i < labels.length; i++) {
     final segment = tester.getRect(_segment(labels[i]));
@@ -239,6 +243,44 @@ void main() {
       }
     });
 
+    testWidgets('no selection hides the thumb and every segment reports',
+        (tester) async {
+      final random = Random(23);
+      final handle = tester.ensureSemantics();
+      for (final direction in directions) {
+        final labels = _labels(random, 3);
+        final log = <int>[];
+        await tester.pumpWidget(_host(
+          direction: direction,
+          child: AppSegmentedControl<int>(
+            value: null,
+            onChanged: log.add,
+            segments: [
+              for (var i = 0; i < 3; i++)
+                AppSegment(value: i, label: labels[i]),
+            ],
+          ),
+        ));
+        expect(find.byKey(SegmentedTrack.thumbKey), findsNothing);
+        for (var i = 0; i < 3; i++) {
+          expect(
+              tester.getSemantics(find.text(labels[i])),
+              matchesSemantics(
+                label: labels[i],
+                isSelected: false,
+                hasSelectedState: true,
+                hasTapAction: true,
+                hasEnabledState: true,
+                isEnabled: true,
+                textDirection: direction,
+              ));
+          await tester.tap(_segment(labels[i]));
+        }
+        expect(log, [0, 1, 2]);
+      }
+      handle.dispose();
+    });
+
     testWidgets('disabled control ignores taps', (tester) async {
       await tester.pumpWidget(_host(
         child: const AppSegmentedControl<int>(
@@ -316,8 +358,8 @@ void main() {
       final labels = _labels(Random(9), 2);
       final controller = TabController(length: 2, vsync: const TestVSync());
       addTearDown(controller.dispose);
-      await tester.pumpWidget(
-          _host(child: tabs(labels, controller: controller)));
+      await tester
+          .pumpWidget(_host(child: tabs(labels, controller: controller)));
       final start = _thumb(tester).center.dx;
       final gesture =
           await tester.startGesture(tester.getCenter(find.text('page 0')));
@@ -332,21 +374,63 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('reduced motion jumps the thumb on tap', (tester) async {
-      final labels = _labels(Random(13), 4);
-      final controller = TabController(length: 4, vsync: const TestVSync());
+    testWidgets('reduced motion jumps the thumb and the page on tap',
+        (tester) async {
+      for (final direction in directions) {
+        final labels = _labels(Random(13), 4);
+        await tester.pumpWidget(_host(
+          direction: direction,
+          reduceMotion: true,
+          child: Builder(
+            builder: (context) => DefaultTabController(
+              key: UniqueKey(),
+              length: 4,
+              animationDuration: AppSegmentedTabBar.pageDuration(context),
+              child: tabs(labels),
+            ),
+          ),
+        ));
+        final controller = DefaultTabController.of(
+            tester.element(find.byType(AppSegmentedTabBar)));
+        for (final index in [3, 0, 2, 1]) {
+          await tester.tap(_segment(labels[index]));
+          await tester.pump();
+          expect(controller.index, index);
+          _expectThumbUnder(tester, labels, index, 'reduced tab $direction');
+          expect(find.text('page $index').hitTestable(), findsOneWidget,
+              reason: 'page $index shown in one frame ($direction)');
+        }
+      }
+    });
+
+    testWidgets('page duration follows reduced motion', (tester) async {
+      for (final reduce in [false, true]) {
+        late Duration duration;
+        await tester.pumpWidget(_host(
+          reduceMotion: reduce,
+          child: Builder(builder: (context) {
+            duration = AppSegmentedTabBar.pageDuration(context);
+            return const SizedBox();
+          }),
+        ));
+        expect(duration == Duration.zero, reduce);
+      }
+    });
+
+    testWidgets(
+        'debug build reports a controller that would still slide pages '
+        'under reduced motion', (tester) async {
+      final labels = _labels(Random(19), 3);
+      final controller = TabController(length: 3, vsync: const TestVSync());
       addTearDown(controller.dispose);
       await tester.pumpWidget(_host(
         reduceMotion: true,
         child: tabs(labels, controller: controller),
       ));
-      for (final index in [3, 0, 2]) {
-        await tester.tap(_segment(labels[index]));
-        await tester.pump();
-        expect(controller.index, index);
-        _expectThumbUnder(tester, labels, index, 'reduced tab');
-        await tester.pumpAndSettle();
-      }
+      await tester.tap(_segment(labels[2]));
+      await tester.pump();
+      expect(tester.takeException(), isA<FlutterError>());
+      await tester.pumpAndSettle();
     });
 
     testWidgets('preferred size reserves the scaled control height',
@@ -502,8 +586,8 @@ void main() {
                 ),
               );
               expect(node.getSemanticsData().role, SemanticsRole.tab);
-              expect(node.parent!.getSemanticsData().role,
-                  SemanticsRole.tabBar);
+              expect(
+                  node.parent!.getSemanticsData().role, SemanticsRole.tabBar);
             }
           }
         }
@@ -533,13 +617,92 @@ void main() {
           ),
         );
 
+    for (final code in ['ar', 'en']) {
+      testWidgets('shows published remote overrides of both codes ($code)',
+          (tester) async {
+        // Arbitrary override strings, distinct per catalog.
+        final remoteFor = {'ar': 'R-${code}1', 'en': 'R-${code}2'};
+        final state = RemoteL10nState(bundles: {
+          for (final e in remoteFor.entries)
+            e.key: RemoteStringBundle(
+              code: e.key,
+              version: 1,
+              strings: {'sharedLanguageToggleShort': e.value},
+            ),
+        });
+        await tester.pumpWidget(MaterialApp(
+          theme: AppTheme.lightFor(arabic: code == 'ar'),
+          locale: Locale(code),
+          supportedLocales: appSupportedLocales(state),
+          localizationsDelegates: appLocalizationsDelegates(state),
+          home: const Scaffold(body: Center(child: LanguageToggle())),
+        ));
+        await tester.pumpAndSettle();
+        // The English catalog's code names Arabic, and vice versa.
+        final arLabel = find.text(remoteFor['en']!);
+        final enLabel = find.text(remoteFor['ar']!);
+        expect(arLabel, findsOneWidget);
+        expect(enLabel, findsOneWidget);
+        expect(tester.getCenter(arLabel).dx,
+            lessThan(tester.getCenter(enLabel).dx));
+        _expectThumbUnder(tester, [remoteFor['en']!, remoteFor['ar']!],
+            code == 'ar' ? 0 : 1, 'remote $code');
+      });
+    }
+
+    testWidgets('a remote-only language selects neither; either switches',
+        (tester) async {
+      for (final fallback in ['ar', 'en']) {
+        for (final target in ['ar', 'en']) {
+          const code = 'xq';
+          final languages = RemoteLanguageList(languages: [
+            RemoteLanguage(
+              code: code,
+              name: code,
+              nativeName: code,
+              direction: TextDirection.ltr,
+              fallback: fallback,
+            ),
+          ]);
+          AppLocale.resetForTest(language: code, languages: languages);
+          final state = RemoteL10nState(languages: languages);
+          await tester.pumpWidget(ValueListenableBuilder<String>(
+            key: UniqueKey(),
+            valueListenable: AppLocale.languageCode,
+            builder: (context, lang, _) => MaterialApp(
+              theme: AppTheme.lightFor(arabic: lang == 'ar'),
+              locale: localeForLanguageCode(lang),
+              supportedLocales: appSupportedLocales(state),
+              localizationsDelegates: appLocalizationsDelegates(state),
+              home: const Scaffold(body: Center(child: LanguageToggle())),
+            ),
+          ));
+          await tester.pumpAndSettle();
+          expect(AppLocale.languageCode.value, code);
+          expect(find.byKey(SegmentedTrack.thumbKey), findsNothing,
+              reason: 'fallback $fallback');
+          final label =
+              lookupAppLocalizations(Locale(target == 'ar' ? 'en' : 'ar'))
+                  .sharedLanguageToggleShort;
+          await tester.tap(find.text(label));
+          await tester.pumpAndSettle();
+          expect(AppLocale.languageCode.value, target,
+              reason: 'fallback $fallback, tap $target');
+          expect(find.byKey(SegmentedTrack.thumbKey), findsOneWidget);
+        }
+      }
+    });
+
     testWidgets('switches the app language both ways and announces names',
         (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
-      final ar = LanguageToggle.shortCode('ar');
-      final en = LanguageToggle.shortCode('en');
+      // Each catalog names the OTHER language.
+      final ar =
+          lookupAppLocalizations(const Locale('en')).sharedLanguageToggleShort;
+      final en =
+          lookupAppLocalizations(const Locale('ar')).sharedLanguageToggleShort;
       expect(ar, isNot(en));
 
       for (final (tap, code) in [(en, 'en'), (ar, 'ar'), (en, 'en')]) {
