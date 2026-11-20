@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
 /// Inset-grouped section: an optional grey header, one rounded
-/// [SiratiColors.groupedCard] card holding the rows, hairline separators
+/// `context.sirati.groupedCard` card holding the rows, hairline separators
 /// between them, and an optional grey footer. Put it on a
-/// [SiratiColors.groupedBackground] page.
+/// `context.sirati.groupedBackground` page.
 ///
 /// ```dart
 /// AppListSection(
