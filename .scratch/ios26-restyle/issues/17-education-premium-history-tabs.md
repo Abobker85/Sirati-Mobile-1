@@ -21,7 +21,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 
 ## Outcome (2026-11-20)
 
-- **Commits:** `6c59bb7`, plus a follow-up test commit for the History text scale (branch `swarm/edu`).
+- **Commits:** `6c59bb7`, `3724943` (History text scale) and a checker2 fix to the chrome helper (branch `swarm/edu`).
 - **Files:**
   - `lib/features/dashboard/presentation/education_screen.dart`: the tab paints the grey `groupedBackground` page (full-bleed `ColoredBox`) inside `GroupedSurface`.
     - "What's coming" is one `AppListSection`: three flat rows with `AppListIcon` and the full description, never truncated.
@@ -37,10 +37,15 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
     - The active card radius is `card`. New key: `benefitsKey`.
     - Purchase, restore, refresh, keys and state logic are untouched.
   - `lib/features/dashboard/presentation/history_screen.dart`: `GroupedSurface`. `AppSegmentedTabBar` (with `textScaler: MediaQuery.textScalerOf(context)`) replaces the Material `TabBar`. `DefaultTabController` is built with `animationDuration: AppSegmentedTabBar.pageDuration(context)`.
-  - `test/support/card_chrome.dart` (new): `expectNoCardChrome` walks the pumped tree under a screen.
-    - It fails on any `BoxDecoration` border or shadow, any `Material` outline side, or any elevation.
-    - It skips buttons, segmented controls and excluded subtrees.
-    - A mutation check passes: re-adding a border to a plan card fails it.
+  - `test/support/card_chrome.dart` (new): `expectNoCardChrome` walks the pumped tree under a screen. It fails on:
+    - any `BoxDecoration` or `ShapeDecoration` side or shadow. A solid width-0 side is a hairline and counts.
+    - any `Material` outline or elevation, canvas included; only a Scaffold's own page is exempt;
+    - any elevated `PhysicalModel` / `PhysicalShape`;
+    - a walk that checked nothing (Materials count).
+    - It skips buttons, list separators, segmented controls and excluded subtrees.
+  - `test/support/card_chrome_test.dart` (new, from checker2's review):
+    - It rejects all 12 chrome kinds: border, hairline, width-0 side, shadow, Card elevation and outline, Material outline, ShapeDecoration side and shadow, PhysicalModel, PhysicalShape and canvas elevation.
+    - It passes plain fills, separators and buttons, a Materials-only page, and excluded subtrees.
   - `test/features/dashboard/education_test.dart`: new grouped tests, run AR/EN × light/dark, registered or not. They cover:
     - the grey page and the grouped `PageSurface`;
     - one white section: its header, the three rows in order, 2 separators and untruncated bodies;
