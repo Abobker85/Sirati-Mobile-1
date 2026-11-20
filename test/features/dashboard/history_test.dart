@@ -415,6 +415,64 @@ void main() {
       }
     }
 
+    for (final language in ['en', 'ar']) {
+      testWidgets('the tab bar grows with the text scale ($language)',
+          (tester) async {
+        AppLocale.languageCode.value = language;
+        // The reserved height, read while that scale is live (the system
+        // scaler reads the current factor).
+        Future<double> pumpAt(double scale) async {
+          tester.view.physicalSize = const Size(390, 844);
+          tester.view.devicePixelRatio = 1;
+          tester.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(tester.view.reset);
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          await tester.pumpWidget(ProviderScope(
+            key: UniqueKey(),
+            overrides: [cvApiServiceProvider.overrideWithValue(_PagedApi())],
+            child: MaterialApp(
+              theme: AppTheme.lightFor(arabic: language == 'ar'),
+              locale: Locale(language),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: const HistoryScreen(),
+            ),
+          ));
+          await tester.pumpAndSettle();
+          final bar = tester
+              .widget<AppSegmentedTabBar>(find.byType(AppSegmentedTabBar));
+          final scaler =
+              MediaQuery.textScalerOf(tester.element(find.byType(TabBarView)));
+          expect(scaler.scale(10), closeTo(10 * scale, 1e-9),
+              reason: 'the page really is at ${scale}x');
+          final height = bar.preferredSize.height;
+          expect(height,
+              AppSegmentedControl.heightFor(scaler) + bar.padding.vertical,
+              reason: 'the app bar reserves the control at ${scale}x');
+          return height;
+        }
+
+        final normal = await pumpAt(1);
+        final large = await pumpAt(2);
+        expect(large, greaterThan(normal));
+        final context = tester.element(find.byType(TabBarView));
+
+        // Both labels are on screen and switch the page at 2x.
+        final l10n = AppLocalizations.of(context);
+        final controller = DefaultTabController.of(context);
+        for (final (index, label) in [
+          (1, l10n.dashboardHistoryGeneratedCvsTab),
+          (0, l10n.analyses),
+        ]) {
+          expect(find.text(label).hitTestable(), findsOneWidget);
+          await tester.tap(find.text(label));
+          await tester.pumpAndSettle();
+          expect(controller.index, index, reason: label);
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
+
     for (final (mode, theme) in [
       ('light', AppTheme.lightFor(arabic: false)),
       ('dark', AppTheme.darkFor(arabic: false)),

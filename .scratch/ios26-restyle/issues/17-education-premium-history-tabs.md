@@ -21,7 +21,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 
 ## Outcome (2026-11-20)
 
-- **Commits:** `6c59bb7` (branch `swarm/edu`).
+- **Commits:** `6c59bb7`, plus a follow-up test commit for the History text scale (branch `swarm/edu`).
 - **Files:**
   - `lib/features/dashboard/presentation/education_screen.dart`: the tab paints the grey `groupedBackground` page (full-bleed `ColoredBox`) inside `GroupedSurface`.
     - "What's coming" is one `AppListSection`: three flat rows with `AppListIcon` and the full description, never truncated.
@@ -51,6 +51,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
   - `test/features/dashboard/history_test.dart`: new tests, en/ar × reduced motion or not. They cover:
     - the grouped page, no `TabBar`, an `AppSegmentedTabBar` with the context's text scaler, and the controller duration (zero under reduced motion);
     - a tap to CVs and back: one frame later the pages have jumped under reduced motion and are still sliding otherwise; both settle on the right page.
+    - At 1x and 2x text scale (en/ar), the bar reserves `heightFor(live scaler) + padding`, and 2x is taller than 1x. Both labels are hit-testable and switch the page at 2x.
     - Ticket 07's date-section and Load more test is unchanged and passes.
   - `test/features/dashboard/premium_gate_test.dart`: new grouped tests, AR/EN × light/dark. They cover:
     - the grouped scaffold, and the benefits section (white card, 5 rows, 4 separators, untruncated bodies);
