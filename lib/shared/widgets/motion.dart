@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/cupertino.dart'
+    show CupertinoFullscreenDialogTransition, CupertinoPageTransition;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:sirati/core/routing/edge_back_swipe.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
@@ -122,34 +125,26 @@ class MotionAxis {
   }
 }
 
-/// Sirati's page transition (Android and other non-iOS platforms): a
-/// shared axis along the reading direction.
+/// Sirati's page transition, on every platform: the page slides in across
+/// the full width from the end edge (from the left in Arabic, from the right
+/// in English) while the page underneath moves a third of the way toward
+/// the start edge; back is the mirror.
 ///
-/// - The new page comes 24 dp from the end edge (the left in Arabic) and
-///   fades in after the old page has mostly faded, so two full layouts
-///   never sit on top of each other.
-/// - The page underneath moves 24 dp toward the start edge and fades out
-///   early, over the app background (never black).
-/// - Back plays the same in reverse, a little faster.
-///
-/// iOS uses the native Cupertino transition instead, for its edge swipe
-/// back. With reduced motion pages simply appear.
+/// Every page also has the back swipe ([EdgeBackSwipe]): drag from the start
+/// edge (the right in Arabic) and the page follows the finger; let go early
+/// and it settles back. With reduced motion pages simply appear and go, and
+/// the swipe still works.
 class SiratiPageTransitionsBuilder extends PageTransitionsBuilder {
   const SiratiPageTransitionsBuilder();
 
-  /// How far pages travel.
-  static const distance = 24.0;
-
-  /// The incoming page starts fading in at this share of the push; the
-  /// outgoing one has faded out by [outgoingFadeEnd].
-  static const incomingFadeStart = .3;
-  static const outgoingFadeEnd = .3;
+  /// Push and back take the same time.
+  static const duration = Duration(milliseconds: 350);
 
   @override
-  Duration get transitionDuration => MotionDurations.step;
+  Duration get transitionDuration => duration;
 
   @override
-  Duration get reverseTransitionDuration => MotionDurations.medium;
+  Duration get reverseTransitionDuration => duration;
 
   @override
   Widget buildTransitions<T>(
@@ -159,69 +154,23 @@ class SiratiPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    if (MotionSettings.reduce(context)) return child;
-    final end = MotionAxis.endSign(context);
-    final background = Theme.of(context).scaffoldBackgroundColor;
-
-    final enter = CurvedAnimation(
-      parent: animation,
-      curve: MotionCurves.enter,
-      reverseCurve: MotionCurves.exit,
-    );
-    final fadeIn = CurvedAnimation(
-      parent: animation,
-      curve: const Interval(incomingFadeStart, 1, curve: MotionCurves.enter),
-      reverseCurve: const Interval(
-        incomingFadeStart,
-        1,
-        curve: MotionCurves.exit,
-      ),
-    );
-    final leave = CurvedAnimation(
-      parent: secondaryAnimation,
-      curve: MotionCurves.enter,
-      reverseCurve: MotionCurves.exit,
-    );
-    final fadeOut = CurvedAnimation(
-      parent: secondaryAnimation,
-      curve: const Interval(0, outgoingFadeEnd, curve: MotionCurves.exit),
-      reverseCurve: const Interval(0, outgoingFadeEnd),
-    );
-
-    final incoming = route.isFirst
-        ? child
-        : AnimatedBuilder(
-            animation: enter,
-            child: FadeTransition(opacity: fadeIn, child: child),
-            builder: (context, c) => Transform.translate(
-              offset: Offset(end * distance * (1 - enter.value), 0),
-              child: c,
-            ),
-          );
-    // As the page underneath: step back toward the start edge while a veil
-    // of the app background covers it. It looks like fading out, but the
-    // page is never inside an opacity layer, so glass blur on it (Home's
-    // header) is not re-rendered through one.
-    return AnimatedBuilder(
-      animation: leave,
-      child: incoming,
-      builder: (context, c) => Transform.translate(
-        offset: Offset(-end * distance * leave.value, 0),
-        child: Stack(
-          fit: StackFit.passthrough,
-          children: [
-            c!,
-            if (fadeOut.value > 0)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: ColoredBox(
-                    color: background.withValues(alpha: fadeOut.value),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+    if (route.fullscreenDialog) {
+      if (MotionSettings.reduce(context)) return child;
+      return CupertinoFullscreenDialogTransition(
+        primaryRouteAnimation: animation,
+        secondaryRouteAnimation: secondaryAnimation,
+        linearTransition: route.popGestureInProgress,
+        child: child,
+      );
+    }
+    final swipe = EdgeBackSwipe(route: route, child: child);
+    if (MotionSettings.reduce(context)) return swipe;
+    return CupertinoPageTransition(
+      primaryRouteAnimation: animation,
+      secondaryRouteAnimation: secondaryAnimation,
+      // While the finger drives it the page tracks the finger exactly.
+      linearTransition: route.popGestureInProgress,
+      child: swipe,
     );
   }
 }
@@ -246,7 +195,6 @@ class MotionTabStack extends StatefulWidget {
 
 class _MotionTabStackState extends State<MotionTabStack> {
   late int _renderedIndex = widget.currentIndex;
-  bool _animateTabChanges = false;
 
   /// How many times each tab has been opened after being away for at
   /// least [MotionTabStack.staleAfter]; content inside arrives again then.
@@ -266,7 +214,6 @@ class _MotionTabStackState extends State<MotionTabStack> {
         _leftAt[oldWidget.currentIndex] = now;
       }
       _renderedIndex = widget.currentIndex;
-      _animateTabChanges = true;
       final left =
           _renderedIndex < _leftAt.length ? _leftAt[_renderedIndex] : null;
       if (left != null && now - left >= MotionTabStack.staleAfter) {
@@ -277,108 +224,26 @@ class _MotionTabStackState extends State<MotionTabStack> {
 
   @override
   Widget build(BuildContext context) {
-    // IndexedStack is always the base so only the active tab is ever painted.
-    // This guarantees inactive tabs can never leak/overlap content (a known
-    // iOS compositing issue when hiding tabs with opacity alone), while every
-    // tab stays mounted to preserve scroll/form state.
-    //
-    // Each slot keeps a stable pane widget so form state survives tab changes.
-    // The first painted Home frame is fully visible; enter motion runs only
-    // when the user actually changes tabs.
-    // Hidden tabs keep their state but do not animate: their tickers are
-    // off until the tab is shown again.
-    if (MotionSettings.reduce(context)) {
-      return IndexedStack(
-        index: _renderedIndex,
-        children: [
-          for (var index = 0; index < widget.children.length; index++)
-            TickerMode(
-              enabled: index == _renderedIndex,
-              child: widget.children[index],
-            ),
-        ],
-      );
-    }
-
+    // IndexedStack paints only the active tab, so inactive tabs never leak
+    // or overlap, while every tab stays mounted to keep its scroll and form
+    // state. Switching is instant, as on iOS tab bars: the new tab is simply
+    // there. Hidden tabs keep their state but do not animate: their tickers
+    // are off until the tab is shown again.
+    final reduce = MotionSettings.reduce(context);
     return IndexedStack(
       index: _renderedIndex,
       children: [
         for (var index = 0; index < widget.children.length; index++)
-          _TabEnterTransition(
+          TickerMode(
             key: ValueKey('tab-$index'),
-            active: index == _renderedIndex,
-            animateOnActivate: _animateTabChanges,
-            child: TickerMode(
-              enabled: index == _renderedIndex,
-              child: TabVisitScope(
-                visit: index < _visits.length ? _visits[index] : 0,
-                child: widget.children[index],
-              ),
+            enabled: index == _renderedIndex,
+            child: TabVisitScope(
+              // Nothing replays under reduced motion.
+              visit: reduce || index >= _visits.length ? 0 : _visits[index],
+              child: widget.children[index],
             ),
           ),
       ],
-    );
-  }
-}
-
-/// Keeps one stable pane per tab. The first frame is fully visible; later
-/// activations fade in without rebuilding the tab's child state.
-class _TabEnterTransition extends StatefulWidget {
-  final bool active;
-  final bool animateOnActivate;
-  final Widget child;
-
-  const _TabEnterTransition({
-    super.key,
-    required this.active,
-    required this.animateOnActivate,
-    required this.child,
-  });
-
-  @override
-  State<_TabEnterTransition> createState() => _TabEnterTransitionState();
-}
-
-class _TabEnterTransitionState extends State<_TabEnterTransition>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    value: 1,
-    duration: MotionDurations.medium,
-  );
-  late final Animation<double> _curved = CurvedAnimation(
-    parent: _controller,
-    curve: MotionCurves.enter,
-  );
-
-  @override
-  void didUpdateWidget(covariant _TabEnterTransition oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.active &&
-        !oldWidget.active &&
-        widget.animateOnActivate &&
-        _controller.value == 1) {
-      _controller.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _curved,
-      builder: (context, child) {
-        // A tab is a peer, not a step deeper: it only fades in, with no
-        // sideways move (which would claim a direction, even going "back"
-        // to Home).
-        return Opacity(opacity: _curved.value, child: child);
-      },
-      child: widget.child,
     );
   }
 }

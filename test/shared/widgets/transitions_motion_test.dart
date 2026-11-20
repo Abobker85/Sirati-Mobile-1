@@ -43,11 +43,22 @@ double _x(WidgetTester tester, Key key) =>
     tester.getTopLeft(find.byKey(key)).dx;
 
 void main() {
-  group('shared axis (Android and others)', () {
+  group('page slide (every platform)', () {
+    test('the theme gives every platform the same page transition', () {
+      for (final arabic in [true, false]) {
+        final builders =
+            AppTheme.lightFor(arabic: arabic).pageTransitionsTheme.builders;
+        for (final platform in TargetPlatform.values) {
+          expect(builders[platform], isA<SiratiPageTransitionsBuilder>(),
+              reason: '$platform');
+        }
+      }
+    });
+
     for (final direction in TextDirection.values) {
       testWidgets(
-          '${direction.name}: new page comes from the end edge, old one steps '
-          'toward the start, both settle', (tester) async {
+          '${direction.name}: new page slides across from the end edge, old '
+          'one moves toward the start, both settle', (tester) async {
         debugDefaultTargetPlatformOverride = TargetPlatform.android;
         late BuildContext ctx;
         await tester.pumpWidget(_app(
@@ -57,6 +68,7 @@ void main() {
           }),
           direction: direction,
         ));
+        final width = tester.getSize(find.byKey(_a)).width;
         final end = direction == TextDirection.rtl ? -1.0 : 1.0;
         unawaited(Navigator.of(ctx)
             .push(MaterialPageRoute<void>(builder: (_) => _page(_b))));
@@ -65,14 +77,13 @@ void main() {
         expect(_x(tester, _b) * end, greaterThan(0),
             reason: 'from the end edge (left in Arabic)');
         expect(_x(tester, _a) * end, lessThan(0),
-            reason: 'the old page steps toward the start edge');
-        // Never further than the travel distance.
-        expect(_x(tester, _b).abs(),
-            lessThanOrEqualTo(SiratiPageTransitionsBuilder.distance));
+            reason: 'the old page moves toward the start edge');
+        // A full-width slide; the page below travels at most a third.
+        expect(_x(tester, _b).abs(), lessThanOrEqualTo(width));
+        expect(_x(tester, _a).abs(), lessThanOrEqualTo(width / 3 + .5));
         await tester.pumpAndSettle();
         expect(_x(tester, _b), 0);
 
-        // Back: the same in reverse, settling the old page in place.
         Navigator.of(ctx).pop();
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 40));
@@ -83,12 +94,6 @@ void main() {
         debugDefaultTargetPlatformOverride = null;
       });
     }
-
-    test('uses the app timings', () {
-      const b = SiratiPageTransitionsBuilder();
-      expect(b.transitionDuration, MotionDurations.step);
-      expect(b.reverseTransitionDuration, MotionDurations.medium);
-    });
 
     testWidgets('reduced motion: the page simply appears', (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -103,14 +108,14 @@ void main() {
       unawaited(Navigator.of(ctx)
           .push(MaterialPageRoute<void>(builder: (_) => _page(_b))));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 60));
+      await tester.pump(const Duration(milliseconds: 16));
       expect(_x(tester, _b), 0);
       await tester.pumpAndSettle();
       debugDefaultTargetPlatformOverride = null;
     });
   });
 
-  group('iOS edge swipe back', () {
+  group('edge swipe back (iOS and Android alike)', () {
     for (final direction in TextDirection.values) {
       for (final blocked in [false, true]) {
         testWidgets(
