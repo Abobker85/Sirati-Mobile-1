@@ -20,7 +20,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 
 ## Outcome (2026-11-20)
 
-- **Commits:** `6b1a035`.
+- **Commits:** `6b1a035`, `64e1263` (checker fix: chevron test asserts each chevron).
 - **Files:**
   - `lib/features/dashboard/presentation/home/dashboard_home_tab.dart` (paints the white page; large title in the tab's own scroll view after the pinned bar; shine radius 18)
   - `lib/features/dashboard/presentation/home/dashboard_home_header.dart` (now the pinned bar: a floating white pill with profile + bell on the end side, and a small title that fades in when collapsed; `subtitle` param removed)
@@ -33,7 +33,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
   - `lib/features/dashboard/presentation/home/dashboard_action_card.dart`, `dashboard_stat_card.dart`, `test/features/dashboard/dashboard_action_card_test.dart` (deleted, unused)
   - `test/features/dashboard/home_restyle_test.dart` (new: real-drag collapse with the pill pinned, AR/EN x light/dark x text scale 1/2, all text AA, small title AA on the glass over black and white; press fill/scale with and without reduced motion; Premium shine AA on grey)
   - `test/features/dashboard/cv_analysis_home_acceptance_test.dart` (name and hint now read from the large title)
-  - `test/features/dashboard/phase2_entry_home_motion_test.dart`, `test/features/settings/subscription_in_profile_test.dart` (dropped the removed `subtitle` arg; the pill has no chevron)
+  - `test/features/dashboard/phase2_entry_home_motion_test.dart`, `test/features/settings/subscription_in_profile_test.dart` (dropped the removed `subtitle` arg; the chevron test now checks that each of the fixture's 2 chevrons is directional)
   - `test_screens/home_board_capture_test.dart` (AR and EN, and lets one-shot intro timers end)
 - **Tests:** `home_restyle_test` 15 passed; `flutter test test/features/dashboard` plus the premium, ambient, dark-walk and profile tests: 387 passed; full `flutter test` 2913 passed, 1 skipped, 0 failed; `flutter test test_screens/home_board_capture_test.dart` 8 passed (`build/home_board/home-{ar,en}-{light,dark}-{cv,empty}.png`). `flutter analyze` is clean on the touched files.
 - **Not covered by a test:** "No schema change, no new dependency" is checked from the commit's file list (no pubspec, migration or ARB change). The latest-jobs cards on Home are the jobs feature's `JobNewsCard` (white, bordered), not restyled here. GitHub issue sync is pending (no push in this run).
