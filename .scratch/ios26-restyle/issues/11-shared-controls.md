@@ -24,7 +24,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 
 ## Outcome (2026-11-20)
 
-- **Commits:** `3b80019`, `e08ce2f` (branch `swarm/controls`).
+- **Commits:** `3b80019`, `e08ce2f`, `6c98a3d` (checker fixes) (branch `swarm/controls`).
 - **Files:**
   - `lib/shared/widgets/app_segmented_control.dart` (new): `AppSegmentedControl<T>` (value + `onChanged`), `AppSegmentedTabBar` (`TabController` or `DefaultTabController`, a `PreferredSizeWidget` with a required `textScaler`), `AppSegment` / `AppSegmentedTab`, `AppSegmentedPalette`, and the shared `SegmentedTrack`.
     - Track: grey `cardFill` capsule.
@@ -43,12 +43,15 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
     - tab / tabBar semantics roles with label and selected state;
     - the language toggle switching the app both ways.
   - `test/shared/widgets/app_skeleton_grey_test.dart` (new, 8 tests): every bone colour across all screen skeletons, sampled shimmer frames, light/dark, reduced or not and LTR/RTL, is `cardFill` or `cardFillPressed`. No bone fades.
-- **Tests:** full `flutter test`: 3210 passed, 1 skipped, 0 failed. `flutter analyze`: no issues.
+- **Checker fixes (`6c98a3d`):**
+  - **Reduced motion, tab mode:** `TabBarView` only jumps when its controller's `animationDuration` is zero. Callers therefore build the `TabController` or `DefaultTabController` with `animationDuration: AppSegmentedTabBar.pageDuration(context)`, which is zero under reduced motion. A debug build reports a controller that would still slide the pages. Tested: the page is hit-testable one frame after a tap, in LTR and RTL.
+  - **Language toggle:** both short codes are read through the app's own delegates (`Localizations.override` on the other bundled locale), so published remote overrides show again. Tested with `appLocalizationsDelegates` in ar and en.
+  - **Remote-only language (option picked):** it selects neither segment. The thumb is hidden, and tapping AR or EN switches the language, whatever the fallback. `AppSegmentedControl.value` is nullable for this case.
+- **Tests:** full `flutter test`: 3216 passed, 1 skipped, 0 failed. `flutter analyze`: no issues.
 - **Not covered by a test:** "Production call site: tabs in 15, 16, 17".
   - The tab mode (`AppSegmentedTabBar`) is infrastructure until tickets 15, 16 and 17 adopt it. The language toggle is its only production call site today.
 - **Notes for 15, 16, 17:**
-  - Pass `textScaler: MediaQuery.textScalerOf(context)`.
+  - Pass `textScaler: MediaQuery.textScalerOf(context)`, and build the controller with `animationDuration: AppSegmentedTabBar.pageDuration(context)`.
   - Segments are equal width with an ellipsis. The CV builder's 4 icon + label tabs get about 80dp each on a phone.
   - The old toggle's tooltip strings `switchToArabic` / `switchToEnglish` are now unused.
-  - Own-language short codes come from swapping the two bundled catalogs, which bypasses remote overrides. Dedicated ARB keys would fix that.
 
