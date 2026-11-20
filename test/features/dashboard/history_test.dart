@@ -18,6 +18,7 @@ import 'package:sirati/shared/services/cv_api_service.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -342,6 +343,134 @@ void main() {
           expect(tester.takeException(), isNull);
         });
       }
+    }
+
+    for (final language in ['en', 'ar']) {
+      for (final reduce in [false, true]) {
+        testWidgets(
+            'tabs are the shared segmented control on the grouped page '
+            '($language, reduced motion: $reduce)', (tester) async {
+          AppLocale.languageCode.value = language;
+          await tester.pumpWidget(ProviderScope(
+            overrides: [cvApiServiceProvider.overrideWithValue(_PagedApi())],
+            child: MaterialApp(
+              theme: AppTheme.lightFor(arabic: language == 'ar'),
+              locale: Locale(language),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              builder: (context, child) => MediaQuery(
+                data:
+                    MediaQuery.of(context).copyWith(disableAnimations: reduce),
+                child: child!,
+              ),
+              home: const HistoryScreen(),
+            ),
+          ));
+          await tester.pumpAndSettle();
+          final context = tester.element(find.byType(TabBarView));
+          final l10n = AppLocalizations.of(context);
+          expect(Directionality.of(context),
+              language == 'ar' ? TextDirection.rtl : TextDirection.ltr);
+          expect(PageSurface.of(context), PageSurfaceKind.grouped,
+              reason: 'the control follows the grouped page palette');
+          expect(find.byType(TabBar), findsNothing);
+          final bar = tester
+              .widget<AppSegmentedTabBar>(find.byType(AppSegmentedTabBar));
+          expect(bar.textScaler, MediaQuery.textScalerOf(context));
+          final controller = DefaultTabController.of(context);
+          expect(controller.animationDuration,
+              reduce ? Duration.zero : isNot(Duration.zero));
+
+          // The page strip behind the tabs: page i rests at i page widths.
+          final pages = tester.state<ScrollableState>(find
+              .descendant(
+                  of: find.byType(TabBarView),
+                  matching: find.byType(Scrollable))
+              .first);
+          final width = tester.getSize(find.byType(TabBarView)).width;
+          final analyses = find.byType(AnalysisHistoryCard).first;
+
+          for (final (target, label) in [
+            (1, l10n.dashboardHistoryGeneratedCvsTab),
+            (0, l10n.analyses),
+          ]) {
+            await tester.tap(find.text(label));
+            await tester.pump();
+            final offset = pages.position.pixels;
+            if (reduce) {
+              // One frame later the pages have jumped, not slid.
+              expect(offset, target * width, reason: 'to $label');
+            } else {
+              expect(offset, isNot(target * width), reason: 'to $label slides');
+            }
+            await tester.pumpAndSettle();
+            expect(pages.position.pixels, target * width);
+            expect(controller.index, target);
+          }
+          expect(analyses.hitTestable(), findsOneWidget);
+          expect(
+              find.byType(GeneratedCvHistoryCard).hitTestable(), findsNothing);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+
+    for (final language in ['en', 'ar']) {
+      testWidgets('the tab bar grows with the text scale ($language)',
+          (tester) async {
+        AppLocale.languageCode.value = language;
+        // The reserved height, read while that scale is live (the system
+        // scaler reads the current factor).
+        Future<double> pumpAt(double scale) async {
+          tester.view.physicalSize = const Size(390, 844);
+          tester.view.devicePixelRatio = 1;
+          tester.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(tester.view.reset);
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          await tester.pumpWidget(ProviderScope(
+            key: UniqueKey(),
+            overrides: [cvApiServiceProvider.overrideWithValue(_PagedApi())],
+            child: MaterialApp(
+              theme: AppTheme.lightFor(arabic: language == 'ar'),
+              locale: Locale(language),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: const HistoryScreen(),
+            ),
+          ));
+          await tester.pumpAndSettle();
+          final bar = tester
+              .widget<AppSegmentedTabBar>(find.byType(AppSegmentedTabBar));
+          final scaler =
+              MediaQuery.textScalerOf(tester.element(find.byType(TabBarView)));
+          expect(scaler.scale(10), closeTo(10 * scale, 1e-9),
+              reason: 'the page really is at ${scale}x');
+          final height = bar.preferredSize.height;
+          expect(height,
+              AppSegmentedControl.heightFor(scaler) + bar.padding.vertical,
+              reason: 'the app bar reserves the control at ${scale}x');
+          return height;
+        }
+
+        final normal = await pumpAt(1);
+        final large = await pumpAt(2);
+        expect(large, greaterThan(normal));
+        final context = tester.element(find.byType(TabBarView));
+
+        // Both labels are on screen and switch the page at 2x.
+        final l10n = AppLocalizations.of(context);
+        final controller = DefaultTabController.of(context);
+        for (final (index, label) in [
+          (1, l10n.dashboardHistoryGeneratedCvsTab),
+          (0, l10n.analyses),
+        ]) {
+          expect(find.text(label).hitTestable(), findsOneWidget);
+          await tester.tap(find.text(label));
+          await tester.pumpAndSettle();
+          expect(controller.index, index, reason: label);
+        }
+        expect(tester.takeException(), isNull);
+      });
     }
 
     for (final (mode, theme) in [

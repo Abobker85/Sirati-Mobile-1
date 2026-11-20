@@ -16,6 +16,7 @@ import 'package:sirati/features/settings/domain/notification_groups.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
@@ -33,39 +34,41 @@ class HistoryScreen extends ConsumerWidget {
     final c = context.sirati;
 
     // Grouped grey page: each date section is one white inset card.
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: c.groupedBackground,
-        appBar: AppBar(
-          title: Text(l10n.dashboardHistory),
+    return GroupedSurface(
+      child: DefaultTabController(
+        length: 2,
+        // Zero under reduced motion, so the pages jump with the thumb.
+        animationDuration: AppSegmentedTabBar.pageDuration(context),
+        child: Scaffold(
           backgroundColor: c.groupedBackground,
-          surfaceTintColor: c.groupedBackground,
-          scrolledUnderElevation: 0,
-          automaticallyImplyLeading: Navigator.of(context).canPop(),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded),
-              tooltip: l10n.dashboardRefresh,
-              onPressed: () {
-                ref
-                  ..invalidate(analysesHistoryProvider)
-                  ..invalidate(generatedCvsHistoryProvider);
-              },
-            ),
-          ],
-          bottom: TabBar(
-            labelColor: c.textPrimary,
-            unselectedLabelColor: c.textSecondary,
-            indicatorColor: c.primary,
-            tabs: [
-              Tab(text: l10n.analyses),
-              Tab(text: l10n.dashboardHistoryGeneratedCvsTab),
+          appBar: AppBar(
+            title: Text(l10n.dashboardHistory),
+            backgroundColor: c.groupedBackground,
+            surfaceTintColor: c.groupedBackground,
+            scrolledUnderElevation: 0,
+            automaticallyImplyLeading: Navigator.of(context).canPop(),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded),
+                tooltip: l10n.dashboardRefresh,
+                onPressed: () {
+                  ref
+                    ..invalidate(analysesHistoryProvider)
+                    ..invalidate(generatedCvsHistoryProvider);
+                },
+              ),
             ],
+            bottom: AppSegmentedTabBar(
+              textScaler: MediaQuery.textScalerOf(context),
+              tabs: [
+                AppSegmentedTab(label: l10n.analyses),
+                AppSegmentedTab(label: l10n.dashboardHistoryGeneratedCvsTab),
+              ],
+            ),
           ),
-        ),
-        body: const TabBarView(
-          children: [_AnalysesTab(), _GeneratedCvsTab()],
+          body: const TabBarView(
+            children: [_AnalysesTab(), _GeneratedCvsTab()],
+          ),
         ),
       ),
     );

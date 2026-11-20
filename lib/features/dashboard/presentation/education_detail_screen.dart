@@ -16,6 +16,9 @@ class EducationDetailScreen extends ConsumerStatefulWidget {
 
   const EducationDetailScreen({super.key, this.id, required this.fallback});
 
+  /// The card holding the article body, for tests.
+  static const bodyCardKey = ValueKey('education-detail-body');
+
   @override
   ConsumerState<EducationDetailScreen> createState() =>
       _EducationDetailScreenState();
@@ -47,50 +50,53 @@ class _EducationDetailScreenState extends ConsumerState<EducationDetailScreen> {
     final english = AppLocale.isEnglish(context);
     _ensureFuture(english);
 
-    return Scaffold(
-      backgroundColor: context.sirati.background,
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).dashboardEducationDetailTitle),
-        actions: const [
-          Padding(
-            padding: EdgeInsetsDirectional.only(end: 12),
-            child: LanguageToggle(),
-          ),
-        ],
-      ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _future,
-        builder: (context, snapshot) {
-          return AppAsyncBody<Map<String, dynamic>>(
-            snapshot: snapshot,
-            english: english,
-            onRetry: () => _retry(english),
-            fallbackOnEmptyError: widget.fallback,
-            errorMessage: (error) => error is ApiException
-                ? error.displayMessage
-                : AppLocalizations.of(context)
-                    .dashboardEducationDetailLoadFailed,
-            loading: const _EducationDetailSkeleton(),
-            errorBuilder: (error, message) {
-              // Prefer list-card fallback when API fails but we navigated with data.
-              if (widget.fallback.isNotEmpty &&
-                  (_text(widget.fallback['title']).isNotEmpty ||
-                      _text(widget.fallback['body']).isNotEmpty)) {
-                return _DetailBody(
-                  data: widget.fallback,
+    // Detail page on the grouped grey pattern; the article is a white card.
+    return GroupedSurface(
+      child: Scaffold(
+        appBar: AppBar(
+          title:
+              Text(AppLocalizations.of(context).dashboardEducationDetailTitle),
+          actions: const [
+            Padding(
+              padding: EdgeInsetsDirectional.only(end: 12),
+              child: LanguageToggle(),
+            ),
+          ],
+        ),
+        body: FutureBuilder<Map<String, dynamic>>(
+          future: _future,
+          builder: (context, snapshot) {
+            return AppAsyncBody<Map<String, dynamic>>(
+              snapshot: snapshot,
+              english: english,
+              onRetry: () => _retry(english),
+              fallbackOnEmptyError: widget.fallback,
+              errorMessage: (error) => error is ApiException
+                  ? error.displayMessage
+                  : AppLocalizations.of(context)
+                      .dashboardEducationDetailLoadFailed,
+              loading: const _EducationDetailSkeleton(),
+              errorBuilder: (error, message) {
+                // Prefer list-card fallback when API fails but we navigated with data.
+                if (widget.fallback.isNotEmpty &&
+                    (_text(widget.fallback['title']).isNotEmpty ||
+                        _text(widget.fallback['body']).isNotEmpty)) {
+                  return _DetailBody(
+                    data: widget.fallback,
+                    english: english,
+                  );
+                }
+                return AppErrorState(
                   english: english,
+                  message: message,
+                  onRetry: () => _retry(english),
+                  exception: error is ApiException ? error : null,
                 );
-              }
-              return AppErrorState(
-                english: english,
-                message: message,
-                onRetry: () => _retry(english),
-                exception: error is ApiException ? error : null,
-              );
-            },
-            builder: (data) => _DetailBody(data: data, english: english),
-          );
-        },
+              },
+              builder: (data) => _DetailBody(data: data, english: english),
+            );
+          },
+        ),
       ),
     );
   }
@@ -136,12 +142,12 @@ class _DetailBody extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         Container(
+          key: EducationDetailScreen.bodyCardKey,
           padding: const EdgeInsets.all(AppSpacing.lg),
+          // Borderless, unshadowed page fill (white on the grouped page).
           decoration: BoxDecoration(
-            color: context.sirati.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.sirati.border),
-            boxShadow: context.sirati.softShadow,
+            color: PageSurface.fillOf(context),
+            borderRadius: AppRadius.cardAll,
           ),
           child: Text(
             body.isEmpty
@@ -183,7 +189,7 @@ class _EducationDetailSkeleton extends StatelessWidget {
           SizedBox(height: AppSpacing.xs),
           AppSkeleton(width: 220, height: 28),
           SizedBox(height: AppSpacing.md),
-          AppSkeleton(height: 220, radius: 16),
+          AppSkeleton(height: 220, radius: AppRadius.card),
         ],
       ),
     );
