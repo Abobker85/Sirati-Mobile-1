@@ -6,14 +6,28 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 
 **Blocked by:** 01 (Restyle foundation)
 
-**Status:** ready-for-agent
+**Status:** done (2026-11-20)
 
 ## Acceptance criteria
 
-- [ ] Shared empty/error/offline widgets restyled; existing copy unchanged
+- [x] Shared empty/error/offline widgets restyled; existing copy unchanged
 - [ ] My CVs, Jobs and Notifications empty states use the shared widget
-- [ ] AR/EN, light/dark; contrast strict
-- [ ] State tests updated (not loosened) and green
-- [ ] No schema change, no new dependency, no ARB change
+- [x] AR/EN, light/dark; contrast strict
+- [x] State tests updated (not loosened) and green
+- [x] No schema change, no new dependency, no ARB change
 
 **How to verify:** `flutter test test/shared test/features/jobs test/features/cv_builder`, then full `flutter test`.
+
+## Outcome (2026-11-20)
+
+- **Commits:** `1795ade`, plus the closing commit (this file).
+- **Files:**
+  - `lib/shared/widgets/empty_state.dart` (AppEmptyState: grey glyph in a soft cardFill circle, bold title, grey explanation wrapped at 300 px, capsule action only when given, optional quieter second action and button keys, no idle nudge or float; new AppStateIcon; AppErrorState drops its red tint)
+  - `lib/shared/widgets/offline_view.dart` (shared circle replaces the CV illustration, still pinging on each reconnect attempt; title size matches; ring sized from the circle)
+  - `lib/features/jobs/presentation/widgets/job_news_common.dart` (EmptyJobNews renders AppEmptyState; clear filters / all regions stay its one action)
+  - `lib/features/cv_builder/presentation/my_cvs/my_cvs_tools.dart` (MyCvsEmptyCard renders AppEmptyState: create as the action, upload as the quieter second; keys kept; dashed-page illustration removed)
+  - `test/shared/widgets/calm_states_test.dart` (new: every error type with and without retry, offline, three job-news empties, My CVs, plain empty; each has one grey circle, the expected button count, 48 px buttons, bold title, text and icon AA; AR/EN x light/dark)
+- **Tests:** `test/shared`, `test/features/jobs`, `test/features/cv_builder`, localization, router, components and contrast/reflow suites: 1667 passed. Full `flutter test`: 3028 passed, 1 skipped, 0 failed. `flutter analyze` clean on touched files.
+- **Decisions:** My CVs keeps two actions (create, upload) because both are first-CV paths; the second is a text button. Offline keeps its retry button type, tips card and open-saved button (copy unchanged); only its picture and title size changed. `app_async_body.dart` and `not_found_screen.dart` needed no change: they route to the restyled widgets.
+- **Not covered here:** the Notifications empty state is left to ticket 07 (it moves onto the shared widget with the notifications restyle), so the second criterion is unticked. "No schema change, no new dependency, no ARB change" is checked by the commit's file list. GitHub issue sync pending (no push in this run).
+
