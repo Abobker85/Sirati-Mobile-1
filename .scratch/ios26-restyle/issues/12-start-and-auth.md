@@ -4,7 +4,7 @@
 
 Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Owner decisions (2026-11-20): keep Sirati teal as the accent (no iOS blue); repo invariants beat the prompt (Latin digits only, dark mode kept with derived tokens, glass opacity stays AA-safe, shipped weights 400/600/700, Sirati keeps its own tabs, no Apple branding or copy).
 
-**Owns:** `lib/features/auth/presentation/*`, `lib/features/dashboard/presentation/splash/*`, `lib/features/settings/presentation/onboarding_screen.dart`, `lib/shared/widgets/auth_hero_page.dart`, `password_strength_meter.dart`, `password_visibility_toggle.dart`.
+**Owns:** `lib/features/auth/presentation/*`, `lib/features/dashboard/presentation/splash/*`, `lib/features/settings/presentation/onboarding_screen.dart`, `lib/shared/widgets/auth_hero_page.dart`, `password_strength_meter.dart`, `password_visibility_toggle.dart`, and the native launch screens (Android `splash_background` / launch drawables, iOS `LaunchScreen.storyboard` background): they are still cream (#FAF7F2) while the first Flutter frame is now white, so a cold start flashes cream then white (found in ticket 10).
 
 **Blocked by:** 10 (Theme round 2)
 
@@ -12,6 +12,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 
 ## Acceptance criteria
 
+- [ ] Native launch background matches the first Flutter frame in light and dark (no cream flash)
 - [ ] All listed screens restyled; copy, validation, keys and flows unchanged
 - [ ] Keyboard open on a 320×568 phone at text scale 1.3: no overflow, submit reachable (AR and EN)
 - [ ] AR/EN × light/dark; strict contrast on every text and the strength meter
