@@ -34,7 +34,10 @@ const appSheetBackgroundRadius = 12.0;
 ///
 /// A sheet that is not scroll controlled keeps 9/16 of the screen for its
 /// content, with the close row on top of that, and scrolls when its content
-/// is taller (small phones, large text) instead of overflowing.
+/// is taller (small phones, large text) instead of overflowing. With the
+/// keyboard up it grows by the keyboard's height and scrolls only what is
+/// above it, so a focused field shows. A scroll controlled sheet gets the
+/// whole screen and handles the keyboard itself.
 Future<T?> showGlassBottomSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -45,11 +48,6 @@ Future<T?> showGlassBottomSheet<T>({
   final c = context.sirati;
   final closeButton = showCloseButton ?? showDragHandle;
   final navigator = Navigator.of(context);
-  final screenHeight = MediaQuery.sizeOf(context).height;
-  final maxHeightRatio = closeButton && screenHeight > 0
-      ? (appSheetContentHeightRatio + _closeRowHeight / screenHeight)
-          .clamp(appSheetContentHeightRatio, 1.0)
-      : appSheetContentHeightRatio;
   final localizations = MaterialLocalizations.of(context);
   return navigator.push(
     _GlassSheetRoute<T>(
@@ -57,8 +55,9 @@ Future<T?> showGlassBottomSheet<T>({
         from: context,
         to: navigator.context,
       ),
-      isScrollControlled: isScrollControlled,
-      scrollControlDisabledMaxHeightRatio: maxHeightRatio,
+      // The route always gives the full height; a capped sheet applies its
+      // own cap below, so it can grow by the keyboard's height.
+      isScrollControlled: true,
       barrierLabel: localizations.scrimLabel,
       barrierOnTapHint:
           localizations.scrimOnTapHint(localizations.bottomSheetLabel),
@@ -75,9 +74,8 @@ Future<T?> showGlassBottomSheet<T>({
               reverseDuration: MotionDurations.sheet,
               curve: MotionCurves.standard,
             ),
-      builder: (context) => GlassSurface(
-        borderRadius: AppRadius.sheetTop,
-        child: Column(
+      builder: (context) {
+        final column = Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -108,8 +106,30 @@ Future<T?> showGlassBottomSheet<T>({
                     ),
             ),
           ],
-        ),
-      ),
+        );
+        if (isScrollControlled) {
+          return GlassSurface(borderRadius: AppRadius.sheetTop, child: column);
+        }
+        // A capped sheet: 9/16 of the screen for content plus the close row.
+        // With the keyboard up it grows by the keyboard's height (up to the
+        // screen) and keeps its scroll above the keyboard, so a focused
+        // field scrolls into view where it can be seen. The glass runs on
+        // behind the keyboard.
+        final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+        final height = MediaQuery.sizeOf(context).height;
+        final cap = height * appSheetContentHeightRatio +
+            (closeButton ? _closeRowHeight : 0);
+        return GlassSurface(
+          borderRadius: AppRadius.sheetTop,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: cap + keyboard),
+            child: Padding(
+              padding: EdgeInsets.only(bottom: keyboard),
+              child: column,
+            ),
+          ),
+        );
+      },
     ),
   );
 }
@@ -182,7 +202,6 @@ class _GlassSheetRoute<T> extends ModalBottomSheetRoute<T> {
     required super.builder,
     required super.capturedThemes,
     required super.isScrollControlled,
-    required super.scrollControlDisabledMaxHeightRatio,
     required super.barrierLabel,
     required super.barrierOnTapHint,
     required super.backgroundColor,
