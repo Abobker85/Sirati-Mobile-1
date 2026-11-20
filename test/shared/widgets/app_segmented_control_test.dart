@@ -160,6 +160,39 @@ void _expectInksAaOnBothFills(WidgetTester tester, String reason) {
   }
 }
 
+/// A non-text contrast check on the pumped control (WCAG 1.4.11): the
+/// control's shape reads if the track stands 3:1 off the page, or the thumb
+/// (its fill or its edge) stands 3:1 off the track.
+void _expectControlShapeVisible(WidgetTester tester, String reason) {
+  final trackElement = find.byKey(SegmentedTrack.trackKey).evaluate().single;
+  final trackBox =
+      (trackElement.widget as DecoratedBox).decoration as BoxDecoration;
+  final pages = paintedBackgroundsOf(trackElement);
+  final thumbElement = find.byKey(SegmentedTrack.thumbKey).evaluate().single;
+  final thumbBox =
+      (thumbElement.widget as DecoratedBox).decoration as BoxDecoration;
+  final edge = thumbBox.border is Border &&
+          (thumbBox.border! as Border).top.style == BorderStyle.solid &&
+          (thumbBox.border! as Border).top.width > 0
+      ? (thumbBox.border! as Border).top.color
+      : null;
+  for (final page in pages) {
+    final track = Color.alphaBlend(trackBox.color!, page);
+    final thumb = Color.alphaBlend(thumbBox.color!, track);
+    final trackOnPage = AppContrast.ratio(track, page);
+    final thumbOnTrack = [
+      AppContrast.ratio(thumb, track),
+      if (edge != null) AppContrast.ratio(Color.alphaBlend(edge, track), track),
+    ].reduce((a, b) => a > b ? a : b);
+    expect(
+      trackOnPage >= 3 || thumbOnTrack >= 3,
+      isTrue,
+      reason: 'track/page ${trackOnPage.toStringAsFixed(2)}, '
+          'thumb/track ${thumbOnTrack.toStringAsFixed(2)} ($reason)',
+    );
+  }
+}
+
 void main() {
   const directions = [TextDirection.ltr, TextDirection.rtl];
 
@@ -549,6 +582,82 @@ void main() {
             expect(track.right, lessThanOrEqualTo(320));
           }
         });
+      }
+    }
+  });
+
+  group('page-aware palette', () {
+    for (final dark in [false, true]) {
+      for (final kind in PageSurfaceKind.values) {
+        for (final direction in directions) {
+          final suffix =
+              '${dark ? 'dark' : 'light'}, ${kind.name}, ${direction.name}';
+          testWidgets('control shape and labels read on the page ($suffix)',
+              (tester) async {
+            final theme = dark
+                ? AppTheme.darkFor(arabic: direction == TextDirection.rtl)
+                : AppTheme.lightFor(arabic: direction == TextDirection.rtl);
+            final c = theme.extension<SiratiColors>()!;
+            Widget page(Widget child) {
+              final body = Builder(
+                builder: (context) => ColoredBox(
+                  color: PageSurface.pageColor(
+                      context.sirati, PageSurface.of(context)),
+                  child: Center(child: child),
+                ),
+              );
+              return kind == PageSurfaceKind.grouped
+                  ? GroupedSurface(child: body)
+                  : body;
+            }
+
+            final random = Random(kind.index * 4 + (dark ? 2 : 0));
+            final candidates = <String, Widget>{
+              for (final n in [2, 4])
+                'control n=$n':
+                    _ValueHarness(key: UniqueKey(), labels: _labels(random, n)),
+              'tab bar': DefaultTabController(
+                length: 3,
+                child: AppSegmentedTabBar(
+                  textScaler: TextScaler.noScaling,
+                  tabs: [
+                    for (final l in _labels(random, 3))
+                      AppSegmentedTab(label: l, icon: Icons.circle),
+                  ],
+                ),
+              ),
+              'language toggle': const LanguageToggle(),
+              // How the sign-in screens pass the page fill (ticket 12).
+              'language toggle, page fill': Builder(
+                builder: (context) => LanguageToggle(
+                  backgroundColor: PageSurface.fillOf(context),
+                ),
+              ),
+            };
+            for (final entry in candidates.entries) {
+              await tester.pumpWidget(_host(
+                theme: theme,
+                direction: direction,
+                child: page(entry.value),
+              ));
+              await tester.pumpAndSettle();
+              final label = '${entry.key}, $suffix';
+              _expectControlShapeVisible(tester, label);
+              _expectInksAaOnBothFills(tester, label);
+              expectAllTextAa(label);
+              expectAllIconsAa(label);
+              // No beige: the track is this page's own control fill.
+              final track = ((find
+                          .byKey(SegmentedTrack.trackKey)
+                          .evaluate()
+                          .single
+                          .widget as DecoratedBox)
+                      .decoration as BoxDecoration)
+                  .color;
+              expect(track, PageSurface.fillColor(c, kind), reason: label);
+            }
+          });
+        }
       }
     }
   });

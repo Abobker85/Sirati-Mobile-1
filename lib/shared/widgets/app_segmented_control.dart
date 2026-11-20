@@ -41,9 +41,11 @@ class AppSegmentedTab {
 
 /// Fills and inks of a segmented control.
 ///
-/// [AppSegmentedPalette.of] is the themed default: a grey card fill (`cardFill`)
-/// track and a raised thumb. Both inks hold AA on the track AND on the thumb,
-/// so a label stays readable while the thumb slides under it.
+/// [AppSegmentedPalette.of] is the themed default, which follows the page
+/// pattern ([PageSurface]): the track is that page's control fill and the
+/// thumb is drawn in the other surface tone. Both inks hold AA on the track
+/// AND on the thumb, so a label stays readable while the thumb slides under
+/// it.
 @immutable
 class AppSegmentedPalette {
   const AppSegmentedPalette({
@@ -56,19 +58,36 @@ class AppSegmentedPalette {
     this.thumbShadow = const [],
   });
 
-  /// Themed default. The thumb is the white grouped-card fill in light mode;
-  /// in dark mode that fill is darker than the track, so the lighter
-  /// `surfaceHigh` is used to keep the thumb looking raised.
+  /// Themed default for the page pattern around [context].
+  ///
+  /// * Plain page: `cardFill` track; the thumb is white (`groupedCard`) in
+  ///   light mode and the lighter `surfaceHigh` in dark mode, so it looks
+  ///   raised.
+  /// * Grouped page: the page is `groupedBackground`, which `cardFill`
+  ///   matches, so the track takes the grouped control fill (`groupedCard`)
+  ///   and the thumb the `cardFill` tone.
+  ///
+  /// Track and thumb fills are close in tone on purpose (the iOS look), so
+  /// the thumb carries an `outline` edge: that boundary holds the 3:1
+  /// non-text contrast against the track on either page, in both themes.
   factory AppSegmentedPalette.of(BuildContext context) {
     final c = context.sirati;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final grouped = PageSurface.of(context) == PageSurfaceKind.grouped;
     return AppSegmentedPalette(
-      track: c.cardFill,
-      thumb: dark ? c.surfaceHigh : c.groupedCard,
-      // Teal ink marks the selection without relying on the thumb, whose
-      // white-on-grey edge is soft by design (as in the iOS control).
+      track: PageSurface.fillOf(context),
+      thumb: grouped
+          ? c.cardFill
+          : dark
+              ? c.surfaceHigh
+              : c.groupedCard,
+      // Teal ink marks the selection as well as the thumb.
       selectedInk: c.primaryInk,
       unselectedInk: c.textSecondary,
+      // 2dp, not a hairline: on a 1x raster a 1dp edge that lands on a
+      // half pixel is antialiased to under 3:1; 2dp always paints a fully
+      // covered pixel column.
+      thumbBorder: BorderSide(color: c.outline, width: 2),
       thumbShadow: c.softShadow,
     );
   }

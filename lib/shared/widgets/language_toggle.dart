@@ -11,12 +11,15 @@ import 'package:sirati/shared/widgets/app_segmented_control.dart';
 /// whole app mirrors when the language changes, and a fixed order lets the
 /// thumb slide to the tapped side instead of jumping across with the mirror.
 class LanguageToggle extends StatelessWidget {
-  /// Overrides for toggles painted on a brand hero instead of a surface:
-  /// [backgroundColor] fills the track, [foregroundColor] inks both labels and
-  /// [side] edges the track and thumb. The thumb paints the (translucent)
-  /// track fill once more over the track, so it reads darker and labels keep
-  /// the hero's contrast wherever it sits. Pass a translucent
-  /// [backgroundColor] or a visible [side], or the thumb cannot be seen.
+  /// Optional overrides; without them the toggle uses the page-aware
+  /// [AppSegmentedPalette.of].
+  ///
+  /// * [backgroundColor] fills the track. An opaque fill keeps the themed
+  ///   thumb and its outline edge. A translucent fill (a toggle on a photo or
+  ///   brand hero) gets a thumb of that fill laid once more over the track,
+  ///   edged by [side].
+  /// * [foregroundColor] inks both labels.
+  /// * [side] edges the track, and the thumb when given.
   final Color? backgroundColor;
   final Color? foregroundColor;
   final BorderSide side;
@@ -64,16 +67,17 @@ class LanguageToggle extends StatelessWidget {
     final selected = current == 'ar' || current == 'en' ? current : null;
     final themed = AppSegmentedPalette.of(context);
     final track = backgroundColor;
+    final translucent = track != null && track.a < 1;
     final colors = track == null && foregroundColor == null
         ? themed
         : AppSegmentedPalette(
             track: track ?? themed.track,
-            thumb:
-                track == null ? themed.thumb : Color.alphaBlend(track, track),
+            thumb: translucent ? Color.alphaBlend(track, track) : themed.thumb,
             selectedInk: foregroundColor ?? themed.selectedInk,
             unselectedInk: foregroundColor ?? themed.unselectedInk,
             trackBorder: side,
-            thumbBorder: side,
+            thumbBorder: side == BorderSide.none ? themed.thumbBorder : side,
+            thumbShadow: translucent ? const [] : themed.thumbShadow,
           );
 
     return withShortCode(
