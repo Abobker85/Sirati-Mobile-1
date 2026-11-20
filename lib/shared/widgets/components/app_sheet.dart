@@ -17,6 +17,9 @@ const appSheetBackgroundScale = 0.95;
 /// screen, before its close row is added (Flutter's own cap).
 const appSheetContentHeightRatio = 9 / 16;
 
+/// Key of a sheet's opaque grouped pane, inside its glass.
+const appSheetPaneKey = ValueKey('sheet-pane');
+
 /// Corner radius the screen behind an open sheet takes on as it shrinks.
 const appSheetBackgroundRadius = 12.0;
 
@@ -107,9 +110,7 @@ Future<T?> showGlassBottomSheet<T>({
             ),
           ],
         );
-        if (isScrollControlled) {
-          return GlassSurface(borderRadius: AppRadius.sheetTop, child: column);
-        }
+        if (isScrollControlled) return _GroupedGlass(child: column);
         // A capped sheet: 9/16 of the screen for content plus the close row.
         // With the keyboard up it grows by the keyboard's height (up to the
         // screen) and keeps its scroll above the keyboard, so a focused
@@ -119,10 +120,9 @@ Future<T?> showGlassBottomSheet<T>({
         final height = MediaQuery.sizeOf(context).height;
         final cap = height * appSheetContentHeightRatio +
             (closeButton ? _closeRowHeight : 0);
-        return GlassSurface(
-          borderRadius: AppRadius.sheetTop,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: cap + keyboard),
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: cap + keyboard),
+          child: _GroupedGlass(
             child: Padding(
               padding: EdgeInsets.only(bottom: keyboard),
               child: column,
@@ -186,6 +186,42 @@ class _NotAlwaysScrollableController extends ScrollController {
         context,
         oldPosition,
       );
+}
+
+/// The sheet's pane on the grouped page pattern: an opaque grouped
+/// background inside the glass (which keeps its lift), with the content in
+/// [GroupedSurface] so its cards, fields and chips fill with the grouped card
+/// colour and keep an edge against the pane. Opaque, so text on the pane
+/// reads the same over anything behind the sheet; the blur behind it no
+/// longer shows. The glass edge is drawn again over the pane: the firm
+/// outline in high contrast or solid mode, the light edge otherwise.
+class _GroupedGlass extends StatelessWidget {
+  const _GroupedGlass({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return GlassSurface(
+      borderRadius: AppRadius.sheetTop,
+      // A Material, so taps on rows inside paint their ink on the pane.
+      child: Material(
+        key: appSheetPaneKey,
+        color: c.groupedBackground,
+        child: DecoratedBox(
+          position: DecorationPosition.foreground,
+          decoration: BoxDecoration(
+            borderRadius: AppRadius.sheetTop,
+            border: Border.all(
+              color: GlassSurface.solid(context) ? c.outline : c.glassEdge,
+            ),
+          ),
+          child: GroupedSurface(child: child),
+        ),
+      ),
+    );
+  }
 }
 
 /// Space above the close button.
@@ -258,7 +294,8 @@ class SheetCloseButton extends StatelessWidget {
       key: const ValueKey('sheet-close'),
       onPressed: () => Navigator.of(context).maybePop(),
       style: IconButton.styleFrom(
-        backgroundColor: c.cardFill,
+        // The page fill: the grouped card colour on a sheet's pane.
+        backgroundColor: PageSurface.fillOf(context),
         foregroundColor: c.textPrimary,
         fixedSize: const Size.square(size),
         minimumSize: const Size.square(size),
