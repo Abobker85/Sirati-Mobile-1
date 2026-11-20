@@ -19,6 +19,7 @@ import 'package:sirati/shared/services/auth_api_service.dart';
 import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 
 import '../../support/contrast_probe.dart';
 
@@ -147,6 +148,33 @@ void main() {
             .descendant(of: scaffold, matching: find.byType(DecoratedBox))
             .evaluate()) {
           final d = (element.widget as DecoratedBox).decoration;
+          // The segmented control's thumb (e.g. the language toggle) is a
+          // selection indicator, not a content box: on a grouped page fills
+          // alone cannot give it a 3:1 shape (ticket 22), so its edge is
+          // exempt here and held to the stricter rule instead: the edge
+          // must stand 3:1 off the track it slides on.
+          if (element.widget.key == SegmentedTrack.thumbKey) {
+            final edge = ((d as BoxDecoration).border! as Border).top;
+            expect(edge.style, BorderStyle.solid, reason: '$screen ($label)');
+            final trackElement = find
+                .ancestor(
+                    of: find.byWidget(element.widget),
+                    matching: find.byKey(SegmentedTrack.trackKey))
+                .evaluate()
+                .single;
+            final trackFill = ((trackElement.widget as DecoratedBox).decoration
+                    as BoxDecoration)
+                .color!;
+            for (final page in paintedBackgroundsOf(trackElement)) {
+              final track = Color.alphaBlend(trackFill, page);
+              expect(
+                AppContrast.ratio(Color.alphaBlend(edge.color, track), track),
+                greaterThanOrEqualTo(3),
+                reason: 'segmented thumb edge on $screen ($label)',
+              );
+            }
+            continue;
+          }
           // A section's hairline separator is a Divider, not a box edge.
           var inDivider = false;
           element.visitAncestorElements((a) {
@@ -351,6 +379,9 @@ void main() {
       testWidgets('privacy policy parts are grouped sections ($label)',
           (tester) async {
         await pump(tester, const PrivacyPolicyScreen());
+        // The language toggle's thumb is on this page, so the exemption's
+        // stricter edge check in expectGroupedPage runs here.
+        expect(find.byKey(SegmentedTrack.thumbKey), findsOneWidget);
         expectGroupedPage(tester, 'privacy');
         final t = l10n(tester);
         final parts = [
