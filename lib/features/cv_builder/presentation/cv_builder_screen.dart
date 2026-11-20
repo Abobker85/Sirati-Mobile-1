@@ -15,6 +15,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/shared/widgets/components.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -32,6 +33,9 @@ class CvBuilderScreen extends ConsumerStatefulWidget {
   final String? cvId;
   final CvDocument? initialDocument;
 
+  /// Key of the segmented editor tab bar.
+  static const tabBarKey = ValueKey('cv-builder-tabs');
+
   @override
   ConsumerState<CvBuilderScreen> createState() => _CvBuilderScreenState();
 }
@@ -39,7 +43,7 @@ class CvBuilderScreen extends ConsumerStatefulWidget {
 class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   CvBuilderController? _controller;
-  late final TabController _tabController;
+  TabController? _tabController;
   late final AnimationController _previewController;
 
   bool _isLoading = true;
@@ -68,7 +72,6 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _tabController = TabController(length: 4, vsync: this);
     _previewController = AnimationController(
       vsync: this,
       duration: MotionDurations.medium,
@@ -77,11 +80,40 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
     unawaited(_initializeDocument());
   }
 
+  /// The editor tabs' controller. Its page duration is fixed at creation,
+  /// so it is rebuilt (keeping the open tab) when reduced motion flips:
+  /// under reduced motion the pages jump with the segmented thumb.
+  TabController _ensureTabController() {
+    final duration = AppSegmentedTabBar.pageDuration(context);
+    final current = _tabController;
+    if (current != null && current.animationDuration == duration) {
+      return current;
+    }
+    final next = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: current?.index ?? 0,
+      animationDuration: duration,
+    );
+    _tabController = next;
+    if (current != null) {
+      // The old bar and pages let go of it during this frame's build.
+      WidgetsBinding.instance.addPostFrameCallback((_) => current.dispose());
+    }
+    return next;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ensureTabController();
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _previewController.dispose();
-    _tabController.dispose();
+    _tabController?.dispose();
     final controller = _controller;
     if (controller != null) {
       // The route can be removed without a Back (logout, deep link): finish
@@ -290,8 +322,13 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
         listenable: controller,
         builder: (context, _) {
           final doc = controller.document;
-          return Scaffold(
+          final tabs = _ensureTabController();
+          // iOS 26 grouped form page; the bar stays white so the segmented
+          // track keeps its grey-on-white look.
+          return GroupedSurface(
+              child: Scaffold(
             appBar: AppBar(
+              backgroundColor: AppTheme.barColor(c, c.pageBackground),
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -336,16 +373,17 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                   onPressed: () => unawaited(_saveNow()),
                 ),
               ],
-              bottom: TabBar(
-                controller: _tabController,
+              // Labels only: four segments are ~80dp each on a phone, and
+              // Arabic labels need all of it.
+              bottom: AppSegmentedTabBar(
+                key: CvBuilderScreen.tabBarKey,
+                controller: tabs,
+                textScaler: MediaQuery.textScalerOf(context),
                 tabs: [
-                  Tab(icon: const Icon(Icons.person), text: l10n.tabPersonal),
-                  Tab(icon: const Icon(Icons.work), text: l10n.tabExperience),
-                  Tab(icon: const Icon(Icons.psychology), text: l10n.tabSkills),
-                  Tab(
-                    icon: const Icon(Icons.format_line_spacing),
-                    text: l10n.tabOrder,
-                  ),
+                  AppSegmentedTab(label: l10n.tabPersonal),
+                  AppSegmentedTab(label: l10n.tabExperience),
+                  AppSegmentedTab(label: l10n.tabSkills),
+                  AppSegmentedTab(label: l10n.tabOrder),
                 ],
               ),
             ),
@@ -356,7 +394,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                       child: child,
                     );
                 final editor = TabBarView(
-                  controller: _tabController,
+                  controller: tabs,
                   children: [
                     page(PersonalDetailsEditor(controller: controller)),
                     page(ExperienceEducationEditor(controller: controller)),
@@ -373,7 +411,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                       Expanded(
                         flex: 2,
                         child: ColoredBox(
-                          color: c.surfaceLow,
+                          color: c.groupedBackground,
                           child: CvLivePreviewPane(
                             controller: controller,
                             template: _template,
@@ -396,7 +434,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                       ),
                       if (_showPreviewPane)
                         ColoredBox(
-                          color: c.surfaceLow,
+                          color: c.groupedBackground,
                           child: CvLivePreviewPane(
                             controller: controller,
                             template: _template,
@@ -443,7 +481,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                               child: Transform.scale(
                                 scale: 0.98 + 0.02 * t,
                                 child: ColoredBox(
-                                  color: c.surfaceLow,
+                                  color: c.groupedBackground,
                                   child: CvLivePreviewPane(
                                     controller: controller,
                                     template: _template,
@@ -458,7 +496,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                 );
               },
             ),
-          );
+          ));
         },
       ),
     );

@@ -271,7 +271,6 @@ class MyCvsToolsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.sirati;
     final l = AppLocalizations.of(context);
 
     Widget pair(Widget a, Widget b) => IntrinsicHeight(
@@ -285,58 +284,51 @@ class MyCvsToolsCard extends StatelessWidget {
           ),
         );
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: c.border),
-        boxShadow: c.softShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            l.myCvsToolsTitle,
-            style: AppTypography.of(context, AppTypography.titleMd),
+    // iOS 26: a section title on the page and borderless grey tiles, like
+    // the support-tools grid; no card around them.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l.myCvsToolsTitle,
+          style: AppTypography.of(context, AppTypography.titleMd),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        pair(
+          _ToolTile(
+            key: createKey,
+            icon: Icons.note_add_outlined,
+            title: l.myCvsToolCreateTitle,
+            body: l.myCvsToolCreateBody,
+            primary: true,
+            onTap: onCreate,
           ),
-          const SizedBox(height: AppSpacing.md),
-          pair(
-            _ToolTile(
-              key: createKey,
-              icon: Icons.note_add_outlined,
-              title: l.myCvsToolCreateTitle,
-              body: l.myCvsToolCreateBody,
-              primary: true,
-              onTap: onCreate,
-            ),
-            _ToolTile(
-              key: scanKey,
-              icon: Icons.document_scanner_outlined,
-              title: l.myCvsToolScanTitle,
-              body: l.myCvsToolScanBody,
-              onTap: onScan,
-            ),
+          _ToolTile(
+            key: scanKey,
+            icon: Icons.document_scanner_outlined,
+            title: l.myCvsToolScanTitle,
+            body: l.myCvsToolScanBody,
+            onTap: onScan,
           ),
-          const SizedBox(height: AppSpacing.sm),
-          pair(
-            _ToolTile(
-              key: uploadKey,
-              icon: Icons.upload_file_rounded,
-              title: l.myCvsToolUploadTitle,
-              body: l.myCvsToolUploadBody,
-              onTap: onUpload,
-            ),
-            _ToolTile(
-              key: targetKey,
-              icon: Icons.track_changes_rounded,
-              title: l.myCvsToolTargetTitle,
-              body: l.myCvsToolTargetBody,
-              onTap: onTarget,
-            ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        pair(
+          _ToolTile(
+            key: uploadKey,
+            icon: Icons.upload_file_rounded,
+            title: l.myCvsToolUploadTitle,
+            body: l.myCvsToolUploadBody,
+            onTap: onUpload,
           ),
-        ],
-      ),
+          _ToolTile(
+            key: targetKey,
+            icon: Icons.track_changes_rounded,
+            title: l.myCvsToolTargetTitle,
+            body: l.myCvsToolTargetBody,
+            onTap: onTarget,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -367,20 +359,20 @@ class _ToolTile extends StatelessWidget {
     final iconInk = primary ? c.onBrandSurface : c.primaryInk;
     final iconFill =
         primary ? c.onBrandSurface.withValues(alpha: .16) : c.primaryLight;
-    const radius = BorderRadius.all(Radius.circular(16));
+    const radius = BorderRadius.all(Radius.circular(AppRadius.card));
+    final fill = primary ? c.brandSurface : c.cardFill;
 
     return PressScale(
       child: Semantics(
         button: true,
         child: Material(
-          color: primary ? c.brandSurface : c.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: radius,
-            side: primary ? BorderSide.none : BorderSide(color: c.border),
-          ),
+          color: fill,
+          shape: const RoundedRectangleBorder(borderRadius: radius),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
+            highlightColor: c.pressOverlay(fill),
+            splashFactory: NoSplash.splashFactory,
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md - 2),
               child: Column(

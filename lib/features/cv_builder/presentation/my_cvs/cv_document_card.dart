@@ -37,6 +37,7 @@ class CvDocumentCard extends StatelessWidget {
   static ValueKey<String> menuKey(int? id) => ValueKey('cv-card-menu-$id');
   static ValueKey<String> openKey(int? id) => ValueKey('cv-card-open-$id');
   static ValueKey<String> scanKey(int? id) => ValueKey('cv-card-scan-$id');
+  static ValueKey<String> cardKey(int? id) => ValueKey('cv-card-$id');
 
   final CvListItem item;
   final VoidCallback onOpen;
@@ -55,14 +56,14 @@ class CvDocumentCard extends StatelessWidget {
     final editable = item.id != null;
     final score = item.scoreTotal;
 
+    // iOS 26: a borderless, shadowless grey card on the white page.
     return PressScale(
       child: Container(
+        key: cardKey(item.id),
         padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 8, 14),
         decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.border),
-          boxShadow: colors.softShadow,
+          color: colors.cardFill,
+          borderRadius: AppRadius.cardAll,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -114,7 +115,7 @@ class CvDocumentCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 8),
-              child: Divider(height: 24, color: colors.border),
+              child: Divider(height: 24, color: colors.separator),
             ),
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 8),
@@ -169,12 +170,17 @@ class CvDocumentCard extends StatelessWidget {
                           ),
                   ),
                   const SizedBox(width: 8),
+                  // A tinted teal capsule: the grey secondary capsule would
+                  // vanish into the grey card.
                   OutlinedButton(
                     key: openKey(item.id),
                     onPressed: editable ? onOpen : null,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: colors.primaryInk,
-                      side: BorderSide(color: colors.primaryInk, width: 1.5),
+                      backgroundColor: colors.primaryLight,
+                      disabledBackgroundColor: colors.pageBackground,
+                      disabledForegroundColor: colors.textSecondary,
+                      side: BorderSide.none,
                       minimumSize: const Size(76, 48),
                       shape: const StadiumBorder(),
                       textStyle: AppTypography.of(
@@ -214,7 +220,7 @@ class _DocumentIcon extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: muted ? colors.surfaceLow : colors.primaryLight,
+        color: muted ? colors.pageBackground : colors.primaryLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(
@@ -313,8 +319,8 @@ class _NotScannedChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: colors.surfaceLow,
-        borderRadius: BorderRadius.circular(999),
+        color: colors.pageBackground,
+        borderRadius: AppRadius.capsuleAll,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
