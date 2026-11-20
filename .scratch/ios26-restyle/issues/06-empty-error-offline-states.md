@@ -11,7 +11,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 ## Acceptance criteria
 
 - [x] Shared empty/error/offline widgets restyled; existing copy unchanged
-- [ ] My CVs, Jobs and Notifications empty states use the shared widget
+- [x] My CVs, Jobs and Notifications empty states use the shared widget
 - [x] AR/EN, light/dark; contrast strict
 - [x] State tests updated (not loosened) and green
 - [x] No schema change, no new dependency, no ARB change
@@ -29,5 +29,6 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
   - `test/shared/widgets/calm_states_test.dart` (new: every error type with and without retry, offline, three job-news empties, My CVs, plain empty; each has one grey circle, the expected button count, 48 px buttons, bold title, text and icon AA; AR/EN x light/dark)
 - **Tests:** `test/shared`, `test/features/jobs`, `test/features/cv_builder`, localization, router, components and contrast/reflow suites: 1667 passed. Full `flutter test`: 3028 passed, 1 skipped, 0 failed. `flutter analyze` clean on touched files.
 - **Decisions:** My CVs keeps two actions (create, upload) because both are first-CV paths; the second is a text button. Offline keeps its retry button type, tips card and open-saved button (copy unchanged); only its picture and title size changed. `app_async_body.dart` and `not_found_screen.dart` needed no change: they route to the restyled widgets.
-- **Not covered here:** the Notifications empty state is left to ticket 07 (it moves onto the shared widget with the notifications restyle), so the second criterion is unticked. "No schema change, no new dependency, no ARB change" is checked by the commit's file list. GitHub issue sync pending (no push in this run).
+- **Follow-up (2026-11-20):** the Notifications empty state moved onto `AppEmptyState` in ticket 07 (`b41f102`), so the second criterion is now ticked.
+- **Not covered here:** "No schema change, no new dependency, no ARB change" is checked by the commit's file list. GitHub issue sync pending (no push in this run).
 

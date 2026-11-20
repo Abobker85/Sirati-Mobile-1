@@ -16,7 +16,6 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -37,10 +36,9 @@ import 'package:sirati/features/cv_builder/presentation/cv_generator_screen.dart
 import 'package:sirati/features/cv_builder/presentation/generated_cv_loader_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/my_cvs_screen.dart';
 import 'package:sirati/features/cv_builder/presentation/widgets/achievement_builder_sheet.dart';
+import 'package:sirati/features/dashboard/application/premium_gate_controller.dart';
 import 'package:sirati/features/dashboard/application/session_bootstrap.dart';
 import 'package:sirati/features/dashboard/data/subscription_plans_repository.dart';
-import 'package:sirati/features/dashboard/application/premium_gate_controller.dart';
-import 'package:sirati/features/job_match/application/job_match_controller.dart';
 import 'package:sirati/features/dashboard/domain/subscription_offer.dart';
 import 'package:sirati/features/dashboard/presentation/education_detail_screen.dart';
 import 'package:sirati/features/dashboard/presentation/gallery_screen.dart';
@@ -48,6 +46,7 @@ import 'package:sirati/features/dashboard/presentation/history_screen.dart';
 import 'package:sirati/features/dashboard/presentation/home_screen.dart';
 import 'package:sirati/features/dashboard/presentation/premium_gate_screen.dart';
 import 'package:sirati/features/dashboard/presentation/splash_screen.dart';
+import 'package:sirati/features/job_match/application/job_match_controller.dart';
 import 'package:sirati/features/job_match/presentation/job_match_screen.dart';
 import 'package:sirati/features/jobs/presentation/job_news_screen.dart';
 import 'package:sirati/features/settings/presentation/avatar_crop_screen.dart';
@@ -157,8 +156,9 @@ class CaptureHarness extends ScreenHarness {
           )),
       Net.empty => MockClient((request) async {
           final path = request.url.path;
-          if (path.endsWith('/i18n/languages'))
+          if (path.endsWith('/i18n/languages')) {
             return ok.send(request).then(http.Response.fromStream);
+          }
           return http.Response(
             jsonEncode({
               'data':

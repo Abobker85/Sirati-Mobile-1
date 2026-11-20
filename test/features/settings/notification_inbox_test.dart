@@ -69,6 +69,11 @@ const _urls = <String, NotificationCategory>{
 };
 
 void main() {
+  // Tests below switch the app language; put it back after each one so no
+  // later test inherits it.
+  final startLanguage = AppLocale.languageCode.value;
+  tearDown(() => AppLocale.languageCode.value = startLanguage);
+
   group('NotificationItem.category', () {
     test('known server types win over whatever url they carry', () {
       for (final MapEntry(key: type, value: (expected, _)) in _known.entries) {

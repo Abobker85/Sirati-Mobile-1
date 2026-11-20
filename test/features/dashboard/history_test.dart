@@ -89,6 +89,11 @@ class _PagedApi extends CvApiService {
 }
 
 void main() {
+  // Tests below switch the app language; put it back after each one so no
+  // later test inherits it.
+  final startLanguage = AppLocale.languageCode.value;
+  tearDown(() => AppLocale.languageCode.value = startLanguage);
+
   group('historySections', () {
     test('keeps every item once, in order, in runs of one period', () {
       final now = DateTime(2026, 11, 20, 9);
