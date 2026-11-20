@@ -23,7 +23,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 
 ## Outcome (2026-11-20)
 
-- **Commits:** `75a2c1f` (code, tests, goldens, memory), then this ticket close.
+- **Commits:** `75a2c1f` (code, tests, goldens, memory), `8b6018d` (ticket close), plus the follow-up commit that widened the handoff audit.
 - **Files:**
   - `lib/shared/theme/sirati_colors.dart`: light `background` is now white (= `pageBackground`; owner approved 2026-11-20). Added `pressOverlay(fill)`, and `pressed()` now uses it.
   - `lib/shared/theme/page_surface.dart` (new): `PageSurfaceKind`, `PageSurface` (`of`, `fillOf`, `pageColor`, `fillColor`) and `GroupedSurface`, the one API for a grouped page: `GroupedSurface(child: Scaffold(...))`.
@@ -61,13 +61,29 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 - **Tests:** `flutter test` on the full suite: 3237 passed, 1 skipped (pre-existing), 0 failed. `flutter analyze`: no issues. No schema change, no new dependency.
 - **Not covered by a test:** none of the criteria. Notes for the screen tickets (12-18):
   - A resting field is identified by its fill and label only. Its edge is below 3:1 against the page by design.
-  - Unbordered `c.surface` boxes that now lose their edge on the white page. These are grep candidates; switch them to `cardFill`:
+  - Unbordered `surface` boxes that now lose their edge on the white page. Found by a wide grep with every hit read. These need `cardFill` (bordered hits, dialogs and sheets are left out):
     - `lib/features/ats_scanner/presentation/cv_analysis/analysis_form_sections.dart:124`
     - `lib/features/auth/presentation/session_expired_screen.dart:329`
     - `lib/features/auth/presentation/session_expired_screen.dart:362`
+    - `lib/features/dashboard/presentation/home/dashboard_home_header.dart:115`
     - `lib/features/jobs/presentation/widgets/job_news_card.dart:65`
+    - `lib/shared/widgets/score_booster_card.dart:173`
     - `lib/shared/widgets/screen_header.dart:159`
+    - `lib/shared/widgets/loading/ai_field_loading_overlay.dart:68`
     - `lib/shared/widgets/loading/ai_field_loading_overlay.dart:172`
+  - Warm-grey fills (`surfaceLow` / `surfaceContainer` / `surfaceHigh`, #F2F1EC to #E7E5DE) now read beige on white. Unbordered ones:
+    - `lib/features/cv_builder/presentation/cv_builder_screen.dart:376`
+    - `lib/features/cv_builder/presentation/cv_builder_screen.dart:399`
+    - `lib/features/cv_builder/presentation/cv_builder_screen.dart:446`
+    - `lib/features/cv_builder/presentation/section_editor_framework.dart:165`
+    - `lib/features/cv_builder/presentation/cv_generator/wizard_header.dart:150`
+    - `lib/features/cv_builder/presentation/my_cvs/cv_document_card.dart:316`
+    - `lib/shared/widgets/ai_cv_field.dart:106`
+    - `lib/shared/widgets/ai_cv_field.dart:246`
+    - `lib/shared/widgets/score_ring.dart:61`
+
+    About 18 more are bordered (cv_builder editors, achievement sheet, skill chips, session_expired, motion, offline_view).
+  - `bottomNavigationBarTheme` (white, flat) is not used by the app: the dashboard draws its own `DashboardNavigationBar`.
   - Fields that override the theme with their own outline or `surface` fill and stay old-style:
     - `lib/features/ats_scanner/presentation/cv_analysis_screen.dart:384`
     - `lib/features/cv_builder/presentation/widgets/skill_chips_selector.dart:345`
