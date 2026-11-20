@@ -65,7 +65,9 @@ class AppSegmentedPalette {
     return AppSegmentedPalette(
       track: c.cardFill,
       thumb: dark ? c.surfaceHigh : c.groupedCard,
-      selectedInk: c.textPrimary,
+      // Teal ink marks the selection without relying on the thumb, whose
+      // white-on-grey edge is soft by design (as in the iOS control).
+      selectedInk: c.primaryInk,
       unselectedInk: c.textSecondary,
       thumbShadow: c.softShadow,
     );
@@ -142,8 +144,9 @@ class AppSegmentedControl<T> extends StatefulWidget {
 
 class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>>
     with SingleTickerProviderStateMixin {
+  late double _target = _index.toDouble();
   late final AnimationController _position =
-      AnimationController.unbounded(vsync: this, value: _index.toDouble());
+      AnimationController.unbounded(vsync: this, value: _target);
 
   int get _index {
     final i = widget.segments.indexWhere((s) => s.value == widget.value);
@@ -155,7 +158,8 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>>
   void didUpdateWidget(covariant AppSegmentedControl<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     final target = _index.toDouble();
-    if (_position.value == target && !_position.isAnimating) return;
+    if (target == _target) return;
+    _target = target;
     if (MotionSettings.reduce(context)) {
       _position.value = target;
     } else {
@@ -205,8 +209,8 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>>
 /// thumb follows the controller's animation, so a [TabBarView] swipe drags it
 /// along and a tap animates the pages (or jumps, under reduced motion).
 ///
-/// [preferredSize] grows with [textScaler]; in an app bar pass
-/// `MediaQuery.textScalerOf(context)` so the bar reserves enough height.
+/// [preferredSize] grows with [textScaler]: pass
+/// `MediaQuery.textScalerOf(context)` so an app bar reserves enough height.
 class AppSegmentedTabBar extends StatefulWidget implements PreferredSizeWidget {
   const AppSegmentedTabBar({
     super.key,
@@ -219,7 +223,7 @@ class AppSegmentedTabBar extends StatefulWidget implements PreferredSizeWidget {
       AppSpacing.md,
       AppSpacing.xs,
     ),
-    this.textScaler = TextScaler.noScaling,
+    required this.textScaler,
   });
 
   final List<AppSegmentedTab> tabs;

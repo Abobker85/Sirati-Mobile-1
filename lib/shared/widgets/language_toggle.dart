@@ -12,8 +12,10 @@ import 'package:sirati/shared/widgets/app_segmented_control.dart';
 class LanguageToggle extends StatelessWidget {
   /// Overrides for toggles painted on a brand hero instead of a surface:
   /// [backgroundColor] fills the track, [foregroundColor] inks both labels and
-  /// [side] edges the track and thumb. The thumb is the track fill laid twice,
-  /// so labels keep the hero's contrast wherever the thumb sits.
+  /// [side] edges the track and thumb. The thumb paints the (translucent)
+  /// track fill once more over the track, so it reads darker and labels keep
+  /// the hero's contrast wherever it sits. Pass a translucent
+  /// [backgroundColor] or a visible [side], or the thumb cannot be seen.
   final Color? backgroundColor;
   final Color? foregroundColor;
   final BorderSide side;

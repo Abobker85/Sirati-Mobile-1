@@ -261,6 +261,7 @@ void main() {
           children: [
             AppSegmentedTabBar(
               controller: controller,
+              textScaler: TextScaler.noScaling,
               tabs: [
                 for (final l in labels)
                   AppSegmentedTab(label: l, icon: Icons.circle),
@@ -409,6 +410,10 @@ void main() {
             child: const LanguageToggle(),
           ));
           _expectInksAaOnBothFills(tester, '$suffix language toggle');
+          // The themed selection is told by ink too, not only by the thumb.
+          final palette = AppSegmentedPalette.of(
+              tester.element(find.byType(LanguageToggle)));
+          expect(palette.selectedInk, isNot(palette.unselectedInk));
           expectAllTextAa('$suffix language toggle');
         });
 
@@ -455,8 +460,9 @@ void main() {
                   reason: '$label at $scale');
             }
             // The whole track still fits a 320dp screen.
-            expect(tester.getRect(find.byKey(SegmentedTrack.trackKey)).right,
-                lessThanOrEqualTo(320));
+            final track = tester.getRect(find.byKey(SegmentedTrack.trackKey));
+            expect(track.left, greaterThanOrEqualTo(0));
+            expect(track.right, lessThanOrEqualTo(320));
           }
         });
       }
