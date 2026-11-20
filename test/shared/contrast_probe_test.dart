@@ -67,7 +67,7 @@ void main() {
         ),
       ));
       expect(paintedBackgroundsOf(tester.element(find.text('Inside'))),
-          [colors.surface]);
+          [colors.cardFill]);
       expect(paintedBackgroundsOf(tester.element(find.text('Outside'))),
           [theme.scaffoldBackgroundColor]);
     });

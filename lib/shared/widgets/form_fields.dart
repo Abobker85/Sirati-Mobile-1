@@ -13,39 +13,62 @@ class AppFormStyles {
 
   static const radius = 14.0;
 
-  /// Inline field error text. `error` on surface/background is a gated AA
-  /// pair in both themes (the old static style was light-only).
+  /// Content padding of a filled field that has a floating label: the label
+  /// sits inside the fill, so less vertical padding keeps the field about as
+  /// tall as an unlabelled one (and above the 48dp target).
+  static const labelledPadding =
+      EdgeInsets.symmetric(horizontal: 14, vertical: 8);
+
+  /// Focus ring width on a filled field.
+  static const focusRingWidth = 2.0;
+
+  /// Error ring width on a filled field (resting / focused).
+  static const errorRingWidth = 1.5;
+
+  /// Inline field error text. The error-container ink holds AA on
+  /// every page, on the field fills and on the soft error wash, in both
+  /// themes (`error` itself drops to 4.4:1 on the light wash).
   static TextStyle errorTextStyle(SiratiColors c, {bool arabic = true}) =>
       AppTypography.bodySm
-          .resolve(arabic: arabic, color: c.error)
+          .resolve(arabic: arabic, color: c.onErrorContainer)
           .copyWith(fontWeight: FontWeight.w600);
 
   static TextStyle successTextStyle(SiratiColors c) =>
       AppTypography.bodySm.resolve(arabic: true, color: c.onSuccessContainer);
 
+  /// The soft red wash behind a field in error, over its [fill].
+  static Color errorWash(SiratiColors c, Color fill) =>
+      Color.alphaBlend(c.errorLight.withValues(alpha: .35), fill);
+
+  /// The soft green wash behind a valid field, over its [fill].
+  static Color successWash(SiratiColors c, Color fill) =>
+      Color.alphaBlend(c.successLight.withValues(alpha: .35), fill);
+
+  /// iOS 26 filled fields: [fill] with no resting outline; a primary-ink ring
+  /// while focused and an error ring in error (the error text and icon carry
+  /// the state too, so it never rests on colour alone).
   static InputDecorationTheme inputThemeFor(
     SiratiColors c, {
     bool arabic = true,
+    required Color fill,
   }) {
-    OutlineInputBorder o(Color color, double width) => OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(color: color, width: width),
-        );
+    FilledFieldBorder ring(Color color, double width) =>
+        FilledFieldBorder(borderSide: BorderSide(color: color, width: width));
 
     return InputDecorationTheme(
       filled: true,
-      fillColor: c.surface,
-      hoverColor: c.surfaceLow,
-      border: o(c.outline, 1),
-      enabledBorder: o(c.outline, 1),
-      focusedBorder: o(c.primaryInk, 1.8),
-      errorBorder: o(c.error, 1.4),
-      focusedErrorBorder: o(c.error, 1.8),
-      disabledBorder: o(c.outline, 1),
+      fillColor: fill,
+      hoverColor: c.pressed(fill),
+      border: const FilledFieldBorder(),
+      enabledBorder: const FilledFieldBorder(),
+      focusedBorder: ring(c.primaryInk, focusRingWidth),
+      errorBorder: ring(c.error, errorRingWidth),
+      focusedErrorBorder: ring(c.error, focusRingWidth),
+      disabledBorder: const FilledFieldBorder(),
       labelStyle: WidgetStateTextStyle.resolveWith((states) {
         final base = AppTypography.bodyMd.resolve(arabic: arabic);
         if (states.contains(WidgetState.error)) {
-          return base.copyWith(color: c.error);
+          return base.copyWith(color: c.onErrorContainer);
         }
         if (states.contains(WidgetState.focused)) {
           return base.copyWith(color: c.primaryInk);
@@ -58,7 +81,7 @@ class AppFormStyles {
       floatingLabelStyle: WidgetStateTextStyle.resolveWith((states) {
         final base = AppTypography.bodySm.resolve(arabic: arabic);
         if (states.contains(WidgetState.error)) {
-          return base.copyWith(color: c.error);
+          return base.copyWith(color: c.onErrorContainer);
         }
         if (states.contains(WidgetState.focused)) {
           return base.copyWith(color: c.primaryInk);
@@ -74,6 +97,10 @@ class AppFormStyles {
       ),
       errorStyle: errorTextStyle(c, arabic: arabic),
       errorMaxLines: 100,
+      helperStyle: AppTypography.bodySm.resolve(
+        arabic: arabic,
+        color: c.textSecondary,
+      ),
       prefixIconColor: c.textSecondary,
       suffixIconColor: c.textSecondary,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
@@ -95,6 +122,117 @@ class AppFormStyles {
       isDense: dense,
     );
   }
+}
+
+/// Rounded border of a filled field: no line at rest ([BorderSide.none]), a
+/// ring of [borderSide] when given one.
+///
+/// Not an outline border, so the floating label rests inside the fill
+/// rather than notching the top edge: every label sits on the fill colour.
+class FilledFieldBorder extends InputBorder {
+  const FilledFieldBorder({
+    super.borderSide = BorderSide.none,
+    this.borderRadius =
+        const BorderRadius.all(Radius.circular(AppFormStyles.radius)),
+  });
+
+  final BorderRadius borderRadius;
+
+  @override
+  bool get isOutline => false;
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.all(borderSide.width);
+
+  @override
+  FilledFieldBorder copyWith({
+    BorderSide? borderSide,
+    BorderRadius? borderRadius,
+  }) =>
+      FilledFieldBorder(
+        borderSide: borderSide ?? this.borderSide,
+        borderRadius: borderRadius ?? this.borderRadius,
+      );
+
+  @override
+  ShapeBorder scale(double t) => FilledFieldBorder(
+        borderSide: borderSide.scale(t),
+        borderRadius: borderRadius * t,
+      );
+
+  @override
+  ShapeBorder? lerpFrom(ShapeBorder? a, double t) {
+    if (a is FilledFieldBorder) {
+      return FilledFieldBorder(
+        borderSide: BorderSide.lerp(a.borderSide, borderSide, t),
+        borderRadius: BorderRadius.lerp(a.borderRadius, borderRadius, t)!,
+      );
+    }
+    return super.lerpFrom(a, t);
+  }
+
+  @override
+  ShapeBorder? lerpTo(ShapeBorder? b, double t) {
+    if (b is FilledFieldBorder) {
+      return FilledFieldBorder(
+        borderSide: BorderSide.lerp(borderSide, b.borderSide, t),
+        borderRadius: BorderRadius.lerp(borderRadius, b.borderRadius, t)!,
+      );
+    }
+    return super.lerpTo(b, t);
+  }
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) => Path()
+    ..addRRect(
+      borderRadius
+          .resolve(textDirection)
+          .toRRect(rect)
+          .deflate(borderSide.width),
+    );
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) =>
+      Path()..addRRect(borderRadius.resolve(textDirection).toRRect(rect));
+
+  @override
+  bool get preferPaintInterior => true;
+
+  @override
+  void paintInterior(
+    Canvas canvas,
+    Rect rect,
+    Paint paint, {
+    TextDirection? textDirection,
+  }) {
+    canvas.drawRRect(borderRadius.resolve(textDirection).toRRect(rect), paint);
+  }
+
+  @override
+  void paint(
+    Canvas canvas,
+    Rect rect, {
+    double? gapStart,
+    double gapExtent = 0.0,
+    double gapPercentage = 0.0,
+    TextDirection? textDirection,
+  }) {
+    if (borderSide.style == BorderStyle.none || borderSide.width == 0) return;
+    final ring = borderRadius
+        .resolve(textDirection)
+        .toRRect(rect)
+        .deflate(borderSide.width / 2);
+    canvas.drawRRect(ring, borderSide.toPaint());
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is FilledFieldBorder &&
+      other.borderSide == borderSide &&
+      other.borderRadius == borderRadius;
+
+  @override
+  int get hashCode => Object.hash(borderSide, borderRadius);
 }
 
 /// Compact inline validation message with icon — modern SaaS style.
@@ -621,11 +759,12 @@ class _AppTextFormFieldState extends FormFieldState<String> {
     final showSuccess = !showError && _isShowingSuccess();
 
     final c = context.sirati;
+    final base = PageSurface.fillOf(context);
     final fill = showError && softErrorFill
-        ? Color.alphaBlend(c.errorLight.withValues(alpha: .35), c.surface)
+        ? AppFormStyles.errorWash(c, base)
         : showSuccess
-            ? Color.alphaBlend(c.successLight.withValues(alpha: .35), c.surface)
-            : c.surface;
+            ? AppFormStyles.successWash(c, base)
+            : base;
     final resolvedSuffix = showError || showSuccess
         ? Row(
             mainAxisSize: MainAxisSize.min,
@@ -663,9 +802,11 @@ class _AppTextFormFieldState extends FormFieldState<String> {
                 ],
               )
             : suffixIcon;
-    final successBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppFormStyles.radius),
-      borderSide: BorderSide(color: c.success, width: 1.4),
+    final successBorder = FilledFieldBorder(
+      borderSide: BorderSide(
+        color: c.success,
+        width: AppFormStyles.errorRingWidth,
+      ),
     );
 
     // A new error shakes the field once (also when a submit finds it).
@@ -746,8 +887,12 @@ class _AppTextFormFieldState extends FormFieldState<String> {
           fillColor: fill,
           enabledBorder: showSuccess ? successBorder : null,
           focusedBorder: showSuccess ? successBorder : null,
+          // A filled field's label floats inside the fill, so a labelled
+          // field trims its vertical padding to keep the old height.
           contentPadding: contentPadding ??
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              (labelText == null
+                  ? const EdgeInsets.symmetric(horizontal: 14, vertical: 14)
+                  : AppFormStyles.labelledPadding),
           // Native errors are associated with the editable semantics node and
           // announced by InputDecorator's live region, including on submit.
           errorText: showError ? errorText : null,

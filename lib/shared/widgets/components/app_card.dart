@@ -19,13 +19,18 @@ class AppSurfaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Borderless, unshadowed fill of the page it sits on (iOS 26): grey on a
+    // plain page, white on a grouped one. Pressing darkens the fill.
     final c = context.sirati;
+    final fill = PageSurface.fillOf(context);
     final body = Material(
-      color: c.surface,
-      borderRadius: AppRadius.xlAll,
+      color: fill,
+      borderRadius: AppRadius.cardAll,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.xlAll,
+        borderRadius: AppRadius.cardAll,
+        highlightColor: c.pressOverlay(fill),
+        splashFactory: NoSplash.splashFactory,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
           child: Padding(
@@ -39,14 +44,7 @@ class AppSurfaceCard extends StatelessWidget {
     return Semantics(
       button: onTap != null,
       label: semanticLabel,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: AppRadius.xlAll,
-          border: Border.all(color: c.outline),
-          boxShadow: AppShadows.of(c, elevation: AppElevation.card),
-        ),
-        child: body,
-      ),
+      child: body,
     );
   }
 }
