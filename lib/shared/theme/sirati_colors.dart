@@ -153,14 +153,14 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
   static const pressedOverlayLight = .10;
   static const pressedOverlayDark = .06;
 
+  /// The translucent press overlay for [fill]: the ink-well highlight that
+  /// turns [fill] into [pressed] when painted over it.
+  Color pressOverlay(Color fill) => fill.computeLuminance() > .5
+      ? const Color(0xFF000000).withValues(alpha: pressedOverlayLight)
+      : const Color(0xFFFFFFFF).withValues(alpha: pressedOverlayDark);
+
   /// [fill] as it looks while pressed.
-  Color pressed(Color fill) {
-    final light = fill.computeLuminance() > .5;
-    final overlay = light
-        ? const Color(0xFF000000).withValues(alpha: pressedOverlayLight)
-        : const Color(0xFFFFFFFF).withValues(alpha: pressedOverlayDark);
-    return Color.alphaBlend(overlay, fill);
-  }
+  Color pressed(Color fill) => Color.alphaBlend(pressOverlay(fill), fill);
 
   /// [cardFill] while pressed.
   Color get cardFillPressed => pressed(cardFill);
@@ -252,7 +252,10 @@ class SiratiColors extends ThemeExtension<SiratiColors> {
     onErrorContainer: Color(0xFFA32F2B),
     onInfoContainer: Color(0xFF006A60),
     surface: Color(0xFFFFFFFF),
-    background: Color(0xFFFAF7F2),
+    // Was the warm cream #FAF7F2. Since the iOS 26 restyle (ticket 10) it is
+    // the plain page white, equal to [pageBackground], so every screen that
+    // paints `background` follows the new page without its own edit.
+    background: Color(0xFFFFFFFF),
     surfaceLow: Color(0xFFF2F1EC),
     surfaceContainer: Color(0xFFEDECE6),
     surfaceHigh: Color(0xFFE7E5DE),

@@ -292,7 +292,7 @@ void main() {
       await tester.pumpAndSettle();
       final input = tester.widget<InputDecorator>(find.byType(InputDecorator));
       final colors = theme.extension<SiratiColors>()!;
-      final border = input.decoration.focusedBorder! as OutlineInputBorder;
+      final border = input.decoration.focusedBorder!;
       expect(input.isFocused, isTrue);
       expect(border.borderSide.color, colors.primaryInk);
       expect(

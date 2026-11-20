@@ -9,6 +9,9 @@ import 'package:sirati/shared/widgets/motion.dart';
 enum AppButtonVariant { primary, secondary, text, destructive }
 
 /// Token-driven button (SIRATI-21). Min 48px target, semantic label, RTL-safe.
+///
+/// iOS 26 (ticket 10): primary and destructive are filled capsules; secondary
+/// is a grey filled capsule on the page's fill ([PageSurface.fillOf]).
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -126,23 +129,16 @@ class AppButton extends StatelessWidget {
             disabledForegroundColor: isLoading ? c.onPrimary : c.textSecondary,
             foregroundColor: c.onPrimary,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+            shape: const StadiumBorder(),
           ),
           child: child,
         );
       case AppButtonVariant.secondary:
+        // Grey filled capsule on the page's fill, no outline (iOS 26).
         button = OutlinedButton(
           onPressed: enabled ? onPressed : null,
-          style: OutlinedButton.styleFrom(
-            minimumSize: minSize,
-            foregroundColor: c.primaryInk,
-            disabledForegroundColor: c.textSecondary,
-            side: BorderSide(
-              color: !enabled && !isLoading ? c.outline : c.primaryInk,
-              width: 1.5,
-            ),
-            shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
-          ),
+          style: AppTheme.secondaryButtonStyle(c, PageSurface.fillOf(context))
+              .copyWith(minimumSize: WidgetStatePropertyAll(minSize)),
           child: child,
         );
       case AppButtonVariant.text:
@@ -166,7 +162,7 @@ class AppButton extends StatelessWidget {
             disabledForegroundColor: isLoading ? c.onError : c.textSecondary,
             foregroundColor: c.onError,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+            shape: const StadiumBorder(),
           ),
           child: child,
         );
