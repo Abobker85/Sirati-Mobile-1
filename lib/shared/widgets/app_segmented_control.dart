@@ -248,8 +248,9 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>>
 ///
 /// [preferredSize] grows with [textScaler]: pass
 /// `MediaQuery.textScalerOf(context)` so an app bar reserves enough height.
-/// When labels may wrap (see [SegmentedTrack]), pass [height] from
-/// [heightFor] instead, which lays the labels out for the real width.
+/// Labels only wrap onto more lines when [height] comes from [heightFor],
+/// which lays them out for the real width; without it, labels that do not
+/// fit side by side are scaled down to fit the one-line height.
 class AppSegmentedTabBar extends StatefulWidget implements PreferredSizeWidget {
   const AppSegmentedTabBar({
     super.key,
@@ -394,6 +395,9 @@ class _AppSegmentedTabBarState extends State<AppSegmentedTabBar> {
         colors: widget.colors ?? AppSegmentedPalette.of(context),
         expand: true,
         labelPadding: widget.labelPadding,
+        // A fixed-height slot (an app bar's bottom) only has room for
+        // wrapped labels when the caller reserved it with [heightFor].
+        allowWrap: widget.height != null,
       ),
     );
   }
@@ -439,6 +443,7 @@ class SegmentLayout {
     required List<AppSegmentedTab> labels,
     required double maxWidth,
     required double labelPadding,
+    bool allowWrap = true,
   }) {
     final n = labels.length;
     final scaler = MediaQuery.textScalerOf(context);
@@ -492,7 +497,7 @@ class SegmentLayout {
       return SegmentLayout._(
           [for (final w in natural) w + slack], minHeight, false, false);
     }
-    if (sum(minimum) <= maxWidth) {
+    if (allowWrap && sum(minimum) <= maxWidth) {
       // Every word fits its segment; share the rest by how much each label
       // still wants, and let labels wrap.
       final want = [for (var i = 0; i < n; i++) natural[i] - minimum[i]];
@@ -512,11 +517,25 @@ class SegmentLayout {
       }
       return SegmentLayout._(widths, height, false, false);
     }
-    // Some word cannot fit even with every label wrapped: share the width by
-    // each label's longest word and scale labels down to fit, whole.
-    final total = sum(minimum);
+    // Some word cannot fit even with every label wrapped (or the caller has
+    // no room to grow): share the width by label size and scale labels down
+    // to fit, whole, on one line.
+    // Only the text part is shared out: padding and icons keep their size,
+    // so every label shrinks by the same factor.
+    final chromes = [for (final tab in labels) chrome(tab)];
+    final text = [
+      for (var i = 0; i < n; i++)
+        (allowWrap ? minimum[i] : natural[i]) - chromes[i],
+    ];
+    final room = math.max(0.0, maxWidth - sum(chromes));
+    final totalText = sum(text);
     return SegmentLayout._(
-      [for (final w in minimum) maxWidth * w / total],
+      [
+        for (var i = 0; i < n; i++)
+          room == 0 || totalText == 0
+              ? maxWidth / n
+              : chromes[i] + room * text[i] / totalText,
+      ],
       minHeight,
       false,
       true,
@@ -542,6 +561,7 @@ class SegmentedTrack extends StatelessWidget {
     required this.colors,
     required this.expand,
     this.labelPadding = AppSegmentedControl.defaultLabelPadding,
+    this.allowWrap = true,
   });
 
   /// Key of the sliding thumb's painted box.
@@ -565,6 +585,10 @@ class SegmentedTrack extends StatelessWidget {
 
   /// Horizontal padding inside each segment, per side.
   final double labelPadding;
+
+  /// Whether labels may wrap onto more lines (the track grows taller).
+  /// Without it, labels that do not fit side by side are scaled down.
+  final bool allowWrap;
 
   static const _capsule = BorderRadius.all(Radius.circular(AppRadius.capsule));
 
@@ -686,6 +710,7 @@ class SegmentedTrack extends StatelessWidget {
           labels: labels,
           maxWidth: constraints.maxWidth,
           labelPadding: labelPadding,
+          allowWrap: allowWrap,
         );
         return layout.equal ? _equal(n, height) : _apportioned(n, layout);
       });

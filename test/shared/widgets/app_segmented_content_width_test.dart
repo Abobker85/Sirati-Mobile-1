@@ -59,6 +59,7 @@ void main() {
     EdgeInsets padding = AppSegmentedTabBar.defaultPadding,
     double labelPadding = AppSegmentedControl.defaultLabelPadding,
     TabController? controller,
+    bool reserveHeight = true,
   }) async {
     tester.view.physicalSize = const Size(width, 700);
     tester.view.devicePixelRatio = 1;
@@ -83,12 +84,14 @@ void main() {
             padding: padding,
             labelPadding: labelPadding,
             textScaler: MediaQuery.textScalerOf(context),
-            height: AppSegmentedTabBar.heightFor(
-              context,
-              tabs: tabs,
-              padding: padding,
-              labelPadding: labelPadding,
-            ),
+            height: reserveHeight
+                ? AppSegmentedTabBar.heightFor(
+                    context,
+                    tabs: tabs,
+                    padding: padding,
+                    labelPadding: labelPadding,
+                  )
+                : null,
           );
           return Scaffold(
             appBar: AppBar(title: const Text('CV'), bottom: bar),
@@ -293,5 +296,30 @@ void main() {
 
   test('the matrix reached every layout mode', () {
     expect(reached, containsAll(['equal', 'apportioned', 'wrapped', 'scaled']));
+  });
+
+  testWidgets('without a reserved height labels scale, never wrap or clip',
+      (tester) async {
+    addTearDown(tester.view.reset);
+    for (final direction in directions) {
+      for (final scale in scales) {
+        for (final tabs in labelSets(direction, Random(29))) {
+          final reason = '${tabs.map((t) => t.label)}, $direction x$scale';
+          await pumpBar(tester,
+              tabs: tabs,
+              direction: direction,
+              scale: scale,
+              reserveHeight: false);
+          expect(tester.takeException(), isNull, reason: reason);
+          // One-line height: the app bar's preferred size holds the track.
+          expect(tester.getSize(find.byKey(SegmentedTrack.trackKey)).height,
+              AppSegmentedControl.heightFor(TextScaler.linear(scale)),
+              reason: reason);
+          for (final tab in tabs) {
+            expectWhole(tester, tab.label, reason);
+          }
+        }
+      }
+    }
   });
 }
