@@ -418,16 +418,28 @@ class _SourceRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(
           _sectionInset, 4, _sectionInset / 2, 4),
-      child: Row(
+      // Side by side when both fit; otherwise the button drops under the
+      // source name (narrow phones, large text).
+      child: OverflowBar(
+        alignment: MainAxisAlignment.spaceBetween,
+        overflowAlignment: OverflowBarAlignment.end,
         children: [
-          Icon(Icons.campaign_outlined, size: 18, color: c.textSecondary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              (item.sourceName ?? '').isNotEmpty
-                  ? l.jobsSourceName(item.sourceName!)
-                  : '',
-              style: TextStyle(fontSize: 13, color: c.textSecondary),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.campaign_outlined, size: 18, color: c.textSecondary),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    (item.sourceName ?? '').isNotEmpty
+                        ? l.jobsSourceName(item.sourceName!)
+                        : '',
+                    style: TextStyle(fontSize: 13, color: c.textSecondary),
+                  ),
+                ),
+              ],
             ),
           ),
           if (sourceUri != null)

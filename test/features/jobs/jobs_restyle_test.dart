@@ -27,6 +27,8 @@ JobNews _job({
   String? salary = '15000 - 20000',
   DateTime? published,
   DateTime? validUntil,
+  String company = 'Acme',
+  String location = 'Riyadh',
 }) =>
     JobNews.fromJson({
       'id': id,
@@ -35,8 +37,8 @@ JobNews _job({
       'body': 'Build APIs with Laravel. 5 years of experience.',
       'category': 'tech',
       'skills_required': ['PHP', 'Laravel'],
-      'company': 'Acme',
-      'location': 'Riyadh',
+      'company': company,
+      'location': location,
       'source_name': '@jobmag',
       'source_url': 'https://t.me/jobmag/123',
       'apply_method': method,
@@ -423,6 +425,59 @@ void main() {
             expectAllTextAa('detail primary held $variant');
             await gesture.cancel();
           });
+        }
+      }
+    }
+  });
+
+  group('detail page on a 320dp phone', () {
+    for (final lang in ['en', 'ar']) {
+      for (final dark in [false, true]) {
+        for (final method in ['url', 'email', 'none']) {
+          for (final scale in [1.0, 1.3, 2.0]) {
+            final variant = '$lang ${dark ? 'dark' : 'light'} $method x$scale';
+            testWidgets('fits without overflow and stays AA ($variant)',
+                (tester) async {
+              tester.view.physicalSize = const Size(320, 568);
+              tester.view.devicePixelRatio = 1;
+              addTearDown(tester.view.reset);
+              final job = _job(
+                language: lang,
+                method: method,
+                title: 'Senior Backend Platform Engineer, Payments and '
+                    'Settlement Infrastructure (Remote-first)',
+                company: 'Saudi National Industrial Development and '
+                    'Logistics Holding Company',
+                location: 'King Abdullah Economic City, Makkah Province',
+                validUntil: DateTime.utc(2027, 3, 14),
+              );
+              await tester.pumpWidget(MediaQuery(
+                data: MediaQueryData(
+                  size: const Size(320, 568),
+                  textScaler: TextScaler.linear(scale),
+                ),
+                child: _host(JobNewsDetailScreen(item: job),
+                    lang: lang, dark: dark, page: true),
+              ));
+              await tester.pumpAndSettle();
+              expect(tester.takeException(), isNull);
+              // Scroll through the whole page; nothing overflows anywhere.
+              await tester.drag(find.byType(ListView), const Offset(0, -20000));
+              await tester.pumpAndSettle();
+              expect(tester.takeException(), isNull);
+              final source = find.text(AppLocalizations.of(
+                      tester.element(find.byType(JobNewsDetailScreen)))
+                  .jobsViewSourcePost);
+              expect(source, findsOneWidget);
+              expect(
+                  tester
+                      .getSize(find.ancestor(
+                          of: source, matching: find.byType(TextButton)))
+                      .height,
+                  greaterThanOrEqualTo(48));
+              expectAllTextAa('detail 320 $variant');
+            });
+          }
         }
       }
     }

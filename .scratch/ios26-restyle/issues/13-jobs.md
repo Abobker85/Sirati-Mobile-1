@@ -22,7 +22,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
 
 ## Outcome (2026-11-20)
 
-- **Commits:** `7f0f9b6` (code and tests), `4c2a239` (ticket close), plus the follow-up that checks chip inks against the pressed fill (branch `swarm/jobs`).
+- **Commits:** `7f0f9b6` (code and tests), `4c2a239` (ticket close), `7d7509d` (chip inks checked against the pressed fill), plus the checker fix for the source row on narrow phones (branch `swarm/jobs`).
 - **Files:**
   - `lib/features/jobs/presentation/widgets/job_pressable_card.dart` (new): `JobPressSurface` (grey page fill, 18dp corners, no edge or shadow, `pressed()` fill and a spring to 0.96 while held, no scale with reduced motion, focus ring outside), `JobPressableCard`, and `JobCardInk` (no splash or highlight). Jobs may not import dashboard (layering test), so this mirrors `HomePressableCard` instead of importing it.
   - `lib/features/jobs/presentation/widgets/job_news_card.dart`: `JobNewsCard` on `JobPressableCard`. `JobChip` is a borderless capsule with a `fill` (the page colour inside a grey card; the emphasis chip is `primaryLight` + `primaryInk`).
@@ -45,7 +45,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
     - Section headers use existing ARB keys only, and the facts section has no header.
     - Action bar: grouped page colour over a separator hairline. Primary is the teal capsule; Tailor is the grey capsule (`secondaryButtonStyle`). Actions and behaviour are unchanged.
   - `lib/features/jobs/presentation/job_news_screen.dart`, `lib/features/dashboard/presentation/home/dashboard_jobs_section.dart`: expand-route and glint radius `AppRadius.card` (the featured card was 24).
-  - `test/features/jobs/jobs_restyle_test.dart` (new, 80 tests). Every case runs on real pumped widgets:
+  - `test/features/jobs/jobs_restyle_test.dart` (new, 116 tests). Every case runs on real pumped widgets:
     - `JobNewsCard` (full and compact) and `FeaturedJobCard`, AR/EN × light/dark × reduced motion:
       - no painted border, shadow or elevation;
       - rest fill is `cardFill`, and held fill is `pressed(cardFill)`;
@@ -70,9 +70,13 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
       - text and icons AA, including with the primary held;
       - Latin digits.
     - Latin digits: 6 dates (relative and absolute, leap day, year end) × AR/EN on the cards and the detail. No Arabic-Indic digits are rendered, and the salary digits are shown as sent.
+- **Checker fix:**
+  - The detail page's source row overflowed on a 320dp phone: 72px at text 1.3, 218px at 2.0.
+  - It is now an `OverflowBar`, so "View original post" drops under the source name when both do not fit, and keeps its 48dp target.
+  - New test: 320×568 × text 1.0/1.3/2.0 × AR/EN × light/dark × url/email/none (36 cases), with long title, employer and place. Each case scrolls the whole page and asserts no overflow, the 48dp source button and AA text. It was red before the fix.
 - **Tests:**
   - `flutter test test/features/jobs test/features/dashboard` plus the contrast/reflow, shipped-weights and architecture suites: all green.
-  - Full `flutter test` after the last change: 3409 passed, 1 skipped (pre-existing), 0 failed.
+  - Full `flutter test` after the last change: 3445 passed, 1 skipped (pre-existing), 0 failed.
   - `flutter analyze`: no issues.
   - No schema change, no new dependency, no ARB change.
 - **Not covered by a test:** none of the criteria. Notes:
