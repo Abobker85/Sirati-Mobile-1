@@ -562,8 +562,8 @@ void main() {
   });
 
   group('sheets', () {
-    for (final handle in [true, false]) {
-      testWidgets('glass sheet, grab bar ${handle ? 'shown' : 'hidden'}',
+    for (final close in [true, false]) {
+      testWidgets('glass sheet, no grab bar, X ${close ? 'shown' : 'hidden'}',
           (tester) async {
         await _pump(
           tester,
@@ -572,7 +572,7 @@ void main() {
               builder: (context) => TextButton(
                 onPressed: () => showGlassBottomSheet<void>(
                   context: context,
-                  showDragHandle: handle,
+                  showCloseButton: close,
                   builder: (_) => const SizedBox(
                     key: ValueKey('sheet-body'),
                     height: 120,
@@ -591,8 +591,19 @@ void main() {
         );
         expect(glass, findsOneWidget);
         expect(_blurring(tester, glass), isTrue);
-        expect(find.byType(SheetDragHandle),
-            handle ? findsOneWidget : findsNothing);
+        expect(tester.widget<GlassSurface>(glass).borderRadius,
+            AppRadius.sheetTop);
+        final closeButton = find.byKey(const ValueKey('sheet-close'));
+        expect(closeButton, close ? findsOneWidget : findsNothing);
+        // Only the X row, if any, sits above the content: no grab bar.
+        final bodyTop =
+            tester.getTopLeft(find.byKey(const ValueKey('sheet-body'))).dy;
+        expect(
+          bodyTop,
+          close
+              ? tester.getBottomLeft(closeButton).dy
+              : tester.getTopLeft(glass).dy,
+        );
       });
     }
   });
