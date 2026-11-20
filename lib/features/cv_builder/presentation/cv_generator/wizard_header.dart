@@ -18,19 +18,36 @@ const wizardStepIcons = [
   Icons.school_rounded,
 ];
 
-/// "Step X of N", progress bar, and the tappable step dots. Only completed
-/// steps (and the current one) can be jumped to.
+/// The calm step header: the step title with "Step X of N", a thin teal
+/// progress line, and the tappable step dots. Only completed steps (and the
+/// current one) can be jumped to.
+///
+/// It sits straight on the page (no band of its own). While the keyboard is
+/// open the dot row folds away, so the fields and the footer keep the room
+/// on a small phone; the title, count and progress stay.
 class WizardHeader extends StatelessWidget {
   const WizardHeader({
     super.key,
     required this.step,
     required this.english,
     required this.onStepTap,
+    this.keyboardOpen,
   });
 
   final int step;
   final bool english;
   final ValueChanged<int> onStepTap;
+
+  /// Whether the keyboard is up. Inside a [Scaffold] body the keyboard inset
+  /// is already taken out of [MediaQuery], so the screen passes it in; when
+  /// null the header reads [MediaQuery] itself.
+  final bool? keyboardOpen;
+
+  /// Key of the dot row, present only while the keyboard is closed.
+  static const dotsKey = ValueKey('wizard-step-dots');
+
+  /// Key of the announced title + count line.
+  static const statusKey = ValueKey('wizard-step-status');
 
   @override
   Widget build(BuildContext context) {
@@ -38,83 +55,128 @@ class WizardHeader extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final steps = wizardStepTitles(l10n);
     final progress = (step + 1) / steps.length;
+    final count = l10n.cvWizardStepOf(step + 1, steps.length);
+    final keyboardOpen =
+        this.keyboardOpen ?? MediaQuery.viewInsetsOf(context).bottom > 0;
 
-    return Container(
-      color: c.background,
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                  child: Text(
-                l10n.cvWizardStepOf(step + 1, steps.length),
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  // primaryInk: primary is a fill colour and fails AA as text.
-                  color: c.primaryInk,
-                ),
-              )),
-              Expanded(
-                  child: Text(
-                steps[step],
-                textAlign: TextAlign.end,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: c.textSecondary,
-                ),
-              )),
-            ],
-          ),
-          const SizedBox(height: 12),
-          WizardProgressBar(progress: progress),
-          const SizedBox(height: 14),
-          // One equal cell per step holds its dot, its halves of the
-          // connectors and its label, so each label sits under its dot.
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var i = 0; i < steps.length; i++)
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _Connector(
-                              visible: i > 0,
-                              done: i <= step,
-                            ),
-                          ),
-                          _StepDot(index: i, step: step, onTap: onStepTap),
-                          Expanded(
-                            child: _Connector(
-                              visible: i < steps.length - 1,
-                              done: i < step,
-                            ),
-                          ),
-                        ],
+          // One announcement per step change: "Step 2 of 4, Skills".
+          Semantics(
+            key: statusKey,
+            container: true,
+            liveRegion: true,
+            label: '$count, ${steps[step]}',
+            child: ExcludeSemantics(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Expanded(
+                    child: Text(
+                      steps[step],
+                      // While typing the header is one line; the full title
+                      // is in the announced label.
+                      maxLines: keyboardOpen ? 1 : null,
+                      overflow: keyboardOpen ? TextOverflow.ellipsis : null,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: c.textPrimary,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        steps[i],
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: i <= step ? c.primaryInk : c.textHint,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-            ],
+                  const SizedBox(width: 12),
+                  Text(
+                    count,
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: c.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          WizardProgressBar(progress: progress),
+          MotionExpandSlot(
+            child: keyboardOpen
+                ? const SizedBox(
+                    key: ValueKey('wizard-step-dots-folded'),
+                    width: double.infinity,
+                  )
+                : Padding(
+                    key: dotsKey,
+                    padding: const EdgeInsets.only(top: 14),
+                    child: _StepDots(
+                      steps: steps,
+                      step: step,
+                      onStepTap: onStepTap,
+                    ),
+                  ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _StepDots extends StatelessWidget {
+  const _StepDots({
+    required this.steps,
+    required this.step,
+    required this.onStepTap,
+  });
+
+  final List<String> steps;
+  final int step;
+  final ValueChanged<int> onStepTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    // One equal cell per step holds its dot, its halves of the connectors
+    // and its label, so each label sits under its dot.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < steps.length; i++)
+          Expanded(
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _Connector(visible: i > 0, done: i <= step),
+                    ),
+                    _StepDot(index: i, step: step, onTap: onStepTap),
+                    Expanded(
+                      child: _Connector(
+                        visible: i < steps.length - 1,
+                        done: i < step,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  steps[i],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: i <= step ? c.primaryInk : c.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -147,7 +209,8 @@ class _Connector extends StatelessWidget {
     return SizedBox(
       height: 2,
       child: ColoredBox(
-        color: c.surfaceHigh,
+        // Hairline track: decorative, the dots and labels carry the state.
+        color: c.separator,
         child: reduce
             ? fill(target)
             : TweenAnimationBuilder<double>(
@@ -194,8 +257,8 @@ class _StepDot extends StatelessWidget {
             color: done
                 ? c.primaryContainer
                 : active
-                    ? c.amberAccent
-                    : c.surfaceHigh,
+                    ? c.primaryLight
+                    : PageSurface.fillOf(context),
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -206,7 +269,7 @@ class _StepDot extends StatelessWidget {
                   : Icon(
                       wizardStepIcons[index],
                       size: 16,
-                      color: active ? c.primaryDark : c.textHint,
+                      color: active ? c.primaryInk : c.textSecondary,
                     ),
             ),
           ),
@@ -253,7 +316,8 @@ class _WizardProgressBarState extends State<WizardProgressBar> {
         child: FractionallySizedBox(
           widthFactor: factor,
           heightFactor: 1,
-          child: ColoredBox(color: context.sirati.primary),
+          // primaryInk: the teal that keeps 3:1 on the track in both themes.
+          child: ColoredBox(color: context.sirati.primaryInk),
         ),
       );
     }
@@ -264,7 +328,7 @@ class _WizardProgressBarState extends State<WizardProgressBar> {
         height: 4,
         width: double.infinity,
         child: ColoredBox(
-          color: context.sirati.border,
+          color: context.sirati.separator,
           child: reduce
               ? fill(target)
               : TweenAnimationBuilder<double>(

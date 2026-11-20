@@ -68,31 +68,33 @@ class SkillsStep extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 18),
-        FieldGroup(
-          label: l10n.cvSummaryLabel,
-          child: AiEnhancedBeatFrame(
-            beat: props.enhanceBeats['summary'] ?? 0,
-            child: AiCvField(
-              field: 'summary',
-              controller: f.summary,
-              english: english,
-              isLoading: props.isEnhancing('summary'),
-              helperText: l10n.cvSummaryHelper,
-              result: props.fieldResults['summary'],
-              onEnhance: () => props.onEnhance('summary'),
-              onDismissResult: () => props.onDismissResult('summary'),
-              child: AppTextFormField(
+        WizardSection(children: [
+          FieldGroup(
+            label: l10n.cvSummaryLabel,
+            child: AiEnhancedBeatFrame(
+              beat: props.enhanceBeats['summary'] ?? 0,
+              child: AiCvField(
+                field: 'summary',
                 controller: f.summary,
-                textAlign: TextAlign.start,
-                maxLines: 4,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => props.onPrimaryAction(),
-                enabled: !props.isEnhancing('summary'),
-                hintText: l10n.cvSummaryHint,
+                english: english,
+                isLoading: props.isEnhancing('summary'),
+                helperText: l10n.cvSummaryHelper,
+                result: props.fieldResults['summary'],
+                onEnhance: () => props.onEnhance('summary'),
+                onDismissResult: () => props.onDismissResult('summary'),
+                child: AppTextFormField(
+                  controller: f.summary,
+                  textAlign: TextAlign.start,
+                  maxLines: 4,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => props.onPrimaryAction(),
+                  enabled: !props.isEnhancing('summary'),
+                  hintText: l10n.cvSummaryHint,
+                ),
               ),
             ),
           ),
-        ),
+        ]),
       ],
     );
   }

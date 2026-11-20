@@ -28,7 +28,8 @@ Future<bool> confirmDiscardEdits(BuildContext context) {
         ),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
-          style: TextButton.styleFrom(foregroundColor: c.red),
+          // Destructive copy ink: AA on the dialog fill in both themes.
+          style: TextButton.styleFrom(foregroundColor: c.onErrorContainer),
           child: Text(l10n.cvDiscard),
         ),
       ],
@@ -59,7 +60,8 @@ Future<WizardExitAction> askSaveDraft(BuildContext context) {
         ),
         TextButton(
           onPressed: () => Navigator.pop(ctx, WizardExitAction.discard),
-          style: TextButton.styleFrom(foregroundColor: c.red),
+          // Destructive copy ink: AA on the dialog fill in both themes.
+          style: TextButton.styleFrom(foregroundColor: c.onErrorContainer),
           child: Text(l10n.cvDiscard),
         ),
         FilledButton(

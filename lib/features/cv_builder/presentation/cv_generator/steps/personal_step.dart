@@ -37,114 +37,122 @@ class PersonalStep extends StatelessWidget {
       title: l10n.cvPersonalStepTitle,
       icon: Icons.person_rounded,
       children: [
-        FieldGroup(
-          label: l10n.cvPersonalFullName,
-          child: AppTextFormField(
-            tickWhenValid: true,
-            controller: f.name,
-            textAlign: TextAlign.start,
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: next,
-            hintText: l10n.cvPersonalFullNameHint,
-            prefixIcon: const Icon(Icons.person_outline),
-            validator: (value) => (value?.trim().isEmpty ?? true)
-                ? l10n.cvPersonalFullNameRequired
-                : null,
-          ),
-        ),
-        const SizedBox(height: 14),
-        FieldGroup(
-          label: l10n.emailLabel,
-          child: AppTextFormField(
-            tickWhenValid: true,
-            controller: f.email,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: next,
-            textDirection: TextDirection.ltr,
-            textAlign: TextAlign.start,
-            hintText: l10n.cvPersonalEmailHint,
-            prefixIcon: const Icon(Icons.email_outlined),
-            validator: (value) {
-              final email = value?.trim() ?? '';
-              if (email.isEmpty) {
-                return l10n.cvPersonalEmailRequired;
-              }
-              if (!email.contains('@')) {
-                return l10n.cvPersonalEmailInvalid;
-              }
-              return null;
-            },
-          ),
-        ),
-        const SizedBox(height: 14),
-        FieldGroup(
-          label: l10n.cvPersonalPhone,
-          child: AppTextFormField(
-            tickWhenValid: true,
-            controller: f.phone,
-            keyboardType: TextInputType.phone,
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: next,
-            textDirection: TextDirection.ltr,
-            textAlign: TextAlign.start,
-            hintText: l10n.cvPersonalPhoneHint,
-            prefixIcon: const Icon(Icons.phone_outlined),
-            validator: (value) => (value?.trim().isEmpty ?? true)
-                ? l10n.cvPersonalPhoneRequired
-                : null,
-          ),
-        ),
-        const SizedBox(height: 14),
-        FieldGroup(
-          label: l10n.cvPersonalLinkedin,
-          child: AppTextFormField(
-            tickWhenValid: true,
-            controller: f.linkedin,
-            keyboardType: TextInputType.url,
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: next,
-            textDirection: TextDirection.ltr,
-            textAlign: TextAlign.start,
-            hintText: l10n.cvPersonalLinkedinHint,
-            prefixIcon: const Icon(Icons.link_rounded),
-          ),
-        ),
-        const SizedBox(height: 14),
-        FieldGroup(
-          label: l10n.cvPersonalTargetJob,
-          child: AppTextFormField(
-            tickWhenValid: true,
-            controller: f.jobTitle,
-            textAlign: TextAlign.start,
-            textInputAction: TextInputAction.next,
-            onFieldSubmitted: next,
-            hintText: l10n.cvPersonalTargetJobHint,
-            prefixIcon: const Icon(Icons.work_outline_rounded),
-            validator: (value) => (value?.trim().isEmpty ?? true)
-                ? l10n.cvPersonalTargetJobRequired
-                : null,
-          ),
-        ),
-        const SizedBox(height: 14),
-        FieldGroup(
-          label: l10n.cvPersonalJobDescription,
-          child: AiEnhancedBeatFrame(
-            beat: props.enhanceBeats['jobDescription'] ?? 0,
-            child: _JobDescriptionField(
-              controller: f.jobDescription,
-              english: english,
-              isEnhancing: isEnhancingJobDescription,
-              onEnhance: onEnhanceJobDescription,
-              onDone: props.onPrimaryAction,
+        // Contact details.
+        WizardSection(children: [
+          FieldGroup(
+            label: l10n.cvPersonalFullName,
+            child: AppTextFormField(
+              tickWhenValid: true,
+              controller: f.name,
+              textAlign: TextAlign.start,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: next,
+              hintText: l10n.cvPersonalFullNameHint,
+              prefixIcon: const Icon(Icons.person_outline),
+              validator: (value) => (value?.trim().isEmpty ?? true)
+                  ? l10n.cvPersonalFullNameRequired
+                  : null,
             ),
           ),
-        ),
-        const SizedBox(height: 18),
-        FieldLabel(l10n.cvPersonalCvLanguage),
-        const SizedBox(height: 8),
-        _LanguagePicker(value: language, onChanged: onLanguageChanged),
+          const SizedBox(height: 14),
+          FieldGroup(
+            label: l10n.emailLabel,
+            child: AppTextFormField(
+              tickWhenValid: true,
+              controller: f.email,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: next,
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.start,
+              hintText: l10n.cvPersonalEmailHint,
+              prefixIcon: const Icon(Icons.email_outlined),
+              validator: (value) {
+                final email = value?.trim() ?? '';
+                if (email.isEmpty) {
+                  return l10n.cvPersonalEmailRequired;
+                }
+                if (!email.contains('@')) {
+                  return l10n.cvPersonalEmailInvalid;
+                }
+                return null;
+              },
+            ),
+          ),
+          const SizedBox(height: 14),
+          FieldGroup(
+            label: l10n.cvPersonalPhone,
+            child: AppTextFormField(
+              tickWhenValid: true,
+              controller: f.phone,
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: next,
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.start,
+              hintText: l10n.cvPersonalPhoneHint,
+              prefixIcon: const Icon(Icons.phone_outlined),
+              validator: (value) => (value?.trim().isEmpty ?? true)
+                  ? l10n.cvPersonalPhoneRequired
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 14),
+          FieldGroup(
+            label: l10n.cvPersonalLinkedin,
+            child: AppTextFormField(
+              tickWhenValid: true,
+              controller: f.linkedin,
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: next,
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.start,
+              hintText: l10n.cvPersonalLinkedinHint,
+              prefixIcon: const Icon(Icons.link_rounded),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 16),
+        // The role the CV targets.
+        WizardSection(children: [
+          FieldGroup(
+            label: l10n.cvPersonalTargetJob,
+            child: AppTextFormField(
+              tickWhenValid: true,
+              controller: f.jobTitle,
+              textAlign: TextAlign.start,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: next,
+              hintText: l10n.cvPersonalTargetJobHint,
+              prefixIcon: const Icon(Icons.work_outline_rounded),
+              validator: (value) => (value?.trim().isEmpty ?? true)
+                  ? l10n.cvPersonalTargetJobRequired
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 14),
+          FieldGroup(
+            label: l10n.cvPersonalJobDescription,
+            child: AiEnhancedBeatFrame(
+              beat: props.enhanceBeats['jobDescription'] ?? 0,
+              child: _JobDescriptionField(
+                controller: f.jobDescription,
+                english: english,
+                isEnhancing: isEnhancingJobDescription,
+                onEnhance: onEnhanceJobDescription,
+                onDone: props.onPrimaryAction,
+              ),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 16),
+        WizardSection(children: [
+          FieldLabel(l10n.cvPersonalCvLanguage),
+          const SizedBox(height: 8),
+          _LanguagePicker(value: language, onChanged: onLanguageChanged),
+        ]),
       ],
     );
   }
@@ -214,15 +222,15 @@ class _JobDescriptionField extends StatelessWidget {
                       Icon(
                         Icons.info_outline_rounded,
                         size: 13,
-                        color: context.sirati.textHint,
+                        color: context.sirati.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           l10n.cvPersonalWriteMore,
                           style: TextStyle(
-                            color: context.sirati.textHint,
-                            fontSize: 11,
+                            color: context.sirati.textSecondary,
+                            fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -242,17 +250,22 @@ class _JobDescriptionField extends StatelessWidget {
 class _LanguagePicker extends StatelessWidget {
   const _LanguagePicker({required this.value, required this.onChanged});
 
+  static const trackKey = ValueKey('cv-language-track');
+
   final String value;
   final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    // A segmented control: a filled capsule track with no outline and the
+    // chosen language as a teal capsule inside it.
     return Container(
+      key: trackKey,
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: context.sirati.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.sirati.border),
+        color: PageSurface.fillOf(context),
+        borderRadius: AppRadius.capsuleAll,
       ),
       child: Row(
         children: [
@@ -293,11 +306,11 @@ class _LanguageOption extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          constraints: const BoxConstraints(minHeight: 48),
+          constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: selected ? context.sirati.primary : null,
-            borderRadius: BorderRadius.circular(11),
+            borderRadius: AppRadius.capsuleAll,
           ),
           alignment: Alignment.center,
           child: Text(
