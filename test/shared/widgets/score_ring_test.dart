@@ -106,9 +106,9 @@ void main() {
         final context = tester.element(find.byType(ScoreRing));
         final colors = context.sirati;
         final expected = switch (ScoreBand.of(score)) {
-          ScoreBand.excellent || ScoreBand.veryGood => colors.success,
-          ScoreBand.fair => colors.warning,
-          ScoreBand.weak => colors.error,
+          ScoreBand.excellent || ScoreBand.veryGood => colors.onSuccessContainer,
+          ScoreBand.fair => colors.onWarningContainer,
+          ScoreBand.weak => colors.onErrorContainer,
         };
         final arc = tester.widget<CircularProgressIndicator>(
           find.byType(CircularProgressIndicator),
