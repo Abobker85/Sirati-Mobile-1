@@ -525,15 +525,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     // Grouped grey page, like Settings: the white fields read as the
     // inset cards of the design.
-    return Scaffold(
-      backgroundColor: context.sirati.groupedBackground,
-      appBar: AppBar(
-        title: Text(l10n.settingsProfileTitle),
-        backgroundColor: context.sirati.groupedBackground,
-        surfaceTintColor: context.sirati.groupedBackground,
-        scrolledUnderElevation: 0,
+    return GroupedSurface(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.settingsProfileTitle),
+        ),
+        body: body,
       ),
-      body: body,
     );
   }
 }

@@ -94,66 +94,63 @@ class NotificationsScreen extends ConsumerWidget {
     final hasUnread = inbox.value?.any((i) => !i.isRead) ?? false;
 
     // Grouped grey page: each date section is one white inset card.
-    final c = context.sirati;
-    return Scaffold(
-      backgroundColor: c.groupedBackground,
-      appBar: AppBar(
-        title: Text(l10n.settingsNotificationsTitle),
-        backgroundColor: c.groupedBackground,
-        surfaceTintColor: c.groupedBackground,
-        scrolledUnderElevation: 0,
-        // Shown only when it can act: a greyed-out "Read all" over an empty
-        // or fully read inbox is noise (and fails text contrast).
-        actions: [
-          AnimatedSwitcher(
-            duration: MotionSettings.reduce(context)
-                ? Duration.zero
-                : MotionDurations.fast,
-            child: hasUnread
-                ? TextButton(
-                    key: const ValueKey('notifications-read-all'),
-                    onPressed: () async {
-                      final ok = await ref
-                          .read(notificationsInboxProvider.notifier)
-                          .markAllRead();
-                      if (!ok && context.mounted) _reportFailure(context);
-                    },
-                    style: TextButton.styleFrom(
-                      minimumSize: const Size(48, 48),
+    return GroupedSurface(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.settingsNotificationsTitle),
+          // Shown only when it can act: a greyed-out "Read all" over an empty
+          // or fully read inbox is noise (and fails text contrast).
+          actions: [
+            AnimatedSwitcher(
+              duration: MotionSettings.reduce(context)
+                  ? Duration.zero
+                  : MotionDurations.fast,
+              child: hasUnread
+                  ? TextButton(
+                      key: const ValueKey('notifications-read-all'),
+                      onPressed: () async {
+                        final ok = await ref
+                            .read(notificationsInboxProvider.notifier)
+                            .markAllRead();
+                        if (!ok && context.mounted) _reportFailure(context);
+                      },
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                      ),
+                      child: Text(l10n.settingsNotificationsReadAll),
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey('notifications-read-all-empty'),
                     ),
-                    child: Text(l10n.settingsNotificationsReadAll),
-                  )
-                : const SizedBox.shrink(
-                    key: ValueKey('notifications-read-all-empty'),
-                  ),
-          ),
-        ],
-      ),
-      body: AppAsyncBody<List<NotificationItem>>(
-        snapshot: inbox.toSnapshot(),
-        english: english,
-        onRetry: () => ref.invalidate(notificationsInboxProvider),
-        fallbackOnEmptyError: const [],
-        errorMessage: (error) => error is ApiException
-            ? error.displayMessage
-            : l10n.settingsNotificationsLoadFailed,
-        loading: const ListScreenSkeleton(
-          itemCount: 5,
-          padding: EdgeInsets.fromLTRB(AppSpacing.lg, 18, AppSpacing.lg, 32),
+            ),
+          ],
         ),
-        isEmpty: (items) => items.isEmpty,
-        empty: SiratiRefreshIndicator(
-          onRefresh: () => _refresh(ref),
-          child: NotificationsEmptyState(
-            onRoute: NotificationService.instance.onNotificationTap == null
-                ? null
-                : (route) => _openRoute(context, route),
+        body: AppAsyncBody<List<NotificationItem>>(
+          snapshot: inbox.toSnapshot(),
+          english: english,
+          onRetry: () => ref.invalidate(notificationsInboxProvider),
+          fallbackOnEmptyError: const [],
+          errorMessage: (error) => error is ApiException
+              ? error.displayMessage
+              : l10n.settingsNotificationsLoadFailed,
+          loading: const ListScreenSkeleton(
+            itemCount: 5,
+            padding: EdgeInsets.fromLTRB(AppSpacing.lg, 18, AppSpacing.lg, 32),
           ),
-        ),
-        builder: (items) => NotificationInbox(
-          items: items,
-          onRefresh: () => _refresh(ref),
-          onOpen: (item) => unawaited(_open(context, ref, item)),
+          isEmpty: (items) => items.isEmpty,
+          empty: SiratiRefreshIndicator(
+            onRefresh: () => _refresh(ref),
+            child: NotificationsEmptyState(
+              onRoute: NotificationService.instance.onNotificationTap == null
+                  ? null
+                  : (route) => _openRoute(context, route),
+            ),
+          ),
+          builder: (items) => NotificationInbox(
+            items: items,
+            onRefresh: () => _refresh(ref),
+            onOpen: (item) => unawaited(_open(context, ref, item)),
+          ),
         ),
       ),
     );
@@ -230,82 +227,88 @@ class _NotificationInboxState extends State<NotificationInbox> {
             onTap: () => _select(category: c),
           ),
     ];
-    return SiratiRefreshIndicator(
-      onRefresh: widget.onRefresh,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xxs),
-              child: Row(
-                children: [
-                  for (var i = 0; i < chips.length; i++) ...[
-                    if (i > 0) const SizedBox(width: AppSpacing.xs),
-                    chips[i],
+    // The inbox always sits on the grey grouped page, so its section cards
+    // take the grouped (white) fill wherever it is hosted.
+    return PageSurface(
+      kind: PageSurfaceKind.grouped,
+      child: SiratiRefreshIndicator(
+        onRefresh: widget.onRefresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm,
+                    AppSpacing.lg, AppSpacing.xxs),
+                child: Row(
+                  children: [
+                    for (var i = 0; i < chips.length; i++) ...[
+                      if (i > 0) const SizedBox(width: AppSpacing.xs),
+                      chips[i],
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: MotionStateSwitcher(
-              stateKey: '$_unreadOnly-${category?.name ?? 'all'}',
-              child: groups.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(AppSpacing.xxl),
-                      child: Text(
-                        l10n.settingsNotificationsFilterEmpty,
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.bodySm(context.sirati)
-                            .copyWith(color: context.sirati.textSecondary),
-                      ),
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (final group in groups) ...[
-                          NotificationGroupHeader(group: group),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.lg,
-                            ),
-                            // One white card per date; separators come
-                            // from the section.
-                            child: AppListSection(
-                              separatorIndent: NotificationCard.separatorIndent,
-                              children: [
-                                for (var index = 0;
-                                    index < group.items.length;
-                                    index++)
-                                  // Keyed by the notification, so a refresh
-                                  // that adds rows never moves a row's dot or
-                                  // reveal onto another item.
-                                  MotionReveal(
-                                    key: ValueKey(
-                                        'notification-${group.items[index].id}'),
-                                    order: index.clamp(0, 5),
-                                    child: NotificationCard(
+            SliverToBoxAdapter(
+              child: MotionStateSwitcher(
+                stateKey: '$_unreadOnly-${category?.name ?? 'all'}',
+                child: groups.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(AppSpacing.xxl),
+                        child: Text(
+                          l10n.settingsNotificationsFilterEmpty,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodySm(context.sirati)
+                              .copyWith(color: context.sirati.textSecondary),
+                        ),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final group in groups) ...[
+                            NotificationGroupHeader(group: group),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                              ),
+                              // One white card per date; separators come
+                              // from the section.
+                              child: AppListSection(
+                                separatorIndent:
+                                    NotificationCard.separatorIndent,
+                                children: [
+                                  for (var index = 0;
+                                      index < group.items.length;
+                                      index++)
+                                    // Keyed by the notification, so a refresh
+                                    // that adds rows never moves a row's dot or
+                                    // reveal onto another item.
+                                    MotionReveal(
                                       key: ValueKey(
-                                          'notification-card-${group.items[index].id}'),
-                                      item: group.items[index],
-                                      order: index,
-                                      onTap: () =>
-                                          widget.onOpen(group.items[index]),
+                                          'notification-${group.items[index].id}'),
+                                      order: index.clamp(0, 5),
+                                      child: NotificationCard(
+                                        key: ValueKey(
+                                            'notification-card-${group.items[index].id}'),
+                                        item: group.items[index],
+                                        order: index,
+                                        onTap: () =>
+                                            widget.onOpen(group.items[index]),
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
-                    ),
+                      ),
+              ),
             ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+          ],
+        ),
       ),
     );
   }

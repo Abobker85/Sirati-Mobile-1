@@ -430,15 +430,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: context.sirati.groupedBackground,
-      appBar: AppBar(
-        title: Text(l10n.settings),
+    return GroupedSurface(
+      child: Scaffold(
         backgroundColor: context.sirati.groupedBackground,
-        surfaceTintColor: context.sirati.groupedBackground,
-        scrolledUnderElevation: 0,
+        appBar: AppBar(
+          title: Text(l10n.settings),
+        ),
+        body: body,
       ),
-      body: body,
     );
   }
 }

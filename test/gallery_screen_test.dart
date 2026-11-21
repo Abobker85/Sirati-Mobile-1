@@ -4,6 +4,9 @@ import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/features/dashboard/presentation/gallery_screen.dart';
 import 'package:sirati/routing/app_router.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components/app_button.dart';
+
+import 'support/contrast_probe.dart';
 
 void main() {
   testWidgets(
@@ -50,4 +53,40 @@ void main() {
     expect(parsed.name, AppRoutes.gallery);
     expect(parsed.unknown, isFalse);
   });
+
+  for (final dark in [false, true]) {
+    testWidgets(
+        'gallery disabled button has a neutral grey fill '
+        '(${dark ? 'dark' : 'light'})', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.lightFor(arabic: true),
+          darkTheme: AppTheme.darkFor(arabic: true),
+          themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+          home: const ComponentGalleryScreen(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final disabled = find.descendant(
+        of: find.widgetWithText(AppButton, 'Disabled'),
+        matching: find.byType(ElevatedButton),
+      );
+      expect(disabled, findsOneWidget);
+      final fill = tester
+          .widget<ElevatedButton>(disabled)
+          .style!
+          .backgroundColor!
+          .resolve(const {WidgetState.disabled})!;
+      final page = paintedBackgroundsOf(tester.element(disabled)).single;
+      final label = find.text('Disabled');
+      final ink = DefaultTextStyle.of(tester.element(label))
+          .style
+          .merge(tester.widget<Text>(label).style)
+          .color!;
+      // Not warm: a warm grey's red channel sits above its blue one.
+      expect(fill.r, lessThanOrEqualTo(fill.b), reason: 'warm fill $fill');
+      expect(fill, isNot(page), reason: 'fill vs page');
+      expect(ink, isNot(fill), reason: 'label vs fill');
+    });
+  }
 }
