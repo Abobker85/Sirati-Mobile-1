@@ -24,6 +24,8 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_list_section.dart';
 
 import '../../support/card_chrome.dart';
+import '../../support/contrast_probe.dart';
+import '../../support/no_gradient.dart';
 import '../../support/non_text_contrast.dart';
 
 Map<String, dynamic> planJson(
@@ -1322,6 +1324,7 @@ void main() {
       await tester.pump();
       for (var step = 0; step < 120; step++) {
         expectNoCardChrome(find.byType(PremiumGateScreen), label);
+        expectNoGradient(find.byType(PremiumGateScreen), label);
         if (position.pixels >= position.maxScrollExtent) return;
         await tester.drag(list, const Offset(0, -350));
         await tester.pump(const Duration(milliseconds: 200));
@@ -1485,6 +1488,121 @@ void main() {
           expect(find.byKey(PremiumGateScreen.successKey), findsOneWidget);
           await walkCards(tester, '$label success');
         });
+      }
+    }
+
+    /// The hero is a flat page fill (no gradient) carrying the feature's
+    /// title and body in page ink, and the page's primary action is the
+    /// theme's teal capsule.
+    void expectFlatHero(WidgetTester tester, String label) {
+      final hero = find.byKey(PremiumGateScreen.heroKey);
+      final c = tester.element(hero).sirati;
+      final decoration =
+          tester.widget<DecoratedBox>(hero).decoration as BoxDecoration;
+      expect(decoration.color, c.groupedCard, reason: label);
+      expect(decoration.gradient, isNull, reason: label);
+      expect(decoration.borderRadius, AppRadius.cardAll, reason: label);
+      // The hero is a descendant of the screen, so its own box is walked.
+      expectNoCardChrome(find.byType(PremiumGateScreen), '$label hero');
+      expectNoGradient(hero, '$label hero');
+      for (final text in find
+          .descendant(of: hero, matching: find.byType(Text))
+          .evaluate()) {
+        expect(paintedBackgroundsOf(text), [c.groupedCard],
+            reason: '$label ${(text.widget as Text).data}');
+      }
+    }
+
+    void expectTealCapsule(WidgetTester tester, Key key, String label) {
+      final button = find.byKey(key);
+      final c = tester.element(button).sirati;
+      final material = tester.widget<Material>(
+          find.descendant(of: button, matching: find.byType(Material)).first);
+      expect(material.color, c.primary, reason: '$label $key fill');
+      expect(material.shape, isA<StadiumBorder>(), reason: '$label $key shape');
+    }
+
+    for (final language in ['en', 'ar']) {
+      for (final dark in [false, true]) {
+        final arabic = language == 'ar';
+        final theme = dark
+            ? AppTheme.darkFor(arabic: arabic)
+            : AppTheme.lightFor(arabic: arabic);
+        final label = '$language/${dark ? 'dark' : 'light'}';
+
+        for (final feature in PremiumFeature.values) {
+          testWidgets('$label ${feature.name}: hero is a flat grouped card',
+              (tester) async {
+            await _pump(tester,
+                plans: _FakePlans([offerJson()]),
+                language: language,
+                theme: theme,
+                screen: PremiumGateScreen(feature: feature));
+            final l = _l(tester);
+            final hero = find.byKey(PremiumGateScreen.heroKey);
+            expect(
+                find.descendant(
+                    of: hero, matching: find.text(feature.title(l))),
+                findsOneWidget);
+            expect(
+                find.descendant(of: hero, matching: find.text(feature.body(l))),
+                findsOneWidget);
+            expectFlatHero(tester, '$label ${feature.name}');
+            expectAllTextAa('$label ${feature.name}');
+            expectAllIconsNonTextAa('$label ${feature.name}');
+          });
+        }
+
+        testWidgets('$label: the primary action is the teal capsule',
+            (tester) async {
+          await _pump(tester,
+              plans: _FakePlans([offerJson()]),
+              language: language,
+              theme: theme);
+          await revealPhoneWidget(
+              tester, find.byKey(PremiumGateScreen.refreshKey));
+          await tester.pumpAndSettle();
+          expectTealCapsule(tester, PremiumGateScreen.refreshKey, label);
+
+          await _pump(tester,
+              plans: _FakePlans([offerJson()]),
+              store: _FakeStore(),
+              language: language,
+              theme: theme,
+              screen: _fastScreen);
+          expectFlatHero(tester, '$label store');
+          await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+          await tester.pumpAndSettle();
+          expectTealCapsule(tester, PremiumGateScreen.buyKey, '$label store');
+        });
+
+        for (final scale in [1.3, 2.0]) {
+          for (final store in [false, true]) {
+            final mode = store ? 'store' : 'informational';
+            testWidgets(
+                '$label $mode at 320x568, text x$scale: no overflow, strict '
+                'contrast', (tester) async {
+              tester.view.physicalSize = const Size(320, 568);
+              tester.view.devicePixelRatio = 1;
+              tester.platformDispatcher.textScaleFactorTestValue = scale;
+              addTearDown(tester.view.reset);
+              addTearDown(
+                  tester.platformDispatcher.clearTextScaleFactorTestValue);
+              await _pump(tester,
+                  keepView: true,
+                  plans: _FakePlans([offerJson()]),
+                  store:
+                      store ? _FakeStore() : const UnavailableStorePurchases(),
+                  language: language,
+                  theme: theme,
+                  screen: store ? _fastScreen : const PremiumGateScreen());
+              await tester.pumpAndSettle();
+              expectFlatHero(tester, '$label $mode x$scale');
+              await inspectPhoneScreen(tester, '$label $mode x$scale');
+              await walkCards(tester, '$label $mode x$scale');
+            });
+          }
+        }
       }
     }
   });
