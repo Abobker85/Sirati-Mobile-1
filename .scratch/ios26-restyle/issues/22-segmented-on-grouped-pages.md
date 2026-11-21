@@ -24,7 +24,7 @@ Found by the checker reviewing ticket 18 (2026-11-20) and the ticket 12 author.
 
 ## Outcome (2026-11-21)
 
-- **Commits:** `2a149a8` (page-aware palette), `f9a5e18` (hero colours and toggle override), `13e8e81` (skeletons), `5f3bd51` (content-sized segments), `f3d9dee` (cross-ticket test edit), `5860993` (tab bars wrap only into reserved height). Branch `swarm/controls-22`, rebased on `1e599ba`.
+- **Commits:** `9bf8816` (page-aware palette), `c4d5e5f` (hero colours and toggle override), `5f06eee` (skeletons), `6405e1a` (content-sized segments), `be1fbc5` (cross-ticket test edit, ticket 18), `b02f4fe` (superseded by `68a6286`), `68a6286` (the tab bar reserves its own wrapped height; padding gives way before labels shrink; cross-ticket test edit, ticket 17). Branch `swarm/controls-22`, rebased on `87a65f2`.
 - **Files:**
   - `lib/shared/widgets/app_segmented_control.dart`:
     - `AppSegmentedPalette.of` follows `PageSurface`. Plain pages: `cardFill` track; thumb `groupedCard` in light, `surfaceHigh` in dark. Grouped pages: `groupedCard` track, `cardFill` thumb.
@@ -48,9 +48,15 @@ Found by the checker reviewing ticket 18 (2026-11-20) and the ticket 12 author.
     - The widget keyed `SegmentedTrack.thumbKey` is exempt from "grouped content has no bordered boxes". It is a selection indicator, not a content box.
     - In its place, the thumb's edge must be ≥ 3:1 against its track.
     - The privacy page asserts that the thumb is present.
-- **Tests:** full `flutter test`: 3604 passed, 1 skipped, 0 failed. `flutter analyze`: no issues. Before the fix, the new contrast test measured track/page 1.00 to 1.17 and thumb/track 1.12 to 1.20.
+- **Tests:** full `flutter test`: 3659 passed, 1 skipped. The 2 History height failures in that run are fixed in `68a6286` (`history_test` 21/21). `flutter analyze`: no issues. Before the fix, the new contrast test measured track/page 1.00 to 1.17 and thumb/track 1.12 to 1.20.
+- **Checker fix (shrink mode):**
+  - `AppSegmentedTabBar.preferredSize` now lays its own tabs out for the view width. It uses Arabic and Latin metrics and keeps the taller, so labels wrap into reserved height and no call site has to opt in. `heightFor` and `height` remain for bars that aren't screen-wide.
+  - Before any label shrinks, segment padding drops to 4dp.
+  - Labels are drawn smaller only when the longest words still can't sit side by side. Then every label wraps at its longest word and all are drawn at one shared factor.
+  - New `test/shared/widgets/app_segmented_real_screens_test.dart`: the real ATS results and History screens at 320dp, x1.0/1.3/2.0, AR/EN, real fonts. It checks the label drawn size against the natural size, that every word and line fits, and that the track sits inside the reserved bar and the app bar.
+  - Result: no label is drawn below 1.00 except **ATS results, EN x2.0: "Score & Criteria" and "Recommendations" at 0.83**. "Recommendations" is a single word too wide to sit next to "Criteria" at 200%.
+- **Cross-ticket edit to ticket 17's test** (`test/features/dashboard/history_test.dart`, "the tab bar grows with the text scale"): it asserted the old one-line height. It now asserts at least one scaled line and that the laid-out track fits in the reserved height.
 - **Not covered by a test:** none.
 - **Notes for callers:**
-  - Ticket 15 (CV builder): pass `padding` and `labelPadding: AppSpacing.xs`, plus `height: AppSegmentedTabBar.heightFor(context, tabs: ..., padding: ..., labelPadding: ...)` so labels can wrap. Also keep `textScaler` and `animationDuration: AppSegmentedTabBar.pageDuration(context)`.
-  - Without a reserved height, labels scale down instead. With the test font this already happens on the ATS results tabs (ticket 16).
+  - The plain `AppSegmentedTabBar(tabs:, textScaler:, ...)` reserves its own height, so `height`/`heightFor` are optional. Keep `animationDuration: AppSegmentedTabBar.pageDuration(context)` on the controller.
 
