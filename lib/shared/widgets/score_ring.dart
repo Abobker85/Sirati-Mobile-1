@@ -13,7 +13,7 @@ import 'package:sirati/shared/widgets/motion.dart';
 /// follows the score band; the number stays on body ink so it holds AA in
 /// both themes.
 ///
-/// The ring always sits on a [SiratiColors.cardFill] card (My CVs, Home), so
+/// The ring always sits on a cardFill card (My CVs, Home), so
 /// its track is that fill pressed twice: a neutral grey that keeps an edge
 /// on the card (no warm beige), with the band's ink tone on top so the arc
 /// holds 3:1 against both the track and the card in either theme.
