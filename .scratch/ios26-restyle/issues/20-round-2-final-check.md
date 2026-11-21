@@ -28,8 +28,8 @@
     - `expectPaintedControlsAa` passes.
   - `test/shared/widgets/score_ring_test.dart` and `test/features/ats_scanner/ats_grade_scale_test.dart`: the expected arc colours now use the band ink tones.
   - Outside this repo, not committed:
-    - `D:\Sirati\docs\screenshotsfter-round1\`: round 1's 320 captures, copied before the recapture.
-    - `D:\Sirati\docs\screenshotsll-screens\`: the 320 new captures, with `.failures.json` = `{}`.
+    - `D:\Sirati\docs\screenshots\after-round1\`: round 1's 320 captures, copied before the recapture.
+    - `D:\Sirati\docs\screenshots\all-screens\`: the 320 new captures, with `.failures.json` = `{}`.
     - `D:\Sirati\docs\screenshots\ios26-before-after.html`: the board for 80 screens, with three columns per screen (before = `before-ios26/`, round 1 = `after-round1/`, now = `all-screens/`). It opens on AR light, has toggles for AR dark, EN light and EN dark, and an image-width slider. All 960 image paths are relative, and all of them resolve on disk.
 - **Tests:**
   - Full `flutter test` on `swarm/final`: 3990 passed, 1 skipped, 0 failed.
