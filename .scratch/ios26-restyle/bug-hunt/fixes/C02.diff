@@ -1,0 +1,41 @@
+diff --git a/lib/core/routing/expand_page_route.dart b/lib/core/routing/expand_page_route.dart
+index 182e0b7..2cd5d41 100644
+--- a/lib/core/routing/expand_page_route.dart
++++ b/lib/core/routing/expand_page_route.dart
+@@ -104,6 +104,16 @@ class ExpandPageRoute<T> extends MaterialPageRoute<T> {
+   ) =>
+       child;
+ 
++  CurvedAnimation? _progress;
++  CurvedAnimation? _opacity;
++
++  @override
++  void dispose() {
++    _progress?.dispose();
++    _opacity?.dispose();
++    super.dispose();
++  }
++
+   @override
+   Duration get transitionDuration => duration;
+ 
+@@ -121,13 +131,17 @@ class ExpandPageRoute<T> extends MaterialPageRoute<T> {
+       return EdgeBackSwipe(route: this, child: child);
+     }
+ 
+-    final progress = CurvedAnimation(
++    // Made once per route: buildTransitions runs on every animation tick,
++    // and a fresh CurvedAnimation would pick its curve direction from the
++    // status at that moment, so an interrupted push or a released swipe
++    // would jump from the forward curve to the flipped one.
++    final progress = _progress ??= CurvedAnimation(
+       parent: animation,
+       curve: curve,
+       reverseCurve: curve.flipped,
+     );
+     // The page fades in over the card during the first half of the growth.
+-    final opacity = CurvedAnimation(
++    final opacity = _opacity ??= CurvedAnimation(
+       parent: animation,
+       curve: const Interval(0, 0.5, curve: Curves.easeOut),
+     );

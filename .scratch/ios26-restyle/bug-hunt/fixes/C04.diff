@@ -1,0 +1,34 @@
+diff --git a/lib/features/cv_builder/presentation/cv_generator/wizard_widgets.dart b/lib/features/cv_builder/presentation/cv_generator/wizard_widgets.dart
+index 614f206..01a9cb2 100644
+--- a/lib/features/cv_builder/presentation/cv_generator/wizard_widgets.dart
++++ b/lib/features/cv_builder/presentation/cv_generator/wizard_widgets.dart
+@@ -268,18 +268,24 @@ class AiEnhancedBeatFrame extends StatelessWidget {
+             alignment: AlignmentDirectional.topStart,
+             child: child,
+           );
+-    if (reduce || beat <= 0) return sized;
++    if (reduce) return sized;
+ 
++    // One stable tree for every beat: a changed key or wrapper type here
++    // would rebuild [child] (losing the field's focus and the AnimatedSize
++    // resize). The tween runs from the previous beat to the new one, and the
++    // glow is how far it still has to go.
++    final target = beat <= 0 ? 0.0 : beat.toDouble();
+     return TweenAnimationBuilder<double>(
+-      key: ValueKey('ai-beat-$beat'),
+-      tween: Tween<double>(begin: 1.0, end: 0.0),
++      tween: Tween<double>(begin: target <= 0 ? 0.0 : target - 1, end: target),
+       duration: MotionDurations.morph,
+       curve: MotionCurves.settle,
+-      builder: (context, glow, inner) => DecoratedBox(
++      builder: (context, value, inner) => DecoratedBox(
+         decoration: BoxDecoration(
+           borderRadius: BorderRadius.circular(AppRadius.lg),
+           border: Border.all(
+-            color: c.primaryInk.withValues(alpha: glow * 0.45),
++            color: c.primaryInk.withValues(
++              alpha: (target - value).clamp(0.0, 1.0) * 0.45,
++            ),
+             width: 1.5,
+           ),
+         ),

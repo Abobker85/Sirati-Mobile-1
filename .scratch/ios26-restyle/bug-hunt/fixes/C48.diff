@@ -1,0 +1,12 @@
+diff --git a/lib/features/cv_builder/presentation/my_cvs_screen.dart b/lib/features/cv_builder/presentation/my_cvs_screen.dart
+index cd956ca..9146efa 100644
+--- a/lib/features/cv_builder/presentation/my_cvs_screen.dart
++++ b/lib/features/cv_builder/presentation/my_cvs_screen.dart
+@@ -73,6 +73,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
+         ));
+       }
+     } catch (error) {
++      if (!mounted) return;
+       _reportError(
+         error,
+         AppLocalizations.of(context).cvOpenFailed,

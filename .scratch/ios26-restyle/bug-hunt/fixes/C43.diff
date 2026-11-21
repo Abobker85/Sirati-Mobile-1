@@ -1,0 +1,49 @@
+diff --git a/lib/features/cv_builder/presentation/experience_education_editor.dart b/lib/features/cv_builder/presentation/experience_education_editor.dart
+index a696f1a..25cd0f4 100644
+--- a/lib/features/cv_builder/presentation/experience_education_editor.dart
++++ b/lib/features/cv_builder/presentation/experience_education_editor.dart
+@@ -463,7 +463,7 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
+                 child: AppInput(
+                   controller: _startCtrl,
+                   label: l10n.startDateLabel,
+-                  hint: l10n.startDateHint,
++                  hint: _calendarHint(l10n.startDateHint, widget.calendarMode),
+                   textDirection: TextDirection.ltr,
+                   onChanged: (_) => _notifyChange(),
+                 ),
+@@ -490,7 +490,7 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
+                     : AppInput(
+                         controller: _endCtrl,
+                         label: l10n.endDateLabel,
+-                        hint: l10n.endDateHint,
++                        hint: _calendarHint(l10n.endDateHint, widget.calendarMode),
+                         textDirection: TextDirection.ltr,
+                         onChanged: (_) => _notifyChange(),
+                       ),
+@@ -764,7 +764,7 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
+                 child: AppInput(
+                   controller: _gradCtrl,
+                   label: l10n.graduationYearLabel,
+-                  hint: l10n.graduationYearHint,
++                  hint: _calendarHint(l10n.graduationYearHint, widget.calendarMode),
+                   textDirection: TextDirection.ltr,
+                   onChanged: (_) => _notifyChange(),
+                 ),
+@@ -792,3 +792,17 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
+     );
+   }
+ }
++
++/// Rewrites the Gregorian example dates in a date-field hint as Hijri when
++/// the Hijri calendar is selected, so the guidance matches the chosen mode.
++String _calendarHint(String hint, String calendarMode) {
++  if (calendarMode != 'hijri') return hint;
++  return hint.replaceAllMapped(RegExp(r'(\d{4})(?:-(\d{1,2}))?'), (m) {
++    final month = m.group(2);
++    final h = ArabicDateFormat.gregorianToHijri(
++        DateTime(int.parse(m.group(1)!), int.parse(month ?? '1'), 15));
++    return month == null
++        ? '${h.year}'
++        : '${h.year}-${h.month.toString().padLeft(2, '0')}';
++  });
++}

@@ -1,0 +1,31 @@
+diff --git a/lib/features/cv_builder/presentation/cv_builder_screen.dart b/lib/features/cv_builder/presentation/cv_builder_screen.dart
+index bf2635c..7b84a7a 100644
+--- a/lib/features/cv_builder/presentation/cv_builder_screen.dart
++++ b/lib/features/cv_builder/presentation/cv_builder_screen.dart
+@@ -54,6 +54,10 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
+   /// route underneath this one.
+   bool _leaving = false;
+ 
++  /// Bumped when the whole document is replaced (draft restore) so the
++  /// editors, which copy the document into their fields once, rebuild.
++  int _documentGeneration = 0;
++
+   static const _tabBarPadding = EdgeInsets.fromLTRB(
+     AppSpacing.xs,
+     AppSpacing.xxs,
+@@ -229,6 +233,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
+             ),
+             onPressed: () {
+               _controller?.updateDocument(draft);
++              setState(() => _documentGeneration++);
+               Navigator.of(ctx).pop();
+               ScaffoldMessenger.of(context).showSnackBar(
+                 SnackBar(content: Text(l10n.draftRestored)),
+@@ -411,6 +416,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
+                       child: child,
+                     );
+                 final editor = TabBarView(
++                  key: ValueKey(_documentGeneration),
+                   controller: tabs,
+                   children: [
+                     page(PersonalDetailsEditor(controller: controller)),

@@ -1,0 +1,18 @@
+diff --git a/lib/features/cv_builder/presentation/skills_languages_editor.dart b/lib/features/cv_builder/presentation/skills_languages_editor.dart
+index 56ebca9..ba3b877 100644
+--- a/lib/features/cv_builder/presentation/skills_languages_editor.dart
++++ b/lib/features/cv_builder/presentation/skills_languages_editor.dart
+@@ -625,8 +625,12 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
+   }
+ 
+   void _notify() {
++    // Built directly: copyWith can't clear a field, and both dates can be
++    // cleared here (empty year, no-expiry ticked).
+     widget.onChanged(
+-      widget.cert.copyWith(
++      Certification(
++        id: widget.cert.id,
++        narrative: widget.cert.narrative,
+         name: LocalizedText(ar: _nameCtrl.text.trim()),
+         authority: LocalizedText(ar: _authorityCtrl.text.trim()),
+         issueDate: _issueDateCtrl.text.trim().isEmpty

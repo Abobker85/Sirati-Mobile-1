@@ -1,0 +1,28 @@
+diff --git a/lib/features/cv_builder/presentation/widgets/achievement_builder_sheet.dart b/lib/features/cv_builder/presentation/widgets/achievement_builder_sheet.dart
+index c277276..dae5fe8 100644
+--- a/lib/features/cv_builder/presentation/widgets/achievement_builder_sheet.dart
++++ b/lib/features/cv_builder/presentation/widgets/achievement_builder_sheet.dart
+@@ -156,9 +156,20 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
+         buffer.write('، $metric');
+       }
+       if (method.isNotEmpty) {
+-        if (!method.startsWith('عبر') &&
+-            !method.startsWith('من خلال') &&
+-            !method.startsWith('باستخدام')) {
++        // A method already led by a means phrase keeps it; "عبر" before
++        // another preposition reads "via by ...".
++        const meansPhrases = [
++          'عبر',
++          'من خلال',
++          'باستخدام',
++          'بتطبيق',
++          'بواسطة',
++          'بالاعتماد',
++          'بالاستعانة',
++          'بفضل',
++          'بالتعاون',
++        ];
++        if (!meansPhrases.any(method.startsWith)) {
+           buffer.write('، عبر $method');
+         } else {
+           buffer.write('، $method');

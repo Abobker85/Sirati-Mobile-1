@@ -1,0 +1,45 @@
+diff --git a/lib/features/cv_builder/presentation/cv_builder_screen.dart b/lib/features/cv_builder/presentation/cv_builder_screen.dart
+index bf2635c..143410e 100644
+--- a/lib/features/cv_builder/presentation/cv_builder_screen.dart
++++ b/lib/features/cv_builder/presentation/cv_builder_screen.dart
+@@ -45,6 +45,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
+   CvBuilderController? _controller;
+   TabController? _tabController;
+   late final AnimationController _previewController;
++  late final CurvedAnimation _previewCurve;
+ 
+   bool _isLoading = true;
+   String? _errorMessage;
+@@ -84,6 +85,11 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
+       duration: MotionDurations.medium,
+       value: 0,
+     );
++    _previewCurve = CurvedAnimation(
++      parent: _previewController,
++      curve: MotionCurves.enter,
++      reverseCurve: MotionCurves.exit,
++    );
+     unawaited(_initializeDocument());
+   }
+ 
+@@ -119,6 +125,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
+   @override
+   void dispose() {
+     WidgetsBinding.instance.removeObserver(this);
++    _previewCurve.dispose();
+     _previewController.dispose();
+     _tabController?.dispose();
+     final controller = _controller;
+@@ -460,11 +467,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
+                     ],
+                   );
+                 }
+-                final curved = CurvedAnimation(
+-                  parent: _previewController,
+-                  curve: MotionCurves.enter,
+-                  reverseCurve: MotionCurves.exit,
+-                );
++                final curved = _previewCurve;
+                 return AnimatedBuilder(
+                   animation: curved,
+                   child: editor,

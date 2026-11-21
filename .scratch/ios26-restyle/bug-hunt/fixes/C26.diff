@@ -1,0 +1,29 @@
+diff --git a/lib/shared/widgets/job_title_picker_field.dart b/lib/shared/widgets/job_title_picker_field.dart
+index 2193f8e..9d0592b 100644
+--- a/lib/shared/widgets/job_title_picker_field.dart
++++ b/lib/shared/widgets/job_title_picker_field.dart
+@@ -250,12 +250,23 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
+     final l10n = AppLocalizations.of(context);
+     final filtered = _filtered;
+     final bottom = MediaQuery.viewInsetsOf(context).bottom;
++    // The sheet route strips the top inset from MediaQuery, so read it from
++    // the view: with the keyboard open the sheet must still end below the
++    // status bar / notch.
++    final view = View.of(context);
++    final topInset = view.padding.top / view.devicePixelRatio;
++    final screenH = MediaQuery.sizeOf(context).height;
++    final maxH = screenH -
++        bottom -
++        topInset -
++        MediaQuery.paddingOf(context).bottom;
++    final height = (screenH * 0.72).clamp(0.0, maxH < 0 ? 0.0 : maxH);
+ 
+     return SafeArea(
+       child: Padding(
+         padding: EdgeInsets.only(bottom: bottom),
+         child: SizedBox(
+-          height: MediaQuery.sizeOf(context).height * 0.72,
++          height: height,
+           child: Column(
+             children: [
+               Padding(

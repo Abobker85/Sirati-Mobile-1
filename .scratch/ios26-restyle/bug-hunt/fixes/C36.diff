@@ -1,0 +1,47 @@
+diff --git a/lib/features/ats_scanner/presentation/analysis_result/score_tab.dart b/lib/features/ats_scanner/presentation/analysis_result/score_tab.dart
+index 1cf21c1..23338fc 100644
+--- a/lib/features/ats_scanner/presentation/analysis_result/score_tab.dart
++++ b/lib/features/ats_scanner/presentation/analysis_result/score_tab.dart
+@@ -60,7 +60,8 @@ class ScoreTab extends StatelessWidget {
+           Text(
+             AppLocalizations.of(context).atsResultKeywordSummary(
+               analysis.keywordsFound.length,
+-              analysis.keywordsMissing.length,
++              analysis.keywordsMissing.length +
++                  analysis.hidden.keywordsMissing,
+             ),
+             key: const ValueKey('ats-result-keyword-summary'),
+             style: TextStyle(color: context.sirati.textSecondary),
+@@ -89,6 +90,8 @@ class ScoreTab extends StatelessWidget {
+                 _KeywordsCard(
+                   found: analysis.keywordsFound,
+                   missing: analysis.keywordsMissing,
++                  missingTotal: analysis.keywordsMissing.length +
++                      analysis.hidden.keywordsMissing,
+                   english: english,
+                 ),
+               ],
+@@ -495,11 +498,13 @@ class _KeywordsCard extends StatelessWidget {
+   const _KeywordsCard({
+     required this.found,
+     required this.missing,
++    this.missingTotal,
+     required this.english,
+   });
+ 
+   final List<String> found;
+   final List<String> missing;
++  final int? missingTotal;
+   final bool english;
+ 
+   @override
+@@ -524,7 +529,8 @@ class _KeywordsCard extends StatelessWidget {
+             dotColor: c.red,
+             textColor: c.red,
+             label:
+-                AppLocalizations.of(context).atsKeywordsMissing(missing.length),
++                AppLocalizations.of(context)
++                .atsKeywordsMissing(missingTotal ?? missing.length),
+           ),
+           const SizedBox(height: 10),
+           KeywordGroup(keywords: missing, found: false, english: english),

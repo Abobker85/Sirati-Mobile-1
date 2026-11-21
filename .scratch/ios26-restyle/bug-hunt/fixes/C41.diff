@@ -1,0 +1,17 @@
+diff --git a/lib/features/dashboard/presentation/premium_gate_screen.dart b/lib/features/dashboard/presentation/premium_gate_screen.dart
+index 73e7791..3d9c587 100644
+--- a/lib/features/dashboard/presentation/premium_gate_screen.dart
++++ b/lib/features/dashboard/presentation/premium_gate_screen.dart
+@@ -310,7 +310,11 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
+       final flowUser = _flowUser;
+       if (flowUser != null) {
+         if (next != flowUser) _resetFlow();
+-      } else if (next != previous && (_activated != null || _notice != null)) {
++      } else if (previous != null &&
++          next != previous &&
++          (_activated != null || _notice != null)) {
++        // A session that only became known (null -> id) is not a change,
++        // as in _refreshStillCurrent.
+         // A refresh result shown for the previous account is not this one's.
+         _resetFlow();
+       }

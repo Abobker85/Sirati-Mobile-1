@@ -1,0 +1,41 @@
+diff --git a/lib/features/cv_builder/presentation/experience_education_editor.dart b/lib/features/cv_builder/presentation/experience_education_editor.dart
+index a696f1a..ca062a1 100644
+--- a/lib/features/cv_builder/presentation/experience_education_editor.dart
++++ b/lib/features/cv_builder/presentation/experience_education_editor.dart
+@@ -231,6 +231,7 @@ class _ExperienceEducationEditorState extends State<ExperienceEducationEditor> {
+                 items: _experience,
+                 onReorder: _reorderExperience,
+                 onDelete: _removeExperience,
++                itemId: (e) => e.id,
+                 itemBuilder: (context, item, index) {
+                   return _ExperienceEntryTile(
+                     key: ValueKey(item.id ?? index),
+@@ -273,6 +274,7 @@ class _ExperienceEducationEditorState extends State<ExperienceEducationEditor> {
+                 items: _education,
+                 onReorder: _reorderEducation,
+                 onDelete: _removeEducation,
++                itemId: (e) => e.id,
+                 itemBuilder: (context, item, index) {
+                   return _EducationEntryTile(
+                     key: ValueKey(item.id ?? index),
+@@ -369,7 +371,7 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
+           ar: _titleArCtrl.text.trim(),
+           en: _titleEnCtrl.text.trim(),
+         ),
+-        location: LocalizedText(ar: _locationArCtrl.text.trim()),
++        location: widget.entry.location.copyWith(ar: _locationArCtrl.text.trim()),
+         startDate: start.isEmpty ? null : start,
+         endDate: end?.isEmpty ?? true ? null : end,
+         isCurrent: _isCurrent,
+@@ -680,8 +682,9 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
+           ar: _instArCtrl.text.trim(),
+           en: _instEnCtrl.text.trim(),
+         ),
+-        degree: LocalizedText(ar: _degreeArCtrl.text.trim()),
+-        fieldOfStudy: LocalizedText(ar: _fieldArCtrl.text.trim()),
++        degree: widget.entry.degree.copyWith(ar: _degreeArCtrl.text.trim()),
++        fieldOfStudy:
++            widget.entry.fieldOfStudy.copyWith(ar: _fieldArCtrl.text.trim()),
+         startDate: start.isEmpty ? null : start,
+         graduationDate: grad.isEmpty ? null : grad,
+       ),

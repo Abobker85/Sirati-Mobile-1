@@ -1,0 +1,13 @@
+diff --git a/lib/shared/widgets/motion.dart b/lib/shared/widgets/motion.dart
+index 681eb40..808e5aa 100644
+--- a/lib/shared/widgets/motion.dart
++++ b/lib/shared/widgets/motion.dart
+@@ -663,6 +665,8 @@ class _MotionSegmentButton<T> extends StatelessWidget {
+       enabled: enabled,
+       label: option.label,
+       excludeSemantics: true,
++      // The InkWell's own tap action is excluded above; expose it here.
++      onTap: enabled ? onTap : null,
+       child: InkWell(
+         key: option.key,
+         borderRadius: AppRadius.mdAll,

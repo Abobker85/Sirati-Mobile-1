@@ -1,0 +1,37 @@
+diff --git a/lib/features/cv_builder/presentation/experience_education_editor.dart b/lib/features/cv_builder/presentation/experience_education_editor.dart
+index a696f1a..abc0e50 100644
+--- a/lib/features/cv_builder/presentation/experience_education_editor.dart
++++ b/lib/features/cv_builder/presentation/experience_education_editor.dart
+@@ -42,9 +42,29 @@ class ExperienceEducationEditor extends StatefulWidget {
+     final s = start.trim();
+     final e = end.trim();
+ 
+-    // Chronological order verification via typed date parsing
+-    final comparison = ArabicDateFormat.compareCvDates(s, e);
+-    if (comparison > 0) {
++    // Only complete dates (with a four-digit year) can be compared; input
++    // still being typed, or a word such as "Present", is never "before".
++    final fourDigitYear = RegExp(r'\d{4}');
++    if (!fourDigitYear.hasMatch(ArabicDateFormat.toWesternDigits(s)) ||
++        !fourDigitYear.hasMatch(ArabicDateFormat.toWesternDigits(e))) {
++      return null;
++    }
++    final startDate = ArabicDateFormat.parseCvDate(s);
++    final endDate = ArabicDateFormat.parseCvDate(e);
++    if (startDate == null || endDate == null) return null;
++
++    // A year-only end covers the whole year: compare against its last month.
++    var endScore = endDate.year * 12 + endDate.month;
++    final yearOnly = RegExp(r'^(\d{4})$')
++        .firstMatch(ArabicDateFormat.toWesternDigits(e));
++    if (yearOnly != null) {
++      final y = int.parse(yearOnly.group(1)!);
++      final last = y < 1700
++          ? ArabicDateFormat.hijriToGregorian(y, 12, 29)
++          : (year: y, month: 12, day: 31);
++      endScore = last.year * 12 + last.month;
++    }
++    if (startDate.year * 12 + startDate.month > endScore) {
+       return l10n.endDateBeforeStart;
+     }
+     return null;
