@@ -11,9 +11,7 @@ import 'package:sirati/shared/models/ats_grade.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
-import 'package:sirati/shared/theme/app_contrast.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/theme/page_surface.dart';
 import 'package:sirati/shared/widgets/score_ring.dart';
 
 import '../../support/contrast_probe.dart';
