@@ -33,6 +33,7 @@ import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/services/in_app_review_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
+import 'package:sirati/shared/theme/page_surface.dart';
 import 'package:sirati/shared/widgets/ai_cv_field.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/form_reveal.dart';
@@ -689,6 +690,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     final isGenerating = ref.watch(cvGenerationControllerProvider);
     final enhancingField = ref.watch(cvFieldEnhancerProvider);
     final pendingDraft = _pendingDraft;
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     // Clean form: back pops normally. Dirty: intercept and ask first.
     return PopScope(
@@ -696,59 +698,120 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) unawaited(_handleExitAttempt());
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_isEditMode
-              ? AppLocalizations.of(context).cvGeneratorEditTitle
-              : AppLocalizations.of(context).cvGeneratorCreateTitle),
-          actions: const [
-            Padding(
-              padding: EdgeInsetsDirectional.only(end: 12),
-              child: LanguageToggle(),
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            WizardHeader(step: _step, english: english, onStepTap: _goToStep),
-            MotionExpandSlot(
-              child: pendingDraft != null && !_isEditMode
-                  ? DraftRestoreBanner(
-                      key: const ValueKey('draft-restore-banner'),
-                      english: english,
-                      savedAt: pendingDraft.savedAt,
-                      onStartFresh: () => unawaited(_startFresh()),
-                      onRestore: _restoreDraft,
-                    )
-                  : const SizedBox.shrink(
-                      key: ValueKey('draft-restore-empty'),
-                    ),
-            ),
-            Expanded(
-              child: MotionStepSwitcher(
-                stepKey: _step,
-                direction: _stepDirection,
-                // PageStorageKey: going back to a step returns to where
-                // the user was on it, not to the top.
-                child: ListView(
-                  key: PageStorageKey('cv-step-$_step'),
-                  padding: const EdgeInsets.all(20),
-                  children: [_buildStep(english, enhancingField)],
+      // Forms sit on the grouped page (iOS 26 restyle).
+      child: GroupedSurface(
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(_isEditMode
+                ? AppLocalizations.of(context).cvGeneratorEditTitle
+                : AppLocalizations.of(context).cvGeneratorCreateTitle),
+            actions: const [
+              Padding(
+                padding: EdgeInsetsDirectional.only(end: 12),
+                child: LanguageToggle(),
+              ),
+            ],
+          ),
+          // Only the app bar, the step header and the footer are pinned; the
+          // draft offer scrolls with the step, so a small phone with the
+          // keyboard open still has room for the field being typed in.
+          // Footer at the bottom, header on top with the room left over
+          // (it folds its dot row when that room is short), the step in
+          // between.
+          body: CustomMultiChildLayout(
+            delegate: _WizardLayout(),
+            children: [
+              LayoutId(
+                id: _WizardSlot.header,
+                child: WizardHeader(
+                  step: _step,
+                  english: english,
+                  onStepTap: _goToStep,
+                  // Read above the Scaffold, which hides the inset from its body.
+                  keyboardOpen: keyboardOpen,
                 ),
               ),
-            ),
-            WizardFooter(
-              english: english,
-              step: _step,
-              stepCount: _stepCount,
-              isEditMode: _isEditMode,
-              isLoading: isGenerating,
-              onBack: () => _goToStep(_step - 1),
-              onPrimary: _onPrimaryAction,
-            ),
-          ],
+              LayoutId(
+                id: _WizardSlot.content,
+                child: MotionStepSwitcher(
+                  stepKey: _step,
+                  direction: _stepDirection,
+                  // PageStorageKey: going back to a step returns to where
+                  // the user was on it, not to the top.
+                  child: ListView(
+                    key: PageStorageKey('cv-step-$_step'),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    children: [
+                      MotionExpandSlot(
+                        child: pendingDraft != null && !_isEditMode
+                            ? DraftRestoreBanner(
+                                key: const ValueKey('draft-restore-banner'),
+                                english: english,
+                                savedAt: pendingDraft.savedAt,
+                                onStartFresh: () => unawaited(_startFresh()),
+                                onRestore: _restoreDraft,
+                              )
+                            : const SizedBox.shrink(
+                                key: ValueKey('draft-restore-empty'),
+                              ),
+                      ),
+                      _buildStep(english, enhancingField),
+                    ],
+                  ),
+                ),
+              ),
+              LayoutId(
+                id: _WizardSlot.footer,
+                child: WizardFooter(
+                  keyboardOpen: keyboardOpen,
+                  english: english,
+                  step: _step,
+                  stepCount: _stepCount,
+                  isEditMode: _isEditMode,
+                  isLoading: isGenerating,
+                  onBack: () => _goToStep(_step - 1),
+                  onPrimary: _onPrimaryAction,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+enum _WizardSlot { header, content, footer }
+
+/// Lays out the wizard: footer (natural height) at the bottom, header
+/// (natural height, at most what the footer leaves) on top, the step's
+/// scroll view filling the rest.
+class _WizardLayout extends MultiChildLayoutDelegate {
+  @override
+  void performLayout(Size size) {
+    final footer = layoutChild(
+      _WizardSlot.footer,
+      BoxConstraints.tightFor(width: size.width),
+    );
+    final header = layoutChild(
+      _WizardSlot.header,
+      BoxConstraints(
+        minWidth: size.width,
+        maxWidth: size.width,
+        maxHeight: (size.height - footer.height).clamp(0.0, size.height),
+      ),
+    );
+    final content =
+        (size.height - header.height - footer.height).clamp(0.0, size.height);
+    layoutChild(
+      _WizardSlot.content,
+      BoxConstraints.tightFor(width: size.width, height: content),
+    );
+    positionChild(_WizardSlot.header, Offset.zero);
+    positionChild(_WizardSlot.content, Offset(0, header.height));
+    positionChild(_WizardSlot.footer, Offset(0, size.height - footer.height));
+  }
+
+  @override
+  bool shouldRelayout(_WizardLayout oldDelegate) => false;
 }

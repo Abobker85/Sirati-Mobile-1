@@ -26,8 +26,8 @@ class SiratiAddButton extends StatelessWidget {
           child: Material(
             color: context.sirati.amberAccent,
             shape: const CircleBorder(),
-            elevation: 6,
-            shadowColor: context.sirati.amberAccent.withValues(alpha: .28),
+            // Flat, like every iOS 26 fill: no drop shadow.
+            elevation: 0,
             child: InkWell(
               onTap: onTap,
               customBorder: const CircleBorder(),

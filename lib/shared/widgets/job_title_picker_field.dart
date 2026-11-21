@@ -81,9 +81,13 @@ class JobTitlePickerField extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppFormStyles.radius),
           child: InputDecorator(
             isEmpty: value == null,
+            // The theme's filled field: page-matched fill, no resting
+            // outline (iOS 26 restyle), and the same padding as an
+            // unlabelled AppTextFormField so the two line up in a form.
             decoration: InputDecoration(
               filled: true,
-              fillColor: context.sirati.surface,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               hintText: AppLocalizations.of(context).sharedJobTitleSelectHint,
               prefixIcon: const Icon(Icons.work_outline_rounded),
               suffixIcon: loading
@@ -104,7 +108,14 @@ class JobTitlePickerField extends StatelessWidget {
               errorMaxLines: 100,
             ),
             child: value == null
-                ? null
+                // An empty line in the value's style: the field takes the
+                // same height as a text field showing its hint.
+                ? ExcludeSemantics(
+                    child: Text(
+                      ' ',
+                      style: AppTypography.of(context, AppTypography.bodyLg),
+                    ),
+                  )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -286,7 +297,7 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                     : ListView.separated(
                         itemCount: filtered.length,
                         separatorBuilder: (_, __) =>
-                            Divider(height: 1, color: context.sirati.border),
+                            Divider(height: 1, color: context.sirati.separator),
                         itemBuilder: (context, index) {
                           final title = filtered[index];
                           final selected = widget.selected?.id == title.id;

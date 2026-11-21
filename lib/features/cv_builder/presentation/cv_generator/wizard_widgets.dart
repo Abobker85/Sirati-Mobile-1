@@ -98,30 +98,105 @@ class SectionHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(7),
-          decoration: BoxDecoration(
-            color: c.primaryLight,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: c.primary.withValues(alpha: .2)),
+    return Semantics(
+      header: true,
+      child: Row(
+        children: [
+          // A calm teal tile, no outline (iOS 26 restyle).
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: c.primaryLight,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Icon(icon, size: 18, color: c.primaryInk),
           ),
-          child: Icon(icon, size: 18, color: c.primaryDark),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            text,
-            textAlign: TextAlign.start,
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: c.primaryDark,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              textAlign: TextAlign.start,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: c.textPrimary,
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The fill a card's contents use: the other one of the page's two fills,
+/// so fields, grey capsules and chips inside a card keep an edge against
+/// it. On a grouped page the card takes the grouped card fill and its
+/// contents the plain card fill; on a plain page it is the other way round.
+class NestedFillScope extends StatelessWidget {
+  const NestedFillScope({super.key, required this.child});
+
+  final Widget child;
+
+  /// The surface kind inside a card that sits on [outer].
+  static PageSurfaceKind innerKind(PageSurfaceKind outer) =>
+      outer == PageSurfaceKind.grouped
+          ? PageSurfaceKind.plain
+          : PageSurfaceKind.grouped;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    final inner = innerKind(PageSurface.of(context));
+    final fill = PageSurface.fillColor(c, inner);
+    final base = Theme.of(context);
+    final secondary = AppTheme.secondaryButtonStyle(c, fill);
+    return Theme(
+      data: base.copyWith(
+        inputDecorationTheme: base.inputDecorationTheme.copyWith(
+          fillColor: fill,
+          hoverColor: c.pressed(fill),
         ),
-      ],
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style:
+              (base.outlinedButtonTheme.style ?? const ButtonStyle()).copyWith(
+            backgroundColor: secondary.backgroundColor,
+            overlayColor: secondary.overlayColor,
+          ),
+        ),
+        chipTheme: base.chipTheme.copyWith(
+          backgroundColor: fill,
+          disabledColor: fill,
+        ),
+        cardTheme: base.cardTheme.copyWith(color: fill),
+      ),
+      child: PageSurface(kind: inner, child: child),
+    );
+  }
+}
+
+/// One grouped section of a step: a borderless rounded card in the page's
+/// card fill, holding a few related fields. The fields inside use the other
+/// fill ([NestedFillScope]) so they keep an edge against the card.
+class WizardSection extends StatelessWidget {
+  const WizardSection({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: PageSurface.fillOf(context),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.cardAll),
+      child: NestedFillScope(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          ),
+        ),
+      ),
     );
   }
 }

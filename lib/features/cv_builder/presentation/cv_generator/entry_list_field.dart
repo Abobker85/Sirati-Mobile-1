@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/features/cv_builder/domain/cv_entries.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_widgets.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components/app_dialog.dart';
@@ -225,10 +226,9 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
             child: OutlinedButton.icon(
               key: const ValueKey('entry-add'),
               onPressed: _add,
+              // The theme's grey capsule: no outline (iOS 26 restyle).
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                foregroundColor: c.primaryInk,
-                side: BorderSide(color: c.primaryInk),
+                minimumSize: const Size.fromHeight(AppTouchTarget.min),
               ),
               icon: const Icon(Icons.add_rounded),
               label: Text(widget.addLabel),
@@ -244,7 +244,7 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
                         state.errorText!,
-                        style: TextStyle(color: c.error, fontSize: 13),
+                        style: AppFormStyles.errorTextStyle(c),
                       ),
                     )
                   : const SizedBox.shrink(key: ValueKey('entry-err-none')),
@@ -277,39 +277,40 @@ class _EntryCard extends StatelessWidget {
     final c = context.sirati;
     final reduce = MotionSettings.reduce(context);
     // Material, not a decorated box: the "currently" tile paints its ink on it.
+    // Borderless, in the page's card fill; its fields and buttons use the
+    // other fill so they keep an edge inside it.
     final card = Material(
-      color: c.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: c.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${index + 1}',
-                    style: TextStyle(
-                      color: c.primaryInk,
-                      fontWeight: FontWeight.w700,
+      color: PageSurface.fillOf(context),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.cardAll),
+      child: NestedFillScope(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        color: c.primaryInk,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                if (onRemove != null)
-                  IconButton(
-                    key: ValueKey('entry-remove-$index'),
-                    tooltip: AppLocalizations.of(context).cvEntryRemove,
-                    onPressed: onRemove,
-                    icon: Icon(Icons.delete_outline_rounded, color: c.error),
-                  ),
-              ],
-            ),
-            child,
-          ],
+                  if (onRemove != null)
+                    IconButton(
+                      key: ValueKey('entry-remove-$index'),
+                      tooltip: AppLocalizations.of(context).cvEntryRemove,
+                      onPressed: onRemove,
+                      icon: Icon(Icons.delete_outline_rounded, color: c.error),
+                    ),
+                ],
+              ),
+              child,
+            ],
+          ),
         ),
       ),
     );
@@ -396,7 +397,7 @@ class _EntryTextInputState extends State<EntryTextInput> {
               padding: const EdgeInsetsDirectional.only(top: 4, start: 4),
               child: Text(
                 widget.error!,
-                style: TextStyle(color: c.error, fontSize: 12),
+                style: AppFormStyles.errorTextStyle(c),
               ),
             ),
         ],
@@ -427,6 +428,7 @@ class MonthYearButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
+    final fill = PageSurface.fillOf(context);
     final text = value == null
         ? AppLocalizations.of(context).cvMonthChoose
         : monthYearLabel(value!, english: english);
@@ -435,7 +437,14 @@ class MonthYearButton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(label, style: TextStyle(color: c.textSecondary, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(
+              color: c.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 4),
           OutlinedButton.icon(
             onPressed: enabled
@@ -448,12 +457,24 @@ class MonthYearButton extends StatelessWidget {
                     if (picked != null) onChanged(picked);
                   }
                 : null,
+            // Drawn like a filled field: the field fill, no resting outline,
+            // the error ring only in error (the error text says it too).
             style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
+              minimumSize: const Size.fromHeight(AppTouchTarget.min),
               alignment: AlignmentDirectional.centerStart,
+              backgroundColor: fill,
+              disabledBackgroundColor: fill,
               foregroundColor: c.textPrimary,
               disabledForegroundColor: c.textSecondary,
-              side: BorderSide(color: error != null ? c.error : c.borderStrong),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppFormStyles.radius),
+              ),
+              side: error != null
+                  ? BorderSide(
+                      color: c.error,
+                      width: AppFormStyles.errorRingWidth,
+                    )
+                  : BorderSide.none,
             ),
             icon: const Icon(Icons.calendar_month_outlined, size: 18),
             label: Text(text),
@@ -461,8 +482,7 @@ class MonthYearButton extends StatelessWidget {
           if (error != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child:
-                  Text(error!, style: TextStyle(color: c.error, fontSize: 12)),
+              child: Text(error!, style: AppFormStyles.errorTextStyle(c)),
             ),
         ],
       ),

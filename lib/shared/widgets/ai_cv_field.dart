@@ -103,17 +103,19 @@ class AiCvField extends StatelessWidget {
                     color: count >= minimum
                         ? context.sirati.success
                         : context.sirati.primaryInk,
-                    backgroundColor: context.sirati.surfaceHigh,
+                    // Hairline track: the count below carries the value.
+                    backgroundColor: context.sirati.separator,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     l10n.sharedAiCharacterCount(count, minimum),
                     key: Key('character_count_$field'),
+                    // The bar carries the met state in colour; the count is
+                    // body ink, which holds AA on every page and card fill
+                    // (success green is 4.48:1 on the grouped page).
                     style: AppTypography.of(context, AppTypography.bodySm,
-                        color: count >= minimum
-                            ? context.sirati.success
-                            : context.sirati.textSecondary),
+                        color: context.sirati.textSecondary),
                   ),
                 ],
               );
@@ -242,9 +244,10 @@ class _EnhancementResultCard extends StatelessWidget {
       key: Key('enhancement_result_$field'),
       width: double.infinity,
       padding: const EdgeInsets.all(14),
+      // Borderless card in the page's card fill (iOS 26 restyle).
       decoration: BoxDecoration(
-        color: c.surfaceLow,
-        borderRadius: BorderRadius.circular(14),
+        color: PageSurface.fillOf(context),
+        borderRadius: AppRadius.cardAll,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,7 +344,7 @@ class _EnhancementResultCard extends StatelessWidget {
                             label: Text(
                               BidiText.protectLatinTokens(claim['text']!),
                             ),
-                            backgroundColor: c.surfaceLow,
+                            backgroundColor: PageSurface.fillOf(context),
                             side: BorderSide(color: c.warning),
                           ),
                         )
