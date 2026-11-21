@@ -334,7 +334,7 @@ class _ShieldIllustration extends StatelessWidget {
                 rest: const Duration(seconds: 10),
                 child: _Badge(
                   size: 54,
-                  gradient: [c.brandSurface, c.brandSurfaceDeep],
+                  color: c.brandSurface,
                   child: Icon(
                     Icons.schedule_rounded,
                     size: 28,
@@ -402,15 +402,13 @@ class _CvPage extends StatelessWidget {
 
 class _Badge extends StatelessWidget {
   final double size;
-  final Color? color;
-  final List<Color>? gradient;
+  final Color color;
   final Widget child;
 
   const _Badge({
     required this.size,
     required this.child,
-    this.color,
-    this.gradient,
+    required this.color,
   });
 
   @override
@@ -422,7 +420,6 @@ class _Badge extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
-        gradient: gradient == null ? null : LinearGradient(colors: gradient!),
         border: Border.all(color: c.pageBackground, width: 3),
       ),
       child: Center(child: child),

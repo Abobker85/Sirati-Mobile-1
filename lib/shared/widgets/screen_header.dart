@@ -273,16 +273,9 @@ class ProfileAvatar extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            // Gated pair across the whole gradient: onBrandSurface on both
-            // brandSurface and brandSurfaceDeep is >= 4.5:1.
-            colors: [
-              context.sirati.brandSurface,
-              context.sirati.brandSurfaceDeep,
-            ],
-          ),
+          // Flat brand fill (iOS 26 restyle: no gradients). Gated pair:
+          // onBrandSurface on brandSurface is >= 4.5:1.
+          color: context.sirati.brandSurface,
         ),
         child: Center(child: content),
       ),
