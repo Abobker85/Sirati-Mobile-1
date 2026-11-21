@@ -24,6 +24,7 @@ import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
+import '../../support/card_chrome.dart';
 import '../../support/contrast_probe.dart';
 import '../../support/non_text_contrast.dart';
 import '../job_match/job_match_test_support.dart';
@@ -585,6 +586,8 @@ void main() {
         expect(download.style!.backgroundColor!.resolve({WidgetState.disabled}),
             c.cardFill);
         expectAllTextAa('$label hub');
+        // No card on the hub paints an outline, shadow or elevation.
+        expectNoCardChrome(find.byType(GeneratedCvScreen), '$label hub');
 
         await _tap(tester, GeneratedCvScreen.shareKey);
         expect(_sharedFiles, [_pdfBody],
