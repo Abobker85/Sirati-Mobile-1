@@ -298,7 +298,7 @@ void main() {
     expect(reached, containsAll(['equal', 'apportioned', 'wrapped', 'scaled']));
   });
 
-  testWidgets('without a reserved height labels scale, never wrap or clip',
+  testWidgets('without a passed height the bar reserves its own',
       (tester) async {
     addTearDown(tester.view.reset);
     for (final direction in directions) {
@@ -311,9 +311,9 @@ void main() {
               scale: scale,
               reserveHeight: false);
           expect(tester.takeException(), isNull, reason: reason);
-          // One-line height: the app bar's preferred size holds the track.
-          expect(tester.getSize(find.byKey(SegmentedTrack.trackKey)).height,
-              AppSegmentedControl.heightFor(TextScaler.linear(scale)),
+          final bar = tester.getRect(find.byType(AppSegmentedTabBar));
+          final track = tester.getRect(find.byKey(SegmentedTrack.trackKey));
+          expect(track.bottom, lessThanOrEqualTo(bar.bottom + 0.5),
               reason: reason);
           for (final tab in tabs) {
             expectWhole(tester, tab.label, reason);

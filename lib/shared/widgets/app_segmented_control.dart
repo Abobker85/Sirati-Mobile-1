@@ -248,9 +248,10 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>>
 ///
 /// [preferredSize] grows with [textScaler]: pass
 /// `MediaQuery.textScalerOf(context)` so an app bar reserves enough height.
-/// Labels only wrap onto more lines when [height] comes from [heightFor],
-/// which lays them out for the real width; without it, labels that do not
-/// fit side by side are scaled down to fit the one-line height.
+/// [preferredSize] reserves the height the labels need on this screen,
+/// wrapped onto more lines when they do not fit side by side, so an app bar
+/// always holds the whole bar. [height] overrides it (for a bar that is not
+/// screen-wide, from [heightFor]).
 class AppSegmentedTabBar extends StatefulWidget implements PreferredSizeWidget {
   const AppSegmentedTabBar({
     super.key,
@@ -315,8 +316,29 @@ class AppSegmentedTabBar extends StatefulWidget implements PreferredSizeWidget {
       MotionSettings.reduce(context) ? Duration.zero : kTabScrollDuration;
 
   @override
-  Size get preferredSize => Size.fromHeight(
-      height ?? AppSegmentedControl.heightFor(textScaler) + padding.vertical);
+  Size get preferredSize {
+    final fixed = height;
+    if (fixed != null) return Size.fromHeight(fixed);
+    // Fail safe: reserve the wrapped height for these tabs on this screen,
+    // so a caller never has to opt in for labels to stay whole. The bar
+    // spans the view's width (an app bar's bottom), read without a context.
+    final view = WidgetsBinding.instance.platformDispatcher.implicitView;
+    final screen =
+        view == null ? null : view.physicalSize.width / view.devicePixelRatio;
+    if (screen == null || screen <= 0) {
+      return Size.fromHeight(
+          AppSegmentedControl.heightFor(textScaler) + padding.vertical);
+    }
+    final track = SegmentLayout.heightWithoutContext(
+      labels: tabs,
+      maxWidth:
+          screen - padding.horizontal - 2 * AppSegmentedControl.trackInset,
+      labelPadding: labelPadding,
+      scaler: textScaler,
+    );
+    return Size.fromHeight(
+        track + 2 * AppSegmentedControl.trackInset + padding.vertical);
+  }
 
   @override
   State<AppSegmentedTabBar> createState() => _AppSegmentedTabBarState();
@@ -395,9 +417,6 @@ class _AppSegmentedTabBarState extends State<AppSegmentedTabBar> {
         colors: widget.colors ?? AppSegmentedPalette.of(context),
         expand: true,
         labelPadding: widget.labelPadding,
-        // A fixed-height slot (an app bar's bottom) only has room for
-        // wrapped labels when the caller reserved it with [heightFor].
-        allowWrap: widget.height != null,
       ),
     );
   }
@@ -412,12 +431,25 @@ class _AppSegmentedTabBarState extends State<AppSegmentedTabBar> {
 /// 3. otherwise each segment gets at least its longest word, the rest is
 ///    shared by label width, and labels wrap onto more lines (every segment
 ///    grows taller);
-/// 4. if even the longest words do not fit side by side, labels are scaled
-///    down to fit on one line.
+/// 4. if even the longest words do not fit side by side, segment padding
+///    shrinks to [AppSpacing.xxs] first; if that is still not enough, every
+///    label wraps at its longest word and all are drawn at one reduced
+///    factor ([scale]).
 /// No label is ever cut off or ellipsized.
 @immutable
 class SegmentLayout {
-  const SegmentLayout._(this.widths, this.height, this.equal, this.scaled);
+  const SegmentLayout._(
+    this.widths,
+    this.height,
+    this.equal,
+    this.labelPadding, {
+    this.scale = 1,
+    this.wrapWidths,
+  });
+
+  /// Padding inside each segment, per side: the requested one, or
+  /// [AppSpacing.xxs] when padding had to give way before labels shrink.
+  final double labelPadding;
 
   /// Segment widths in reading order.
   final List<double> widths;
@@ -428,9 +460,16 @@ class SegmentLayout {
   /// Whether every segment has the same width (the classic control).
   final bool equal;
 
-  /// Whether labels are scaled down to fit: only when a single word is wider
-  /// than any share of the track could be.
-  final bool scaled;
+  /// Factor labels are drawn at: 1, except when even the longest words of
+  /// all labels cannot sit side by side; then every label wraps at its
+  /// longest word and is drawn at this same reduced factor.
+  final double scale;
+
+  /// Whether labels are scaled down (see [scale]).
+  bool get scaled => scale < 1;
+
+  /// Width each label wraps at before scaling, when [scaled].
+  final List<double>? wrapWidths;
 
   /// Space for the icon and its gap, when a segment has one.
   static const iconSize = 18.0;
@@ -445,19 +484,66 @@ class SegmentLayout {
     required double labelPadding,
     bool allowWrap = true,
   }) {
-    final n = labels.length;
-    final scaler = MediaQuery.textScalerOf(context);
-    final direction = Directionality.of(context);
     final defaults = DefaultTextStyle.of(context);
     // Measured exactly as [Text] will paint it, with the wider (selected)
     // weight so a label never outgrows its segment when it is selected.
-    final style = defaults.style.merge(
-      AppTypography.of(context, AppSegmentedControl.labelToken)
-          .copyWith(fontWeight: FontWeight.w600),
+    return measure(
+      labels: labels,
+      maxWidth: maxWidth,
+      labelPadding: labelPadding,
+      allowWrap: allowWrap,
+      scaler: MediaQuery.textScalerOf(context),
+      direction: Directionality.of(context),
+      style: defaults.style.merge(
+        AppTypography.of(context, AppSegmentedControl.labelToken)
+            .copyWith(fontWeight: FontWeight.w600),
+      ),
+      locale: Localizations.maybeLocaleOf(context),
+      heightBehavior: defaults.textHeightBehavior ??
+          DefaultTextHeightBehavior.maybeOf(context),
     );
-    final locale = Localizations.maybeLocaleOf(context);
-    final heightBehavior = defaults.textHeightBehavior ??
-        DefaultTextHeightBehavior.maybeOf(context);
+  }
+
+  /// Height a track needs for [labels] across [maxWidth] without a
+  /// [BuildContext]: the taller of the Arabic and Latin label metrics, so it
+  /// holds the laid-out track in either reading direction.
+  static double heightWithoutContext({
+    required List<AppSegmentedTab> labels,
+    required double maxWidth,
+    required double labelPadding,
+    required TextScaler scaler,
+  }) {
+    var height = AppSegmentedControl.segmentHeightFor(scaler);
+    for (final arabic in [true, false]) {
+      final layout = measure(
+        labels: labels,
+        maxWidth: maxWidth,
+        labelPadding: labelPadding,
+        allowWrap: true,
+        scaler: scaler,
+        direction: arabic ? TextDirection.rtl : TextDirection.ltr,
+        style: AppSegmentedControl.labelToken
+            .resolve(arabic: arabic)
+            .copyWith(fontWeight: FontWeight.w600),
+      );
+      height = math.max(height, layout.height);
+    }
+    return height;
+  }
+
+  /// The layout for an explicit label [style] (see [compute]).
+  static SegmentLayout measure({
+    required List<AppSegmentedTab> labels,
+    required double maxWidth,
+    required double labelPadding,
+    required bool allowWrap,
+    required TextScaler scaler,
+    required TextDirection direction,
+    required TextStyle style,
+    Locale? locale,
+    TextHeightBehavior? heightBehavior,
+  }) {
+    final n = labels.length;
     final minHeight = AppSegmentedControl.segmentHeightFor(scaler);
 
     double chrome(AppSegmentedTab tab) =>
@@ -490,12 +576,12 @@ class SegmentLayout {
 
     if (widest * n <= maxWidth) {
       return SegmentLayout._(
-          List.filled(n, maxWidth / n), minHeight, true, false);
+          List.filled(n, maxWidth / n), minHeight, true, labelPadding);
     }
     if (sum(natural) <= maxWidth) {
       final slack = (maxWidth - sum(natural)) / n;
       return SegmentLayout._(
-          [for (final w in natural) w + slack], minHeight, false, false);
+          [for (final w in natural) w + slack], minHeight, false, labelPadding);
     }
     if (allowWrap && sum(minimum) <= maxWidth) {
       // Every word fits its segment; share the rest by how much each label
@@ -515,13 +601,26 @@ class SegmentLayout {
         height = math.max(height, tp.height.ceilToDouble() + 2 * AppSpacing.xs);
         tp.dispose();
       }
-      return SegmentLayout._(widths, height, false, false);
+      return SegmentLayout._(widths, height, false, labelPadding);
     }
-    // Some word cannot fit even with every label wrapped (or the caller has
-    // no room to grow): share the width by label size and scale labels down
-    // to fit, whole, on one line.
-    // Only the text part is shared out: padding and icons keep their size,
-    // so every label shrinks by the same factor.
+    // Before any label shrinks, segment padding gives way.
+    if (labelPadding > AppSpacing.xxs) {
+      return measure(
+        labels: labels,
+        maxWidth: maxWidth,
+        labelPadding: AppSpacing.xxs,
+        allowWrap: allowWrap,
+        scaler: scaler,
+        direction: direction,
+        style: style,
+        locale: locale,
+        heightBehavior: heightBehavior,
+      );
+    }
+    // Some word cannot fit even with every label wrapped (or wrapping is
+    // off): each label wraps at its longest word (one line without
+    // wrapping), and all labels are drawn at the one factor that fits them
+    // side by side. Padding and icons keep their size.
     final chromes = [for (final tab in labels) chrome(tab)];
     final text = [
       for (var i = 0; i < n; i++)
@@ -529,16 +628,26 @@ class SegmentLayout {
     ];
     final room = math.max(0.0, maxWidth - sum(chromes));
     final totalText = sum(text);
+    if (room == 0 || totalText == 0) {
+      return SegmentLayout._(
+          List.filled(n, maxWidth / n), minHeight, false, labelPadding,
+          scale: 0.01, wrapWidths: text);
+    }
+    final scale = math.min(1.0, room / totalText);
+    var height = minHeight;
+    for (var i = 0; i < n; i++) {
+      final tp = painter(labels[i].label)..layout(maxWidth: text[i]);
+      height = math.max(
+          height, (tp.height * scale).ceilToDouble() + 2 * AppSpacing.xs);
+      tp.dispose();
+    }
     return SegmentLayout._(
-      [
-        for (var i = 0; i < n; i++)
-          room == 0 || totalText == 0
-              ? maxWidth / n
-              : chromes[i] + room * text[i] / totalText,
-      ],
-      minHeight,
+      [for (var i = 0; i < n; i++) chromes[i] + text[i] * scale],
+      height,
       false,
-      true,
+      labelPadding,
+      scale: scale,
+      wrapWidths: text,
     );
   }
 }
@@ -602,15 +711,16 @@ class SegmentedTrack extends StatelessWidget {
         ),
       );
 
-  Widget _segment(int i, double height, int inkIndex, {bool scaled = false}) =>
+  Widget _segment(int i, double height, int inkIndex,
+          {double? wrapWidth, double? padding}) =>
       _Segment(
         tab: labels[i],
         height: height,
-        scaled: scaled,
+        wrapWidth: wrapWidth,
         selected: i == selectedIndex,
         inked: i == inkIndex,
         colors: colors,
-        labelPadding: labelPadding,
+        labelPadding: padding ?? labelPadding,
         onTap: onTap == null ? null : () => onTap!(i),
       );
 
@@ -681,7 +791,8 @@ class SegmentedTrack extends StatelessWidget {
                   SizedBox(
                     width: layout.widths[k],
                     child: _segment(k, layout.height, inkIndex,
-                        scaled: layout.scaled),
+                        wrapWidth: layout.scaled ? layout.wrapWidths![k] : null,
+                        padding: layout.labelPadding),
                   ),
               ],
             ),
@@ -712,7 +823,9 @@ class SegmentedTrack extends StatelessWidget {
           labelPadding: labelPadding,
           allowWrap: allowWrap,
         );
-        return layout.equal ? _equal(n, height) : _apportioned(n, layout);
+        return layout.equal && layout.labelPadding == labelPadding
+            ? _equal(n, height)
+            : _apportioned(n, layout);
       });
     } else {
       body = _equal(n, height);
@@ -746,13 +859,14 @@ class _Segment extends StatelessWidget {
     required this.colors,
     required this.labelPadding,
     required this.onTap,
-    this.scaled = false,
+    this.wrapWidth,
   });
 
   final AppSegmentedTab tab;
 
-  /// Scale the label down to fit on one line (see [SegmentLayout.scaled]).
-  final bool scaled;
+  /// When set, the label wraps at this width and is scaled down to fit its
+  /// segment (see [SegmentLayout.scale]).
+  final double? wrapWidth;
   final double height;
   final bool selected;
 
@@ -777,8 +891,12 @@ class _Segment extends StatelessWidget {
       style: style,
       textAlign: TextAlign.center,
     );
-    if (scaled) {
-      label = FittedBox(fit: BoxFit.scaleDown, child: label);
+    final wrapWidth = this.wrapWidth;
+    if (wrapWidth != null) {
+      label = FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(width: wrapWidth, child: label),
+      );
     }
     if (tab.semanticLabel != null) label = ExcludeSemantics(child: label);
     final icon = tab.icon;

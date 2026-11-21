@@ -446,9 +446,17 @@ void main() {
           expect(scaler.scale(10), closeTo(10 * scale, 1e-9),
               reason: 'the page really is at ${scale}x');
           final height = bar.preferredSize.height;
-          expect(height,
-              AppSegmentedControl.heightFor(scaler) + bar.padding.vertical,
+          // At least one scaled label line (ticket 22: more when the labels
+          // wrap), and the laid-out track fits in what the bar reserved.
+          expect(
+              height,
+              greaterThanOrEqualTo(
+                  AppSegmentedControl.heightFor(scaler) + bar.padding.vertical),
               reason: 'the app bar reserves the control at ${scale}x');
+          final slot = tester.getRect(find.byType(AppSegmentedTabBar));
+          final track = tester.getRect(find.byKey(SegmentedTrack.trackKey));
+          expect(track.bottom, lessThanOrEqualTo(slot.bottom + 0.5),
+              reason: 'the track fits the reserved height at ${scale}x');
           return height;
         }
 
