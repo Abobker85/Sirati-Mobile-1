@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/components/brand_gradient_button.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/components/app_button.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -202,39 +203,21 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
                 ),
                 const Spacer(),
                 const SizedBox(height: AppSpacing.lg),
+                // The teal primary capsule, like the error-state retry; it
+                // keeps its fill and shows a spinner while checking.
                 if (widget.onRetry != null)
-                  BrandGradientButton(
+                  AppButton(
                     label: l10n.retry,
-                    loadingLabel: l10n.sharedOfflineChecking,
                     icon: Icons.refresh_rounded,
                     isLoading: _checking,
                     onPressed: _retryNow,
                   ),
                 if (widget.onOpenSaved != null) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  OutlinedButton.icon(
+                  AppButton.secondary(
+                    label: l10n.sharedOfflineOpenSaved,
+                    icon: Icons.folder_open_rounded,
                     onPressed: widget.onOpenSaved,
-                    icon: Icon(
-                      Icons.folder_open_rounded,
-                      size: 20,
-                      color: c.primaryInk,
-                    ),
-                    label: Text(
-                      l10n.sharedOfflineOpenSaved,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.of(
-                        context,
-                        AppTypography.titleSm,
-                        color: c.primaryInk,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(AppTouchTarget.min),
-                      side: BorderSide(color: c.borderStrong),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.lgAll,
-                      ),
-                    ),
                   ),
                 ],
               ],
@@ -371,79 +354,57 @@ class _LivePillState extends State<_LivePill>
   }
 }
 
+/// Connection tips as an inset-grouped section: a grey header over one
+/// card of rows, on the page's own fill (no border, no warm tint).
 class _TipsCard extends StatelessWidget {
   final String title;
   final List<String> tips;
 
   const _TipsCard({required this.title, required this.tips});
 
+  static const double _iconSize = 20;
+
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surfaceLow,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.tips_and_updates_outlined,
-                size: 20,
-                color: c.primaryInk,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTypography.of(
-                    context,
-                    AppTypography.titleSm,
-                    color: c.textPrimary,
+    return AppListSection(
+      header: title,
+      separatorIndent:
+          AppListSection.rowPadding + _iconSize + AppListTileMetrics.gap,
+      children: [
+        for (final tip in tips)
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppListSection.rowPadding,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(
+                    Icons.check_circle_outline_rounded,
+                    size: _iconSize,
+                    color: c.onSuccessContainer,
                   ),
                 ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: Divider(height: 1, color: c.border),
-          ),
-          for (final tip in tips)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.xxs),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Icon(
-                      Icons.check_circle_outline_rounded,
-                      size: 18,
-                      color: c.onSuccessContainer,
+                const SizedBox(width: AppListTileMetrics.gap),
+                Expanded(
+                  child: Text(
+                    tip,
+                    textAlign: TextAlign.start,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.bodyMd,
+                      color: c.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      tip,
-                      style: AppTypography.of(
-                        context,
-                        AppTypography.bodySm,
-                        color: c.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }

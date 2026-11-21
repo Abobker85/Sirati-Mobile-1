@@ -5,7 +5,6 @@ import 'package:sirati/features/cv_builder/presentation/my_cvs/my_cvs_tools.dart
 import 'package:sirati/features/jobs/presentation/widgets/job_news_common.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/components/brand_gradient_button.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/offline_view.dart';
 
@@ -67,8 +66,7 @@ void main() {
         findsNothing,
       );
 
-      final allButtons = find.byWidgetPredicate(
-          (w) => w is ButtonStyleButton || w is BrandGradientButton);
+      final allButtons = find.byWidgetPredicate((w) => w is ButtonStyleButton);
       expect(allButtons, findsNWidgets(buttons), reason: label);
       for (final b in allButtons.evaluate()) {
         final size = tester.getSize(find.byWidget(b.widget));

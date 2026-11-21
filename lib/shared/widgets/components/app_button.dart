@@ -12,6 +12,8 @@ enum AppButtonVariant { primary, secondary, text, destructive }
 ///
 /// iOS 26 (ticket 10): primary and destructive are filled capsules; secondary
 /// is a grey filled capsule on the page's fill ([PageSurface.fillOf]).
+/// Disabled primary and destructive buttons (not loading) take that same
+/// grey page fill with a secondary-ink label (ticket 23).
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -125,7 +127,8 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             minimumSize: minSize,
             backgroundColor: c.primary,
-            disabledBackgroundColor: isLoading ? c.primary : c.surfaceHigh,
+            disabledBackgroundColor:
+                isLoading ? c.primary : PageSurface.fillOf(context),
             disabledForegroundColor: isLoading ? c.onPrimary : c.textSecondary,
             foregroundColor: c.onPrimary,
             elevation: 0,
@@ -158,7 +161,8 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             minimumSize: minSize,
             backgroundColor: c.error,
-            disabledBackgroundColor: isLoading ? c.error : c.surfaceHigh,
+            disabledBackgroundColor:
+                isLoading ? c.error : PageSurface.fillOf(context),
             disabledForegroundColor: isLoading ? c.onError : c.textSecondary,
             foregroundColor: c.onError,
             elevation: 0,

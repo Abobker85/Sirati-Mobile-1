@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'package:sirati/shared/theme/app_theme.dart';
 
-/// Inset-grouped section: an optional grey header, one rounded
-/// `context.sirati.groupedCard` card holding the rows, hairline separators
-/// between them, and an optional grey footer. Put it on a
-/// `context.sirati.groupedBackground` page.
+/// Inset-grouped section: an optional grey header, one rounded card holding
+/// the rows, hairline separators between them, and an optional grey footer.
+/// The card takes the page's fill ([PageSurface.fillOf]): white on a grouped
+/// page, grey on a plain one.
 ///
 /// ```dart
 /// AppListSection(
@@ -91,7 +91,9 @@ class AppListSection extends StatelessWidget {
           ),
         Material(
           key: cardKey,
-          color: c.groupedCard,
+          // The page's fill: white on a grouped page, grey on a plain one, so
+          // the card keeps its edge on both (ticket 23).
+          color: PageSurface.fillOf(context),
           borderRadius: AppRadius.cardAll,
           clipBehavior: Clip.antiAlias,
           child: _SectionScope(

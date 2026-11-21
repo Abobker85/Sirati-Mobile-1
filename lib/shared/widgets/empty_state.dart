@@ -195,7 +195,8 @@ class AppStateIcon extends StatelessWidget {
 
   final IconData icon;
 
-  /// Circle fill; defaults to `cardFill`.
+  /// Circle fill; defaults to the page's fill ([PageSurface.fillOf]), so the
+  /// circle stands out on plain and grouped pages.
   final Color? background;
 
   /// Glyph colour; defaults to `textHint` (AA on `cardFill`).
@@ -214,7 +215,7 @@ class AppStateIcon extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: background ?? c.cardFill,
+          color: background ?? PageSurface.fillOf(context),
           shape: BoxShape.circle,
         ),
         child: Center(

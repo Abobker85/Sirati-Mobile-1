@@ -495,7 +495,7 @@ void main() {
         expectAllProgressIndicatorsAa(
             'AppButton $variant loading indicator dark=$dark');
 
-        // 3. Disabled: neutral surfaceHigh-level fill with textSecondary-level text (text >= 4.5:1 on its own fill)
+        // 3. Disabled: the page's grey fill with textSecondary-level text (text >= 4.5:1 on its own fill)
         await tester.pumpWidget(
           app(
             theme,
@@ -513,13 +513,14 @@ void main() {
             tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         final disabledResolvedBg = disabledBtn.style!.backgroundColor!
             .resolve(const <WidgetState>{WidgetState.disabled})!;
-        expect(disabledResolvedBg, siratiColors.surfaceHigh,
-            reason: 'disabled must use neutral surfaceHigh fill');
+        final pageFill =
+            PageSurface.fillOf(tester.element(find.byType(AppButton)));
+        expect(disabledResolvedBg, pageFill,
+            reason: 'disabled must use the neutral page fill');
         expect(disabledResolvedBg, isNot(equals(enabledBg)),
             reason: 'disabled fill must look different from enabled');
         final disabledText = tester.element(find.text(testLabel));
-        expect(paintedBackgroundsOf(disabledText),
-            contains(siratiColors.surfaceHigh));
+        expect(paintedBackgroundsOf(disabledText), contains(pageFill));
         final disabledTextColor =
             renderedTextColor(tester, find.text(testLabel));
         expect(disabledTextColor, siratiColors.textSecondary,
