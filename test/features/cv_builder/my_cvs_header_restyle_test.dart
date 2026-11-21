@@ -145,7 +145,7 @@ void main() {
         // Announced as the page heading.
         expect(
           tester.getSemantics(title),
-          containsSemantics(isHeader: true),
+          isSemantics(isHeader: true),
         );
         // The tools card follows the title, not overlapping it.
         expect(
@@ -173,7 +173,7 @@ void main() {
         );
         expect(
           tester.getSemantics(slimTitle),
-          containsSemantics(isHeader: true),
+          isSemantics(isHeader: true),
         );
       });
     }
