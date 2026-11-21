@@ -29,3 +29,4 @@
   - Tests: `test/support/card_chrome.dart` (`expectNoCardChrome`) is the strict no-border/shadow walker; call `loadAppFonts` once in `setUpAll` for real-font width checks; `pumpAndSettle` before contrast probes (buttons animate their ink).
   - Gates: `app_metrics` rejects `Colors.` and `[SiratiColors.x]` even in doc comments; jobs may not import dashboard (layering test).
   - Swarm: give every author absolute worktree paths with forward slashes; one stray edit landed in the main checkout once.
+  - Screen capture: `test_screens/all_screens_capture_test.dart` writes to the relative `../docs/screenshots/all-screens` and deletes every PNG there first; run it from the main checkout (from a worktree the path points outside D:\Sirati\docs). Board: D:\Sirati\docs\screenshots\ios26-before-after.html (before-ios26 / after-round1 / all-screens).
