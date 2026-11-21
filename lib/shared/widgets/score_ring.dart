@@ -12,6 +12,11 @@ import 'package:sirati/shared/widgets/motion.dart';
 /// "remove animations" on it shows the final score at once. The arc colour
 /// follows the score band; the number stays on body ink so it holds AA in
 /// both themes.
+///
+/// The ring always sits on a [SiratiColors.cardFill] card (My CVs, Home), so
+/// its track is that fill pressed twice: a neutral grey that keeps an edge
+/// on the card (no warm beige), with the band's ink tone on top so the arc
+/// holds 3:1 against both the track and the card in either theme.
 class ScoreRing extends StatelessWidget {
   const ScoreRing({
     super.key,
@@ -31,15 +36,19 @@ class ScoreRing extends StatelessWidget {
   /// Same pace as the large ring on the analysis result.
   static const duration = Duration(milliseconds: 560);
 
+  /// The grey track under the arc: the card fill, pressed twice.
+  static Color trackOf(SiratiColors c) => c.pressed(c.pressed(c.cardFill));
+
   @override
   Widget build(BuildContext context) {
     final colors = context.sirati;
     final target = score.clamp(0, 100);
     final arc = switch (ScoreBand.of(target)) {
-      ScoreBand.excellent || ScoreBand.veryGood => colors.success,
-      ScoreBand.fair => colors.warning,
-      ScoreBand.weak => colors.error,
+      ScoreBand.excellent || ScoreBand.veryGood => colors.onSuccessContainer,
+      ScoreBand.fair => colors.onWarningContainer,
+      ScoreBand.weak => colors.onErrorContainer,
     };
+    final track = trackOf(colors);
     final reduce = MotionSettings.reduce(context);
     final english = AppLocale.isEnglish(context);
 
@@ -58,7 +67,7 @@ class ScoreRing extends StatelessWidget {
                 strokeWidth: 4,
                 strokeCap: StrokeCap.round,
                 color: arc,
-                backgroundColor: colors.surfaceLow,
+                backgroundColor: track,
               ),
               Center(
                 child: Text(
