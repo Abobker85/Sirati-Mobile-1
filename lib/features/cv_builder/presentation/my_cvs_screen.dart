@@ -256,7 +256,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     final english = AppLocale.isEnglish(context);
     final cvs = ref.watch(myCvsProvider(english));
 
-    // The brand band draws under the status bar; the rest stays inset.
+    // The header and the bar pad themselves below the status bar.
     return SafeArea(
       top: false,
       bottom: false,
@@ -315,7 +315,8 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     );
   }
 
-  /// Whether the band's top row has scrolled out, so the slim header shows.
+  /// Whether the large title's top row has scrolled out, so the slim header
+  /// shows.
   final _slim = ValueNotifier<bool>(false);
 
   @override
@@ -335,8 +336,8 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
       ? data.title
       : AppLocalizations.of(context).myCvsListTitle;
 
-  /// Slides down over the band as its top row leaves, and back up at the top
-  /// of the list. Out of the tree while hidden, so the page has one title and
+  /// Slides down over the large title as its top row leaves, and back up at
+  /// the top of the list. Out of the tree while hidden, so the page has one title and
   /// one bell at a time for screen readers.
   Widget _slimHeader(BuildContext context, CvList data) {
     final reduce = MotionSettings.reduce(context);
@@ -367,9 +368,6 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     );
   }
 
-  /// How far the tools card reaches up into the brand band.
-  static const _toolsOverlap = 40.0;
-
   Widget _buildList(
     BuildContext context,
     CvList data,
@@ -397,31 +395,19 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
                 onNotifications: () =>
                     Navigator.of(context).pushNamed(AppRoutes.notifications),
               ),
-              Stack(
-                children: [
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: _toolsOverlap,
-                    child: DecoratedBox(
-                      decoration: MyCvsHeader.brandBand(context),
-                    ),
+              const SizedBox(height: AppSpacing.lg),
+              shell(Padding(
+                padding: gutter,
+                child: MotionReveal(
+                  order: 0,
+                  child: MyCvsToolsCard(
+                    onCreate: _openGenerator,
+                    onScan: _openScan,
+                    onUpload: () => _openScan(upload: true),
+                    onTarget: _openJobMatch,
                   ),
-                  shell(Padding(
-                    padding: gutter,
-                    child: MotionReveal(
-                      order: 0,
-                      child: MyCvsToolsCard(
-                        onCreate: _openGenerator,
-                        onScan: _openScan,
-                        onUpload: () => _openScan(upload: true),
-                        onTarget: _openJobMatch,
-                      ),
-                    ),
-                  )),
-                ],
-              ),
+                ),
+              )),
               shell(Padding(
                 padding: gutter,
                 child: Column(
