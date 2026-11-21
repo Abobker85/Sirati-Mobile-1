@@ -134,17 +134,22 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
 
+    // A floating bar laid over the body (the dashboard tab bar) reaches the
+    // body only as bottom padding, so the actions must end above it.
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(
-          horizontal: _sidePadding(constraints.maxWidth),
-          vertical: AppSpacing.lg,
+        padding: EdgeInsets.fromLTRB(
+          _sidePadding(constraints.maxWidth),
+          AppSpacing.lg,
+          _sidePadding(constraints.maxWidth),
+          AppSpacing.lg + bottomInset,
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(
             minHeight: constraints.hasBoundedHeight
-                ? constraints.maxHeight - AppSpacing.lg * 2
+                ? constraints.maxHeight - AppSpacing.lg * 2 - bottomInset
                 : 0,
           ),
           child: IntrinsicHeight(
