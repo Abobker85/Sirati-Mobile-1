@@ -8,6 +8,9 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/components.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
+/// Key of the lifted drag proxy's fill.
+const reorderProxyKey = ValueKey('reorder-lift-proxy');
+
 /// Shared tactile lift decorator for [ReorderableListView] drag proxies.
 Widget reorderLiftProxyDecorator(
   Widget child,
@@ -16,20 +19,29 @@ Widget reorderLiftProxyDecorator(
 ) {
   return Builder(
     builder: (context) {
-      if (MotionSettings.reduce(context)) {
-        return Material(type: MaterialType.transparency, child: child);
-      }
       final c = context.sirati;
+      // Entry rows are flat (no fill of their own), so the lifted copy gets
+      // the white card fill: it must hide the rows it is dragged over. The
+      // proxy lives in the overlay, outside the grouped theme, hence the
+      // explicit colour.
+      final lifted = Material(
+        key: reorderProxyKey,
+        color: c.groupedCard,
+        borderRadius: AppRadius.cardAll,
+        clipBehavior: Clip.antiAlias,
+        child: child,
+      );
+      if (MotionSettings.reduce(context)) return lifted;
       return AnimatedBuilder(
         animation: animation,
-        child: Material(type: MaterialType.transparency, child: child),
+        child: lifted,
         builder: (context, inner) {
           final t = Curves.easeOut.transform(animation.value);
           return Transform.scale(
             scale: 1.0 + 0.02 * t,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderRadius: AppRadius.cardAll,
                 boxShadow: AppShadows.of(
                   c,
                   elevation: AppElevation.sheet * t,
@@ -72,6 +84,12 @@ class SectionCardWrapper extends StatefulWidget {
     this.validationError,
   });
 
+  /// Key of the collapsible header.
+  static const headerKey = ValueKey('section-card-header');
+
+  /// Key of the entry count badge.
+  static const countKey = ValueKey('section-card-count');
+
   @override
   State<SectionCardWrapper> createState() => _SectionCardWrapperState();
 }
@@ -112,138 +130,160 @@ class _SectionCardWrapperState extends State<SectionCardWrapper>
   Widget build(BuildContext context) {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
+    final reduce = MotionSettings.reduce(context);
 
-    return AppSurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          InkWell(
+    // iOS 26 grouped section: a tappable header on the page, then the
+    // section's fields straight on the grouped page (white fills on grey).
+    // Nothing is nested in a second fill: in dark mode the card and field
+    // fills are too close to tell apart.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Header
+        Semantics(
+          button: true,
+          expanded: _expanded,
+          child: InkWell(
+            key: SectionCardWrapper.headerKey,
             onTap: _toggleExpanded,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            splashFactory:
-                MotionSettings.reduce(context) ? NoSplash.splashFactory : null,
-            highlightColor: MotionSettings.reduce(context)
-                ? c.surface.withValues(alpha: 0)
-                : null,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.xs),
-                    decoration: BoxDecoration(
-                      color: c.primaryLight,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
+            borderRadius: AppRadius.cardAll,
+            splashFactory: NoSplash.splashFactory,
+            highlightColor: c.pressOverlay(c.groupedBackground),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xxs,
+                  vertical: AppSpacing.xs,
+                ),
+                child: Row(
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: c.primaryLight,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.xs),
+                        child: Icon(widget.icon, size: 20, color: c.primaryInk),
+                      ),
                     ),
-                    child: Icon(widget.icon, size: 20, color: c.primary),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              widget.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            if (widget.entryCount > 0) ...[
-                              const SizedBox(width: AppSpacing.xs),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: c.surfaceHigh,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
                                 child: Text(
-                                  '${widget.entryCount}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(
-                                        color: c.textSecondary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  widget.title,
+                                  style: AppTypography.of(
+                                    context,
+                                    AppTypography.titleMd,
+                                    color: c.textPrimary,
+                                  ),
                                 ),
                               ),
-                            ],
-                          ],
-                        ),
-                        if (widget.subtitle != null)
-                          Text(
-                            widget.subtitle!,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: c.textSecondary,
+                              if (widget.entryCount > 0) ...[
+                                const SizedBox(width: AppSpacing.xs),
+                                DecoratedBox(
+                                  key: SectionCardWrapper.countKey,
+                                  decoration: BoxDecoration(
+                                    color: c.groupedCard,
+                                    borderRadius: AppRadius.capsuleAll,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
                                     ),
+                                    child: Text(
+                                      '${widget.entryCount}',
+                                      textDirection: TextDirection.ltr,
+                                      style: AppTypography.of(
+                                        context,
+                                        AppTypography.labelMd,
+                                        color: c.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                      ],
+                          if (widget.subtitle != null)
+                            Text(
+                              widget.subtitle!,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.bodySm,
+                                color: c.textSecondary,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                  AnimatedRotation(
-                    turns: _expanded ? 0.5 : 0.0,
-                    duration: MotionSettings.reduce(context)
-                        ? Duration.zero
-                        : MotionDurations.fast,
-                    curve: MotionCurves.state,
-                    child: Icon(
-                      Icons.keyboard_arrow_down,
-                      color: c.textHint,
+                    AnimatedRotation(
+                      turns: _expanded ? 0.5 : 0.0,
+                      duration: reduce ? Duration.zero : MotionDurations.fast,
+                      curve: MotionCurves.state,
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: c.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
+        ),
 
-          // Inline validation error
-          if (widget.validationError != null &&
-              widget.validationError!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.xs),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, size: 14, color: c.error),
-                  const SizedBox(width: AppSpacing.xxs),
-                  Expanded(
-                    child: Text(
-                      widget.validationError!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: c.error,
-                          ),
+        // Inline validation error
+        if (widget.validationError != null &&
+            widget.validationError!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: AppSpacing.xxs,
+              top: AppSpacing.xxs,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, size: 14, color: c.onErrorContainer),
+                const SizedBox(width: AppSpacing.xxs),
+                Expanded(
+                  child: Text(
+                    widget.validationError!,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.bodySm,
+                      color: c.onErrorContainer,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
 
-          // Collapsible Content: animate only on header toggle so child growth
-          // inside an already-open section never animates or clips.
-          SizeTransition(
-            sizeFactor: _expandAnim,
-            alignment: AlignmentDirectional.topStart,
-            child: FadeTransition(
-              opacity: _expandAnim,
-              child: AnimatedBuilder(
-                animation: _expandController,
-                builder: (context, _) {
-                  if (!_expanded && _expandController.isDismissed) {
-                    return const SizedBox.shrink();
-                  }
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        // Collapsible Content: animate only on header toggle so child growth
+        // inside an already-open section never animates or clips.
+        SizeTransition(
+          sizeFactor: _expandAnim,
+          alignment: AlignmentDirectional.topStart,
+          child: FadeTransition(
+            opacity: _expandAnim,
+            child: AnimatedBuilder(
+              animation: _expandController,
+              builder: (context, _) {
+                if (!_expanded && _expandController.isDismissed) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Divider(height: AppSpacing.lg),
                       widget.child,
                       if (widget.onAdd != null) ...[
                         const SizedBox(height: AppSpacing.md),
@@ -254,12 +294,40 @@ class _SectionCardWrapperState extends State<SectionCardWrapper>
                         ),
                       ],
                     ],
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+}
+
+/// A white inset-grouped card on the grouped editor page, for row-like
+/// controls (switch rows, segmented switches, the section order list).
+/// Fields never go inside it: they sit on the page itself.
+class EditorGroupCard extends StatelessWidget {
+  const EditorGroupCard({super.key, required this.child, this.padding});
+
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.sirati.groupedCard,
+        borderRadius: AppRadius.cardAll,
+      ),
+      child: Padding(
+        padding: padding ??
+            const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+        child: child,
       ),
     );
   }
@@ -301,8 +369,19 @@ class ReorderableEntryList<T> extends StatelessWidget {
 
         return KeyedSubtree(
           key: ValueKey(item.hashCode ^ index),
+          // Flat rows: entries are told apart by a hairline, not a box.
           child: Container(
-            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+            padding: EdgeInsets.only(
+              top: isFirst ? 0 : AppSpacing.sm,
+              bottom: isLast ? 0 : AppSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              border: isLast
+                  ? null
+                  : Border(
+                      bottom: BorderSide(color: context.sirati.separator),
+                    ),
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

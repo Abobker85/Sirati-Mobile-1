@@ -55,20 +55,19 @@ class _CvTemplatePickerState extends State<CvTemplatePicker> {
             child: PressScale(
               child: TweenAnimationBuilder<Color?>(
                 tween: ColorTween(
-                  end: selected
-                      ? c.primaryLight.withValues(alpha: .35)
-                      : c.surface,
+                  // White rows on the grey sheet; the chosen design is tinted
+                  // and keeps its teal ring as the selection mark.
+                  end: selected ? c.primaryLight : c.groupedCard,
                 ),
                 duration: reduce ? Duration.zero : MotionDurations.fast,
                 curve: MotionCurves.state,
                 builder: (context, bgColor, listTile) => Material(
                   color: bgColor,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    side: BorderSide(
-                      color: selected ? c.primaryInk : c.border,
-                      width: selected ? 1.5 : 1,
-                    ),
+                    borderRadius: AppRadius.cardAll,
+                    side: selected
+                        ? BorderSide(color: c.primaryInk, width: 1.5)
+                        : BorderSide.none,
                   ),
                   child: listTile,
                 ),
@@ -78,7 +77,7 @@ class _CvTemplatePickerState extends State<CvTemplatePicker> {
                     Navigator.pop(context, template);
                   },
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: AppRadius.cardAll,
                   ),
                   leading: TemplatePreview(
                     imageUrl: template.previewImageUrl,

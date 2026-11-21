@@ -210,7 +210,7 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
                 child: Text(
                   _skillCategoryLabel(l10n, entry.key),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: c.primary,
+                        color: c.primaryInk,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
@@ -231,8 +231,6 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
                             color: c.textPrimary,
                           ),
                     ),
-                    backgroundColor: c.surfaceHigh,
-                    side: BorderSide(color: c.border),
                     deleteIcon: const Icon(Icons.close, size: 16),
                     onDeleted: () => _removeSkill(index),
                   );
@@ -286,8 +284,6 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
                           color: c.textPrimary,
                         ),
                   ),
-                  backgroundColor: c.surfaceHigh,
-                  side: BorderSide(color: c.border),
                   deleteIcon: const Icon(Icons.close, size: 16),
                   onDeleted: () => _removeLanguage(idx),
                 );
@@ -646,13 +642,9 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: c.border),
-      ),
+    return Padding(
+      // Flat row on the grouped page; the list draws the hairlines.
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -694,7 +686,7 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
                           l10n.noExpiry,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: c.primary,
+                                    color: c.primaryInk,
                                     fontWeight: FontWeight.bold,
                                   ),
                         ),
@@ -798,16 +790,11 @@ class _ProjectEntryTileState extends State<_ProjectEntryTile> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.sirati;
     final l10n = AppLocalizations.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: c.border),
-      ),
+    return Padding(
+      // Flat row on the grouped page; the list draws the hairlines.
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -21,6 +21,7 @@ import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/components/app_card.dart';
 import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -60,6 +61,9 @@ class GeneratedCvScreen extends ConsumerStatefulWidget {
   static const atsStepKey = ValueKey('cv-hub-step-ats');
   static const jobMatchStepKey = ValueKey('cv-hub-step-job-match');
   static const editStepKey = ValueKey('cv-hub-step-edit');
+
+  /// The white paper the CV is shown on, inside the preview card.
+  static const paperKey = ValueKey('cv-hub-paper');
 
   @override
   ConsumerState<GeneratedCvScreen> createState() => _GeneratedCvScreenState();
@@ -245,7 +249,6 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
     final atsCheck = GeneratedCvHubLinks.atsCheck;
 
     return Scaffold(
-      backgroundColor: c.background,
       appBar: AppBar(
         title: Text(ready ? l.cvHubTitle : l.cvHubAppBar),
         actions: [
@@ -304,7 +307,7 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
                 key: GeneratedCvScreen.downloadKey,
                 // Busy state keeps a readable label (AA pair).
                 style: ElevatedButton.styleFrom(
-                  disabledBackgroundColor: c.surface,
+                  disabledBackgroundColor: c.cardFill,
                   disabledForegroundColor: c.textSecondary,
                 ),
                 onPressed:
@@ -328,9 +331,9 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
             PressScale(
               child: OutlinedButton.icon(
                 key: GeneratedCvScreen.shareKey,
+                // The theme's grey filled capsule; no outline.
                 style: OutlinedButton.styleFrom(
                   disabledForegroundColor: c.textSecondary,
-                  side: BorderSide(color: c.textSecondary),
                 ),
                 onPressed: _isSharing ? null : () => unawaited(_share()),
                 icon: _isSharing
@@ -443,12 +446,12 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
       ),
     );
 
+    // Borderless grey card; the CV itself keeps its white paper inside.
     return DecoratedBox(
       key: GeneratedCvScreen.previewKey,
       decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.textSecondary),
+        color: c.cardFill,
+        borderRadius: AppRadius.cardAll,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -476,7 +479,17 @@ class _GeneratedCvScreenState extends ConsumerState<GeneratedCvScreen> {
               expanded: _previewExpanded,
               onToggle: () =>
                   setState(() => _previewExpanded = !_previewExpanded),
-              child: document,
+              child: DecoratedBox(
+                key: GeneratedCvScreen.paperKey,
+                decoration: BoxDecoration(
+                  color: c.surface,
+                  borderRadius: AppRadius.mdAll,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: document,
+                ),
+              ),
             ),
           ],
         ),
@@ -597,9 +610,8 @@ class _AtsScoreCard extends StatelessWidget {
     return DecoratedBox(
       key: GeneratedCvScreen.atsScoreKey,
       decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.textSecondary),
+        color: c.cardFill,
+        borderRadius: AppRadius.cardAll,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -702,100 +714,83 @@ class _NextStepCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
+    // Borderless grey card; pressing darkens the fill.
     return PressScale(
-      child: Semantics(
-        button: true,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: c.surface,
-            borderRadius: AppRadius.lgAll,
-            border: Border.all(color: c.textSecondary),
-          ),
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: AppRadius.lgAll,
+      child: AppSurfaceCard(
+        onTap: onTap,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: c.primaryLight,
+                borderRadius: AppRadius.mdAll,
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: c.primaryLight,
-                        borderRadius: AppRadius.mdAll,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.xs),
-                        child: Icon(icon, size: 22, color: c.primaryInk),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Wrap(
-                            spacing: AppSpacing.xs,
-                            runSpacing: AppSpacing.xxs,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                title,
-                                style: AppTypography.of(
-                                  context,
-                                  AppTypography.titleSm,
-                                ),
-                              ),
-                              if (tag != null)
-                                DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: c.primaryLight,
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.pill),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.xs,
-                                      vertical: 2,
-                                    ),
-                                    child: Text(
-                                      tag!,
-                                      style: AppTypography.of(
-                                        context,
-                                        AppTypography.labelSm,
-                                        color: c.primaryInk,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.xxs),
-                          Text(
-                            body,
-                            style: AppTypography.of(
-                              context,
-                              AppTypography.bodySm,
-                              color: c.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Icon(
-                      Directionality.of(context) == TextDirection.rtl
-                          ? Icons.chevron_left_rounded
-                          : Icons.chevron_right_rounded,
-                      color: c.textSecondary,
-                    ),
-                  ],
-                ),
+                padding: const EdgeInsets.all(AppSpacing.xs),
+                child: Icon(icon, size: 22, color: c.primaryInk),
               ),
             ),
-          ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xxs,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTypography.of(
+                          context,
+                          AppTypography.titleSm,
+                        ),
+                      ),
+                      if (tag != null)
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: c.primaryLight,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xs,
+                              vertical: 2,
+                            ),
+                            child: Text(
+                              tag!,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.labelSm,
+                                color: c.primaryInk,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    body,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.bodySm,
+                      color: c.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Icons.chevron_left_rounded
+                  : Icons.chevron_right_rounded,
+              color: c.textSecondary,
+            ),
+          ],
         ),
       ),
     );

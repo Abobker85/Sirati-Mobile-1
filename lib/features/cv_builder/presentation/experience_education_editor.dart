@@ -6,6 +6,7 @@ import 'package:sirati/features/cv_builder/presentation/section_editor_framework
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/shared/widgets/components.dart';
 
 /// Experience and Education section editors (SIRATI-38).
@@ -23,6 +24,9 @@ class ExperienceEducationEditor extends StatefulWidget {
     super.key,
     required this.controller,
   });
+
+  /// Key of the Gregorian / Hijri calendar switch.
+  static const calendarModeKey = ValueKey('cv-calendar-mode');
 
   /// Verifies date range chronological invariant (end >= start).
   static String? validateDateRange(
@@ -158,57 +162,45 @@ class _ExperienceEducationEditorState extends State<ExperienceEducationEditor> {
 
     return Column(
       children: [
-        // ── Calendar Mode Selection Banner ──────────────────────────────────
-        Container(
-          margin: const EdgeInsets.only(bottom: AppSpacing.md),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
-          ),
-          decoration: BoxDecoration(
-            color: c.surfaceHigh,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: c.border),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.calendar_month_outlined,
-                      size: 18, color: c.primary),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    l10n.calendarSystemLabel,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        // ── Calendar Mode Selection ───────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: EditorGroupCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.calendar_month_outlined,
+                        size: 18, color: c.primaryInk),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        l10n.calendarSystemLabel,
+                        style: AppTypography.of(
+                          context,
+                          AppTypography.labelLg,
                           color: c.textPrimary,
-                          fontWeight: FontWeight.bold,
                         ),
-                  ),
-                ],
-              ),
-              SegmentedButton<String>(
-                segments: [
-                  ButtonSegment(
-                    value: 'gregorian',
-                    label: Text(l10n.calendarGregorian),
-                  ),
-                  ButtonSegment(
-                    value: 'hijri',
-                    label: Text(l10n.calendarHijri),
-                  ),
-                ],
-                selected: {_calendarMode},
-                onSelectionChanged: (set) =>
-                    setState(() => _calendarMode = set.first),
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  textStyle: WidgetStatePropertyAll(
-                    Theme.of(context).textTheme.labelSmall,
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.xs),
+                AppSegmentedControl<String>(
+                  key: ExperienceEducationEditor.calendarModeKey,
+                  segments: [
+                    AppSegment(
+                      value: 'gregorian',
+                      label: l10n.calendarGregorian,
+                    ),
+                    AppSegment(value: 'hijri', label: l10n.calendarHijri),
+                  ],
+                  value: _calendarMode,
+                  onChanged: (mode) => setState(() => _calendarMode = mode),
+                ),
+              ],
+            ),
           ),
         ),
 
@@ -409,13 +401,9 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: c.border),
-      ),
+    return Padding(
+      // Flat row on the grouped page; the list draws the hairlines.
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -494,7 +482,7 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
                           l10n.currentlyHere,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: c.primary,
+                                    color: c.primaryInk,
                                     fontWeight: FontWeight.bold,
                                   ),
                         ),
@@ -705,13 +693,9 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: c.border),
-      ),
+    return Padding(
+      // Flat row on the grouped page; the list draws the hairlines.
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
