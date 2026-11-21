@@ -446,9 +446,32 @@ void main() {
           expect(scaler.scale(10), closeTo(10 * scale, 1e-9),
               reason: 'the page really is at ${scale}x');
           final height = bar.preferredSize.height;
+          // The contract (ticket 22): the bar reserves the height its own
+          // tabs need on this view, wrapped when they do not fit, measured
+          // with the taller of the Arabic and Latin metrics so it is never
+          // short in either reading direction. At least one label line.
+          final slot = tester.getRect(find.byType(AppSegmentedTabBar));
+          final track = tester.getRect(find.byKey(SegmentedTrack.trackKey));
           expect(height,
-              AppSegmentedControl.heightFor(scaler) + bar.padding.vertical,
+              greaterThanOrEqualTo(AppSegmentedControl.heightFor(scaler)),
+              reason: 'at least one label line at ${scale}x');
+          expect(
+              height,
+              moreOrLessEquals(
+                  epsilon: 1e-6,
+                  SegmentLayout.heightWithoutContext(
+                        labels: bar.tabs,
+                        maxWidth: 390 -
+                            bar.padding.horizontal -
+                            2 * AppSegmentedControl.trackInset,
+                        labelPadding: bar.labelPadding,
+                        scaler: scaler,
+                      ) +
+                      2 * AppSegmentedControl.trackInset +
+                      bar.padding.vertical),
               reason: 'the app bar reserves the control at ${scale}x');
+          expect(track.bottom, lessThanOrEqualTo(slot.bottom + 0.5),
+              reason: 'the track fits the reserved height at ${scale}x');
           return height;
         }
 

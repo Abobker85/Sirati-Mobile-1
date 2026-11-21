@@ -41,9 +41,11 @@ class AppSegmentedTab {
 
 /// Fills and inks of a segmented control.
 ///
-/// [AppSegmentedPalette.of] is the themed default: a grey card fill (`cardFill`)
-/// track and a raised thumb. Both inks hold AA on the track AND on the thumb,
-/// so a label stays readable while the thumb slides under it.
+/// [AppSegmentedPalette.of] is the themed default, which follows the page
+/// pattern ([PageSurface]): the track is that page's control fill and the
+/// thumb is drawn in the other surface tone. Both inks hold AA on the track
+/// AND on the thumb, so a label stays readable while the thumb slides under
+/// it.
 @immutable
 class AppSegmentedPalette {
   const AppSegmentedPalette({
@@ -56,19 +58,36 @@ class AppSegmentedPalette {
     this.thumbShadow = const [],
   });
 
-  /// Themed default. The thumb is the white grouped-card fill in light mode;
-  /// in dark mode that fill is darker than the track, so the lighter
-  /// `surfaceHigh` is used to keep the thumb looking raised.
+  /// Themed default for the page pattern around [context].
+  ///
+  /// * Plain page: `cardFill` track; the thumb is white (`groupedCard`) in
+  ///   light mode and the lighter `surfaceHigh` in dark mode, so it looks
+  ///   raised.
+  /// * Grouped page: the page is `groupedBackground`, which `cardFill`
+  ///   matches, so the track takes the grouped control fill (`groupedCard`)
+  ///   and the thumb the `cardFill` tone.
+  ///
+  /// Track and thumb fills are close in tone on purpose (the iOS look), so
+  /// the thumb carries an `outline` edge: that boundary holds the 3:1
+  /// non-text contrast against the track on either page, in both themes.
   factory AppSegmentedPalette.of(BuildContext context) {
     final c = context.sirati;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final grouped = PageSurface.of(context) == PageSurfaceKind.grouped;
     return AppSegmentedPalette(
-      track: c.cardFill,
-      thumb: dark ? c.surfaceHigh : c.groupedCard,
-      // Teal ink marks the selection without relying on the thumb, whose
-      // white-on-grey edge is soft by design (as in the iOS control).
+      track: PageSurface.fillOf(context),
+      thumb: grouped
+          ? c.cardFill
+          : dark
+              ? c.surfaceHigh
+              : c.groupedCard,
+      // Teal ink marks the selection as well as the thumb.
       selectedInk: c.primaryInk,
       unselectedInk: c.textSecondary,
+      // 2dp, not a hairline: on a 1x raster a 1dp edge that lands on a
+      // half pixel is antialiased to under 3:1; 2dp always paints a fully
+      // covered pixel column.
+      thumbBorder: BorderSide(color: c.outline, width: 2),
       thumbShadow: c.softShadow,
     );
   }
@@ -99,6 +118,7 @@ class AppSegmentedControl<T> extends StatefulWidget {
     required this.onChanged,
     this.colors,
     this.expand = true,
+    this.labelPadding = defaultLabelPadding,
   });
 
   final List<AppSegment<T>> segments;
@@ -116,6 +136,12 @@ class AppSegmentedControl<T> extends StatefulWidget {
   /// Fill the available width (true) or size to the widest label times the
   /// segment count (false, for app-bar actions and other unbounded slots).
   final bool expand;
+
+  /// Horizontal padding inside each segment, per side.
+  final double labelPadding;
+
+  /// Default [labelPadding].
+  static const defaultLabelPadding = AppSpacing.sm;
 
   /// Space between the track edge and the thumb.
   static const trackInset = 2.0;
@@ -202,6 +228,7 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>>
             },
       colors: widget.colors ?? AppSegmentedPalette.of(context),
       expand: widget.expand,
+      labelPadding: widget.labelPadding,
     );
   }
 }
@@ -221,26 +248,67 @@ class _AppSegmentedControlState<T> extends State<AppSegmentedControl<T>>
 ///
 /// [preferredSize] grows with [textScaler]: pass
 /// `MediaQuery.textScalerOf(context)` so an app bar reserves enough height.
+/// [preferredSize] reserves the height the labels need on this screen,
+/// wrapped onto more lines when they do not fit side by side, so an app bar
+/// always holds the whole bar. [height] overrides it (for a bar that is not
+/// screen-wide, from [heightFor]).
 class AppSegmentedTabBar extends StatefulWidget implements PreferredSizeWidget {
   const AppSegmentedTabBar({
     super.key,
     required this.tabs,
     this.controller,
     this.colors,
-    this.padding = const EdgeInsets.fromLTRB(
-      AppSpacing.md,
-      AppSpacing.xxs,
-      AppSpacing.md,
-      AppSpacing.xs,
-    ),
+    this.padding = defaultPadding,
+    this.labelPadding = AppSegmentedControl.defaultLabelPadding,
     required this.textScaler,
+    this.height,
   });
 
   final List<AppSegmentedTab> tabs;
   final TabController? controller;
   final AppSegmentedPalette? colors;
+
+  /// Space around the track.
   final EdgeInsets padding;
+
+  /// Horizontal padding inside each segment, per side.
+  final double labelPadding;
   final TextScaler textScaler;
+
+  /// Exact preferred height, from [heightFor]. Null reserves one label line
+  /// at [textScaler].
+  final double? height;
+
+  static const defaultPadding = EdgeInsets.fromLTRB(
+    AppSpacing.md,
+    AppSpacing.xxs,
+    AppSpacing.md,
+    AppSpacing.xs,
+  );
+
+  /// The bar's real height for [tabs] laid out across [width] (default: the
+  /// screen width), including [padding]: taller than one line only when
+  /// labels have to wrap.
+  static double heightFor(
+    BuildContext context, {
+    required List<AppSegmentedTab> tabs,
+    double? width,
+    EdgeInsets padding = defaultPadding,
+    double labelPadding = AppSegmentedControl.defaultLabelPadding,
+  }) {
+    final inner = (width ?? MediaQuery.sizeOf(context).width) -
+        padding.horizontal -
+        2 * AppSegmentedControl.trackInset;
+    final layout = SegmentLayout.compute(
+      context,
+      labels: tabs,
+      maxWidth: inner,
+      labelPadding: labelPadding,
+    );
+    return layout.height +
+        2 * AppSegmentedControl.trackInset +
+        padding.vertical;
+  }
 
   /// Page-change duration for the [TabController] behind this bar: zero
   /// under reduced motion, so pages jump with the thumb.
@@ -248,8 +316,29 @@ class AppSegmentedTabBar extends StatefulWidget implements PreferredSizeWidget {
       MotionSettings.reduce(context) ? Duration.zero : kTabScrollDuration;
 
   @override
-  Size get preferredSize => Size.fromHeight(
-      AppSegmentedControl.heightFor(textScaler) + padding.vertical);
+  Size get preferredSize {
+    final fixed = height;
+    if (fixed != null) return Size.fromHeight(fixed);
+    // Fail safe: reserve the wrapped height for these tabs on this screen,
+    // so a caller never has to opt in for labels to stay whole. The bar
+    // spans the view's width (an app bar's bottom), read without a context.
+    final view = WidgetsBinding.instance.platformDispatcher.implicitView;
+    final screen =
+        view == null ? null : view.physicalSize.width / view.devicePixelRatio;
+    if (screen == null || screen <= 0) {
+      return Size.fromHeight(
+          AppSegmentedControl.heightFor(textScaler) + padding.vertical);
+    }
+    final track = SegmentLayout.heightWithoutContext(
+      labels: tabs,
+      maxWidth:
+          screen - padding.horizontal - 2 * AppSegmentedControl.trackInset,
+      labelPadding: labelPadding,
+      scaler: textScaler,
+    );
+    return Size.fromHeight(
+        track + 2 * AppSegmentedControl.trackInset + padding.vertical);
+  }
 
   @override
   State<AppSegmentedTabBar> createState() => _AppSegmentedTabBarState();
@@ -327,7 +416,238 @@ class _AppSegmentedTabBarState extends State<AppSegmentedTabBar> {
         onTap: _select,
         colors: widget.colors ?? AppSegmentedPalette.of(context),
         expand: true,
+        labelPadding: widget.labelPadding,
       ),
+    );
+  }
+}
+
+/// Segment widths and height for a track of a given inner width.
+///
+/// Like iOS `apportionsSegmentWidthsByContent`, but only when needed:
+/// 1. every label fits in an equal share: equal widths ([equal]);
+/// 2. otherwise, if the labels fit side by side: each segment gets its
+///    label's width plus an equal share of the slack;
+/// 3. otherwise each segment gets at least its longest word, the rest is
+///    shared by label width, and labels wrap onto more lines (every segment
+///    grows taller);
+/// 4. if even the longest words do not fit side by side, segment padding
+///    shrinks to [AppSpacing.xxs] first; if that is still not enough, every
+///    label wraps at its longest word and all are drawn at one reduced
+///    factor ([scale]).
+/// No label is ever cut off or ellipsized.
+@immutable
+class SegmentLayout {
+  const SegmentLayout._(
+    this.widths,
+    this.height,
+    this.equal,
+    this.labelPadding, {
+    this.scale = 1,
+    this.wrapWidths,
+  });
+
+  /// Padding inside each segment, per side: the requested one, or
+  /// [AppSpacing.xxs] when padding had to give way before labels shrink.
+  final double labelPadding;
+
+  /// Segment widths in reading order.
+  final List<double> widths;
+
+  /// Height shared by every segment.
+  final double height;
+
+  /// Whether every segment has the same width (the classic control).
+  final bool equal;
+
+  /// Factor labels are drawn at: 1, except when even the longest words of
+  /// all labels cannot sit side by side; then every label wraps at its
+  /// longest word and is drawn at this same reduced factor.
+  final double scale;
+
+  /// Whether labels are scaled down (see [scale]).
+  bool get scaled => scale < 1;
+
+  /// Width each label wraps at before scaling, when [scaled].
+  final List<double>? wrapWidths;
+
+  /// Space for the icon and its gap, when a segment has one.
+  static const iconSize = 18.0;
+  static const iconGap = AppSpacing.xxs;
+
+  /// Lays out [labels] across [maxWidth] (the track minus its inset) with the
+  /// label style of [context].
+  static SegmentLayout compute(
+    BuildContext context, {
+    required List<AppSegmentedTab> labels,
+    required double maxWidth,
+    required double labelPadding,
+    bool allowWrap = true,
+  }) {
+    final defaults = DefaultTextStyle.of(context);
+    // Measured exactly as [Text] will paint it, with the wider (selected)
+    // weight so a label never outgrows its segment when it is selected.
+    return measure(
+      labels: labels,
+      maxWidth: maxWidth,
+      labelPadding: labelPadding,
+      allowWrap: allowWrap,
+      scaler: MediaQuery.textScalerOf(context),
+      direction: Directionality.of(context),
+      style: defaults.style.merge(
+        AppTypography.of(context, AppSegmentedControl.labelToken)
+            .copyWith(fontWeight: FontWeight.w600),
+      ),
+      locale: Localizations.maybeLocaleOf(context),
+      heightBehavior: defaults.textHeightBehavior ??
+          DefaultTextHeightBehavior.maybeOf(context),
+    );
+  }
+
+  /// Height a track needs for [labels] across [maxWidth] without a
+  /// [BuildContext]: the taller of the Arabic and Latin label metrics, so it
+  /// holds the laid-out track in either reading direction.
+  static double heightWithoutContext({
+    required List<AppSegmentedTab> labels,
+    required double maxWidth,
+    required double labelPadding,
+    required TextScaler scaler,
+  }) {
+    var height = AppSegmentedControl.segmentHeightFor(scaler);
+    for (final arabic in [true, false]) {
+      final layout = measure(
+        labels: labels,
+        maxWidth: maxWidth,
+        labelPadding: labelPadding,
+        allowWrap: true,
+        scaler: scaler,
+        direction: arabic ? TextDirection.rtl : TextDirection.ltr,
+        style: AppSegmentedControl.labelToken
+            .resolve(arabic: arabic)
+            .copyWith(fontWeight: FontWeight.w600),
+      );
+      height = math.max(height, layout.height);
+    }
+    return height;
+  }
+
+  /// The layout for an explicit label [style] (see [compute]).
+  static SegmentLayout measure({
+    required List<AppSegmentedTab> labels,
+    required double maxWidth,
+    required double labelPadding,
+    required bool allowWrap,
+    required TextScaler scaler,
+    required TextDirection direction,
+    required TextStyle style,
+    Locale? locale,
+    TextHeightBehavior? heightBehavior,
+  }) {
+    final n = labels.length;
+    final minHeight = AppSegmentedControl.segmentHeightFor(scaler);
+
+    double chrome(AppSegmentedTab tab) =>
+        2 * labelPadding + (tab.icon == null ? 0 : iconSize + iconGap);
+
+    // One logical pixel of slack absorbs sub-pixel rounding between this
+    // measurement and the painted paragraph.
+    double whole(double width) => width.ceilToDouble() + 1;
+
+    TextPainter painter(String text) => TextPainter(
+          text: TextSpan(text: text, style: style),
+          textDirection: direction,
+          textScaler: scaler,
+          textAlign: TextAlign.center,
+          locale: locale,
+          textHeightBehavior: heightBehavior,
+        );
+
+    final natural = <double>[];
+    final minimum = <double>[];
+    for (final tab in labels) {
+      final tp = painter(tab.label)..layout();
+      natural.add(whole(tp.width) + chrome(tab));
+      // Longest unbreakable run: the narrowest the label can wrap to.
+      minimum.add(whole(tp.minIntrinsicWidth) + chrome(tab));
+      tp.dispose();
+    }
+    double sum(List<double> xs) => xs.fold<double>(0, (a, b) => a + b);
+    final widest = natural.reduce(math.max);
+
+    if (widest * n <= maxWidth) {
+      return SegmentLayout._(
+          List.filled(n, maxWidth / n), minHeight, true, labelPadding);
+    }
+    if (sum(natural) <= maxWidth) {
+      final slack = (maxWidth - sum(natural)) / n;
+      return SegmentLayout._(
+          [for (final w in natural) w + slack], minHeight, false, labelPadding);
+    }
+    if (allowWrap && sum(minimum) <= maxWidth) {
+      // Every word fits its segment; share the rest by how much each label
+      // still wants, and let labels wrap.
+      final want = [for (var i = 0; i < n; i++) natural[i] - minimum[i]];
+      final totalWant = sum(want);
+      final spare = maxWidth - sum(minimum);
+      final widths = [
+        for (var i = 0; i < n; i++)
+          minimum[i] +
+              (totalWant == 0 ? spare / n : spare * want[i] / totalWant),
+      ];
+      var height = minHeight;
+      for (var i = 0; i < n; i++) {
+        final tp = painter(labels[i].label)
+          ..layout(maxWidth: widths[i] - chrome(labels[i]));
+        height = math.max(height, tp.height.ceilToDouble() + 2 * AppSpacing.xs);
+        tp.dispose();
+      }
+      return SegmentLayout._(widths, height, false, labelPadding);
+    }
+    // Before any label shrinks, segment padding gives way.
+    if (labelPadding > AppSpacing.xxs) {
+      return measure(
+        labels: labels,
+        maxWidth: maxWidth,
+        labelPadding: AppSpacing.xxs,
+        allowWrap: allowWrap,
+        scaler: scaler,
+        direction: direction,
+        style: style,
+        locale: locale,
+        heightBehavior: heightBehavior,
+      );
+    }
+    // Some word cannot fit even with every label wrapped (or wrapping is
+    // off): each label wraps at its longest word (one line without
+    // wrapping), and all labels are drawn at the one factor that fits them
+    // side by side. Padding and icons keep their size.
+    final chromes = [for (final tab in labels) chrome(tab)];
+    final text = [
+      for (var i = 0; i < n; i++)
+        (allowWrap ? minimum[i] : natural[i]) - chromes[i],
+    ];
+    final room = math.max(0.0, maxWidth - sum(chromes));
+    final totalText = sum(text);
+    if (room == 0 || totalText == 0) {
+      return SegmentLayout._(
+          List.filled(n, maxWidth / n), minHeight, false, labelPadding,
+          scale: 0.01, wrapWidths: text);
+    }
+    final scale = math.min(1.0, room / totalText);
+    var height = minHeight;
+    for (var i = 0; i < n; i++) {
+      final tp = painter(labels[i].label)..layout(maxWidth: text[i]);
+      height = math.max(
+          height, (tp.height * scale).ceilToDouble() + 2 * AppSpacing.xs);
+      tp.dispose();
+    }
+    return SegmentLayout._(
+      [for (var i = 0; i < n; i++) chromes[i] + text[i] * scale],
+      height,
+      false,
+      labelPadding,
+      scale: scale,
+      wrapWidths: text,
     );
   }
 }
@@ -335,6 +655,11 @@ class _AppSegmentedTabBarState extends State<AppSegmentedTabBar> {
 /// The painted control shared by both modes. Public for tests and for
 /// callers that own their own position animation; prefer the two widgets
 /// above.
+///
+/// In a bounded width ([expand]) segments are laid out by [SegmentLayout]:
+/// equal while labels fit, apportioned by label width when they do not, and
+/// wrapped onto more lines as a last resort. The thumb interpolates between
+/// segment rects, so it tracks a swipe across unequal widths too.
 class SegmentedTrack extends StatelessWidget {
   const SegmentedTrack({
     super.key,
@@ -344,6 +669,8 @@ class SegmentedTrack extends StatelessWidget {
     required this.onTap,
     required this.colors,
     required this.expand,
+    this.labelPadding = AppSegmentedControl.defaultLabelPadding,
+    this.allowWrap = true,
   });
 
   /// Key of the sliding thumb's painted box.
@@ -365,6 +692,116 @@ class SegmentedTrack extends StatelessWidget {
   final AppSegmentedPalette colors;
   final bool expand;
 
+  /// Horizontal padding inside each segment, per side.
+  final double labelPadding;
+
+  /// Whether labels may wrap onto more lines (the track grows taller).
+  /// Without it, labels that do not fit side by side are scaled down.
+  final bool allowWrap;
+
+  static const _capsule = BorderRadius.all(Radius.circular(AppRadius.capsule));
+
+  Widget _thumb() => DecoratedBox(
+        key: thumbKey,
+        decoration: BoxDecoration(
+          color: colors.thumb,
+          borderRadius: _capsule,
+          border: Border.fromBorderSide(colors.thumbBorder),
+          boxShadow: colors.thumbShadow,
+        ),
+      );
+
+  Widget _segment(int i, double height, int inkIndex,
+          {double? wrapWidth, double? padding}) =>
+      _Segment(
+        tab: labels[i],
+        height: height,
+        wrapWidth: wrapWidth,
+        selected: i == selectedIndex,
+        inked: i == inkIndex,
+        colors: colors,
+        labelPadding: padding ?? labelPadding,
+        onTap: onTap == null ? null : () => onTap!(i),
+      );
+
+  /// Equal segments: the classic control.
+  Widget _equal(int n, double height) => AnimatedBuilder(
+        animation: position,
+        builder: (context, _) {
+          final pos = position.value.clamp(0.0, (n - 1).toDouble());
+          final hasSelection = selectedIndex >= 0;
+          final inkIndex = hasSelection ? pos.round() : -1;
+          return Stack(
+            children: [
+              if (hasSelection)
+                Positioned.fill(
+                  child: ExcludeSemantics(
+                    child: FractionallySizedBox(
+                      widthFactor: 1 / n,
+                      alignment: AlignmentDirectional(
+                        n == 1 ? 0 : -1 + 2 * pos / (n - 1),
+                        0,
+                      ),
+                      child: _thumb(),
+                    ),
+                  ),
+                ),
+              Row(
+                children: [
+                  for (var i = 0; i < n; i++)
+                    Expanded(child: _segment(i, height, inkIndex)),
+                ],
+              ),
+            ],
+          );
+        },
+      );
+
+  /// Segments of [layout]'s widths; the thumb interpolates between them.
+  Widget _apportioned(int n, SegmentLayout layout) {
+    final starts = <double>[0];
+    for (var i = 0; i < n - 1; i++) {
+      starts.add(starts.last + layout.widths[i]);
+    }
+    return AnimatedBuilder(
+      animation: position,
+      builder: (context, _) {
+        final pos = position.value.clamp(0.0, (n - 1).toDouble());
+        final hasSelection = selectedIndex >= 0;
+        final inkIndex = hasSelection ? pos.round() : -1;
+        final i = pos.floor().clamp(0, n - 1);
+        final next = math.min(i + 1, n - 1);
+        final t = pos - i;
+        final start = starts[i] + (starts[next] - starts[i]) * t;
+        final width =
+            layout.widths[i] + (layout.widths[next] - layout.widths[i]) * t;
+        return Stack(
+          children: [
+            if (hasSelection)
+              PositionedDirectional(
+                start: start,
+                width: width,
+                top: 0,
+                bottom: 0,
+                child: ExcludeSemantics(child: _thumb()),
+              ),
+            Row(
+              children: [
+                for (var k = 0; k < n; k++)
+                  SizedBox(
+                    width: layout.widths[k],
+                    child: _segment(k, layout.height, inkIndex,
+                        wrapWidth: layout.scaled ? layout.wrapWidths![k] : null,
+                        padding: layout.labelPadding),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final n = labels.length;
@@ -372,66 +809,36 @@ class SegmentedTrack extends StatelessWidget {
     final height =
         AppSegmentedControl.segmentHeightFor(MediaQuery.textScalerOf(context));
     const inset = AppSegmentedControl.trackInset;
-    const capsule = BorderRadius.all(Radius.circular(AppRadius.capsule));
+
+    Widget body;
+    if (expand) {
+      body = LayoutBuilder(builder: (context, constraints) {
+        if (!constraints.hasBoundedWidth) {
+          return IntrinsicWidth(child: _equal(n, height));
+        }
+        final layout = SegmentLayout.compute(
+          context,
+          labels: labels,
+          maxWidth: constraints.maxWidth,
+          labelPadding: labelPadding,
+          allowWrap: allowWrap,
+        );
+        return layout.equal && layout.labelPadding == labelPadding
+            ? _equal(n, height)
+            : _apportioned(n, layout);
+      });
+    } else {
+      body = _equal(n, height);
+    }
 
     Widget control = DecoratedBox(
       key: trackKey,
       decoration: BoxDecoration(
         color: colors.track,
-        borderRadius: capsule,
+        borderRadius: _capsule,
         border: Border.fromBorderSide(colors.trackBorder),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(inset),
-        child: AnimatedBuilder(
-          animation: position,
-          builder: (context, _) {
-            final pos = position.value.clamp(0.0, (n - 1).toDouble());
-            final hasSelection = selectedIndex >= 0;
-            final inkIndex = hasSelection ? pos.round() : -1;
-            return Stack(
-              children: [
-                if (hasSelection)
-                  Positioned.fill(
-                    child: ExcludeSemantics(
-                      child: FractionallySizedBox(
-                        widthFactor: 1 / n,
-                        alignment: AlignmentDirectional(
-                          n == 1 ? 0 : -1 + 2 * pos / (n - 1),
-                          0,
-                        ),
-                        child: DecoratedBox(
-                          key: thumbKey,
-                          decoration: BoxDecoration(
-                            color: colors.thumb,
-                            borderRadius: capsule,
-                            border: Border.fromBorderSide(colors.thumbBorder),
-                            boxShadow: colors.thumbShadow,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                Row(
-                  children: [
-                    for (var i = 0; i < n; i++)
-                      Expanded(
-                        child: _Segment(
-                          tab: labels[i],
-                          height: height,
-                          selected: i == selectedIndex,
-                          inked: i == inkIndex,
-                          colors: colors,
-                          onTap: onTap == null ? null : () => onTap!(i),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            );
-          },
-        ),
-      ),
+      child: Padding(padding: const EdgeInsets.all(inset), child: body),
     );
     if (!expand) control = IntrinsicWidth(child: control);
     return Semantics(
@@ -450,16 +857,23 @@ class _Segment extends StatelessWidget {
     required this.selected,
     required this.inked,
     required this.colors,
+    required this.labelPadding,
     required this.onTap,
+    this.wrapWidth,
   });
 
   final AppSegmentedTab tab;
+
+  /// When set, the label wraps at this width and is scaled down to fit its
+  /// segment (see [SegmentLayout.scale]).
+  final double? wrapWidth;
   final double height;
   final bool selected;
 
   /// Whether the thumb currently sits under this label.
   final bool inked;
   final AppSegmentedPalette colors;
+  final double labelPadding;
   final VoidCallback? onTap;
 
   @override
@@ -470,14 +884,20 @@ class _Segment extends StatelessWidget {
       AppSegmentedControl.labelToken,
       color: ink,
     ).copyWith(fontWeight: inked ? FontWeight.w600 : FontWeight.w400);
+    // Never truncated: [SegmentLayout] gives the label room on one line, or
+    // a taller segment to wrap into.
     Widget label = Text(
       tab.label,
       style: style,
-      maxLines: 1,
-      softWrap: false,
-      overflow: TextOverflow.ellipsis,
       textAlign: TextAlign.center,
     );
+    final wrapWidth = this.wrapWidth;
+    if (wrapWidth != null) {
+      label = FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(width: wrapWidth, child: label),
+      );
+    }
     if (tab.semanticLabel != null) label = ExcludeSemantics(child: label);
     final icon = tab.icon;
 
@@ -495,13 +915,13 @@ class _Segment extends StatelessWidget {
             child: SizedBox(
               height: height,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                padding: EdgeInsets.symmetric(horizontal: labelPadding),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon, size: 18, color: ink),
-                      const SizedBox(width: AppSpacing.xxs),
+                      Icon(icon, size: SegmentLayout.iconSize, color: ink),
+                      const SizedBox(width: SegmentLayout.iconGap),
                     ],
                     Flexible(child: label),
                   ],
