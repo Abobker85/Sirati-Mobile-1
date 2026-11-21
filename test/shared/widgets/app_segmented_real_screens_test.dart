@@ -69,6 +69,26 @@ void main() {
                 lessThanOrEqualTo(
                     tester.getRect(find.byType(AppBar)).bottom + 0.5),
                 reason: reason);
+            // Not over-reserved beyond the contract: the slot is exactly
+            // the bar's own measure for these tabs on this view.
+            final barWidget = tester.widget<AppSegmentedTabBar>(bar);
+            final reserved = barWidget.preferredSize.height;
+            final measured = SegmentLayout.heightWithoutContext(
+                  labels: barWidget.tabs,
+                  maxWidth: 320 -
+                      barWidget.padding.horizontal -
+                      2 * AppSegmentedControl.trackInset,
+                  labelPadding: barWidget.labelPadding,
+                  scaler: TextScaler.linear(scale),
+                ) +
+                2 * AppSegmentedControl.trackInset +
+                barWidget.padding.vertical;
+            expect(reserved, moreOrLessEquals(measured, epsilon: 1e-6),
+                reason: reason);
+            // The laid-out control fits what was reserved.
+            expect(track.height + barWidget.padding.vertical,
+                lessThanOrEqualTo(reserved + 0.5),
+                reason: reason);
             expect(track.left, greaterThanOrEqualTo(0), reason: reason);
             expect(track.right, lessThanOrEqualTo(320), reason: reason);
 
