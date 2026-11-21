@@ -30,7 +30,7 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
   2. **Header status row at text scale 2.0:** it overflowed by 19–21 px on every step. The count Text is now `Flexible`, and both status texts drop to one line while typing.
   3. **One long selected skill:** it overflowed the chip Row (`skill_chips_selector.dart`, then line 285). The chip label is now `Flexible`, so it wraps inside the chip.
 - **Decisions:**
-  - **Header and footer text is capped at text scale 1.5** (`WizardHeader.maxChromeTextScale`, via `MediaQuery.withClampedTextScaling`), as iOS bars are. The step's own content still scales fully, and the announced label carries the full text. Without the cap, at 2.0 with the keyboard open the header and footer alone took the whole 252 px left above the keyboard.
+  - **Header and footer text is capped at text scale 1.5 only while the keyboard is open** (`WizardHeader.maxChromeTextScale`, via `MediaQuery.withClampedTextScaling`). With the keyboard up only 252 px are left, and without the cap the header and footer alone filled them at 2.0. With the keyboard closed they scale fully to 200%, per AGENTS.md and main's decision on 2026-11-21. The step's own content always scales fully, and the announced label carries the full text.
   - **Banner and sections use the grouped card fill, not grey.** That fill is white in light and `#1A201D` in dark. On the grouped page, grey is the page itself (`#F2F2F7`), so a grey card would vanish. The ticket's "grey card" is read as a neutral, borderless card.
   - **The step dots stay,** because jump-back navigation needs them. While the keyboard is open the dots fold away and the title shrinks to one line with an ellipsis. The announced label keeps the full text.
   - **The footer is laid out below the step, not as an overlay.** It is a non-elevated `GlassSurface` with zero radius. An overlay would need measured list padding, or `validateAndReveal` would park fields under the bar. Since `0b83615` the layout is done by `_WizardLayout`, not a Column.
@@ -100,6 +100,10 @@ Design source: `docs/design/ios26/apple-support-design-prompt.md` (+ images). Ow
   - `test/features/cv_builder/cv_generator_scale_regression_test.dart` (new): checker2's review test, extended to every step. At 320×568, text scale 1.5/2.0, keyboard open and closed, AR and EN, no Flutter error is reported on any step.
   - `cv_generator_screen.dart`, `wizard_header.dart`, `wizard_footer.dart`, `skill_chips_selector.dart`: changed again in `0b83615` for the review fixes listed above.
 - **Tests (after review, on 1e599ba):** full `flutter test`: 3839 passed, 1 skipped (pre-existing), 0 failed. `flutter analyze`: no issues.
+  - Follow-up commit, after main's note: the cap applies only while the keyboard is open (`WizardFooter` now takes `keyboardOpen` too). New tests in `cv_generator_restyle_test.dart`, all at 320×568, AR and EN:
+    - Keyboard closed at ×2.0: every step's header status and footer text is painted at the full 2.0 scale, with no overflow.
+    - Keyboard open at ×2.0: the same text is capped at 1.5.
+  - Full `flutter test` after it: 3843 passed, 1 skipped (pre-existing), 0 failed; `flutter analyze`: no issues.
 - **Tests (first round):** full `flutter test`: 3373 passed, 1 skipped (pre-existing), 0 failed. `flutter analyze`: no issues. No existing test was edited or loosened. No schema change, ARB change or new dependency.
 - **Not covered by a test:** none of the criteria.
 - **Durable learnings for `PROJECT_MEMORY.md`** (outside this ticket's files; main to add):

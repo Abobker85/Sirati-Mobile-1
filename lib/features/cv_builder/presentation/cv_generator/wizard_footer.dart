@@ -24,6 +24,7 @@ class WizardFooter extends StatelessWidget {
     required this.isLoading,
     required this.onBack,
     required this.onPrimary,
+    this.keyboardOpen,
   });
 
   final bool english;
@@ -33,6 +34,9 @@ class WizardFooter extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onBack;
   final VoidCallback onPrimary;
+
+  /// Whether the keyboard is up; see [WizardHeader.keyboardOpen].
+  final bool? keyboardOpen;
 
   /// Key of the glass bar.
   static const glassKey = ValueKey('wizard-footer-glass');
@@ -44,9 +48,13 @@ class WizardFooter extends StatelessWidget {
     final showBack = step > 0;
     const gap = 12.0;
 
-    // Capped like the header (WizardHeader.maxChromeTextScale).
+    // Capped like the header (WizardHeader.maxChromeTextScale), only while
+    // the keyboard is open.
+    final keyboardOpen =
+        this.keyboardOpen ?? MediaQuery.viewInsetsOf(context).bottom > 0;
     return MediaQuery.withClampedTextScaling(
-      maxScaleFactor: WizardHeader.maxChromeTextScale,
+      maxScaleFactor:
+          keyboardOpen ? WizardHeader.maxChromeTextScale : double.infinity,
       child: GlassSurface(
         key: glassKey,
         borderRadius: BorderRadius.zero,

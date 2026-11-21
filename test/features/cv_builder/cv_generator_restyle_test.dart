@@ -463,6 +463,63 @@ void main() {
         }
       }
 
+      // Text resizable to 200%: with the keyboard closed the header and
+      // footer are painted at the user's full size (the 1.5 cap is only for
+      // the half screen left above a keyboard), and nothing overflows.
+      testWidgets(
+          '$language: keyboard closed at x2.0, chrome text is full size',
+          (tester) async {
+        final errors = <String>[];
+        final old = FlutterError.onError;
+        FlutterError.onError = (d) => errors.add(d.exceptionAsString());
+        addTearDown(() => FlutterError.onError = old);
+        for (var step = 0; step < 4; step++) {
+          await _pump(tester,
+              language: language,
+              dark: false,
+              draft: step == 0 ? null : _draftAt(language, step),
+              size: size,
+              textScale: 2.0);
+          if (step > 0) await _restoreTo(tester, step);
+          for (final part in [
+            find.byKey(WizardHeader.statusKey),
+            find.byKey(WizardFooter.glassKey),
+          ]) {
+            final paragraphs =
+                find.descendant(of: part, matching: find.byType(Text));
+            expect(paragraphs, findsWidgets);
+            for (final e in paragraphs.evaluate()) {
+              final scaler = paragraphOf(e.renderObject!).textScaler;
+              expect(scaler.scale(10), 20, reason: 'step ${step + 1}');
+            }
+          }
+          expect(errors, isEmpty, reason: 'step ${step + 1}');
+        }
+        FlutterError.onError = old;
+      });
+
+      testWidgets('$language: keyboard open at x2.0, chrome text is capped',
+          (tester) async {
+        await _pump(tester,
+            language: language,
+            dark: false,
+            size: size,
+            textScale: 2.0,
+            keyboard: keyboard);
+        for (final part in [
+          find.byKey(WizardHeader.statusKey),
+          find.byKey(WizardFooter.glassKey),
+        ]) {
+          for (final e in find
+              .descendant(of: part, matching: find.byType(Text))
+              .evaluate()) {
+            final scaler = paragraphOf(e.renderObject!).textScaler;
+            expect(scaler.scale(10), 10 * WizardHeader.maxChromeTextScale);
+          }
+        }
+        expect(tester.takeException(), isNull);
+      });
+
       testWidgets('$language: keyboard closed at x1.3, the dots are shown',
           (tester) async {
         for (var step = 0; step < 4; step++) {

@@ -763,6 +763,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
               LayoutId(
                 id: _WizardSlot.footer,
                 child: WizardFooter(
+                  keyboardOpen: keyboardOpen,
                   english: english,
                   step: _step,
                   stepCount: _stepCount,

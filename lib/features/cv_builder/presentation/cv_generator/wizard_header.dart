@@ -47,7 +47,8 @@ class WizardHeader extends StatelessWidget {
   /// Key of the dot row, present only while the keyboard is closed.
   static const dotsKey = ValueKey('wizard-step-dots');
 
-  /// Largest text scale the header and footer chrome follow.
+  /// Largest text scale the header and footer chrome follow while the
+  /// keyboard is open; with it closed they follow the user's size.
   static const maxChromeTextScale = 1.5;
 
   /// Height kept for the step's content below the header before the dot row
@@ -84,11 +85,12 @@ class WizardHeader extends StatelessWidget {
             ),
     );
 
-    // Bar chrome caps its text at [maxChromeTextScale], as iOS bars do: at
-    // the largest sizes on a small phone the step itself keeps the room.
+    // While the keyboard is up (about half a small phone left), bar chrome
+    // caps its text at [maxChromeTextScale] so the field being typed in
+    // keeps the room. Otherwise it scales fully (text resizable to 200%).
     // The announced label always carries the full text.
     return MediaQuery.withClampedTextScaling(
-      maxScaleFactor: maxChromeTextScale,
+      maxScaleFactor: keyboardOpen ? maxChromeTextScale : double.infinity,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
         // With a height limit (the wizard gives one), the dot row shows only
