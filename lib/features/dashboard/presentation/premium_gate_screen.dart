@@ -62,6 +62,7 @@ class PremiumGateScreen extends ConsumerStatefulWidget {
   static const supportKey = ValueKey('premium-support');
   static const noticeKey = ValueKey('premium-notice');
   static const benefitsKey = ValueKey('premium-benefits');
+  static const heroKey = ValueKey('premium-hero');
   static Key planKey(String key) => ValueKey('premium-plan-$key');
 
   @override
@@ -731,14 +732,14 @@ class _Hero extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
+    // Borderless, unshadowed, flat page fill (white on the grouped page in
+    // light): no brand gradient. The page's call to action stays the theme's
+    // teal capsule (Buy or Refresh) further down.
     return DecoratedBox(
+      key: PremiumGateScreen.heroKey,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.topStart,
-          end: AlignmentDirectional.bottomEnd,
-          colors: [c.brandSurface, c.brandSurfaceDeep],
-        ),
-        borderRadius: AppRadius.xlAll,
+        color: PageSurface.fillOf(context),
+        borderRadius: AppRadius.cardAll,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
@@ -748,7 +749,7 @@ class _Hero extends StatelessWidget {
             Icon(
               Icons.workspace_premium_rounded,
               size: 40,
-              color: c.onBrandSurface,
+              color: c.primary,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
@@ -756,7 +757,7 @@ class _Hero extends StatelessWidget {
               style: AppTypography.of(
                 context,
                 AppTypography.headlineLg,
-                color: c.onBrandSurface,
+                color: c.textPrimary,
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
@@ -765,7 +766,7 @@ class _Hero extends StatelessWidget {
               style: AppTypography.of(
                 context,
                 AppTypography.bodyMd,
-                color: c.onBrandSurface,
+                color: c.textSecondary,
               ),
             ),
           ],
