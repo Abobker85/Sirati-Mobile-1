@@ -20,8 +20,8 @@
 - **Files:**
   - `.scratch/ios26-restyle/issues/26-round-3-final-check.md` (this file).
   - Outside this repo, not committed:
-    - `D:\Sirati\docs\screenshotsfter-round2\`: round 2's 320 captures plus their `index.md`, copied before the recapture.
-    - `D:\Sirati\docs\screenshotsll-screens\`: the 320 round 3 captures, with `.failures.json` = `{}`.
+    - `D:\Sirati\docs\screenshots\after-round2\`: round 2's 320 captures plus their `index.md`, copied before the recapture.
+    - `D:\Sirati\docs\screenshots\all-screens\`: the 320 round 3 captures, with `.failures.json` = `{}`.
     - `D:\Sirati\docs\screenshots\ios26-before-after.html`: the board for 80 screens, now with four columns per screen: before (`before-ios26/`), round 1 (`after-round1/`), round 2 (`after-round2/`) and round 3 (`all-screens/`). The AR/EN x light/dark toggles and the width slider are unchanged. All 1280 image paths are relative (320 per column), and all of them resolve on disk.
 - **Tests** (all run from the main checkout on `feat/ios26-restyle` at `f86dcbf`):
   - Full `flutter test`: 4116 passed, 0 skipped, 0 failed.
