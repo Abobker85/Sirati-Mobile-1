@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sirati/features/ats_scanner/domain/score_band.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result/keyword_group.dart';
@@ -9,6 +11,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// First tab: score hero, per-criterion breakdown, and keyword coverage.
 class ScoreTab extends StatelessWidget {
@@ -31,6 +34,15 @@ class ScoreTab extends StatelessWidget {
   /// The last scan's score for the same CV and job, if any.
   final int? previousScore;
 
+  /// The score card at the top.
+  static const heroKey = ValueKey('analysis-score-hero');
+
+  /// The score band's icon in the grade badge.
+  static const bandIconKey = ValueKey('analysis-score-band-icon');
+
+  /// A criterion band's icon in its percentage chip.
+  static const criterionIconKey = ValueKey('analysis-criterion-band-icon');
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -48,24 +60,41 @@ class ScoreTab extends StatelessWidget {
           Text(
             AppLocalizations.of(context).atsResultKeywordSummary(
               analysis.keywordsFound.length,
-              analysis.keywordsMissing.length,
+              analysis.keywordsMissing.length + analysis.hidden.keywordsMissing,
             ),
             key: const ValueKey('ats-result-keyword-summary'),
             style: TextStyle(color: context.sirati.textSecondary),
           ),
         const SizedBox(height: 24),
-        SectionTitle(AppLocalizations.of(context).atsCriteriaDetails),
-        const SizedBox(height: 12),
-        _CriteriaCard(criteria: analysis.criteria),
+        MotionReveal(
+          order: 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SectionTitle(AppLocalizations.of(context).atsCriteriaDetails),
+              const SizedBox(height: 12),
+              _CriteriaCard(criteria: analysis.criteria),
+            ],
+          ),
+        ),
         const SizedBox(height: 24),
         if (analysis.hasKeywordSummary)
-          SectionTitle(AppLocalizations.of(context).atsKeywordsTitle),
-        const SizedBox(height: 12),
-        if (analysis.hasKeywordSummary)
-          _KeywordsCard(
-            found: analysis.keywordsFound,
-            missing: analysis.keywordsMissing,
-            english: english,
+          MotionReveal(
+            order: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SectionTitle(AppLocalizations.of(context).atsKeywordsTitle),
+                const SizedBox(height: 12),
+                _KeywordsCard(
+                  found: analysis.keywordsFound,
+                  missing: analysis.keywordsMissing,
+                  missingTotal: analysis.keywordsMissing.length +
+                      analysis.hidden.keywordsMissing,
+                  english: english,
+                ),
+              ],
+            ),
           ),
         if (analysis.hidden.keywordsMissing > 0) ...[
           const SizedBox(height: 8),
@@ -101,13 +130,9 @@ class _ScoreHero extends StatelessWidget {
       english: english,
     );
 
-    return Container(
+    return AppCard(
+      key: ScoreTab.heroKey,
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.border),
-      ),
       child: Column(
         children: [
           if (analysis.hasScore) ...[
@@ -118,57 +143,81 @@ class _ScoreHero extends StatelessWidget {
               previousScore: previousScore,
             ),
             const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: band.container(c),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                AppLocalizations.of(context)
-                    .atsGradeLabel(AtsGrade.of(analysis.scoreTotal).label),
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: band.onContainer(c),
-                ),
+            _ScoreHeroRevealBeat(
+              reveal: reveal,
+              child: Column(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: band.container(c),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          band.icon,
+                          key: ScoreTab.bandIconKey,
+                          size: 18,
+                          color: band.onContainer(c),
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            AppLocalizations.of(context).atsGradeLabel(
+                                AtsGrade.of(analysis.scoreTotal).label),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: band.onContainer(c),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    band.description(AppLocalizations.of(context)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: c.textSecondary,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (AnimatedScoreRing.deltaOf(
+                          analysis.scoreTotal, previousScore)
+                      case final delta?) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      delta > 0
+                          ? AppLocalizations.of(context)
+                              .atsScoreUpSinceLast(delta)
+                          : AppLocalizations.of(context)
+                              .atsScoreDownSinceLast(delta.abs()),
+                      key: const ValueKey('analysis-score-since-last'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: c.textSecondary,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              band.description(AppLocalizations.of(context)),
-              style: TextStyle(
-                fontSize: 12,
-                color: c.textSecondary,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (AnimatedScoreRing.deltaOf(analysis.scoreTotal, previousScore)
-                case final delta?) ...[
-              const SizedBox(height: 4),
-              Text(
-                delta > 0
-                    ? AppLocalizations.of(context).atsScoreUpSinceLast(delta)
-                    : AppLocalizations.of(context)
-                        .atsScoreDownSinceLast(delta.abs()),
-                key: const ValueKey('analysis-score-since-last'),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: c.textSecondary,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
           ] else
             Text(
               AppLocalizations.of(context).homeHeroScoreUnavailable,
               style: TextStyle(color: c.textSecondary),
             ),
           const SizedBox(height: 16),
-          const Divider(),
+          Divider(height: 1, thickness: 0.5, color: c.separator),
           const SizedBox(height: 14),
           Row(
             children: [
@@ -217,7 +266,6 @@ class _ScoreHero extends StatelessWidget {
             AnimatedAtsScoreBar(
               value: jobMatch / 100,
               color: c.primaryInk,
-              trackColor: c.surface,
               height: 7,
               borderRadius: 6,
               // Primary score: haptic the moment the elastic fill settles.
@@ -235,14 +283,8 @@ class _ScoreHero extends StatelessWidget {
           ],
           if (category != null) ...[
             const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: c.background,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: c.border),
-              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
                   Icon(Icons.tune_rounded, size: 14, color: c.textSecondary),
@@ -272,6 +314,81 @@ class _ScoreHero extends StatelessWidget {
   }
 }
 
+/// Reveals the grade pill and delta explanation right as [AnimatedScoreRing]
+/// reaches its [AnimatedScoreRing.climbShare] landing beat.
+class _ScoreHeroRevealBeat extends StatefulWidget {
+  const _ScoreHeroRevealBeat({required this.reveal, required this.child});
+
+  final bool reveal;
+  final Widget child;
+
+  @override
+  State<_ScoreHeroRevealBeat> createState() => _ScoreHeroRevealBeatState();
+}
+
+class _ScoreHeroRevealBeatState extends State<_ScoreHeroRevealBeat>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: AnimatedScoreRing.duration,
+  );
+  late final Animation<double> _beat = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(
+      AnimatedScoreRing.climbShare * 0.9,
+      1.0,
+      curve: MotionCurves.enter,
+    ),
+  );
+  bool _triggered = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.reveal || MotionSettings.reduce(context)) {
+      _triggered = true;
+      _controller.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.reveal || MotionSettings.reduce(context)) {
+      return widget.child;
+    }
+    return RouteSettled(
+      builder: (context, settled) {
+        if (settled && !_triggered) {
+          _triggered = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(_controller.forward());
+          });
+        }
+        return AnimatedBuilder(
+          animation: _beat,
+          child: widget.child,
+          builder: (context, child) {
+            final t = _beat.value;
+            return Opacity(
+              opacity: t,
+              child: Transform.scale(
+                scale: 0.92 + 0.08 * t,
+                child: child,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
 class _CriteriaCard extends StatelessWidget {
   const _CriteriaCard({required this.criteria});
 
@@ -279,13 +396,15 @@ class _CriteriaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.sirati;
     return AppCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(
         children: [
           for (var i = 0; i < criteria.length; i++) ...[
             _CriterionRow(criterion: criteria[i]),
-            if (i < criteria.length - 1) const Divider(height: 1),
+            if (i < criteria.length - 1)
+              Divider(height: 1, thickness: 0.5, color: c.separator),
           ],
         ],
       ),
@@ -337,13 +456,25 @@ class _CriterionRow extends StatelessWidget {
                     color: criterionBand.container(c),
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  child: Text(
-                    '${(ratio * 100).round()}%',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: criterionBand.onContainer(c),
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        criterionBand.icon,
+                        key: ScoreTab.criterionIconKey,
+                        size: 13,
+                        color: criterionBand.onContainer(c),
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${(ratio * 100).round()}%',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: criterionBand.onContainer(c),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -353,7 +484,6 @@ class _CriterionRow extends StatelessWidget {
           AnimatedAtsScoreBar(
             value: ratio,
             color: barColor,
-            trackColor: c.surface,
             height: 6,
             borderRadius: 6,
           ),
@@ -367,11 +497,13 @@ class _KeywordsCard extends StatelessWidget {
   const _KeywordsCard({
     required this.found,
     required this.missing,
+    this.missingTotal,
     required this.english,
   });
 
   final List<String> found;
   final List<String> missing;
+  final int? missingTotal;
   final bool english;
 
   @override
@@ -390,13 +522,13 @@ class _KeywordsCard extends StatelessWidget {
           const SizedBox(height: 10),
           KeywordGroup(keywords: found, found: true, english: english),
           const SizedBox(height: 16),
-          const Divider(),
+          Divider(height: 1, thickness: 0.5, color: c.separator),
           const SizedBox(height: 14),
           _KeywordHeading(
             dotColor: c.red,
             textColor: c.red,
-            label:
-                AppLocalizations.of(context).atsKeywordsMissing(missing.length),
+            label: AppLocalizations.of(context)
+                .atsKeywordsMissing(missingTotal ?? missing.length),
           ),
           const SizedBox(height: 10),
           KeywordGroup(keywords: missing, found: false, english: english),

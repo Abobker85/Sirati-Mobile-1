@@ -3,20 +3,24 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
-/// A Home card that is one tap target, with the board's states: pressed
-/// turns the surface a step darker and the border to the selected colour;
-/// keyboard focus draws a 2dp ring outside the card.
+/// A Home card that is one tap target, in the iOS 26 style: a grey,
+/// shadowless fill with 18dp corners. Pressing darkens the fill and springs
+/// the card down to [pressedScale], then back on release (no scale with
+/// reduced motion; the fill still darkens). Keyboard focus draws a 2dp ring
+/// outside the card.
 class HomePressableCard extends StatefulWidget {
   const HomePressableCard({
     super.key,
     required this.child,
     required this.onTap,
     this.inkKey,
-    this.radius = 22,
+    this.radius = AppRadius.card,
     this.color,
-    this.pressedColor,
     this.semanticsLabel,
   });
+
+  /// How far a held card shrinks.
+  static const pressedScale = .96;
 
   final Widget child;
   final VoidCallback? onTap;
@@ -25,9 +29,9 @@ class HomePressableCard extends StatefulWidget {
   final Key? inkKey;
   final double radius;
 
-  /// Resting fill; the surface by default.
+  /// Resting fill; the card fill by default. The pressed fill is derived
+  /// from it, so every card darkens by the same rule.
   final Color? color;
-  final Color? pressedColor;
 
   /// Read instead of the card's text, when the text alone is not enough.
   final String? semanticsLabel;
@@ -45,17 +49,14 @@ class _HomePressableCardState extends State<HomePressableCard> {
     final c = context.sirati;
     final radius = BorderRadius.circular(widget.radius);
     final enabled = widget.onTap != null;
+    final reduce = MotionSettings.reduce(context);
+    final fill = widget.color ?? c.cardFill;
 
     Widget card = AnimatedContainer(
-      duration: MotionSettings.reduce(context)
-          ? Duration.zero
-          : const Duration(milliseconds: 120),
+      duration: reduce ? Duration.zero : const Duration(milliseconds: 120),
       decoration: BoxDecoration(
-        color: _pressed
-            ? (widget.pressedColor ?? c.surfaceContainer)
-            : (widget.color ?? c.surface),
+        color: _pressed ? c.pressed(fill) : fill,
         borderRadius: radius,
-        border: Border.all(color: _pressed ? c.primary : c.border),
       ),
       child: Material(
         type: MaterialType.transparency,
@@ -66,8 +67,8 @@ class _HomePressableCardState extends State<HomePressableCard> {
           onTap: widget.onTap,
           borderRadius: radius,
           splashFactory: NoSplash.splashFactory,
-          // The pressed surface and border are the feedback.
-          overlayColor: WidgetStatePropertyAll(c.surface.withValues(alpha: 0)),
+          // The darker fill is the feedback.
+          overlayColor: WidgetStatePropertyAll(fill.withValues(alpha: 0)),
           onHighlightChanged: (v) => setState(() => _pressed = v),
           onFocusChange: (v) => setState(() => _focused = v),
           // Icons inside squish and bounce back with the card.
@@ -100,11 +101,11 @@ class _HomePressableCardState extends State<HomePressableCard> {
       ],
     );
 
-    // Type C press: the card dips to 0.97 while held (none with reduce motion).
+    // Press: down quickly, back with a small spring overshoot.
     card = AnimatedScale(
-      scale: _pressed && !MotionSettings.reduce(context) ? .97 : 1,
-      duration: MotionDurations.press,
-      curve: MotionCurves.standard,
+      scale: _pressed && !reduce ? HomePressableCard.pressedScale : 1,
+      duration: _pressed ? MotionDurations.press : MotionDurations.medium,
+      curve: _pressed ? MotionCurves.standard : MotionCurves.pop,
       child: card,
     );
 

@@ -1,0 +1,29 @@
+diff --git a/lib/features/cv_builder/presentation/widgets/skill_chips_selector.dart b/lib/features/cv_builder/presentation/widgets/skill_chips_selector.dart
+index 89e9fe4..c11715e 100644
+--- a/lib/features/cv_builder/presentation/widgets/skill_chips_selector.dart
++++ b/lib/features/cv_builder/presentation/widgets/skill_chips_selector.dart
+@@ -225,14 +225,16 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
+                           // Destructive copy ink: AA on every fill.
+                           foregroundColor: c.onErrorContainer,
+                         ),
+-                        onPressed: () {
+-                          HapticFeedback.selectionClick();
+-                          setState(() {
+-                            _justAddedKeys.clear();
+-                            _skills.clear();
+-                            _syncToController();
+-                          });
+-                        },
++                        onPressed: widget.enabled
++                            ? () {
++                                HapticFeedback.selectionClick();
++                                setState(() {
++                                  _justAddedKeys.clear();
++                                  _skills.clear();
++                                  _syncToController();
++                                });
++                              }
++                            : null,
+                         child: Text(
+                           AppLocalizations.of(context).cvSkillsClearAll,
+                           style: const TextStyle(

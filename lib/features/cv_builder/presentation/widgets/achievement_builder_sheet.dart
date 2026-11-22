@@ -78,7 +78,7 @@ class AchievementBuilderSheet extends StatefulWidget {
     return showGlassBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      // The sheet draws its own grab bar.
+      // The sheet draws its own top, with its own close button.
       showDragHandle: false,
       builder: (ctx) => AchievementBuilderSheet(
         english: english,
@@ -156,9 +156,20 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
         buffer.write('، $metric');
       }
       if (method.isNotEmpty) {
-        if (!method.startsWith('عبر') &&
-            !method.startsWith('من خلال') &&
-            !method.startsWith('باستخدام')) {
+        // A method already led by a means phrase keeps it; "عبر" before
+        // another preposition reads "via by ...".
+        const meansPhrases = [
+          'عبر',
+          'من خلال',
+          'باستخدام',
+          'بتطبيق',
+          'بواسطة',
+          'بالاعتماد',
+          'بالاستعانة',
+          'بفضل',
+          'بالتعاون',
+        ];
+        if (!meansPhrases.any(method.startsWith)) {
           buffer.write('، عبر $method');
         } else {
           buffer.write('، $method');
@@ -219,7 +230,9 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
             'بنسبة دقة 99.9%'
           ];
 
-    return Padding(
+    // Sheet content sits on the grouped sheet page: white fields and chips.
+    return GroupedSurface(
+        child: Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
       child: SingleChildScrollView(
         child: Padding(
@@ -228,19 +241,6 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── Handle bar ───────────────────────────────────────────────
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: c.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
               // ── Header ───────────────────────────────────────────────────
               Row(
                 children: [
@@ -253,7 +253,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                     child: Icon(
                       Icons.auto_awesome_rounded,
                       size: 20,
-                      color: c.primaryDark,
+                      color: c.primaryInk,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -296,7 +296,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: c.primaryDark,
+                  color: c.primaryInk,
                 ),
               ),
               const SizedBox(height: 8),
@@ -375,8 +375,6 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                                   fontSize: 11, color: c.textSecondary)),
                           padding: EdgeInsets.zero,
                           visualDensity: VisualDensity.compact,
-                          backgroundColor: c.surfaceLow,
-                          side: BorderSide(color: c.border),
                           onPressed: () => _actionCtrl.text =
                               applyAchievementVerb(
                                   _actionCtrl.text, pill, actionVerbs),
@@ -411,8 +409,6 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                                   fontSize: 11, color: c.textSecondary)),
                           padding: EdgeInsets.zero,
                           visualDensity: VisualDensity.compact,
-                          backgroundColor: c.surfaceLow,
-                          side: BorderSide(color: c.border),
                           onPressed: () {
                             _metricCtrl.text = pill;
                           },
@@ -446,7 +442,6 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                   decoration: BoxDecoration(
                     color: c.primaryLight,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: c.primary.withValues(alpha: .3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,14 +449,14 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                       Row(
                         children: [
                           Icon(Icons.visibility_outlined,
-                              size: 16, color: c.primaryDark),
+                              size: 16, color: c.primaryInk),
                           const SizedBox(width: 6),
                           Text(
                             l10n.cvXyzPreviewTitle,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: c.primaryDark,
+                              color: c.primaryInk,
                             ),
                           ),
                         ],
@@ -491,7 +486,6 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: BorderSide(color: c.border),
                       ),
                       onPressed: () => Navigator.of(context).pop(),
                       child: Text(l10n.cancel),
@@ -500,10 +494,10 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: c.primary,
-                        foregroundColor: c.onPrimary,
+                    // The theme's primary capsule: its enabled and disabled
+                    // pairs are both AA.
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       onPressed: canInsert ? _insert : null,
@@ -520,7 +514,7 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -533,32 +527,35 @@ class _PresetChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: c.surfaceLow,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: c.border),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.flash_on_rounded, size: 14, color: c.primary),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: c.textPrimary,
-              ),
+    final fill = PageSurface.fillOf(context);
+    // A filled capsule like the theme's chips: the sheet page's fill, a
+    // darker fill while pressed, no outline.
+    return Material(
+        color: fill,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const StadiumBorder(),
+          highlightColor: c.pressOverlay(fill),
+          splashFactory: NoSplash.splashFactory,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.flash_on_rounded, size: 14, color: c.primaryInk),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: c.textPrimary,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
   }
 }

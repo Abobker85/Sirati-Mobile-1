@@ -5,10 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/components/brand_gradient_button.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/components/app_button.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/offline_view.dart';
 
+import '../support/card_chrome.dart';
 import '../support/contrast_probe.dart';
 
 Future<void> _pump(
@@ -19,6 +21,7 @@ Future<void> _pump(
   Size size = const Size(390, 844),
   double textScale = 1,
   bool disableAnimations = false,
+  bool grouped = false,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -38,7 +41,11 @@ Future<void> _pump(
         ),
         child: app!,
       ),
-      home: Scaffold(appBar: AppBar(), body: child),
+      home: grouped
+          ? GroupedSurface(
+              child: Scaffold(appBar: AppBar(), body: child),
+            )
+          : Scaffold(appBar: AppBar(), body: child),
     ),
   );
 }
@@ -63,6 +70,41 @@ void _expectMeaningfulIconsAa(String label) {
   }
 }
 
+/// The retry action: the teal primary capsule.
+final _retry = find.byWidgetPredicate(
+  (w) => w is AppButton && w.variant == AppButtonVariant.primary,
+);
+
+/// The open-saved action: the grey secondary capsule.
+final _openSaved = find.byWidgetPredicate(
+  (w) => w is AppButton && w.variant == AppButtonVariant.secondary,
+);
+
+/// Asserts nothing painted under the offline view uses a gradient or a
+/// shader, walking every widget in the pumped tree.
+void _expectNoGradient(String label) {
+  final root = find.byType(OfflineView);
+  for (final element in find
+      .descendant(of: root, matching: find.byWidgetPredicate((_) => true))
+      .evaluate()) {
+    final widget = element.widget;
+    expect(widget, isNot(isA<ShaderMask>()), reason: label);
+    final decoration = switch (widget) {
+      DecoratedBox(:final decoration) => decoration,
+      Ink(:final decoration) => decoration,
+      _ => null,
+    };
+    if (decoration is BoxDecoration) {
+      expect(decoration.gradient, isNull, reason: '$label: $widget');
+    } else if (decoration is ShapeDecoration) {
+      expect(decoration.gradient, isNull, reason: '$label: $widget');
+    }
+  }
+}
+
+/// The page colour actually painted behind [element].
+Color _pageBehind(Element element) => paintedBackgroundsOf(element).single;
+
 const _delays = [
   Duration(seconds: 5),
   Duration(seconds: 10),
@@ -73,41 +115,107 @@ void main() {
   const layouts = [
     (Size(390, 844), 1.0),
     (Size(320, 568), 1.0),
+    (Size(320, 568), 1.3),
     (Size(320, 568), 2.0),
     (Size(1024, 768), 1.0),
   ];
 
-  for (final english in [false, true]) {
-    for (final dark in [false, true]) {
-      for (final (size, scale) in layouts) {
-        final label =
-            '${english ? 'en' : 'ar'} ${dark ? 'dark' : 'light'} $size x$scale';
-        testWidgets('lays out, reads and taps cleanly ($label)',
-            (tester) async {
-          await _pump(
-            tester,
-            OfflineView(onRetry: () {}, onOpenSaved: () {}),
-            english: english,
-            dark: dark,
-            size: size,
-            textScale: scale,
-          );
-          await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
-          expectAllTextAa(label);
-          _expectMeaningfulIconsAa(label);
-          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+  for (final grouped in [false, true]) {
+    final kind = grouped ? PageSurfaceKind.grouped : PageSurfaceKind.plain;
+    for (final english in [false, true]) {
+      for (final dark in [false, true]) {
+        for (final (size, scale) in layouts) {
+          final label = '${kind.name} ${english ? 'en' : 'ar'} '
+              '${dark ? 'dark' : 'light'} $size x$scale';
+          testWidgets('lays out, reads and taps cleanly ($label)',
+              (tester) async {
+            await _pump(
+              tester,
+              OfflineView(onRetry: () {}, onOpenSaved: () {}),
+              english: english,
+              dark: dark,
+              size: size,
+              textScale: scale,
+              grouped: grouped,
+            );
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+            expectAllTextAa(label);
+            _expectMeaningfulIconsAa(label);
+            await expectLater(
+                tester, meetsGuideline(androidTapTargetGuideline));
+            await expectLater(
+                tester, meetsGuideline(labeledTapTargetGuideline));
+            _expectNoGradient(label);
 
-          final retry = find.byType(BrandGradientButton);
-          expect(tester.getSize(retry).width, lessThanOrEqualTo(440));
-          await tester.ensureVisible(find.byType(OutlinedButton));
-          await tester.pumpAndSettle();
-          expect(
-            tester.getRect(find.byType(OutlinedButton)).bottom,
-            lessThanOrEqualTo(size.height),
-          );
-        });
+            final c = Theme.of(tester.element(find.byType(OfflineView)))
+                .extension<SiratiColors>()!;
+            final fill = PageSurface.fillColor(c, kind);
+
+            // Tips: an inset-grouped section with no outline or shadow, on
+            // the page's fill, which differs from the page behind it.
+            final section = find.byType(AppListSection);
+            expect(section, findsOneWidget, reason: label);
+            expectNoCardChrome(section, label);
+            final card = find.byKey(AppListSection.cardKey);
+            final cardFill = tester.widget<Material>(card).color!;
+            expect(cardFill, fill, reason: label);
+            expect(cardFill, isNot(_pageBehind(tester.element(card))),
+                reason: '$label: card vs page');
+
+            // The state circle stands out from the page too.
+            final circle = tester.widget<Container>(find
+                .descendant(
+                    of: find.byType(AppStateIcon),
+                    matching: find.byType(Container))
+                .first);
+            final circleFill = (circle.decoration! as BoxDecoration).color!;
+            expect(
+              circleFill,
+              isNot(_pageBehind(tester.element(find.byType(AppStateIcon)))),
+              reason: '$label: circle vs page',
+            );
+
+            // Retry: the teal filled capsule.
+            final retryStyle = tester
+                .widget<ElevatedButton>(find.descendant(
+                    of: _retry, matching: find.byType(ElevatedButton)))
+                .style!;
+            expect(retryStyle.backgroundColor!.resolve(const {}), c.primary,
+                reason: label);
+            expect(retryStyle.shape!.resolve(const {}), isA<StadiumBorder>(),
+                reason: label);
+            expect(tester.getSize(_retry).width, lessThanOrEqualTo(440));
+            // The teal capsule is a 3:1 boundary against the page.
+            expect(
+              AppContrast.ratio(
+                c.primary,
+                _pageBehind(tester.element(find.byType(ElevatedButton))),
+              ),
+              greaterThanOrEqualTo(3),
+              reason: '$label: retry capsule vs page',
+            );
+
+            // Open saved: the grey secondary capsule with no outline.
+            final savedStyle = tester
+                .widget<OutlinedButton>(find.descendant(
+                    of: _openSaved, matching: find.byType(OutlinedButton)))
+                .style!;
+            expect(savedStyle.backgroundColor!.resolve(const {}), fill,
+                reason: label);
+            expect(savedStyle.side!.resolve(const {}), BorderSide.none,
+                reason: label);
+            expect(savedStyle.shape!.resolve(const {}), isA<StadiumBorder>(),
+                reason: label);
+
+            await tester.ensureVisible(find.byType(OutlinedButton));
+            await tester.pumpAndSettle();
+            expect(
+              tester.getRect(find.byType(OutlinedButton)).bottom,
+              lessThanOrEqualTo(size.height),
+            );
+          });
+        }
       }
     }
   }
@@ -165,13 +273,21 @@ void main() {
     );
     final l10n = AppLocalizations.of(tester.element(find.byType(OfflineView)));
 
-    await tester.tap(find.byType(BrandGradientButton));
+    await tester.tap(_retry);
     await tester.pump();
     expect(calls, 1);
     expect(find.text(l10n.sharedOfflineChecking), findsWidgets);
+    // The badge sends out a reconnect ping for the attempt.
+    await tester.pump(OfflinePing.duration ~/ 3);
+    expect(find.byKey(OfflinePing.ringKey), findsOneWidget);
+    // The capsule shows a spinner while checking.
+    expect(
+        find.descendant(
+            of: _retry, matching: find.byType(CircularProgressIndicator)),
+        findsOneWidget);
 
     // A tap while checking does not start a second request.
-    await tester.tap(find.byType(BrandGradientButton));
+    await tester.tap(_retry, warnIfMissed: false);
     await tester.pump();
     expect(calls, 1);
 
@@ -215,7 +331,7 @@ void main() {
       (tester) async {
     await _pump(tester, const OfflineView());
     await tester.pump(const Duration(minutes: 2));
-    expect(find.byType(BrandGradientButton), findsNothing);
+    expect(_retry, findsNothing);
     expect(find.byType(OutlinedButton), findsNothing);
   });
 
@@ -229,8 +345,8 @@ void main() {
       tester,
       OfflineView(onRetry: () {}, onOpenSaved: () => opened++),
     );
-    await tester.ensureVisible(find.byType(OutlinedButton));
-    await tester.tap(find.byType(OutlinedButton));
+    await tester.ensureVisible(_openSaved);
+    await tester.tap(_openSaved);
     expect(opened, 1);
   });
 

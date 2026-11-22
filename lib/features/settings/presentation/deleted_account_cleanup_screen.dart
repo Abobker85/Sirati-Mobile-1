@@ -47,34 +47,50 @@ class _DeletedAccountCleanupScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      backgroundColor: context.sirati.background,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  size: 48,
-                  color: context.sirati.error,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  l10n.settingsCleanupMessage,
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodySm(context.sirati),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                SubmitButton(
-                  label: l10n.settingsCleanupRetry,
-                  loadingLabel: l10n.settingsCleanupClearing,
-                  isLoading: _loading,
-                  onPressed: () => unawaited(_retry()),
-                ),
-              ],
+    final c = context.sirati;
+    // iOS 26 grouped page: the notice sits in one grouped card.
+    return GroupedSurface(
+      child: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Material(
+                    color: c.groupedCard,
+                    borderRadius: AppRadius.cardAll,
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            size: 48,
+                            color: c.onErrorContainer,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            l10n.settingsCleanupMessage,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.bodySm(c),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  SubmitButton(
+                    label: l10n.settingsCleanupRetry,
+                    loadingLabel: l10n.settingsCleanupClearing,
+                    isLoading: _loading,
+                    onPressed: () => unawaited(_retry()),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

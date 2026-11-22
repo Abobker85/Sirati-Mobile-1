@@ -25,6 +25,7 @@ import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/components/app_dialog.dart';
 import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
@@ -72,6 +73,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
         ));
       }
     } catch (error) {
+      if (!mounted) return;
       _reportError(
         error,
         AppLocalizations.of(context).cvOpenFailed,
@@ -84,7 +86,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     if (id == null) return;
     final english = _english;
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSiratiDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context).cvDeleteTitle),
@@ -255,7 +257,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     final english = AppLocale.isEnglish(context);
     final cvs = ref.watch(myCvsProvider(english));
 
-    // The brand band draws under the status bar; the rest stays inset.
+    // The header and the bar pad themselves below the status bar.
     return SafeArea(
       top: false,
       bottom: false,
@@ -292,7 +294,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
             ),
             builder: (data) => Stack(
               children: [
-                NotificationListener<ScrollNotification>(
+                NotificationListener<Notification>(
                   onNotification: _onListScroll,
                   child: SiratiRefreshIndicator(
                     onRefresh: _refresh,
@@ -314,7 +316,8 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     );
   }
 
-  /// Whether the band's top row has scrolled out, so the slim header shows.
+  /// Whether the large title's top row has scrolled out, so the slim header
+  /// shows.
   final _slim = ValueNotifier<bool>(false);
 
   @override
@@ -323,9 +326,16 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     super.dispose();
   }
 
-  bool _onListScroll(ScrollNotification notification) {
-    if (notification.depth == 0 && notification.metrics.axis == Axis.vertical) {
-      _slim.value = notification.metrics.pixels > MyCvsSlimHeader.showAfter;
+  // ScrollMetricsNotification also fires when a fresh list first lays out
+  // (language switch, Retry), so the slim state follows the new offset.
+  bool _onListScroll(Notification notification) {
+    final (depth, metrics) = switch (notification) {
+      ScrollNotification n => (n.depth, n.metrics),
+      ScrollMetricsNotification n => (n.depth, n.metrics),
+      _ => (-1, null),
+    };
+    if (depth == 0 && metrics != null && metrics.axis == Axis.vertical) {
+      _slim.value = metrics.pixels > MyCvsSlimHeader.showAfter;
     }
     return false;
   }
@@ -334,8 +344,8 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
       ? data.title
       : AppLocalizations.of(context).myCvsListTitle;
 
-  /// Slides down over the band as its top row leaves, and back up at the top
-  /// of the list. Out of the tree while hidden, so the page has one title and
+  /// Slides down over the large title as its top row leaves, and back up at
+  /// the top of the list. Out of the tree while hidden, so the page has one title and
   /// one bell at a time for screen readers.
   Widget _slimHeader(BuildContext context, CvList data) {
     final reduce = MotionSettings.reduce(context);
@@ -366,9 +376,6 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     );
   }
 
-  /// How far the tools card reaches up into the brand band.
-  static const _toolsOverlap = 40.0;
-
   Widget _buildList(
     BuildContext context,
     CvList data,
@@ -396,31 +403,19 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
                 onNotifications: () =>
                     Navigator.of(context).pushNamed(AppRoutes.notifications),
               ),
-              Stack(
-                children: [
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: _toolsOverlap,
-                    child: DecoratedBox(
-                      decoration: MyCvsHeader.brandBand(context),
-                    ),
+              const SizedBox(height: AppSpacing.lg),
+              shell(Padding(
+                padding: gutter,
+                child: MotionReveal(
+                  order: 0,
+                  child: MyCvsToolsCard(
+                    onCreate: _openGenerator,
+                    onScan: _openScan,
+                    onUpload: () => _openScan(upload: true),
+                    onTarget: _openJobMatch,
                   ),
-                  shell(Padding(
-                    padding: gutter,
-                    child: MotionReveal(
-                      order: 0,
-                      child: MyCvsToolsCard(
-                        onCreate: _openGenerator,
-                        onScan: _openScan,
-                        onUpload: () => _openScan(upload: true),
-                        onTarget: _openJobMatch,
-                      ),
-                    ),
-                  )),
-                ],
-              ),
+                ),
+              )),
               shell(Padding(
                 padding: gutter,
                 child: Column(

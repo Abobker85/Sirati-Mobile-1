@@ -6,6 +6,7 @@ import 'package:sirati/features/cv_builder/presentation/section_editor_framework
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/shared/widgets/components.dart';
 
 /// Experience and Education section editors (SIRATI-38).
@@ -24,6 +25,9 @@ class ExperienceEducationEditor extends StatefulWidget {
     required this.controller,
   });
 
+  /// Key of the Gregorian / Hijri calendar switch.
+  static const calendarModeKey = ValueKey('cv-calendar-mode');
+
   /// Verifies date range chronological invariant (end >= start).
   static String? validateDateRange(
     String? start,
@@ -38,9 +42,29 @@ class ExperienceEducationEditor extends StatefulWidget {
     final s = start.trim();
     final e = end.trim();
 
-    // Chronological order verification via typed date parsing
-    final comparison = ArabicDateFormat.compareCvDates(s, e);
-    if (comparison > 0) {
+    // Only complete dates (with a four-digit year) can be compared; input
+    // still being typed, or a word such as "Present", is never "before".
+    final fourDigitYear = RegExp(r'\d{4}');
+    if (!fourDigitYear.hasMatch(ArabicDateFormat.toWesternDigits(s)) ||
+        !fourDigitYear.hasMatch(ArabicDateFormat.toWesternDigits(e))) {
+      return null;
+    }
+    final startDate = ArabicDateFormat.parseCvDate(s);
+    final endDate = ArabicDateFormat.parseCvDate(e);
+    if (startDate == null || endDate == null) return null;
+
+    // A year-only end covers the whole year: compare against its last month.
+    var endScore = endDate.year * 12 + endDate.month;
+    final yearOnly =
+        RegExp(r'^(\d{4})$').firstMatch(ArabicDateFormat.toWesternDigits(e));
+    if (yearOnly != null) {
+      final y = int.parse(yearOnly.group(1)!);
+      final last = y < 1700
+          ? ArabicDateFormat.hijriToGregorian(y, 12, 29)
+          : (year: y, month: 12, day: 31);
+      endScore = last.year * 12 + last.month;
+    }
+    if (startDate.year * 12 + startDate.month > endScore) {
       return l10n.endDateBeforeStart;
     }
     return null;
@@ -158,57 +182,45 @@ class _ExperienceEducationEditorState extends State<ExperienceEducationEditor> {
 
     return Column(
       children: [
-        // ── Calendar Mode Selection Banner ──────────────────────────────────
-        Container(
-          margin: const EdgeInsets.only(bottom: AppSpacing.md),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
-          ),
-          decoration: BoxDecoration(
-            color: c.surfaceHigh,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: c.border),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.calendar_month_outlined,
-                      size: 18, color: c.primary),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    l10n.calendarSystemLabel,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        // ── Calendar Mode Selection ───────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: EditorGroupCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.calendar_month_outlined,
+                        size: 18, color: c.primaryInk),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        l10n.calendarSystemLabel,
+                        style: AppTypography.of(
+                          context,
+                          AppTypography.labelLg,
                           color: c.textPrimary,
-                          fontWeight: FontWeight.bold,
                         ),
-                  ),
-                ],
-              ),
-              SegmentedButton<String>(
-                segments: [
-                  ButtonSegment(
-                    value: 'gregorian',
-                    label: Text(l10n.calendarGregorian),
-                  ),
-                  ButtonSegment(
-                    value: 'hijri',
-                    label: Text(l10n.calendarHijri),
-                  ),
-                ],
-                selected: {_calendarMode},
-                onSelectionChanged: (set) =>
-                    setState(() => _calendarMode = set.first),
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  textStyle: WidgetStatePropertyAll(
-                    Theme.of(context).textTheme.labelSmall,
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.xs),
+                AppSegmentedControl<String>(
+                  key: ExperienceEducationEditor.calendarModeKey,
+                  segments: [
+                    AppSegment(
+                      value: 'gregorian',
+                      label: l10n.calendarGregorian,
+                    ),
+                    AppSegment(value: 'hijri', label: l10n.calendarHijri),
+                  ],
+                  value: _calendarMode,
+                  onChanged: (mode) => setState(() => _calendarMode = mode),
+                ),
+              ],
+            ),
           ),
         ),
 
@@ -226,10 +238,12 @@ class _ExperienceEducationEditorState extends State<ExperienceEducationEditor> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    AppButton.text(
-                      label: l10n.sortChronologically,
-                      icon: Icons.sort,
-                      onPressed: _sortExperienceChronologically,
+                    Flexible(
+                      child: AppButton.text(
+                        label: l10n.sortChronologically,
+                        icon: Icons.sort,
+                        onPressed: _sortExperienceChronologically,
+                      ),
                     ),
                   ],
                 ),
@@ -268,10 +282,12 @@ class _ExperienceEducationEditorState extends State<ExperienceEducationEditor> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    AppButton.text(
-                      label: l10n.sortChronologically,
-                      icon: Icons.sort,
-                      onPressed: _sortEducationChronologically,
+                    Flexible(
+                      child: AppButton.text(
+                        label: l10n.sortChronologically,
+                        icon: Icons.sort,
+                        onPressed: _sortEducationChronologically,
+                      ),
                     ),
                   ],
                 ),
@@ -326,7 +342,14 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
   late final TextEditingController _endCtrl;
   late bool _isCurrent;
 
-  String? _dateError;
+  // Derived from the current field values so it survives tile rebuilds and
+  // is shown for entries that are already invalid when loaded.
+  String? get _dateError => ExperienceEducationEditor.validateDateRange(
+        _startCtrl.text.trim(),
+        _isCurrent ? null : _endCtrl.text.trim(),
+        _isCurrent,
+        AppLocalizations.of(context),
+      );
 
   @override
   void initState() {
@@ -356,16 +379,8 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
   void _notifyChange({List<LocalizedText>? bullets}) {
     final start = _startCtrl.text.trim();
     final end = _isCurrent ? null : _endCtrl.text.trim();
-    final l10n = AppLocalizations.of(context);
 
-    setState(() {
-      _dateError = ExperienceEducationEditor.validateDateRange(
-        start,
-        end,
-        _isCurrent,
-        l10n,
-      );
-    });
+    setState(() {});
 
     widget.onChanged(
       widget.entry.copyWith(
@@ -377,7 +392,8 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
           ar: _titleArCtrl.text.trim(),
           en: _titleEnCtrl.text.trim(),
         ),
-        location: LocalizedText(ar: _locationArCtrl.text.trim()),
+        location:
+            widget.entry.location.copyWith(ar: _locationArCtrl.text.trim()),
         startDate: start.isEmpty ? null : start,
         endDate: end?.isEmpty ?? true ? null : end,
         isCurrent: _isCurrent,
@@ -409,13 +425,9 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: c.border),
-      ),
+    return Padding(
+      // Flat row on the grouped page; the list draws the hairlines.
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -475,7 +487,7 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
                 child: AppInput(
                   controller: _startCtrl,
                   label: l10n.startDateLabel,
-                  hint: l10n.startDateHint,
+                  hint: _calendarHint(l10n.startDateHint, widget.calendarMode),
                   textDirection: TextDirection.ltr,
                   onChanged: (_) => _notifyChange(),
                 ),
@@ -494,7 +506,7 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
                           l10n.currentlyHere,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: c.primary,
+                                    color: c.primaryInk,
                                     fontWeight: FontWeight.bold,
                                   ),
                         ),
@@ -502,7 +514,8 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
                     : AppInput(
                         controller: _endCtrl,
                         label: l10n.endDateLabel,
-                        hint: l10n.endDateHint,
+                        hint: _calendarHint(
+                            l10n.endDateHint, widget.calendarMode),
                         textDirection: TextDirection.ltr,
                         onChanged: (_) => _notifyChange(),
                       ),
@@ -517,11 +530,13 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
               children: [
                 Icon(Icons.error_outline, size: 14, color: c.error),
                 const SizedBox(width: AppSpacing.xxs),
-                Text(
-                  _dateError!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: c.error,
-                      ),
+                Expanded(
+                  child: Text(
+                    _dateError!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: c.error,
+                        ),
+                  ),
                 ),
               ],
             ),
@@ -539,11 +554,13 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
                   _notifyChange();
                 },
               ),
-              Text(
-                l10n.currentlyWorking,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: c.textPrimary,
-                    ),
+              Expanded(
+                child: Text(
+                  l10n.currentlyWorking,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: c.textPrimary,
+                      ),
+                ),
               ),
             ],
           ),
@@ -648,7 +665,14 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
   late final TextEditingController _startCtrl;
   late final TextEditingController _gradCtrl;
 
-  String? _dateError;
+  // Derived from the current field values so it survives tile rebuilds and
+  // is shown for entries that are already invalid when loaded.
+  String? get _dateError => ExperienceEducationEditor.validateDateRange(
+        _startCtrl.text.trim(),
+        _gradCtrl.text.trim(),
+        false,
+        AppLocalizations.of(context),
+      );
 
   @override
   void initState() {
@@ -675,16 +699,8 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
   void _notifyChange() {
     final start = _startCtrl.text.trim();
     final grad = _gradCtrl.text.trim();
-    final l10n = AppLocalizations.of(context);
 
-    setState(() {
-      _dateError = ExperienceEducationEditor.validateDateRange(
-        start,
-        grad,
-        false,
-        l10n,
-      );
-    });
+    setState(() {});
 
     widget.onChanged(
       widget.entry.copyWith(
@@ -692,8 +708,9 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
           ar: _instArCtrl.text.trim(),
           en: _instEnCtrl.text.trim(),
         ),
-        degree: LocalizedText(ar: _degreeArCtrl.text.trim()),
-        fieldOfStudy: LocalizedText(ar: _fieldArCtrl.text.trim()),
+        degree: widget.entry.degree.copyWith(ar: _degreeArCtrl.text.trim()),
+        fieldOfStudy:
+            widget.entry.fieldOfStudy.copyWith(ar: _fieldArCtrl.text.trim()),
         startDate: start.isEmpty ? null : start,
         graduationDate: grad.isEmpty ? null : grad,
       ),
@@ -705,13 +722,9 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: c.border),
-      ),
+    return Padding(
+      // Flat row on the grouped page; the list draws the hairlines.
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -780,7 +793,8 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
                 child: AppInput(
                   controller: _gradCtrl,
                   label: l10n.graduationYearLabel,
-                  hint: l10n.graduationYearHint,
+                  hint: _calendarHint(
+                      l10n.graduationYearHint, widget.calendarMode),
                   textDirection: TextDirection.ltr,
                   onChanged: (_) => _notifyChange(),
                 ),
@@ -794,11 +808,13 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
               children: [
                 Icon(Icons.error_outline, size: 14, color: c.error),
                 const SizedBox(width: AppSpacing.xxs),
-                Text(
-                  _dateError!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: c.error,
-                      ),
+                Expanded(
+                  child: Text(
+                    _dateError!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: c.error,
+                        ),
+                  ),
                 ),
               ],
             ),
@@ -807,4 +823,18 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
       ),
     );
   }
+}
+
+/// Rewrites the Gregorian example dates in a date-field hint as Hijri when
+/// the Hijri calendar is selected, so the guidance matches the chosen mode.
+String _calendarHint(String hint, String calendarMode) {
+  if (calendarMode != 'hijri') return hint;
+  return hint.replaceAllMapped(RegExp(r'(\d{4})(?:-(\d{1,2}))?'), (m) {
+    final month = m.group(2);
+    final h = ArabicDateFormat.gregorianToHijri(
+        DateTime(int.parse(m.group(1)!), int.parse(month ?? '1'), 15));
+    return month == null
+        ? '${h.year}'
+        : '${h.year}-${h.month.toString().padLeft(2, '0')}';
+  });
 }

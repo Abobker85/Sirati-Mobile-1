@@ -205,7 +205,7 @@ void main() {
             );
             expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-            // Disabled has neutral surfaceHigh fill and textSecondary text
+            // Disabled has the page's grey fill and textSecondary text
             await tester.pumpWidget(
               MaterialApp(
                 home: Theme(
@@ -228,7 +228,8 @@ void main() {
                 tester.widget<ElevatedButton>(find.byType(ElevatedButton));
             final disabledFill = disabledBtn.style!.backgroundColor!
                 .resolve(const <WidgetState>{WidgetState.disabled})!;
-            expect(disabledFill, c.surfaceHigh);
+            expect(disabledFill,
+                PageSurface.fillOf(tester.element(find.byType(AppButton))));
             expect(disabledFill, isNot(equals(enabledFill)));
 
             final textWidget = tester.widget<Text>(find.text(label));

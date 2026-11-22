@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/rolling_number.dart';
 
 /// Shared top bar for the four main tabs so the notification button, language
 /// and title all render identically across screens.
@@ -194,8 +195,9 @@ class NotificationBellButton extends StatelessWidget {
                       color: context.sirati.error,
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Text(
-                      unreadCount > 9 ? '9+' : '$unreadCount',
+                    child: RollingNumber(
+                      value: unreadCount,
+                      cap: 9,
                       // Gated pair: onError on error.
                       style: AppTypography.of(
                         context,
@@ -271,16 +273,9 @@ class ProfileAvatar extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            // Gated pair across the whole gradient: onBrandSurface on both
-            // brandSurface and brandSurfaceDeep is >= 4.5:1.
-            colors: [
-              context.sirati.brandSurface,
-              context.sirati.brandSurfaceDeep,
-            ],
-          ),
+          // Flat brand fill (iOS 26 restyle: no gradients). Gated pair:
+          // onBrandSurface on brandSurface is >= 4.5:1.
+          color: context.sirati.brandSurface,
         ),
         child: Center(child: content),
       ),

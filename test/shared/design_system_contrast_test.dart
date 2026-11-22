@@ -162,11 +162,12 @@ void main() {
       final deco =
           tester.widget<InputDecorator>(find.byType(InputDecorator)).decoration;
       final fill = deco.fillColor!;
-      final enabled = deco.enabledBorder! as OutlineInputBorder;
-      final focusedBorder = deco.focusedBorder! as OutlineInputBorder;
-      expect(enabled.borderSide.color.a, 1);
+      final enabled = deco.enabledBorder!;
+      final focusedBorder = deco.focusedBorder!;
+      // iOS 26 filled field (ticket 10): no resting outline; the focus ring
+      // is the drawn boundary and must hold 3:1 on the fill.
+      expect(enabled.borderSide, BorderSide.none);
       expect(focusedBorder.borderSide.color.a, 1);
-      uiPair(enabled.borderSide.color, fill);
       uiPair(focusedBorder.borderSide.color, fill);
 
       final restingColor = renderedTextColor(tester, find.text('Email'));
@@ -254,7 +255,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       final errorDeco =
           tester.widget<InputDecorator>(find.byType(InputDecorator)).decoration;
-      final errorBorder = errorDeco.errorBorder! as OutlineInputBorder;
+      final errorBorder = errorDeco.errorBorder!;
       expect(errorBorder.borderSide.color.a, 1);
       uiPair(errorBorder.borderSide.color, errorDeco.fillColor!);
       expect(
@@ -308,7 +309,7 @@ void main() {
       await tester.pump();
       final successDeco =
           tester.widget<InputDecorator>(find.byType(InputDecorator)).decoration;
-      final successBorder = successDeco.enabledBorder! as OutlineInputBorder;
+      final successBorder = successDeco.enabledBorder!;
       expect(successBorder.borderSide.color.a, 1);
       uiPair(successBorder.borderSide.color, successDeco.fillColor!);
       expect(
@@ -494,7 +495,7 @@ void main() {
         expectAllProgressIndicatorsAa(
             'AppButton $variant loading indicator dark=$dark');
 
-        // 3. Disabled: neutral surfaceHigh-level fill with textSecondary-level text (text >= 4.5:1 on its own fill)
+        // 3. Disabled: the page's grey fill with textSecondary-level text (text >= 4.5:1 on its own fill)
         await tester.pumpWidget(
           app(
             theme,
@@ -512,13 +513,14 @@ void main() {
             tester.widget<ElevatedButton>(find.byType(ElevatedButton));
         final disabledResolvedBg = disabledBtn.style!.backgroundColor!
             .resolve(const <WidgetState>{WidgetState.disabled})!;
-        expect(disabledResolvedBg, siratiColors.surfaceHigh,
-            reason: 'disabled must use neutral surfaceHigh fill');
+        final pageFill =
+            PageSurface.fillOf(tester.element(find.byType(AppButton)));
+        expect(disabledResolvedBg, pageFill,
+            reason: 'disabled must use the neutral page fill');
         expect(disabledResolvedBg, isNot(equals(enabledBg)),
             reason: 'disabled fill must look different from enabled');
         final disabledText = tester.element(find.text(testLabel));
-        expect(paintedBackgroundsOf(disabledText),
-            contains(siratiColors.surfaceHigh));
+        expect(paintedBackgroundsOf(disabledText), contains(pageFill));
         final disabledTextColor =
             renderedTextColor(tester, find.text(testLabel));
         expect(disabledTextColor, siratiColors.textSecondary,
@@ -597,17 +599,24 @@ void main() {
         app(theme, direction, const AppCard(child: Text('Plain card'))),
       );
       await tester.pump();
-      final cardBox = tester
-          .widget<Container>(
-            find
-                .descendant(
-                  of: find.byType(AppCard),
-                  matching: find.byType(Container),
-                )
-                .first,
-          )
-          .decoration! as BoxDecoration;
-      expect(cardBox.boxShadow ?? const <BoxShadow>[], isEmpty);
+      // Cards are flat and borderless (iOS 26, ticket 10): no painted box
+      // under either card may carry a shadow or a border.
+      void expectFlat(Type card) {
+        for (final box in tester.widgetList<DecoratedBox>(
+          find.descendant(
+            of: find.byType(card),
+            matching: find.byType(DecoratedBox),
+          ),
+        )) {
+          final d = box.decoration;
+          if (d is BoxDecoration) {
+            expect(d.boxShadow ?? const <BoxShadow>[], isEmpty);
+            expect(d.border, isNull);
+          }
+        }
+      }
+
+      expectFlat(AppCard);
 
       await tester.pumpWidget(
         app(
@@ -617,18 +626,7 @@ void main() {
         ),
       );
       await tester.pump();
-      final surfaceShadow = (tester
-              .widget<DecoratedBox>(
-                find
-                    .descendant(
-                      of: find.byType(AppSurfaceCard),
-                      matching: find.byType(DecoratedBox),
-                    )
-                    .first,
-              )
-              .decoration as BoxDecoration)
-          .boxShadow;
-      expect(surfaceShadow ?? const <BoxShadow>[], isEmpty);
+      expectFlat(AppSurfaceCard);
       expect(tester.takeException(), isNull);
     });
 

@@ -173,9 +173,8 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
     // Categories grouping — keys stay as stored identifiers.
     final categories = <String, List<MapEntry<int, Skill>>>{};
     for (var i = 0; i < _skills.length; i++) {
-      final cat = _skills[i].category.ar.isEmpty
-          ? SkillStorageKeys.general
-          : _skills[i].category.ar;
+      final stored = _storedKey(_skills[i].category, SkillStorageKeys.english);
+      final cat = stored.isEmpty ? SkillStorageKeys.general : stored;
       categories.putIfAbsent(cat, () => []).add(MapEntry(i, _skills[i]));
     }
 
@@ -210,7 +209,7 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
                 child: Text(
                   _skillCategoryLabel(l10n, entry.key),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: c.primary,
+                        color: c.primaryInk,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
@@ -221,18 +220,18 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
                 children: entry.value.map((pair) {
                   final index = pair.key;
                   final skill = pair.value;
-                  final levelLabel = skill.level.ar.isEmpty
+                  final level =
+                      _storedKey(skill.level, SkillStorageKeys.english);
+                  final levelLabel = level.isEmpty
                       ? ''
-                      : ' (${_skillLevelLabel(l10n, skill.level.ar)})';
+                      : ' (${_skillLevelLabel(l10n, level)})';
                   return Chip(
                     label: Text(
-                      '${skill.name.ar}$levelLabel',
+                      '${_editableText(skill.name)}$levelLabel',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: c.textPrimary,
                           ),
                     ),
-                    backgroundColor: c.surfaceHigh,
-                    side: BorderSide(color: c.border),
                     deleteIcon: const Icon(Icons.close, size: 16),
                     onDeleted: () => _removeSkill(index),
                   );
@@ -281,13 +280,11 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
                 final lang = e.value;
                 return Chip(
                   label: Text(
-                    '${lang.name.ar} - ${_languageLevelLabel(l10n, lang.level.ar)}',
+                    '${_editableText(lang.name)} - ${_languageLevelLabel(l10n, _storedKey(lang.level, LanguageLevelStorageKeys.english))}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: c.textPrimary,
                         ),
                   ),
-                  backgroundColor: c.surfaceHigh,
-                  side: BorderSide(color: c.border),
                   deleteIcon: const Icon(Icons.close, size: 16),
                   onDeleted: () => _removeLanguage(idx),
                 );
@@ -364,6 +361,16 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
 }
 
 // ── Display mapping (storage key → locale label) ────────────────────────────
+
+/// The stored schema key of [t]: `ar`, or the key whose English export
+/// string is `en` when only English is stored (else `en` as-is).
+String _storedKey(LocalizedText t, Map<String, String> english) {
+  if (t.ar.isNotEmpty || t.en.isEmpty) return t.ar;
+  for (final e in english.entries) {
+    if (e.value == t.en) return e.key;
+  }
+  return t.en;
+}
 
 String _skillLevelLabel(AppLocalizations l10n, String stored) {
   return switch (stored) {
@@ -612,8 +619,9 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: widget.cert.name.ar);
-    _authorityCtrl = TextEditingController(text: widget.cert.authority.ar);
+    _nameCtrl = TextEditingController(text: _editableText(widget.cert.name));
+    _authorityCtrl =
+        TextEditingController(text: _editableText(widget.cert.authority));
     _issueDateCtrl = TextEditingController(text: widget.cert.issueDate ?? '');
     _expiryDateCtrl = TextEditingController(text: widget.cert.expiryDate ?? '');
     _noExpiry = widget.cert.expiryDate == null;
@@ -629,10 +637,15 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
   }
 
   void _notify() {
+    // Built directly: copyWith can't clear a field, and both dates can be
+    // cleared here (empty year, no-expiry ticked).
     widget.onChanged(
-      widget.cert.copyWith(
-        name: LocalizedText(ar: _nameCtrl.text.trim()),
-        authority: LocalizedText(ar: _authorityCtrl.text.trim()),
+      Certification(
+        id: widget.cert.id,
+        narrative: widget.cert.narrative,
+        name: _withEditedText(widget.cert.name, _nameCtrl.text.trim()),
+        authority:
+            _withEditedText(widget.cert.authority, _authorityCtrl.text.trim()),
         issueDate: _issueDateCtrl.text.trim().isEmpty
             ? null
             : _issueDateCtrl.text.trim(),
@@ -646,13 +659,9 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: c.border),
-      ),
+    return Padding(
+      // Flat row on the grouped page; the list draws the hairlines.
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -694,7 +703,7 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
                           l10n.noExpiry,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: c.primary,
+                                    color: c.primaryInk,
                                     fontWeight: FontWeight.bold,
                                   ),
                         ),
@@ -732,6 +741,17 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
   }
 }
 
+/// The variant a single-field editor shows: Arabic, or English when only
+/// English is stored.
+String _editableText(LocalizedText t) =>
+    t.ar.isEmpty && t.en.isNotEmpty ? t.en : t.ar;
+
+/// Writes [text] into the variant [_editableText] showed, keeping the other.
+LocalizedText _withEditedText(LocalizedText original, String text) =>
+    original.ar.isEmpty && original.en.isNotEmpty
+        ? original.copyWith(en: text)
+        : original.copyWith(ar: text);
+
 // ── Project Tile ────────────────────────────────────────────────────────────
 
 class _ProjectEntryTile extends StatefulWidget {
@@ -759,10 +779,12 @@ class _ProjectEntryTileState extends State<_ProjectEntryTile> {
   @override
   void initState() {
     super.initState();
-    _titleCtrl = TextEditingController(text: widget.project.title.ar);
-    _roleCtrl = TextEditingController(text: widget.project.role.ar);
+    _titleCtrl =
+        TextEditingController(text: _editableText(widget.project.title));
+    _roleCtrl = TextEditingController(text: _editableText(widget.project.role));
     _urlCtrl = TextEditingController(text: widget.project.url ?? '');
-    _descCtrl = TextEditingController(text: widget.project.narrative.ar);
+    _descCtrl =
+        TextEditingController(text: _editableText(widget.project.narrative));
   }
 
   @override
@@ -787,27 +809,25 @@ class _ProjectEntryTileState extends State<_ProjectEntryTile> {
     setState(() {});
 
     widget.onChanged(
-      widget.project.copyWith(
-        title: LocalizedText(ar: _titleCtrl.text.trim()),
-        role: LocalizedText(ar: _roleCtrl.text.trim()),
+      // Not copyWith: copyWith(url: null) keeps the old URL.
+      Project(
+        id: widget.project.id,
+        title: _withEditedText(widget.project.title, _titleCtrl.text.trim()),
+        role: _withEditedText(widget.project.role, _roleCtrl.text.trim()),
         url: urlText.isEmpty ? null : urlText,
-        narrative: LocalizedText(ar: _descCtrl.text.trim()),
+        narrative:
+            _withEditedText(widget.project.narrative, _descCtrl.text.trim()),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = context.sirati;
     final l10n = AppLocalizations.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surfaceHigh,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: c.border),
-      ),
+    return Padding(
+      // Flat row on the grouped page; the list draws the hairlines.
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

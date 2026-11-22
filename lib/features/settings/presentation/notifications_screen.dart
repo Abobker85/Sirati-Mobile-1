@@ -13,7 +13,10 @@ import 'package:sirati/shared/navigation/notification_target.dart';
 import 'package:sirati/shared/services/notification_service.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
+import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
@@ -90,52 +93,64 @@ class NotificationsScreen extends ConsumerWidget {
     final inbox = ref.watch(notificationsInboxProvider);
     final hasUnread = inbox.value?.any((i) => !i.isRead) ?? false;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.settingsNotificationsTitle),
-        // Shown only when it can act: a greyed-out "Read all" over an empty
-        // or fully read inbox is noise (and fails text contrast).
-        actions: [
-          if (hasUnread)
-            TextButton(
-              onPressed: () async {
-                final ok = await ref
-                    .read(notificationsInboxProvider.notifier)
-                    .markAllRead();
-                if (!ok && context.mounted) _reportFailure(context);
-              },
-              style: TextButton.styleFrom(
-                minimumSize: const Size(48, 48),
-              ),
-              child: Text(l10n.settingsNotificationsReadAll),
+    // Grouped grey page: each date section is one white inset card.
+    return GroupedSurface(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.settingsNotificationsTitle),
+          // Shown only when it can act: a greyed-out "Read all" over an empty
+          // or fully read inbox is noise (and fails text contrast).
+          actions: [
+            AnimatedSwitcher(
+              duration: MotionSettings.reduce(context)
+                  ? Duration.zero
+                  : MotionDurations.fast,
+              child: hasUnread
+                  ? TextButton(
+                      key: const ValueKey('notifications-read-all'),
+                      onPressed: () async {
+                        final ok = await ref
+                            .read(notificationsInboxProvider.notifier)
+                            .markAllRead();
+                        if (!ok && context.mounted) _reportFailure(context);
+                      },
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                      ),
+                      child: Text(l10n.settingsNotificationsReadAll),
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey('notifications-read-all-empty'),
+                    ),
             ),
-        ],
-      ),
-      body: AppAsyncBody<List<NotificationItem>>(
-        snapshot: inbox.toSnapshot(),
-        english: english,
-        onRetry: () => ref.invalidate(notificationsInboxProvider),
-        fallbackOnEmptyError: const [],
-        errorMessage: (error) => error is ApiException
-            ? error.displayMessage
-            : l10n.settingsNotificationsLoadFailed,
-        loading: const ListScreenSkeleton(
-          itemCount: 5,
-          padding: EdgeInsets.fromLTRB(AppSpacing.lg, 18, AppSpacing.lg, 32),
+          ],
         ),
-        isEmpty: (items) => items.isEmpty,
-        empty: SiratiRefreshIndicator(
-          onRefresh: () => _refresh(ref),
-          child: NotificationsEmptyState(
-            onRoute: NotificationService.instance.onNotificationTap == null
-                ? null
-                : (route) => _openRoute(context, route),
+        body: AppAsyncBody<List<NotificationItem>>(
+          snapshot: inbox.toSnapshot(),
+          english: english,
+          onRetry: () => ref.invalidate(notificationsInboxProvider),
+          fallbackOnEmptyError: const [],
+          errorMessage: (error) => error is ApiException
+              ? error.displayMessage
+              : l10n.settingsNotificationsLoadFailed,
+          loading: const ListScreenSkeleton(
+            itemCount: 5,
+            padding: EdgeInsets.fromLTRB(AppSpacing.lg, 18, AppSpacing.lg, 32),
           ),
-        ),
-        builder: (items) => NotificationInbox(
-          items: items,
-          onRefresh: () => _refresh(ref),
-          onOpen: (item) => unawaited(_open(context, ref, item)),
+          isEmpty: (items) => items.isEmpty,
+          empty: SiratiRefreshIndicator(
+            onRefresh: () => _refresh(ref),
+            child: NotificationsEmptyState(
+              onRoute: NotificationService.instance.onNotificationTap == null
+                  ? null
+                  : (route) => _openRoute(context, route),
+            ),
+          ),
+          builder: (items) => NotificationInbox(
+            items: items,
+            onRefresh: () => _refresh(ref),
+            onOpen: (item) => unawaited(_open(context, ref, item)),
+          ),
         ),
       ),
     );
@@ -212,66 +227,88 @@ class _NotificationInboxState extends State<NotificationInbox> {
             onTap: () => _select(category: c),
           ),
     ];
-    return SiratiRefreshIndicator(
-      onRefresh: widget.onRefresh,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xxs),
-              child: Row(
-                children: [
-                  for (var i = 0; i < chips.length; i++) ...[
-                    if (i > 0) const SizedBox(width: AppSpacing.xs),
-                    chips[i],
+    // The inbox always sits on the grey grouped page, so its section cards
+    // take the grouped (white) fill wherever it is hosted.
+    return PageSurface(
+      kind: PageSurfaceKind.grouped,
+      child: SiratiRefreshIndicator(
+        onRefresh: widget.onRefresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm,
+                    AppSpacing.lg, AppSpacing.xxs),
+                child: Row(
+                  children: [
+                    for (var i = 0; i < chips.length; i++) ...[
+                      if (i > 0) const SizedBox(width: AppSpacing.xs),
+                      chips[i],
+                    ],
                   ],
-                ],
-              ),
-            ),
-          ),
-          if (groups.isEmpty)
-            SliverPadding(
-              padding: const EdgeInsets.all(AppSpacing.xxl),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  l10n.settingsNotificationsFilterEmpty,
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodySm(context.sirati)
-                      .copyWith(color: context.sirati.textSecondary),
                 ),
               ),
             ),
-          for (final group in groups) ...[
-            SliverToBoxAdapter(child: NotificationGroupHeader(group: group)),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              sliver: SliverList.separated(
-                itemCount: group.items.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppSpacing.sm),
-                itemBuilder: (context, index) {
-                  final item = group.items[index];
-                  // Keyed by the notification, so a refresh that adds rows
-                  // never moves a row's dot or reveal onto another item.
-                  return MotionReveal(
-                    key: ValueKey('notification-${item.id}'),
-                    order: index.clamp(0, 5),
-                    child: NotificationCard(
-                      key: ValueKey('notification-card-${item.id}'),
-                      item: item,
-                      order: index,
-                      onTap: () => widget.onOpen(item),
-                    ),
-                  );
-                },
+            SliverToBoxAdapter(
+              child: MotionStateSwitcher(
+                stateKey: '$_unreadOnly-${category?.name ?? 'all'}',
+                child: groups.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(AppSpacing.xxl),
+                        child: Text(
+                          l10n.settingsNotificationsFilterEmpty,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodySm(context.sirati)
+                              .copyWith(color: context.sirati.textSecondary),
+                        ),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final group in groups) ...[
+                            NotificationGroupHeader(group: group),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                              ),
+                              // One white card per date; separators come
+                              // from the section.
+                              child: AppListSection(
+                                separatorIndent:
+                                    NotificationCard.separatorIndent,
+                                children: [
+                                  for (var index = 0;
+                                      index < group.items.length;
+                                      index++)
+                                    // Keyed by the notification, so a refresh
+                                    // that adds rows never moves a row's dot or
+                                    // reveal onto another item.
+                                    MotionReveal(
+                                      key: ValueKey(
+                                          'notification-${group.items[index].id}'),
+                                      order: index.clamp(0, 5),
+                                      child: NotificationCard(
+                                        key: ValueKey(
+                                            'notification-card-${group.items[index].id}'),
+                                        item: group.items[index],
+                                        order: index,
+                                        onTap: () =>
+                                            widget.onOpen(group.items[index]),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
               ),
             ),
+            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
           ],
-          const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
-        ],
+        ),
       ),
     );
   }
@@ -311,9 +348,8 @@ class NotificationFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    final shape = StadiumBorder(
-      side: BorderSide(color: selected ? c.primary : c.borderStrong),
-    );
+    final reduce = MotionSettings.reduce(context);
+    const shape = StadiumBorder();
     return Semantics(
       button: true,
       selected: selected,
@@ -321,45 +357,58 @@ class NotificationFilterChip extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
         child: Center(
           widthFactor: 1,
-          child: Material(
-            color: selected ? c.primary : c.surface,
-            shape: shape,
-            child: InkWell(
-              onTap: onTap,
-              customBorder: shape,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: AppTextStyles.labelMd(c).copyWith(
-                        color: selected ? c.onPrimary : c.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (count != null) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        constraints: const BoxConstraints(minWidth: 20),
-                        decoration: BoxDecoration(
-                          color: selected ? c.onPrimary : c.primary,
-                          borderRadius: BorderRadius.circular(10),
+          child: AnimatedContainer(
+            duration: reduce ? Duration.zero : MotionDurations.fast,
+            curve: MotionCurves.state,
+            decoration: BoxDecoration(
+              color: selected ? c.primary : c.groupedCard,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: selected ? c.primary : c.borderStrong),
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              shape: shape,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                customBorder: shape,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
+                        style: AppTextStyles.labelMd(c).copyWith(
+                          color: selected ? c.onPrimary : c.textPrimary,
+                          fontWeight: FontWeight.w600,
                         ),
-                        child: Text(
-                          count!,
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.labelMd(c).copyWith(
-                            color: selected ? c.primary : c.onPrimary,
-                            fontWeight: FontWeight.w700,
+                      ),
+                      if (count != null) ...[
+                        const SizedBox(width: 6),
+                        AnimatedContainer(
+                          duration:
+                              reduce ? Duration.zero : MotionDurations.fast,
+                          curve: MotionCurves.state,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          constraints: const BoxConstraints(minWidth: 20),
+                          decoration: BoxDecoration(
+                            color: selected ? c.onPrimary : c.primary,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            count!,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.labelMd(c).copyWith(
+                              color: selected ? c.primary : c.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -370,7 +419,8 @@ class NotificationFilterChip extends StatelessWidget {
   }
 }
 
-/// Section title on the start side; unread count (or row count) at the end.
+/// Grey label above a date section's card: the date on the start side,
+/// unread count (or row count) at the end. Lined up with the rows' text.
 class NotificationGroupHeader extends StatelessWidget {
   const NotificationGroupHeader({super.key, required this.group});
 
@@ -394,9 +444,18 @@ class NotificationGroupHeader extends StatelessWidget {
           : l10n.settingsNotificationsCount(group.items.length),
       english: english,
     );
+    final style = AppTypography.of(
+      context,
+      AppTypography.caption,
+      color: c.textSecondary,
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xs),
+        AppSpacing.lg + AppListSection.rowPadding,
+        AppSpacing.lg,
+        AppSpacing.lg + AppListSection.rowPadding,
+        AppSpacing.xs + 2,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -404,14 +463,11 @@ class NotificationGroupHeader extends StatelessWidget {
               header: true,
               child: Text(
                 title,
-                style: AppTextStyles.titleSm(c).copyWith(color: c.primaryInk),
+                style: style.copyWith(fontWeight: FontWeight.w600),
               ),
             ),
           ),
-          Text(
-            meta,
-            style: AppTextStyles.labelMd(c).copyWith(color: c.textSecondary),
-          ),
+          Text(meta, style: style),
         ],
       ),
     );
@@ -478,6 +534,10 @@ String notificationTimeLabel(
   return AppFormat.digits(item.createdLabel, english: english);
 }
 
+/// One notification. Inside an [AppListSection] it is a flat row of the
+/// section's white card (the press shows as a grey highlight); on its own
+/// it is a grouped-white card with no border or shadow. Unread rows carry
+/// the dot and a bolder title.
 class NotificationCard extends StatelessWidget {
   const NotificationCard({
     super.key,
@@ -493,6 +553,13 @@ class NotificationCard extends StatelessWidget {
   /// another (the first [NotificationUnreadDot.maxStagger]), then together.
   final int order;
 
+  /// Icon box at the start of the row.
+  static const double iconBox = 40;
+
+  /// Separators start under the text, past the icon box.
+  static const double separatorIndent =
+      AppListSection.rowPadding + iconBox + AppListTileMetrics.gap;
+
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
@@ -501,130 +568,132 @@ class NotificationCard extends StatelessWidget {
     final time = notificationTimeLabel(item, AppLocalizations.of(context),
         english: english);
     final tile = notificationTileStyle(item, c);
-    final radius = BorderRadius.circular(16);
     final unread = !item.isRead;
+    final grouped = AppListSection.contains(context);
 
-    return PressScale(
-      child: DecoratedBox(
-        decoration:
-            BoxDecoration(borderRadius: radius, boxShadow: c.softShadow),
-        child: Material(
-          color: unread ? c.primaryLight : c.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: radius,
-            side: BorderSide(
-              color: unread ? c.primary.withValues(alpha: .28) : c.border,
+    final row = Padding(
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: AppListSection.rowPadding,
+        vertical: AppSpacing.sm,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: iconBox,
+            height: iconBox,
+            decoration: BoxDecoration(
+              color: tile.bg,
+              borderRadius: BorderRadius.circular(10),
             ),
+            child: Icon(tile.icon, size: 20, color: tile.fg),
           ),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: radius,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    // On the teal unread tint the light tile tints blend in;
-                    // a surface tile with a category-coloured edge pops.
-                    decoration: BoxDecoration(
-                      color: unread ? c.surface : tile.bg,
-                      borderRadius: BorderRadius.circular(12),
-                      border: unread
-                          ? Border.all(color: tile.fg.withValues(alpha: .35))
-                          : null,
-                    ),
-                    child: Icon(tile.icon, size: 22, color: tile.fg),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item.title,
-                                textAlign: TextAlign.start,
-                                style: AppTextStyles.titleSm(c).copyWith(
-                                  fontWeight: unread
-                                      ? FontWeight.w700
-                                      : FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            // Shrinks away when the item is read, instead of
-                            // vanishing.
-                            NotificationUnreadDot(
-                              unread: unread,
-                              order: order,
-                              label: l10n.settingsNotificationsUnread,
-                              color: c.primaryInk,
-                            ),
-                            if (item.opensSomething) ...[
-                              const SizedBox(width: 6),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                size: 18,
-                                color: c.textSecondary,
-                                textDirection: Directionality.of(context),
-                              ),
-                            ],
-                          ],
+          const SizedBox(width: AppListTileMetrics.gap),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.title,
+                        textAlign: TextAlign.start,
+                        style: AppTextStyles.titleSm(c).copyWith(
+                          fontWeight:
+                              unread ? FontWeight.w700 : FontWeight.w600,
                         ),
-                        if (item.body.isNotEmpty) ...[
-                          const SizedBox(height: AppSpacing.xxs),
-                          Text(
-                            item.body,
-                            textAlign: TextAlign.start,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.bodySm(c),
-                          ),
-                        ],
-                        if (time.isNotEmpty || _showsViewCv) ...[
-                          const SizedBox(height: AppSpacing.xs),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  time,
-                                  style: AppTextStyles.labelMd(c)
-                                      .copyWith(color: c.textSecondary),
-                                ),
-                              ),
-                              if (_showsViewCv)
-                                FilledButton.icon(
-                                  onPressed: onTap,
-                                  icon: const Icon(Icons.visibility_outlined,
-                                      size: 18),
-                                  label: Text(l10n.settingsNotificationsViewCv),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: c.primary,
-                                    foregroundColor: c.onPrimary,
-                                    minimumSize:
-                                        const Size(0, AppTouchTarget.min),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.md),
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius: AppRadius.mdAll),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ],
+                      ),
                     ),
+                    // Shrinks away when the item is read, instead of
+                    // vanishing.
+                    NotificationUnreadDot(
+                      unread: unread,
+                      order: order,
+                      label: l10n.settingsNotificationsUnread,
+                      color: c.primaryInk,
+                    ),
+                    if (item.opensSomething) ...[
+                      const SizedBox(width: 6),
+                      DirectionalIcon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: c.textSecondary,
+                      ),
+                    ],
+                  ],
+                ),
+                if (item.body.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    item.body,
+                    textAlign: TextAlign.start,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodySm(c),
                   ),
                 ],
-              ),
+                if (time.isNotEmpty || _showsViewCv) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          time,
+                          style: AppTextStyles.labelMd(c)
+                              .copyWith(color: c.textSecondary),
+                        ),
+                      ),
+                      if (_showsViewCv)
+                        FilledButton.icon(
+                          onPressed: onTap,
+                          icon: const Icon(Icons.visibility_outlined, size: 18),
+                          label: Text(l10n.settingsNotificationsViewCv),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: c.primary,
+                            foregroundColor: c.onPrimary,
+                            minimumSize: const Size(0, AppTouchTarget.min),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: AppRadius.mdAll),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
-        ),
+        ],
+      ),
+    );
+
+    // The press darkens the white card the row sits on, as AppContrast
+    // checks every ink against.
+    final pressed = WidgetStateProperty.resolveWith<Color?>(
+      (states) => states.contains(WidgetState.pressed)
+          ? c.pressed(c.groupedCard)
+          : null,
+    );
+    if (grouped) {
+      return InkWell(
+        onTap: onTap,
+        splashFactory: NoSplash.splashFactory,
+        overlayColor: pressed,
+        child: row,
+      );
+    }
+    return Material(
+      color: c.groupedCard,
+      borderRadius: AppRadius.cardAll,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        splashFactory: NoSplash.splashFactory,
+        overlayColor: pressed,
+        child: row,
       ),
     );
   }
@@ -634,9 +703,10 @@ class NotificationCard extends StatelessWidget {
       !item.isRead && item.type == 'cv_ready' && item.opensSomething;
 }
 
-/// Inbox with no notifications at all: what will arrive here, plus the two
-/// actions that start producing it. [onRoute] opens an in-app route through
-/// the push router; without one the buttons are hidden.
+/// Inbox with no notifications at all: the shared empty state (what will
+/// arrive here, and the scan action), a grouped card of sample rows, then
+/// the second action. [onRoute] opens an in-app route through the push
+/// router; without one the buttons are hidden.
 class NotificationsEmptyState extends StatelessWidget {
   const NotificationsEmptyState({super.key, required this.onRoute});
 
@@ -663,82 +733,33 @@ class NotificationsEmptyState extends StatelessWidget {
         l10n.settingsNotificationsPreviewAnalysisBody,
       ),
     ];
+    final open = onRoute;
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.xxl),
       children: [
-        const Center(child: _BellHero()),
-        const SizedBox(height: AppSpacing.lg),
-        Semantics(
-          header: true,
-          child: Text(
-            l10n.settingsNotificationsEmptyTitle,
-            textAlign: TextAlign.center,
-            style: AppTypography.of(context, AppTypography.titleLg),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          l10n.settingsNotificationsEmptyBody,
-          textAlign: TextAlign.center,
-          style: AppTypography.of(context, AppTypography.bodyMd,
-              color: c.textSecondary),
+        AppEmptyState(
+          icon: Icons.notifications_none_rounded,
+          title: l10n.settingsNotificationsEmptyTitle,
+          subtitle: l10n.settingsNotificationsEmptyBody,
+          actionLabel: open == null ? null : l10n.settingsNotificationsScanCta,
+          actionIcon: Icons.document_scanner_outlined,
+          onAction: open == null ? null : () => open('cv-analysis'),
+          scrollable: false,
         ),
         const SizedBox(height: AppSpacing.xl),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: c.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: c.border),
-            boxShadow: c.softShadow,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline_rounded,
-                        size: 20, color: c.primaryInk),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(
-                      child: Semantics(
-                        header: true,
-                        child: Text(
-                          l10n.settingsNotificationsPreviewTitle,
-                          style: AppTextStyles.titleSm(c),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              for (final (category, title, body) in previews) ...[
-                Divider(height: 1, color: c.border),
-                _PreviewRow(category: category, title: title, body: body),
-              ],
-            ],
-          ),
+        AppListSection(
+          header: l10n.settingsNotificationsPreviewTitle,
+          separatorIndent: NotificationCard.separatorIndent,
+          children: [
+            for (final (category, title, body) in previews)
+              _PreviewRow(category: category, title: title, body: body),
+          ],
         ),
-        if (onRoute case final open?) ...[
-          const SizedBox(height: AppSpacing.xl),
-          FilledButton.icon(
-            onPressed: () => open('cv-analysis'),
-            icon: const Icon(Icons.document_scanner_outlined, size: 20),
-            label: Text(l10n.settingsNotificationsScanCta),
-            style: FilledButton.styleFrom(
-              backgroundColor: c.primary,
-              foregroundColor: c.onPrimary,
-              minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
-              textStyle: AppTypography.of(context, AppTypography.labelLg),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
+        if (open != null) ...[
+          const SizedBox(height: AppSpacing.md),
           TextButton.icon(
             onPressed: () => open('create-cv'),
             icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
@@ -751,39 +772,6 @@ class NotificationsEmptyState extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-/// Bell on a primary disc inside two soft rings.
-class _BellHero extends StatelessWidget {
-  const _BellHero();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.sirati;
-    return ExcludeSemantics(
-      child: Container(
-        width: 112,
-        height: 112,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: c.primaryLight.withValues(alpha: .5),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: c.primaryLight,
-          ),
-          child: DecoratedBox(
-            decoration: BoxDecoration(shape: BoxShape.circle, color: c.primary),
-            child: Icon(Icons.notifications_none_rounded,
-                size: 36, color: c.onPrimary),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -805,20 +793,23 @@ class _PreviewRow extends StatelessWidget {
     final c = context.sirati;
     final tile = notificationCategoryTile(category, c);
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: AppListSection.rowPadding,
+        vertical: AppSpacing.sm,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: NotificationCard.iconBox,
+            height: NotificationCard.iconBox,
             decoration: BoxDecoration(
               color: tile.bg,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(tile.icon, size: 22, color: tile.fg),
+            child: Icon(tile.icon, size: 20, color: tile.fg),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppListTileMetrics.gap),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

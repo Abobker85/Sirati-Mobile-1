@@ -24,10 +24,13 @@ class PasswordStrengthMeter extends StatelessWidget {
     if (password.isEmpty) return PasswordStrength.empty;
 
     var score = 0;
-    if (password.length >= 8) score++;
-    if (RegExp(r'[A-Za-z\u0600-\u06FF]').hasMatch(password)) score++;
-    if (RegExp(r'[0-9]').hasMatch(password)) score++;
-    if (RegExp(r'[^A-Za-z0-9\u0600-\u06FF]').hasMatch(password)) score++;
+    // Characters, not UTF-16 units; letters and digits of any script.
+    if (password.runes.length >= 8) score++;
+    if (RegExp(r'[\p{L}\p{M}]', unicode: true).hasMatch(password)) score++;
+    if (RegExp(r'\p{Nd}', unicode: true).hasMatch(password)) score++;
+    if (RegExp(r'[^\p{L}\p{M}\p{Nd}]', unicode: true).hasMatch(password)) {
+      score++;
+    }
 
     if (score <= 1) return PasswordStrength.weak;
     if (score <= 3) return PasswordStrength.medium;
@@ -45,7 +48,7 @@ class PasswordStrengthMeter extends StatelessWidget {
       PasswordStrength.strong => 3,
     };
     final color = switch (level) {
-      PasswordStrength.empty => context.sirati.border,
+      PasswordStrength.empty => context.sirati.separator,
       PasswordStrength.weak => context.sirati.error,
       PasswordStrength.medium => context.sirati.warning,
       PasswordStrength.strong => context.sirati.success,
@@ -85,7 +88,7 @@ class PasswordStrengthMeter extends StatelessWidget {
                       curve: MotionCurves.state,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: filled ? color : context.sirati.border,
+                        color: filled ? color : context.sirati.separator,
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),

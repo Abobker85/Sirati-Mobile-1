@@ -1,0 +1,29 @@
+diff --git a/lib/features/cv_builder/presentation/section_editor_framework.dart b/lib/features/cv_builder/presentation/section_editor_framework.dart
+index c63f5f1..cebbf8a 100644
+--- a/lib/features/cv_builder/presentation/section_editor_framework.dart
++++ b/lib/features/cv_builder/presentation/section_editor_framework.dart
+@@ -367,8 +367,14 @@ class ReorderableEntryList<T> extends StatelessWidget {
+         final isFirst = index == 0;
+         final isLast = index == items.length - 1;
+ 
++        final entry = itemBuilder(context, item, index);
+         return KeyedSubtree(
+-          key: ValueKey(item.hashCode ^ index),
++          // Key by the entry's own stable key (its id) when it has one: an
++          // edited entry is a new object with a new identity hashCode, and a
++          // changing key would rebuild the row (and drop focus) per keystroke.
++          key: entry.key != null
++              ? ValueKey<Key>(entry.key!)
++              : ValueKey(item.hashCode ^ index),
+           // Flat rows: entries are told apart by a hairline, not a box.
+           child: Container(
+             padding: EdgeInsets.only(
+@@ -424,7 +430,7 @@ class ReorderableEntryList<T> extends StatelessWidget {
+                 const SizedBox(width: AppSpacing.xs),
+                 // Entry Body
+                 Expanded(
+-                  child: itemBuilder(context, item, index),
++                  child: entry,
+                 ),
+                 // Delete button
+                 if (onDelete != null)

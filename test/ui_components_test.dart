@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sirati/features/ats_scanner/presentation/analysis_result_screen.dart';
@@ -155,28 +156,52 @@ void main() {
     }
   });
 
-  testWidgets('MotionTabStack first frame is fully visible', (tester) async {
+  testWidgets(
+      'MotionTabStack paints the first tab fully on its first frame, and a '
+      'new tab fully on the frame after a switch', (tester) async {
+    // The opacity actually applied to [text] when painted: every
+    // see-through render object above it multiplied together, whatever
+    // widget made it. Offstage counts as invisible.
+    double paintedOpacity(String text) {
+      var alpha = 1.0;
+      RenderObject? node = tester.renderObject(find.text(text));
+      while (node != null) {
+        if (node is RenderOpacity) alpha *= node.opacity;
+        if (node is RenderAnimatedOpacityMixin) {
+          alpha *= node.opacity.value;
+        }
+        if (node is RenderOffstage && node.offstage) return 0;
+        node = node.parent;
+      }
+      return alpha;
+    }
+
+    var index = 0;
+    late StateSetter setIndex;
     await tester.pumpWidget(wrap(
-      const SizedBox(
+      SizedBox(
         height: 220,
-        child: MotionTabStack(
-          currentIndex: 0,
-          children: [Text('Dashboard tab'), Text('Second tab')],
-        ),
+        child: StatefulBuilder(builder: (context, setState) {
+          setIndex = setState;
+          return MotionTabStack(
+            currentIndex: index,
+            children: const [Text('Dashboard tab'), Text('Second tab')],
+          );
+        }),
       ),
     ));
 
     expect(find.text('Dashboard tab'), findsOneWidget);
-    final opacity = tester.widget<Opacity>(
-      find
-          .ancestor(
-            of: find.text('Dashboard tab'),
-            matching: find.byType(Opacity),
-          )
-          .first,
-    );
-    expect(opacity.opacity, 1,
-        reason: 'the first Home frame must not start at opacity zero');
+    expect(paintedOpacity('Dashboard tab'), 1,
+        reason: 'the first Home frame must not start see-through');
+
+    setIndex(() => index = 1);
+    await tester.pump();
+    expect(find.text('Second tab'), findsOneWidget);
+    expect(paintedOpacity('Second tab'), 1,
+        reason: 'switching tabs is instant: no fade in');
+    expect(find.text('Dashboard tab'), findsNothing,
+        reason: 'only the active tab is painted');
   });
 
   testWidgets('AuthFormConstraint caps width on wide screens', (tester) async {
@@ -267,7 +292,7 @@ void main() {
       await tester.pumpAndSettle();
       final input = tester.widget<InputDecorator>(find.byType(InputDecorator));
       final colors = theme.extension<SiratiColors>()!;
-      final border = input.decoration.focusedBorder! as OutlineInputBorder;
+      final border = input.decoration.focusedBorder!;
       expect(input.isFocused, isTrue);
       expect(border.borderSide.color, colors.primaryInk);
       expect(

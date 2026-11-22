@@ -12,6 +12,7 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/password_strength_meter.dart';
@@ -38,6 +39,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   bool _isResending = false;
   bool _submitted = false;
   bool _codeSent = false;
+  int _stepDirection = 1;
 
   /// The code field gets focus as soon as its stage appears.
   final _codeFocus = FocusNode();
@@ -84,7 +86,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
 
     if (!_codeSent) {
-      if (!_formKey.currentState!.validate()) {
+      if (!validateAndReveal(_formKey)) {
         unawaited(HapticFeedback.selectionClick());
         return;
       }
@@ -111,6 +113,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           );
       if (!mounted) return;
       setState(() {
+        _stepDirection = 1;
         _codeSent = true;
         _submitted = false;
       });
@@ -151,7 +154,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (_isLoading) return;
     final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
-    if (!_formKey.currentState!.validate()) {
+    if (!validateAndReveal(_formKey)) {
       unawaited(HapticFeedback.selectionClick());
       return;
     }
@@ -196,254 +199,283 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.authForgotTitle),
-        actions: const [
+        // The title is the large title in the page; the bar keeps Back and
+        // the language toggle.
+        actions: [
           Padding(
-            padding: EdgeInsetsDirectional.only(end: 12),
-            child: LanguageToggle(),
+            padding: const EdgeInsetsDirectional.only(end: 12),
+            child: LanguageToggle(backgroundColor: PageSurface.fillOf(context)),
           ),
         ],
       ),
       body: AuthFormConstraint(
         child: Form(
           key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
-            children: [
-              Text(
-                _codeSent
-                    ? l10n.authForgotCodeIntro
-                    : l10n.authForgotEmailIntro,
-                textAlign: TextAlign.start,
-                style: AppTextStyles.titleMd(context.sirati)
-                    .copyWith(fontSize: 17, height: 1.55),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Text(
-                l10n.authEmailAddressLabel,
-                textAlign: TextAlign.start,
-                style: AppTextStyles.labelMd(context.sirati)
-                    .copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 6),
-              AppTextFormField(
-                controller: _emailController,
-                enabled: !_codeSent,
-                autovalidateMode: _submitted
-                    ? AutovalidateMode.onUserInteraction
-                    : AutovalidateMode.disabled,
-                keyboardType: TextInputType.emailAddress,
-                textDirection: TextDirection.ltr,
-                textAlign: TextAlign.start,
-                textInputAction:
-                    _codeSent ? TextInputAction.next : TextInputAction.done,
-                onFieldSubmitted: (_) {
-                  if (!_codeSent) unawaited(_sendCode());
-                },
-                hintText: l10n.authEmailHint,
-                prefixIcon: const Icon(Icons.email_outlined),
-                validator: (value) {
-                  if (_codeSent) return null;
-                  final email = value?.trim() ?? '';
-                  if (email.isEmpty) {
-                    return l10n.authEmailRequired;
-                  }
-                  if (!email.contains('@')) {
-                    return l10n.authForgotEmailInvalid;
-                  }
-                  return null;
-                },
-              ),
-              // The next stage slides in from the reading end, like the
-              // CV wizard's steps.
-              MotionStepSwitcher(
-                stepKey: _codeSent,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (!_codeSent) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      SubmitButton(
-                        label: l10n.authForgotSendCode,
-                        loadingLabel: l10n.authSending,
-                        isLoading: _isLoading,
-                        icon: Icons.send_outlined,
-                        onPressed: _sendCode,
-                      ),
-                    ] else ...[
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                        l10n.authVerificationCodeLabel,
-                        textAlign: TextAlign.start,
-                        style: AppTextStyles.labelMd(context.sirati)
-                            .copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 6),
-                      AppTextFormField(
-                        controller: _codeController,
-                        focusNode: _codeFocus,
-                        autovalidateMode: _submitted
-                            ? AutovalidateMode.onUserInteraction
-                            : AutovalidateMode.disabled,
-                        keyboardType: TextInputType.number,
-                        textDirection: TextDirection.ltr,
-                        textAlign: TextAlign.center,
-                        textInputAction: TextInputAction.next,
-                        maxLength: 6,
-                        hintText: '••••••',
-                        autofillHints: const [AutofillHints.oneTimeCode],
-                        // Accepts codes typed on Arabic keyboards (٠-٩), unlike digitsOnly.
-                        inputFormatters: const [
-                          LatinDigitsInputFormatter(maxLength: 6)
-                        ],
-                        prefixIcon: const Icon(Icons.pin_outlined),
-                        validator: (value) {
-                          final code = value?.trim() ?? '';
-                          if (code.length != 6) {
-                            return l10n.authCodeRequired;
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                        l10n.authNewPasswordLabel,
-                        textAlign: TextAlign.start,
-                        style: AppTextStyles.labelMd(context.sirati)
-                            .copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 6),
-                      AppTextFormField(
-                        controller: _passwordController,
-                        autovalidateMode: _submitted
-                            ? AutovalidateMode.onUserInteraction
-                            : AutovalidateMode.disabled,
-                        obscureText: _obscurePassword,
-                        textDirection: TextDirection.ltr,
-                        textAlign: TextAlign.start,
-                        textInputAction: TextInputAction.next,
-                        hintText: '••••••••',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          tooltip: _obscurePassword
-                              ? l10n.showPassword
-                              : l10n.hidePassword,
-                          icon: Icon(_obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined),
-                          onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword),
-                        ),
-                        onChanged: (_) {
-                          setState(() {});
-                          if (_submitted) _confirmKey.currentState?.validate();
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.authForgotNewPasswordRequired;
-                          }
-                          if (value.length < 8) {
-                            return l10n.authPasswordTooShort(8);
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      PasswordStrengthMeter(
-                        password: _passwordController.text,
-                        english: english,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                        l10n.authForgotConfirmPasswordLabel,
-                        textAlign: TextAlign.start,
-                        style: AppTextStyles.labelMd(context.sirati)
-                            .copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 6),
-                      AppTextFormField(
-                        key: _confirmKey,
-                        controller: _confirmController,
-                        autovalidateMode: _submitted
-                            ? AutovalidateMode.onUserInteraction
-                            : AutovalidateMode.disabled,
-                        obscureText: _obscureConfirm,
-                        textDirection: TextDirection.ltr,
-                        textAlign: TextAlign.start,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => unawaited(_resetPassword()),
-                        hintText: '••••••••',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          tooltip: _obscureConfirm
-                              ? l10n.showPassword
-                              : l10n.hidePassword,
-                          icon: Icon(_obscureConfirm
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined),
-                          onPressed: () => setState(
-                              () => _obscureConfirm = !_obscureConfirm),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.authForgotConfirmPasswordRequired;
-                          }
-                          if (value != _passwordController.text) {
-                            return l10n.authPasswordsDoNotMatch;
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      SubmitButton(
-                        label: l10n.authForgotResetButton,
-                        loadingLabel: l10n.authSaving,
-                        isLoading: _isLoading,
-                        icon: Icons.check_circle_outline,
-                        onPressed: _resetPassword,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Center(
-                        child: TextButton(
-                          // The countdown is information, not a dead control: keep it readable
-                          // while the button is disabled.
-                          style: TextButton.styleFrom(
-                            disabledForegroundColor:
-                                context.sirati.textSecondary,
-                          ),
-                          onPressed: (_resendCooldown > 0 || _isResending)
-                              ? null
-                              : () => _sendCode(isResend: true),
-                          child: Text(
-                            _isResending
-                                ? l10n.authSending
-                                : _resendCooldown > 0
-                                    ? l10n.authResendCodeIn(_resendCooldown)
-                                    : l10n.authResendCode,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () {
-                                setState(() {
-                                  _codeSent = false;
-                                  _submitted = false;
-                                  _codeController.clear();
-                                  _passwordController.clear();
-                                  _confirmController.clear();
-                                });
-                              },
-                        child: Text(
-                          l10n.authForgotUseDifferentEmail,
-                        ),
-                      ),
-                    ],
-                  ],
+          // Eager, so every stage's controls exist for focus traversal and
+          // ensureVisible on short screens.
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.authForgotTitle,
+                    textAlign: TextAlign.start,
+                    style: AppTypography.of(context, AppTypography.largeTitle),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.xs),
+                MotionStateSwitcher(
+                  stateKey: _codeSent,
+                  child: Text(
+                    _codeSent
+                        ? l10n.authForgotCodeIntro
+                        : l10n.authForgotEmailIntro,
+                    textAlign: TextAlign.start,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.bodyXl,
+                      color: context.sirati.textSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                Text(
+                  l10n.authEmailAddressLabel,
+                  textAlign: TextAlign.start,
+                  style: AppTextStyles.labelMd(context.sirati).copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: context.sirati.textSecondary),
+                ),
+                const SizedBox(height: 6),
+                AppTextFormField(
+                  controller: _emailController,
+                  enabled: !_codeSent,
+                  autovalidateMode: _submitted
+                      ? AutovalidateMode.onUserInteraction
+                      : AutovalidateMode.disabled,
+                  keyboardType: TextInputType.emailAddress,
+                  textDirection: TextDirection.ltr,
+                  textAlign: TextAlign.start,
+                  textInputAction:
+                      _codeSent ? TextInputAction.next : TextInputAction.done,
+                  onFieldSubmitted: (_) {
+                    if (!_codeSent) unawaited(_sendCode());
+                  },
+                  hintText: l10n.authEmailHint,
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  validator: (value) {
+                    if (_codeSent) return null;
+                    final email = value?.trim() ?? '';
+                    if (email.isEmpty) {
+                      return l10n.authEmailRequired;
+                    }
+                    if (!email.contains('@')) {
+                      return l10n.authForgotEmailInvalid;
+                    }
+                    return null;
+                  },
+                ),
+                // The next stage slides in from the reading end, like the
+                // CV wizard's steps.
+                MotionStepSwitcher(
+                  stepKey: _codeSent,
+                  direction: _stepDirection,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (!_codeSent) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        SubmitButton(
+                          label: l10n.authForgotSendCode,
+                          loadingLabel: l10n.authSending,
+                          isLoading: _isLoading,
+                          icon: Icons.send_outlined,
+                          onPressed: _sendCode,
+                        ),
+                      ] else ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          l10n.authVerificationCodeLabel,
+                          textAlign: TextAlign.start,
+                          style: AppTextStyles.labelMd(context.sirati).copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: context.sirati.textSecondary),
+                        ),
+                        const SizedBox(height: 6),
+                        AppTextFormField(
+                          controller: _codeController,
+                          focusNode: _codeFocus,
+                          autovalidateMode: _submitted
+                              ? AutovalidateMode.onUserInteraction
+                              : AutovalidateMode.disabled,
+                          keyboardType: TextInputType.number,
+                          textDirection: TextDirection.ltr,
+                          textAlign: TextAlign.center,
+                          textInputAction: TextInputAction.next,
+                          maxLength: 6,
+                          hintText: '••••••',
+                          autofillHints: const [AutofillHints.oneTimeCode],
+                          // Accepts codes typed on Arabic keyboards (٠-٩), unlike digitsOnly.
+                          inputFormatters: const [
+                            LatinDigitsInputFormatter(maxLength: 6)
+                          ],
+                          prefixIcon: const Icon(Icons.pin_outlined),
+                          validator: (value) {
+                            final code = value?.trim() ?? '';
+                            if (code.length != 6) {
+                              return l10n.authCodeRequired;
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          l10n.authNewPasswordLabel,
+                          textAlign: TextAlign.start,
+                          style: AppTextStyles.labelMd(context.sirati).copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: context.sirati.textSecondary),
+                        ),
+                        const SizedBox(height: 6),
+                        AppTextFormField(
+                          controller: _passwordController,
+                          autovalidateMode: _submitted
+                              ? AutovalidateMode.onUserInteraction
+                              : AutovalidateMode.disabled,
+                          obscureText: _obscurePassword,
+                          textDirection: TextDirection.ltr,
+                          textAlign: TextAlign.start,
+                          textInputAction: TextInputAction.next,
+                          hintText: '••••••••',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            tooltip: _obscurePassword
+                                ? l10n.showPassword
+                                : l10n.hidePassword,
+                            icon: Icon(_obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined),
+                            onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword),
+                          ),
+                          onChanged: (_) {
+                            setState(() {});
+                            if (_submitted) {
+                              _confirmKey.currentState?.validate();
+                            }
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return l10n.authForgotNewPasswordRequired;
+                            }
+                            if (value.length < 8) {
+                              return l10n.authPasswordTooShort(8);
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        PasswordStrengthMeter(
+                          password: _passwordController.text,
+                          english: english,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          l10n.authForgotConfirmPasswordLabel,
+                          textAlign: TextAlign.start,
+                          style: AppTextStyles.labelMd(context.sirati).copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: context.sirati.textSecondary),
+                        ),
+                        const SizedBox(height: 6),
+                        AppTextFormField(
+                          key: _confirmKey,
+                          controller: _confirmController,
+                          autovalidateMode: _submitted
+                              ? AutovalidateMode.onUserInteraction
+                              : AutovalidateMode.disabled,
+                          obscureText: _obscureConfirm,
+                          textDirection: TextDirection.ltr,
+                          textAlign: TextAlign.start,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => unawaited(_resetPassword()),
+                          hintText: '••••••••',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            tooltip: _obscureConfirm
+                                ? l10n.showPassword
+                                : l10n.hidePassword,
+                            icon: Icon(_obscureConfirm
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined),
+                            onPressed: () => setState(
+                                () => _obscureConfirm = !_obscureConfirm),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return l10n.authForgotConfirmPasswordRequired;
+                            }
+                            if (value != _passwordController.text) {
+                              return l10n.authPasswordsDoNotMatch;
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        SubmitButton(
+                          label: l10n.authForgotResetButton,
+                          loadingLabel: l10n.authSaving,
+                          isLoading: _isLoading,
+                          icon: Icons.check_circle_outline,
+                          onPressed: _resetPassword,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Center(
+                          child: TextButton(
+                            // The countdown is information, not a dead control: keep it readable
+                            // while the button is disabled.
+                            style: TextButton.styleFrom(
+                              disabledForegroundColor:
+                                  context.sirati.textSecondary,
+                            ),
+                            onPressed: (_resendCooldown > 0 || _isResending)
+                                ? null
+                                : () => _sendCode(isResend: true),
+                            child: Text(
+                              _isResending
+                                  ? l10n.authSending
+                                  : _resendCooldown > 0
+                                      ? l10n.authResendCodeIn(_resendCooldown)
+                                      : l10n.authResendCode,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _stepDirection = -1;
+                                    _codeSent = false;
+                                    _submitted = false;
+                                    _codeController.clear();
+                                    _passwordController.clear();
+                                    _confirmController.clear();
+                                  });
+                                },
+                          child: Text(
+                            l10n.authForgotUseDifferentEmail,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

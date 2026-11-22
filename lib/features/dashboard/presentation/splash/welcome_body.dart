@@ -7,7 +7,7 @@ import 'package:sirati/shared/widgets/submit_button.dart';
 
 /// Signed-out landing, as agreed in Salem's review (2026-10-24): logo, name
 /// and brand slogan, one value card, then the two account actions and the
-/// privacy link — on the same gradient hero as Login and Register.
+/// privacy link. Same large-title page as Login and Register.
 class WelcomeBody extends StatelessWidget {
   final VoidCallback onRegister;
   final VoidCallback onLogin;
@@ -57,8 +57,10 @@ class WelcomeBody extends StatelessWidget {
       title: l10n.welcomeToSirati,
       subtitle: slogan(l10n),
       markKey: logoKey,
+      markHeroTag: 'sirati-brand-mark',
       subtitleKey: sloganKey,
       cardKey: valueCardKey,
+      boxedCard: true,
       card: MotionReveal(
         order: 1,
         child: _ValueCard(
@@ -131,40 +133,43 @@ class _ValueCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         for (final (i, point) in points.indexed)
-          Padding(
-            padding: EdgeInsets.only(
-                bottom: i == points.length - 1 ? 0 : AppSpacing.sm + 2),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: c.primaryLight,
-                    borderRadius: BorderRadius.circular(10),
+          MotionReveal(
+            order: i.clamp(0, MotionReveal.maxStaggerIndex),
+            child: Padding(
+              padding: EdgeInsets.only(
+                  bottom: i == points.length - 1 ? 0 : AppSpacing.sm + 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: c.primaryLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      WelcomeBody.pointIcons[i % WelcomeBody.pointIcons.length],
+                      size: 20,
+                      color: c.primaryInk,
+                    ),
                   ),
-                  child: Icon(
-                    WelcomeBody.pointIcons[i % WelcomeBody.pointIcons.length],
-                    size: 20,
-                    color: c.primaryInk,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      point,
-                      textAlign: TextAlign.start,
-                      style: AppTextStyles.bodySm(c).copyWith(
-                        height: 1.6,
-                        color: c.textPrimary,
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        point,
+                        textAlign: TextAlign.start,
+                        style: AppTextStyles.bodySm(c).copyWith(
+                          height: 1.6,
+                          color: c.textPrimary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
       ],

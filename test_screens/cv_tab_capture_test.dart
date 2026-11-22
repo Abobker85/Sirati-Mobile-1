@@ -73,6 +73,7 @@ void main() {
     ('en-light', 'en', false, false),
   ]) {
     testWidgets('capture $name', (tester) async {
+      // ignore: invalid_use_of_visible_for_testing_member
       SharedPreferences.setMockInitialValues({});
       AppLocale.languageCode.value = language;
       tester.view.physicalSize = const Size(390 * 2, 1240 * 2);
@@ -103,8 +104,8 @@ void main() {
       await tester.pumpAndSettle(const Duration(milliseconds: 100));
       await tester.pump(const Duration(seconds: 2));
 
-      final boundary = tester.renderObject<RenderRepaintBoundary>(
-          find.byKey(rootKey));
+      final boundary =
+          tester.renderObject<RenderRepaintBoundary>(find.byKey(rootKey));
       await tester.runAsync(() async {
         final image = await boundary.toImage(pixelRatio: 2);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);

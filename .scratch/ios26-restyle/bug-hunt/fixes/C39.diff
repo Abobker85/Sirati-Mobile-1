@@ -1,0 +1,14 @@
+diff --git a/lib/features/dashboard/presentation/home/dashboard_navigation_bar.dart b/lib/features/dashboard/presentation/home/dashboard_navigation_bar.dart
+index 37aed4c..99b783a 100644
+--- a/lib/features/dashboard/presentation/home/dashboard_navigation_bar.dart
++++ b/lib/features/dashboard/presentation/home/dashboard_navigation_bar.dart
+@@ -205,6 +205,9 @@ class _NavButton extends StatelessWidget {
+       // One choice out of the group of tabs.
+       inMutuallyExclusiveGroup: true,
+       label: '$label\n$tabLabel',
++      // excludeSemantics drops the child's tap action; declare it here so
++      // assistive tech can activate the tab.
++      onTap: onTap,
+       excludeSemantics: true,
+       // Its icon squishes under the finger and bounces back.
+       child: IconPressListener(

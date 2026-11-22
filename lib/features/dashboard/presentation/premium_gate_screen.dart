@@ -17,6 +17,8 @@ import 'package:sirati/shared/services/purchases/store_purchases.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/services/session_user_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -59,6 +61,8 @@ class PremiumGateScreen extends ConsumerStatefulWidget {
   static const checkAgainKey = ValueKey('premium-check-again');
   static const supportKey = ValueKey('premium-support');
   static const noticeKey = ValueKey('premium-notice');
+  static const benefitsKey = ValueKey('premium-benefits');
+  static const heroKey = ValueKey('premium-hero');
   static Key planKey(String key) => ValueKey('premium-plan-$key');
 
   @override
@@ -100,7 +104,7 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       _notice = null;
     });
     _GateNotice? notice;
-    var active = false;
+    bool? active;
     var stale = false;
     try {
       final user = await ref.read(authApiServiceProvider).me();
@@ -115,7 +119,8 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     setState(() {
       _refreshing = false;
       if (stale) return;
-      _activated = active;
+      // A failed check proves nothing: keep what was last known.
+      if (active != null) _activated = active;
       _notice = notice;
     });
   }
@@ -306,13 +311,16 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       final flowUser = _flowUser;
       if (flowUser != null) {
         if (next != flowUser) _resetFlow();
-      } else if (next != previous && (_activated != null || _notice != null)) {
+      } else if (previous != null &&
+          next != previous &&
+          (_activated != null || _notice != null)) {
+        // A session that only became known (null -> id) is not a change,
+        // as in _refreshStillCurrent.
         // A refresh result shown for the previous account is not this one's.
         _resetFlow();
       }
     });
     final l = AppLocalizations.of(context);
-    final c = context.sirati;
     final offer = ref.watch(subscriptionOfferProvider);
     final storeAvailable = ref.watch(storePurchasesProvider).isAvailable;
     final active = _activated ?? (offer.value?.subscribed ?? false);
@@ -340,12 +348,15 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       children = _informationalChildren(context, offer, active);
     }
 
-    return Scaffold(
-      backgroundColor: c.background,
-      appBar: AppBar(title: Text(l.premiumGateAppBar)),
-      body: SafeArea(
-        top: false,
-        child: ListView(padding: padding, children: children),
+    // Grouped grey page: benefits are an inset-grouped section, plans and
+    // notices borderless fills.
+    return GroupedSurface(
+      child: Scaffold(
+        appBar: AppBar(title: Text(l.premiumGateAppBar)),
+        body: SafeArea(
+          top: false,
+          child: ListView(padding: padding, children: children),
+        ),
       ),
     );
   }
@@ -726,14 +737,14 @@ class _Hero extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
+    // Borderless, unshadowed, flat page fill (white on the grouped page in
+    // light): no brand gradient. The page's call to action stays the theme's
+    // teal capsule (Buy or Refresh) further down.
     return DecoratedBox(
+      key: PremiumGateScreen.heroKey,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.topStart,
-          end: AlignmentDirectional.bottomEnd,
-          colors: [c.brandSurface, c.brandSurfaceDeep],
-        ),
-        borderRadius: AppRadius.xlAll,
+        color: PageSurface.fillOf(context),
+        borderRadius: AppRadius.cardAll,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
@@ -743,7 +754,7 @@ class _Hero extends StatelessWidget {
             Icon(
               Icons.workspace_premium_rounded,
               size: 40,
-              color: c.onBrandSurface,
+              color: c.primary,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
@@ -751,7 +762,7 @@ class _Hero extends StatelessWidget {
               style: AppTypography.of(
                 context,
                 AppTypography.headlineLg,
-                color: c.onBrandSurface,
+                color: c.textPrimary,
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
@@ -760,7 +771,7 @@ class _Hero extends StatelessWidget {
               style: AppTypography.of(
                 context,
                 AppTypography.bodyMd,
-                color: c.onBrandSurface,
+                color: c.textSecondary,
               ),
             ),
           ],
@@ -817,20 +828,25 @@ class _Benefits extends StatelessWidget {
     ];
     final lead = _leading;
     if (lead != null) items.insert(0, items.removeAt(lead));
-    return _Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
+    return Column(
+      key: PremiumGateScreen.benefitsKey,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
             l.premiumGateBenefitsTitle,
             style: AppTypography.of(context, AppTypography.titleLg),
           ),
-          for (final (icon, title, body) in items) ...[
-            const SizedBox(height: AppSpacing.md),
-            _BenefitRow(icon: icon, title: title, body: body),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppListSection(
+          children: [
+            for (final (icon, title, body) in items)
+              _BenefitRow(icon: icon, title: title, body: body),
           ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -849,39 +865,39 @@ class _BenefitRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: c.primaryLight,
-            shape: BoxShape.circle,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xs),
-            child: Icon(icon, size: 20, color: c.primaryInk),
-          ),
+    // A flat row of the benefits section; the body is never truncated.
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: AppListSection.rowPadding,
+          vertical: 12,
         ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: AppTypography.of(context, AppTypography.titleSm)),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(
-                body,
-                style: AppTypography.of(
-                  context,
-                  AppTypography.bodySm,
-                  color: c.textSecondary,
-                ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ExcludeSemantics(child: AppListIcon(icon)),
+            const SizedBox(width: AppListTileMetrics.gap),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: AppTypography.of(context, AppTypography.titleSm)),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    body,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.bodySm,
+                      color: c.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -949,21 +965,20 @@ class _PlanCard extends StatelessWidget {
     );
     final isSelected = selected;
     if (isSelected == null) return _Card(child: details);
+    // Borderless fill: the choice reads through the radio mark and the halo
+    // that [PlanSelectionHalo] draws around the selected card.
+    final fill = PageSurface.fillOf(context);
     return Semantics(
       selected: isSelected,
       button: true,
       child: Material(
-        color: c.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.lgAll,
-          side: BorderSide(
-            color: isSelected ? c.primary : c.textSecondary,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
+        color: fill,
+        borderRadius: AppRadius.cardAll,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onSelect,
+          splashFactory: NoSplash.splashFactory,
+          highlightColor: c.pressOverlay(fill),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
@@ -1032,7 +1047,7 @@ class _ActiveCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: c.successLight,
-        borderRadius: AppRadius.lgAll,
+        borderRadius: AppRadius.cardAll,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -1237,12 +1252,11 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.sirati;
+    // Borderless, unshadowed page fill (white on the grouped page).
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.textSecondary),
+        color: PageSurface.fillOf(context),
+        borderRadius: AppRadius.cardAll,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -1322,11 +1336,11 @@ class _PlansSkeleton extends StatelessWidget {
         key: skeletonKey,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppSkeleton(height: 84, radius: 16),
+          AppSkeleton(height: 84, radius: AppRadius.card),
           SizedBox(height: AppSpacing.sm),
-          AppSkeleton(height: 84, radius: 16),
+          AppSkeleton(height: 84, radius: AppRadius.card),
           SizedBox(height: AppSpacing.sm),
-          AppSkeleton(height: 84, radius: 16),
+          AppSkeleton(height: 84, radius: AppRadius.card),
         ],
       ),
     );
@@ -1466,7 +1480,7 @@ class _HaloPainter extends CustomPainter {
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         rect,
-        const Radius.circular(AppRadius.lg + PlanSelectionHalo.outset),
+        const Radius.circular(AppRadius.card + PlanSelectionHalo.outset),
       ),
       Paint()
         ..style = PaintingStyle.stroke

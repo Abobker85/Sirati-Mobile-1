@@ -1,0 +1,95 @@
+diff --git a/lib/features/cv_builder/presentation/experience_education_editor.dart b/lib/features/cv_builder/presentation/experience_education_editor.dart
+index a696f1a..2c8cabf 100644
+--- a/lib/features/cv_builder/presentation/experience_education_editor.dart
++++ b/lib/features/cv_builder/presentation/experience_education_editor.dart
+@@ -218,10 +218,12 @@ class _ExperienceEducationEditorState extends State<ExperienceEducationEditor> {
+                 Row(
+                   mainAxisAlignment: MainAxisAlignment.end,
+                   children: [
+-                    AppButton.text(
+-                      label: l10n.sortChronologically,
+-                      icon: Icons.sort,
+-                      onPressed: _sortExperienceChronologically,
++                    Flexible(
++                      child: AppButton.text(
++                        label: l10n.sortChronologically,
++                        icon: Icons.sort,
++                        onPressed: _sortExperienceChronologically,
++                      ),
+                     ),
+                   ],
+                 ),
+@@ -260,10 +262,12 @@ class _ExperienceEducationEditorState extends State<ExperienceEducationEditor> {
+                 Row(
+                   mainAxisAlignment: MainAxisAlignment.end,
+                   children: [
+-                    AppButton.text(
+-                      label: l10n.sortChronologically,
+-                      icon: Icons.sort,
+-                      onPressed: _sortEducationChronologically,
++                    Flexible(
++                      child: AppButton.text(
++                        label: l10n.sortChronologically,
++                        icon: Icons.sort,
++                        onPressed: _sortEducationChronologically,
++                      ),
+                     ),
+                   ],
+                 ),
+@@ -505,11 +509,13 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
+               children: [
+                 Icon(Icons.error_outline, size: 14, color: c.error),
+                 const SizedBox(width: AppSpacing.xxs),
+-                Text(
+-                  _dateError!,
+-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+-                        color: c.error,
+-                      ),
++                Expanded(
++                  child: Text(
++                    _dateError!,
++                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
++                          color: c.error,
++                        ),
++                  ),
+                 ),
+               ],
+             ),
+@@ -527,11 +533,13 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
+                   _notifyChange();
+                 },
+               ),
+-              Text(
+-                l10n.currentlyWorking,
+-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+-                      color: c.textPrimary,
+-                    ),
++              Expanded(
++                child: Text(
++                  l10n.currentlyWorking,
++                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
++                        color: c.textPrimary,
++                      ),
++                ),
+               ),
+             ],
+           ),
+@@ -778,11 +786,13 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
+               children: [
+                 Icon(Icons.error_outline, size: 14, color: c.error),
+                 const SizedBox(width: AppSpacing.xxs),
+-                Text(
+-                  _dateError!,
+-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+-                        color: c.error,
+-                      ),
++                Expanded(
++                  child: Text(
++                    _dateError!,
++                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
++                          color: c.error,
++                        ),
++                  ),
+                 ),
+               ],
+             ),

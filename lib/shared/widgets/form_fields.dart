@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:sirati/core/utils/bidi_text_utils.dart';
+
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -11,39 +14,62 @@ class AppFormStyles {
 
   static const radius = 14.0;
 
-  /// Inline field error text. `error` on surface/background is a gated AA
-  /// pair in both themes (the old static style was light-only).
+  /// Content padding of a filled field that has a floating label: the label
+  /// sits inside the fill, so less vertical padding keeps the field about as
+  /// tall as an unlabelled one (and above the 48dp target).
+  static const labelledPadding =
+      EdgeInsets.symmetric(horizontal: 14, vertical: 8);
+
+  /// Focus ring width on a filled field.
+  static const focusRingWidth = 2.0;
+
+  /// Error ring width on a filled field (resting / focused).
+  static const errorRingWidth = 1.5;
+
+  /// Inline field error text. The error-container ink holds AA on
+  /// every page, on the field fills and on the soft error wash, in both
+  /// themes (`error` itself drops to 4.4:1 on the light wash).
   static TextStyle errorTextStyle(SiratiColors c, {bool arabic = true}) =>
       AppTypography.bodySm
-          .resolve(arabic: arabic, color: c.error)
+          .resolve(arabic: arabic, color: c.onErrorContainer)
           .copyWith(fontWeight: FontWeight.w600);
 
   static TextStyle successTextStyle(SiratiColors c) =>
       AppTypography.bodySm.resolve(arabic: true, color: c.onSuccessContainer);
 
+  /// The soft red wash behind a field in error, over its [fill].
+  static Color errorWash(SiratiColors c, Color fill) =>
+      Color.alphaBlend(c.errorLight.withValues(alpha: .35), fill);
+
+  /// The soft green wash behind a valid field, over its [fill].
+  static Color successWash(SiratiColors c, Color fill) =>
+      Color.alphaBlend(c.successLight.withValues(alpha: .35), fill);
+
+  /// iOS 26 filled fields: [fill] with no resting outline; a primary-ink ring
+  /// while focused and an error ring in error (the error text and icon carry
+  /// the state too, so it never rests on colour alone).
   static InputDecorationTheme inputThemeFor(
     SiratiColors c, {
     bool arabic = true,
+    required Color fill,
   }) {
-    OutlineInputBorder o(Color color, double width) => OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(color: color, width: width),
-        );
+    FilledFieldBorder ring(Color color, double width) =>
+        FilledFieldBorder(borderSide: BorderSide(color: color, width: width));
 
     return InputDecorationTheme(
       filled: true,
-      fillColor: c.surface,
-      hoverColor: c.surfaceLow,
-      border: o(c.outline, 1),
-      enabledBorder: o(c.outline, 1),
-      focusedBorder: o(c.primaryInk, 1.8),
-      errorBorder: o(c.error, 1.4),
-      focusedErrorBorder: o(c.error, 1.8),
-      disabledBorder: o(c.outline, 1),
+      fillColor: fill,
+      hoverColor: c.pressed(fill),
+      border: const FilledFieldBorder(),
+      enabledBorder: const FilledFieldBorder(),
+      focusedBorder: ring(c.primaryInk, focusRingWidth),
+      errorBorder: ring(c.error, errorRingWidth),
+      focusedErrorBorder: ring(c.error, focusRingWidth),
+      disabledBorder: const FilledFieldBorder(),
       labelStyle: WidgetStateTextStyle.resolveWith((states) {
         final base = AppTypography.bodyMd.resolve(arabic: arabic);
         if (states.contains(WidgetState.error)) {
-          return base.copyWith(color: c.error);
+          return base.copyWith(color: c.onErrorContainer);
         }
         if (states.contains(WidgetState.focused)) {
           return base.copyWith(color: c.primaryInk);
@@ -56,7 +82,7 @@ class AppFormStyles {
       floatingLabelStyle: WidgetStateTextStyle.resolveWith((states) {
         final base = AppTypography.bodySm.resolve(arabic: arabic);
         if (states.contains(WidgetState.error)) {
-          return base.copyWith(color: c.error);
+          return base.copyWith(color: c.onErrorContainer);
         }
         if (states.contains(WidgetState.focused)) {
           return base.copyWith(color: c.primaryInk);
@@ -72,6 +98,10 @@ class AppFormStyles {
       ),
       errorStyle: errorTextStyle(c, arabic: arabic),
       errorMaxLines: 100,
+      helperStyle: AppTypography.bodySm.resolve(
+        arabic: arabic,
+        color: c.textSecondary,
+      ),
       prefixIconColor: c.textSecondary,
       suffixIconColor: c.textSecondary,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
@@ -93,6 +123,117 @@ class AppFormStyles {
       isDense: dense,
     );
   }
+}
+
+/// Rounded border of a filled field: no line at rest ([BorderSide.none]), a
+/// ring of [borderSide] when given one.
+///
+/// Not an outline border, so the floating label rests inside the fill
+/// rather than notching the top edge: every label sits on the fill colour.
+class FilledFieldBorder extends InputBorder {
+  const FilledFieldBorder({
+    super.borderSide = BorderSide.none,
+    this.borderRadius =
+        const BorderRadius.all(Radius.circular(AppFormStyles.radius)),
+  });
+
+  final BorderRadius borderRadius;
+
+  @override
+  bool get isOutline => false;
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.all(borderSide.width);
+
+  @override
+  FilledFieldBorder copyWith({
+    BorderSide? borderSide,
+    BorderRadius? borderRadius,
+  }) =>
+      FilledFieldBorder(
+        borderSide: borderSide ?? this.borderSide,
+        borderRadius: borderRadius ?? this.borderRadius,
+      );
+
+  @override
+  ShapeBorder scale(double t) => FilledFieldBorder(
+        borderSide: borderSide.scale(t),
+        borderRadius: borderRadius * t,
+      );
+
+  @override
+  ShapeBorder? lerpFrom(ShapeBorder? a, double t) {
+    if (a is FilledFieldBorder) {
+      return FilledFieldBorder(
+        borderSide: BorderSide.lerp(a.borderSide, borderSide, t),
+        borderRadius: BorderRadius.lerp(a.borderRadius, borderRadius, t)!,
+      );
+    }
+    return super.lerpFrom(a, t);
+  }
+
+  @override
+  ShapeBorder? lerpTo(ShapeBorder? b, double t) {
+    if (b is FilledFieldBorder) {
+      return FilledFieldBorder(
+        borderSide: BorderSide.lerp(borderSide, b.borderSide, t),
+        borderRadius: BorderRadius.lerp(borderRadius, b.borderRadius, t)!,
+      );
+    }
+    return super.lerpTo(b, t);
+  }
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) => Path()
+    ..addRRect(
+      borderRadius
+          .resolve(textDirection)
+          .toRRect(rect)
+          .deflate(borderSide.width),
+    );
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) =>
+      Path()..addRRect(borderRadius.resolve(textDirection).toRRect(rect));
+
+  @override
+  bool get preferPaintInterior => true;
+
+  @override
+  void paintInterior(
+    Canvas canvas,
+    Rect rect,
+    Paint paint, {
+    TextDirection? textDirection,
+  }) {
+    canvas.drawRRect(borderRadius.resolve(textDirection).toRRect(rect), paint);
+  }
+
+  @override
+  void paint(
+    Canvas canvas,
+    Rect rect, {
+    double? gapStart,
+    double gapExtent = 0.0,
+    double gapPercentage = 0.0,
+    TextDirection? textDirection,
+  }) {
+    if (borderSide.style == BorderStyle.none || borderSide.width == 0) return;
+    final ring = borderRadius
+        .resolve(textDirection)
+        .toRRect(rect)
+        .deflate(borderSide.width / 2);
+    canvas.drawRRect(ring, borderSide.toPaint());
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is FilledFieldBorder &&
+      other.borderSide == borderSide &&
+      other.borderRadius == borderRadius;
+
+  @override
+  int get hashCode => Object.hash(borderSide, borderRadius);
 }
 
 /// Compact inline validation message with icon — modern SaaS style.
@@ -168,10 +309,33 @@ class AppFormErrorBanner extends StatelessWidget {
 
   const AppFormErrorBanner({super.key, required this.message, this.onDismiss});
 
+  /// How far it drifts down as it arrives.
+  static const drift = 8.0;
+
   @override
   Widget build(BuildContext context) {
+    // Arrives calmly once: fades in while drifting 8 px into place. No
+    // shake, no flash.
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration:
+          MotionSettings.reduce(context) ? Duration.zero : MotionDurations.slow,
+      curve: MotionCurves.enter,
+      builder: (context, t, child) => Opacity(
+        opacity: t,
+        child: Transform.translate(
+          offset: Offset(0, -drift * (1 - t)),
+          child: child,
+        ),
+      ),
+      child: _banner(context),
+    );
+  }
+
+  Widget _banner(BuildContext context) {
+    final reduce = MotionSettings.reduce(context);
     return AnimatedSize(
-      duration: MotionDurations.fast,
+      duration: reduce ? Duration.zero : MotionDurations.fast,
       curve: MotionCurves.state,
       child: Container(
         width: double.infinity,
@@ -232,20 +396,21 @@ class AppFormSuccessBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduce = MotionSettings.reduce(context);
     return AnimatedSize(
-      duration: MotionDurations.fast,
+      duration: reduce ? Duration.zero : MotionDurations.fast,
       curve: MotionCurves.state,
       child: TweenAnimationBuilder<double>(
         key: ValueKey(message),
         tween: Tween(begin: 0, end: 1),
-        duration: MotionDurations.medium,
+        duration: reduce ? Duration.zero : MotionDurations.medium,
         curve: MotionCurves.enter,
         builder: (context, t, child) => Opacity(
-          opacity: MotionSettings.reduce(context) ? 1 : t,
+          opacity: reduce ? 1 : t,
           child: Transform.translate(
             offset: Offset(
               0,
-              MotionSettings.reduce(context) ? 0 : (1 - t) * -4,
+              reduce ? 0 : (1 - t) * -4,
             ),
             child: child,
           ),
@@ -348,6 +513,11 @@ class AppTextFormField extends FormField<String> {
     /// (after first blur, or when [autovalidateMode] forces validation).
     this.showSuccessWhenValid = false,
     this.successMessage,
+
+    /// A small check draws at the field's end the first time it becomes
+    /// valid with text in it, then fades away: quiet encouragement for long
+    /// forms that do not use [showSuccessWhenValid].
+    this.tickWhenValid = false,
   })  : _autovalidateMode = autovalidateMode,
         super(
           initialValue:
@@ -387,6 +557,7 @@ class AppTextFormField extends FormField<String> {
   final FocusNode? focusNode;
   final bool showSuccessWhenValid;
   final String? successMessage;
+  final bool tickWhenValid;
   final List<String>? autofillHints;
   final ValueChanged<String>? onFocusLost;
   final ValueChanged<String>? onBecameValid;
@@ -409,6 +580,24 @@ class _AppTextFormFieldState extends FormFieldState<String> {
   /// After first unfocus, re-validate on each keystroke (onUserInteraction).
   bool _blurredOnce = false;
   bool _wasValid = false;
+
+  /// The valid tick has played (once per field) / is showing now.
+  bool _ticked = false;
+  bool _showTick = false;
+
+  /// Set when a focused edit fails the validator, until the next frame. A
+  /// Form that autovalidates (onUserInteraction after a submit) re-runs
+  /// [validate] on every keystroke; while this is set and the field keeps
+  /// focus, that call keeps the current error state instead (forgive while
+  /// editing). Blur and submit validate normally.
+  bool _holdFormValidation = false;
+
+  void _becameValid(String text) {
+    widget.onBecameValid?.call(text);
+    if (!widget.tickWhenValid || _ticked || text.trim().isEmpty) return;
+    _ticked = true;
+    if (mounted) setState(() => _showTick = true);
+  }
 
   TextEditingController get _effectiveController =>
       widget.controller ?? _localController!;
@@ -487,7 +676,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
       widget.onFocusLost?.call(text);
       if (ok && !_wasValid) {
         _wasValid = true;
-        widget.onBecameValid?.call(text);
+        _becameValid(text);
       } else if (!ok) {
         _wasValid = false;
       }
@@ -505,16 +694,47 @@ class _AppTextFormFieldState extends FormFieldState<String> {
     }
     // After first blur: re-validate as the user types (onUserInteraction).
     // Before first blur: stay quiet — no error flash while typing.
-    final forceAlways = widget._autovalidateMode == AutovalidateMode.always;
+    // An explicit always / onUserInteraction (e.g. after a submit) validates
+    // live without waiting for a blur.
+    final forceAlways = widget._autovalidateMode == AutovalidateMode.always ||
+        widget._autovalidateMode == AutovalidateMode.onUserInteraction;
+    // Forgive while editing: as long as the field has focus, typing may
+    // clear an error but never add one or change its message. New errors
+    // show on blur or submit (the rules themselves are unchanged). This also
+    // holds back a parent Form that autovalidates on user interaction.
+    final failsWhileFocused =
+        _focusNode.hasFocus && widget.validator?.call(value) != null;
+    if (failsWhileFocused) {
+      _holdFormValidation = true;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _holdFormValidation = false,
+      );
+    }
     if (_blurredOnce || forceAlways) {
+      if (failsWhileFocused) {
+        _wasValid = false;
+        return;
+      }
       final ok = validate();
       if (ok && !_wasValid) {
         _wasValid = true;
-        widget.onBecameValid?.call(value ?? '');
+        _becameValid(value ?? '');
       } else if (!ok) {
         _wasValid = false;
       }
     }
+  }
+
+  @override
+  bool validate() {
+    // Only the Form's autovalidation, which runs while the Form builds, is
+    // held. A submit's Form.validate() (an event handler) always validates.
+    final inBuild = SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks;
+    if (_holdFormValidation && _focusNode.hasFocus && inBuild) {
+      return !hasError;
+    }
+    return super.validate();
   }
 
   @override
@@ -534,7 +754,10 @@ class _AppTextFormFieldState extends FormFieldState<String> {
   bool _isShowingSuccess() {
     if (!widget.showSuccessWhenValid) return false;
     // Never show success chrome before the first blur (unless always mode).
-    final forceAlways = widget._autovalidateMode == AutovalidateMode.always;
+    // An explicit always / onUserInteraction (e.g. after a submit) validates
+    // live without waiting for a blur.
+    final forceAlways = widget._autovalidateMode == AutovalidateMode.always ||
+        widget._autovalidateMode == AutovalidateMode.onUserInteraction;
     if (!_blurredOnce && !forceAlways) return false;
     final text = value?.trim() ?? '';
     if (text.isEmpty) return false;
@@ -569,13 +792,17 @@ class _AppTextFormFieldState extends FormFieldState<String> {
   }) {
     final showError = hasError && (errorText?.isNotEmpty ?? false);
     final showSuccess = !showError && _isShowingSuccess();
+    // An error or success mark that takes the suffix slot ends the tick for
+    // good: it plays once per field and must not replay when the slot frees.
+    if (showError || showSuccess) _showTick = false;
 
     final c = context.sirati;
+    final base = PageSurface.fillOf(context);
     final fill = showError && softErrorFill
-        ? Color.alphaBlend(c.errorLight.withValues(alpha: .35), c.surface)
+        ? AppFormStyles.errorWash(c, base)
         : showSuccess
-            ? Color.alphaBlend(c.successLight.withValues(alpha: .35), c.surface)
-            : c.surface;
+            ? AppFormStyles.successWash(c, base)
+            : base;
     final resolvedSuffix = showError || showSuccess
         ? Row(
             mainAxisSize: MainAxisSize.min,
@@ -597,10 +824,27 @@ class _AppTextFormFieldState extends FormFieldState<String> {
               ),
             ],
           )
-        : suffixIcon;
-    final successBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppFormStyles.radius),
-      borderSide: BorderSide(color: c.success, width: 1.4),
+        : _showTick
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (suffixIcon != null) suffixIcon,
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 12),
+                    child: ValidTick(
+                      onDone: () {
+                        if (mounted) setState(() => _showTick = false);
+                      },
+                    ),
+                  ),
+                ],
+              )
+            : suffixIcon;
+    final successBorder = FilledFieldBorder(
+      borderSide: BorderSide(
+        color: c.success,
+        width: AppFormStyles.errorRingWidth,
+      ),
     );
 
     // A new error shakes the field once (also when a submit finds it).
@@ -626,6 +870,14 @@ class _AppTextFormFieldState extends FormFieldState<String> {
               _effectiveController.text,
               fallback: Directionality.of(context),
             ),
+        // Room under the field so its error line and the next field stay
+        // visible above the keyboard and any footer.
+        scrollPadding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          math.min(120, MediaQuery.sizeOf(context).height * .2),
+        ),
         style: AppTypography.of(context, AppTypography.bodyLg),
         cursorColor: c.primaryInk,
         onChanged: (value) {
@@ -664,7 +916,7 @@ class _AppTextFormFieldState extends FormFieldState<String> {
                     scale:
                         _hasFocus && !MotionSettings.reduce(context) ? 1.1 : 1,
                     duration: MotionDurations.medium,
-                    curve: MotionCurves.pop,
+                    curve: MotionCurves.settle,
                     child: prefixIcon,
                   ),
                 ),
@@ -673,8 +925,12 @@ class _AppTextFormFieldState extends FormFieldState<String> {
           fillColor: fill,
           enabledBorder: showSuccess ? successBorder : null,
           focusedBorder: showSuccess ? successBorder : null,
+          // A filled field's label floats inside the fill, so a labelled
+          // field trims its vertical padding to keep the old height.
           contentPadding: contentPadding ??
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              (labelText == null
+                  ? const EdgeInsets.symmetric(horizontal: 14, vertical: 14)
+                  : AppFormStyles.labelledPadding),
           // Native errors are associated with the editable semantics node and
           // announced by InputDecorator's live region, including on submit.
           errorText: showError ? errorText : null,
@@ -705,4 +961,97 @@ Widget? _tokenLabel(String? text) {
           ),
     ),
   );
+}
+
+/// A check that draws itself in, holds, then fades away, and tells
+/// [onDone]. With reduced motion it does not show at all.
+class ValidTick extends StatefulWidget {
+  const ValidTick({super.key, required this.onDone});
+
+  final VoidCallback onDone;
+
+  /// Draw, hold and fade.
+  static const duration = Duration(milliseconds: 1400);
+
+  @override
+  State<ValidTick> createState() => _ValidTickState();
+}
+
+class _ValidTickState extends State<ValidTick>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: ValidTick.duration);
+
+  static const _draw = Interval(0, .2, curve: MotionCurves.enter);
+  static const _fade = Interval(.75, 1, curve: MotionCurves.exit);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_c.isAnimating || _c.isCompleted) return;
+    if (MotionSettings.reduce(context)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => widget.onDone());
+      _c.value = 1;
+      return;
+    }
+    _c.forward().whenComplete(() {
+      if (mounted) widget.onDone();
+    });
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = context.sirati.success;
+    return ExcludeSemantics(
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, _) => Opacity(
+          opacity: 1 - _fade.transform(_c.value),
+          child: CustomPaint(
+            size: const Size.square(16),
+            painter: _TickPainter(
+              progress: _draw.transform(_c.value),
+              color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TickPainter extends CustomPainter {
+  _TickPainter({required this.progress, required this.color});
+
+  final double progress;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0) return;
+    final path = Path()
+      ..moveTo(size.width * .15, size.height * .55)
+      ..lineTo(size.width * .42, size.height * .8)
+      ..lineTo(size.width * .88, size.height * .25);
+    final metric = path.computeMetrics().first;
+    canvas.drawPath(
+      metric.extractPath(0, metric.length * progress),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TickPainter old) =>
+      old.progress != progress || old.color != color;
 }

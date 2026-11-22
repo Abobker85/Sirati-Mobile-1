@@ -174,6 +174,49 @@ class AppContrast {
         background: c.inkSurface,
         minRatio: 4.5,
       ),
+      ...restylePairs(c),
+    ];
+  }
+
+  /// Every ink over every iOS 26 surface, resting and pressed (ticket 01).
+  /// Built as a cross product so a new ink or surface is covered by adding
+  /// it to one list, not by hand-picking pairs.
+  static List<ContrastPair> restylePairs(SiratiColors c) {
+    final surfaces = <String, Color>{
+      'pageBackground': c.pageBackground,
+      'groupedBackground': c.groupedBackground,
+      'cardFill': c.cardFill,
+      'cardFill pressed': c.cardFillPressed,
+      'groupedCard': c.groupedCard,
+      'groupedCard pressed': c.pressed(c.groupedCard),
+    };
+    final inks = <String, (Color, double)>{
+      'onSurface': (c.onSurface, 4.5),
+      'onSurfaceVariant': (c.onSurfaceVariant, 4.5),
+      'onSurfaceMuted': (c.onSurfaceMuted, 4.5),
+      'primaryInk': (c.primaryInk, 4.5),
+      // Same class as 'error / surface': status ink and icons, while error
+      // body copy uses onErrorContainer on errorLight.
+      'error': (c.error, 3.0),
+    };
+    return [
+      for (final s in surfaces.entries)
+        for (final i in inks.entries)
+          ContrastPair(
+            name: '${i.key} / ${s.key}',
+            foreground: i.value.$1,
+            background: s.value,
+            minRatio: i.value.$2,
+          ),
+      // Control boundaries (fields, switch tracks) on resting surfaces.
+      for (final s in surfaces.entries)
+        if (!s.key.endsWith('pressed'))
+          ContrastPair(
+            name: 'outline / ${s.key}',
+            foreground: c.outline,
+            background: s.value,
+            minRatio: 3.0,
+          ),
     ];
   }
 }

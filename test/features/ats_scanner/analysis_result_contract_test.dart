@@ -8,6 +8,7 @@ import 'package:sirati/l10n/generated/app_localizations_ar.dart';
 import 'package:sirati/l10n/generated/app_localizations_en.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 
 /// Server contract for `GET /api/cv-analyses` (issues #16, #20).
 Map<String, dynamic> _json({
@@ -156,7 +157,7 @@ void main() {
       );
       expect(find.text(en.atsHiddenMore(5)), findsOneWidget);
 
-      await tester.tap(find.byType(Tab).at(1));
+      await tester.tap(find.descendant(of: find.byType(AppSegmentedTabBar), matching: find.byType(Text)).at(1));
       await tester.pump();
       await tester.pump(const Duration(seconds: 2));
       for (final n in [3, 4, 6]) {
@@ -170,7 +171,7 @@ void main() {
         ..['strengths'] = const []
         ..['weaknesses'] = const [];
       await _pump(tester, CvAnalysis.fromJson(json));
-      await tester.tap(find.byType(Tab).at(1));
+      await tester.tap(find.descendant(of: find.byType(AppSegmentedTabBar), matching: find.byType(Text)).at(1));
       await tester.pump();
       await tester.pump(const Duration(seconds: 2));
       expect(find.text(en.atsHiddenMore(2)), findsOneWidget);
@@ -186,7 +187,7 @@ void main() {
         )),
       );
       for (final tab in [0, 1]) {
-        await tester.tap(find.byType(Tab).at(tab));
+        await tester.tap(find.descendant(of: find.byType(AppSegmentedTabBar), matching: find.byType(Text)).at(tab));
         await tester.pump();
         await tester.pump(const Duration(seconds: 2));
         for (var n = 0; n <= 10; n++) {

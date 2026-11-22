@@ -64,6 +64,9 @@ class SocialSignInSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final social = ref.watch(socialSignInOptionsProvider);
+    // Keeps the auto-dispose controller alive while a provider's picker is
+    // open; Register doesn't watch it otherwise.
+    ref.watch(loginControllerProvider);
     if (!social.any) return const SizedBox.shrink();
     final l10n = AppLocalizations.of(context);
 
@@ -90,7 +93,7 @@ class SocialSignInSection extends ConsumerWidget {
         LayoutBuilder(
           builder: (context, constraints) => Row(
             children: [
-              Expanded(child: Divider(color: context.sirati.border)),
+              Expanded(child: Divider(color: context.sirati.separator)),
               ConstrainedBox(
                 constraints:
                     BoxConstraints(maxWidth: constraints.maxWidth * 0.6),
@@ -104,7 +107,7 @@ class SocialSignInSection extends ConsumerWidget {
                   ),
                 ),
               ),
-              Expanded(child: Divider(color: context.sirati.border)),
+              Expanded(child: Divider(color: context.sirati.separator)),
             ],
           ),
         ),
@@ -136,6 +139,8 @@ class SocialSignInSection extends ConsumerWidget {
   }
 }
 
+/// A grey filled capsule (the secondary button shape) with the provider's
+/// mark and name.
 class _SocialButton extends StatelessWidget {
   final Widget mark;
   final String label;
@@ -146,37 +151,43 @@ class _SocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.sirati;
+    final fill = PageSurface.fillOf(context);
     return PressScale(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 50),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              color: context.sirati.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: context.sirati.border),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                mark,
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: context.sirati.textPrimary,
+      child: Material(
+        color: fill,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          overlayColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.pressed)
+                ? c.pressOverlay(fill)
+                : null,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 50),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  mark,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: c.textPrimary,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

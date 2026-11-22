@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/shared/theme/app_typography.dart';
+import 'package:sirati/shared/theme/page_surface.dart';
 import 'package:sirati/shared/theme/sirati_colors.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 export 'package:sirati/shared/theme/app_contrast.dart';
 export 'package:sirati/shared/theme/app_typography.dart';
+export 'package:sirati/shared/theme/page_surface.dart';
 export 'package:sirati/shared/theme/sirati_colors.dart';
 
 /// Light-mode static palette — source of truth for [SiratiColors.light].
@@ -48,7 +50,7 @@ class AppColors {
   static const infoLight = Color(0xFFDDF6F3);
 
   static const surface = Color(0xFFFFFFFF);
-  static const background = Color(0xFFFAF7F2);
+  static const background = Color(0xFFFFFFFF);
   static const surfaceLow = Color(0xFFF2F1EC);
   static const surfaceContainer = Color(0xFFEDECE6);
   static const surfaceHigh = Color(0xFFE7E5DE);
@@ -245,17 +247,14 @@ class AppTheme {
         surface: c.surface,
         onSurface: c.textPrimary,
       ),
-      scaffoldBackgroundColor: c.background,
+      // Plain white page (iOS 26); grouped pages opt in with GroupedSurface.
+      scaffoldBackgroundColor: c.pageBackground,
       fontFamily: 'IBM Plex Sans Arabic',
       textTheme: AppTypography.textTheme(c, arabic: arabic),
       appBarTheme: AppBarTheme(
         // Clear at rest; once content scrolls under it the bar turns to the
         // frosted glass tint (iOS scroll-edge style), without a shadow.
-        backgroundColor: WidgetStateColor.resolveWith(
-          (states) => states.contains(WidgetState.scrolledUnder)
-              ? Color.alphaBlend(c.glassFill, c.background)
-              : c.background,
-        ),
+        backgroundColor: barColor(c, c.pageBackground),
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         foregroundColor: c.textPrimary,
@@ -285,29 +284,16 @@ class AppTheme {
           foregroundColor: c.onPrimary,
           minimumSize: const Size.fromHeight(54),
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: const StadiumBorder(),
           textStyle: AppTypography.labelLg.resolve(arabic: arabic),
         ),
       ),
+      // Secondary actions: a grey filled capsule with no outline.
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: c.primaryInk,
-          minimumSize: const Size.fromHeight(54),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          textStyle: AppTypography.labelLg.resolve(arabic: arabic),
-        ).copyWith(
-          // A disabled button must not keep the active outline.
-          side: WidgetStateProperty.resolveWith(
-            (states) => BorderSide(
-              color: states.contains(WidgetState.disabled)
-                  ? c.border
-                  : c.primaryInk,
-              width: 1.5,
-            ),
+        style: secondaryButtonStyle(c, c.cardFill).copyWith(
+          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(54)),
+          textStyle: WidgetStatePropertyAll(
+            AppTypography.labelLg.resolve(arabic: arabic),
           ),
         ),
       ),
@@ -317,27 +303,87 @@ class AppTheme {
           textStyle: AppTypography.labelMd.resolve(arabic: arabic),
         ),
       ),
-      inputDecorationTheme: AppFormStyles.inputThemeFor(c, arabic: arabic),
+      inputDecorationTheme: AppFormStyles.inputThemeFor(
+        c,
+        arabic: arabic,
+        fill: c.cardFill,
+      ),
+      // Borderless, unshadowed grey cards on the plain page.
       cardTheme: CardThemeData(
-        color: c.surface,
+        color: c.cardFill,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.xlAll,
+          borderRadius: AppRadius.cardAll,
           side: BorderSide.none,
         ),
         margin: EdgeInsets.zero,
       ),
-      chipTheme: ChipThemeData(
-        backgroundColor: c.primaryLight,
-        labelStyle: AppTypography.labelMd.resolve(
+      // Inset-grouped rows: 17pt name, 13pt grey caption, ~54pt row.
+      listTileTheme: ListTileThemeData(
+        titleTextStyle: AppTypography.bodyXl.resolve(
           arabic: arabic,
-          color: c.primaryInk,
+          color: c.textPrimary,
         ),
+        subtitleTextStyle: AppTypography.caption.resolve(
+          arabic: arabic,
+          color: c.textSecondary,
+        ),
+        leadingAndTrailingTextStyle: AppTypography.bodyXl.resolve(
+          arabic: arabic,
+          color: c.textSecondary,
+        ),
+        iconColor: c.textSecondary,
+        textColor: c.textPrimary,
+        selectedColor: c.primaryInk,
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        minTileHeight: 54,
+      ),
+      // iOS-style switch in Sirati teal. The off track uses [outline] so the
+      // control keeps 3:1 against any row fill (an iOS grey track does not).
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? c.onPrimary.withValues(alpha: .6)
+              : c.onPrimary,
+        ),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          final track =
+              states.contains(WidgetState.selected) ? c.primary : c.outline;
+          return states.contains(WidgetState.disabled)
+              ? track.withValues(alpha: .38)
+              : track;
+        }),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+      ),
+      // Sheets: large top corners and no grabber, on the grouped background.
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: c.groupedBackground,
+        modalBackgroundColor: c.groupedBackground,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: false,
+        elevation: AppElevation.sheet,
+        modalElevation: AppElevation.sheet,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.sheetTop),
+      ),
+      // Filled capsule chips: grey at rest, teal tint when selected. The
+      // checkmark stays on so selection never rests on colour alone.
+      chipTheme: ChipThemeData(
+        backgroundColor: c.cardFill,
+        disabledColor: c.cardFill,
+        selectedColor: c.primaryLight,
+        checkmarkColor: c.primaryInk,
+        showCheckmark: true,
+        labelStyle: AppTypography.labelMd.resolve(arabic: arabic).copyWith(
+              color: chipLabelColor(c),
+            ),
+        iconTheme: IconThemeData(color: c.textSecondary, size: 18),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: const StadiumBorder(),
         side: BorderSide.none,
       ),
-      dividerTheme: DividerThemeData(color: c.border, thickness: 1, space: 0),
+      // Hairline separators: thickness 0 draws exactly one device pixel.
+      dividerTheme:
+          DividerThemeData(color: c.separator, thickness: 0, space: 0),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: c.surface,
         selectedItemColor: c.primaryInk,
@@ -359,8 +405,20 @@ class AppTheme {
         linearTrackColor: c.border,
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: c.surface,
+        backgroundColor: c.groupedCard,
         surfaceTintColor: Colors.transparent,
+        elevation: AppElevation.dialog,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sheet),
+        ),
+        titleTextStyle: AppTypography.headline.resolve(
+          arabic: arabic,
+          color: c.textPrimary,
+        ),
+        contentTextStyle: AppTypography.bodyMd.resolve(
+          arabic: arabic,
+          color: c.textSecondary,
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: isDark ? c.surfaceHigh : c.textPrimary,
@@ -371,13 +429,85 @@ class AppTheme {
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
+          // One transition everywhere: a full slide along the reading
+          // direction, with the back swipe from the start edge.
           TargetPlatform.android: SiratiPageTransitionsBuilder(),
           TargetPlatform.iOS: SiratiPageTransitionsBuilder(),
           TargetPlatform.macOS: SiratiPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: SiratiPageTransitionsBuilder(),
           TargetPlatform.windows: SiratiPageTransitionsBuilder(),
           TargetPlatform.linux: SiratiPageTransitionsBuilder(),
         },
       ),
+    );
+  }
+
+  /// App bar fill over [page]: the page colour at rest, frosted glass over it
+  /// once content scrolls under the bar (iOS scroll-edge style).
+  static WidgetStateColor barColor(SiratiColors c, Color page) =>
+      WidgetStateColor.resolveWith(
+        (states) => states.contains(WidgetState.scrolledUnder)
+            ? Color.alphaBlend(c.glassFill, page)
+            : page,
+      );
+
+  /// Chip label ink per state: primary ink on the selected teal tint, body
+  /// ink on the grey fill, secondary ink when disabled.
+  static WidgetStateColor chipLabelColor(SiratiColors c) =>
+      WidgetStateColor.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? c.primaryInk
+            : states.contains(WidgetState.disabled)
+                ? c.textSecondary
+                : c.textPrimary,
+      );
+
+  /// Grey filled capsule on [fill]: primary ink label, no outline, the
+  /// shared press overlay. Disabled keeps the fill with a grey label.
+  static ButtonStyle secondaryButtonStyle(SiratiColors c, Color fill) =>
+      ButtonStyle(
+        backgroundColor: WidgetStatePropertyAll(fill),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? c.textSecondary
+              : c.primaryInk,
+        ),
+        overlayColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.pressed)
+              ? c.pressOverlay(fill)
+              : null,
+        ),
+        side: const WidgetStatePropertyAll(BorderSide.none),
+        shape: const WidgetStatePropertyAll(StadiumBorder()),
+        elevation: const WidgetStatePropertyAll(0),
+      );
+
+  /// [base] re-dressed for a grouped page (see [GroupedSurface]): the
+  /// scaffold and app bar sit on [SiratiColors.groupedBackground]; fields,
+  /// secondary buttons, chips and cards fill with [SiratiColors.groupedCard].
+  static ThemeData grouped(ThemeData base) {
+    final c = base.extension<SiratiColors>() ?? SiratiColors.light;
+    final page = PageSurface.pageColor(c, PageSurfaceKind.grouped);
+    final fill = PageSurface.fillColor(c, PageSurfaceKind.grouped);
+    final secondary = secondaryButtonStyle(c, fill);
+    return base.copyWith(
+      scaffoldBackgroundColor: page,
+      appBarTheme: base.appBarTheme.copyWith(backgroundColor: barColor(c, page)),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        fillColor: fill,
+        hoverColor: c.pressed(fill),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: (base.outlinedButtonTheme.style ?? const ButtonStyle()).copyWith(
+          backgroundColor: secondary.backgroundColor,
+          overlayColor: secondary.overlayColor,
+        ),
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        backgroundColor: fill,
+        disabledColor: fill,
+      ),
+      cardTheme: base.cardTheme.copyWith(color: fill),
     );
   }
 
@@ -432,20 +562,20 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Borderless, unshadowed fill of the page it sits on (iOS 26): grey on
+    // a plain page, white on a grouped one. Pressing darkens the fill.
     final c = context.sirati;
+    final fill = color ?? PageSurface.fillOf(context);
     return Material(
-      color: color ?? c.surface,
-      borderRadius: AppRadius.xlAll,
+      color: fill,
+      borderRadius: AppRadius.cardAll,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.xlAll,
-        child: Container(
+        borderRadius: AppRadius.cardAll,
+        highlightColor: c.pressOverlay(fill),
+        splashFactory: NoSplash.splashFactory,
+        child: Padding(
           padding: padding ?? const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            borderRadius: AppRadius.xlAll,
-            border: Border.all(color: c.border),
-            boxShadow: AppShadows.of(c, elevation: AppElevation.card),
-          ),
           child: child,
         ),
       ),

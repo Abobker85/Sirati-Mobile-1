@@ -851,7 +851,7 @@
   "sharedAiStageAnalysisReading": "Reading your CV",
   "sharedAiStageAnalysisScoring": "Scoring against ATS criteria",
   "sharedAiStageAnalysisPreparing": "Preparing your report",
-  "sharedAiLongWait": "This is taking longer than usual — still working…",
+  "sharedAiLongWait": "Still working on it. Your CV is safe, thanks for waiting.",
   "sharedAiDoneGeneration": "Your CV is ready",
   "sharedAiDoneAnalysis": "Your report is ready",
   "sharedAiWorking": "AI is working",
@@ -1679,6 +1679,30 @@
     "placeholders": {
       "points": {
         "type": "int"
+      }
+    }
+  },
+  "coreGreetingMorning": "Good morning, {name}",
+  "@coreGreetingMorning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "coreGreetingAfternoon": "Good afternoon, {name}",
+  "@coreGreetingAfternoon": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "coreGreetingEvening": "Good evening, {name}",
+  "@coreGreetingEvening": {
+    "placeholders": {
+      "name": {
+        "type": "String"
       }
     }
   }

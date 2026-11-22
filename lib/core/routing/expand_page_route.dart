@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:sirati/core/routing/edge_back_swipe.dart';
 
 /// Where on screen an expanding page starts: the tapped card's rectangle
 /// inside its navigator, and that card's corner radius.
@@ -53,10 +54,11 @@ class ExpandFrom {
 
 /// A page that grows out of the card that opened it and shrinks back onto it.
 ///
-/// Back gestures: like every page in the app (see
-/// `SiratiPageTransitionsBuilder` in the theme), this route has no iOS
-/// edge-swipe or Android predictive-back preview; back is the button or the
-/// system back, and the page then shrinks onto its card.
+/// Back: the button, the system back, or the swipe from the start edge
+/// (the right in Arabic, [EdgeBackSwipe]), which shrinks the page onto its
+/// card under the finger and can be cancelled by letting go early. The page
+/// underneath stays still while this one grows or shrinks over it, so the
+/// card it grows from never moves away.
 ///
 /// The page is laid out at full size from the first frame and revealed
 /// through a rounded rectangle that travels from [origin] to the whole
@@ -90,6 +92,29 @@ class ExpandPageRoute<T> extends MaterialPageRoute<T> {
   final ExpandOrigin origin;
 
   @override
+  DelegatedTransitionBuilder? get delegatedTransition => _stayStill;
+
+  /// What the page underneath does: nothing.
+  static Widget? _stayStill(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    bool allowSnapshotting,
+    Widget? child,
+  ) =>
+      child;
+
+  CurvedAnimation? _progress;
+  CurvedAnimation? _opacity;
+
+  @override
+  void dispose() {
+    _progress?.dispose();
+    _opacity?.dispose();
+    super.dispose();
+  }
+
+  @override
   Duration get transitionDuration => duration;
 
   @override
@@ -102,15 +127,21 @@ class ExpandPageRoute<T> extends MaterialPageRoute<T> {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+      return EdgeBackSwipe(route: this, child: child);
+    }
 
-    final progress = CurvedAnimation(
+    // Made once per route: buildTransitions runs on every animation tick,
+    // and a fresh CurvedAnimation would pick its curve direction from the
+    // status at that moment, so an interrupted push or a released swipe
+    // would jump from the forward curve to the flipped one.
+    final progress = _progress ??= CurvedAnimation(
       parent: animation,
       curve: curve,
       reverseCurve: curve.flipped,
     );
     // The page fades in over the card during the first half of the growth.
-    final opacity = CurvedAnimation(
+    final opacity = _opacity ??= CurvedAnimation(
       parent: animation,
       curve: const Interval(0, 0.5, curve: Curves.easeOut),
     );
@@ -125,7 +156,7 @@ class ExpandPageRoute<T> extends MaterialPageRoute<T> {
       size.height == 0 ? 0 : origin.rect.center.dy / size.height * 2 - 1,
     );
 
-    return AnimatedBuilder(
+    final reveal = AnimatedBuilder(
       animation: animation,
       // The tree keeps one shape for the route's whole life, so the page's
       // state survives the end of the transition.
@@ -164,6 +195,7 @@ class ExpandPageRoute<T> extends MaterialPageRoute<T> {
         child: RepaintBoundary(child: child),
       ),
     );
+    return EdgeBackSwipe(route: this, child: reveal);
   }
 }
 

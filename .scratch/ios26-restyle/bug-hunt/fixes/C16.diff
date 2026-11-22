@@ -1,0 +1,20 @@
+diff --git a/lib/shared/widgets/motion.dart b/lib/shared/widgets/motion.dart
+index 681eb40..808e5aa 100644
+--- a/lib/shared/widgets/motion.dart
++++ b/lib/shared/widgets/motion.dart
+@@ -318,10 +318,12 @@ class ErrorShakeState extends State<ErrorShake>
+         child: widget.child,
+         builder: (context, child) {
+           final t = _shake.value;
+-          if (t == 0 || t == 1) return child!;
++          // Always the same wrapper, so the field below keeps its state
++          // (text, focus) when a shake starts and ends.
+           // Two soft swings, the second smaller.
+-          final dx =
+-              ErrorShake.amplitude * math.sin(2 * 2 * math.pi * t) * (1 - t);
++          final dx = (t == 0 || t == 1)
++              ? 0.0
++              : ErrorShake.amplitude * math.sin(2 * 2 * math.pi * t) * (1 - t);
+           return Transform.translate(offset: Offset(dx, 0), child: child);
+         },
+       );

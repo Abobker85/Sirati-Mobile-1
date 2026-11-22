@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#12384F</color>
-    <!-- Matches Flutter AppColors.background for seamless cold start -->
-    <color name="splash_background">#FAF7F2</color>
+    <!-- The first Flutter frame (SplashScreen on SiratiColors.light.background,
+         white since the iOS 26 restyle) so a cold start does not flash. -->
+    <color name="splash_background">#FFFFFF</color>
 </resources>

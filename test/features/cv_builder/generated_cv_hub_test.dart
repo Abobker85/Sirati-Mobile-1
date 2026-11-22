@@ -24,6 +24,8 @@ import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 
+import '../../support/card_chrome.dart';
+import '../../support/contrast_probe.dart';
 import '../../support/non_text_contrast.dart';
 import '../job_match/job_match_test_support.dart';
 
@@ -530,4 +532,94 @@ void main() {
       }
     }
   });
+
+  // iOS 26 restyle (ticket 15): the hub's cards are borderless grey, the CV
+  // keeps its paper, and the exported PDF is the server's, byte for byte.
+  for (final language in ['ar', 'en']) {
+    for (final dark in [false, true]) {
+      final label = '$language/${dark ? 'dark' : 'light'}';
+      testWidgets('$label: borderless grey cards; the shared PDF is unchanged',
+          (tester) async {
+        final api = _Api();
+        await _pump(tester, language: language, dark: dark, api: api);
+        final c = tester.element(find.byType(GeneratedCvScreen)).sirati;
+
+        BoxDecoration box(Key key) =>
+            tester.widget<DecoratedBox>(find.byKey(key)).decoration
+                as BoxDecoration;
+        for (final key in [
+          GeneratedCvScreen.previewKey,
+          GeneratedCvScreen.atsScoreKey,
+        ]) {
+          expect(box(key).color, c.cardFill, reason: '$label $key');
+          expect(box(key).border, isNull, reason: '$label $key');
+          expect(box(key).boxShadow ?? const [], isEmpty);
+        }
+        // The CV itself still sits on its paper inside the card.
+        expect(box(GeneratedCvScreen.paperKey).color, c.surface);
+        expect(box(GeneratedCvScreen.paperKey).border, isNull);
+
+        for (final key in [
+          GeneratedCvScreen.jobMatchStepKey,
+          GeneratedCvScreen.editStepKey,
+        ]) {
+          await revealPhoneWidget(tester, find.byKey(key));
+          await tester.pumpAndSettle();
+          final card = tester.widget<Material>(find
+              .descendant(of: find.byKey(key), matching: find.byType(Material))
+              .first);
+          expect(card.color, c.cardFill, reason: '$label $key');
+          expect(
+              find.descendant(
+                  of: find.byKey(key), matching: find.byType(DecoratedBox)),
+              isNot(_hasOutline()),
+              reason: '$label $key');
+        }
+
+        // Share is the theme's grey capsule: no outline of its own.
+        final share = tester
+            .widget<OutlinedButton>(find.byKey(GeneratedCvScreen.shareKey));
+        expect(share.style?.side, isNull);
+        // Busy Download keeps a visible fill on the white page.
+        final download = tester
+            .widget<ElevatedButton>(find.byKey(GeneratedCvScreen.downloadKey));
+        expect(download.style!.backgroundColor!.resolve({WidgetState.disabled}),
+            c.cardFill);
+        expectAllTextAa('$label hub');
+        // No card on the hub paints an outline, shadow or elevation.
+        expectNoCardChrome(find.byType(GeneratedCvScreen), '$label hub');
+
+        await _tap(tester, GeneratedCvScreen.shareKey);
+        expect(_sharedFiles, [_pdfBody],
+            reason: 'the exported PDF is the server bytes, untouched');
+        expect(api.pdfRequests.map((u) => u.toString()),
+            ['/generated-cvs/91/download?language=$language'],
+            reason: 'same export request: default design, CV language');
+      });
+    }
+  }
+}
+
+/// Matches when any decorated box in the finder paints a full outline.
+Matcher _hasOutline() => _OutlineMatcher();
+
+class _OutlineMatcher extends Matcher {
+  @override
+  bool matches(Object? item, Map<dynamic, dynamic> matchState) {
+    if (item is! Finder) return false;
+    for (final e in item.evaluate()) {
+      final d = (e.widget as DecoratedBox).decoration;
+      if (d is BoxDecoration) {
+        final b = d.border;
+        if (b is Border && b.isUniform && b.top.style != BorderStyle.none) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @override
+  Description describe(Description description) =>
+      description.add('a box with a full outline');
 }

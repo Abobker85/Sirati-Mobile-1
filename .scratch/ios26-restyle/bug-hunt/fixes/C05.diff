@@ -1,0 +1,13 @@
+diff --git a/lib/features/cv_builder/presentation/cv_generator_screen.dart b/lib/features/cv_builder/presentation/cv_generator_screen.dart
+index ef12275..86a23c1 100644
+--- a/lib/features/cv_builder/presentation/cv_generator_screen.dart
++++ b/lib/features/cv_builder/presentation/cv_generator_screen.dart
+@@ -321,6 +321,8 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
+           AnalyticsService.logWizardAbandoned(step: _step, dirty: _isDirty),
+         );
+         _autosaveTimer?.cancel();
++        // Discarded: dispose must not flush the form back as a draft.
++        _isDirty = false;
+         await _draftStore.clear();
+         if (mounted) Navigator.of(context).pop();
+       case WizardExitAction.saveDraft:

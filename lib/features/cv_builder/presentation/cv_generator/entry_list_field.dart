@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/features/cv_builder/domain/cv_entries.dart';
+import 'package:sirati/features/cv_builder/presentation/cv_generator/wizard_widgets.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components/app_dialog.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// A list of entry cards that reads and writes one wizard text field
 /// (Salem review, issue 3: experience and education like a job application).
@@ -123,19 +129,37 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
     _write();
   }
 
+  /// One key per entry, to bring a newly added entry into view.
+  final Map<int, GlobalKey> _cardKeys = {};
+  final Set<int> _justAddedIds = {};
+
+  GlobalKey _cardKey(int id) => _cardKeys.putIfAbsent(id, GlobalKey.new);
+
   void _add() {
-    setState(() => _entries = [..._entries, (_nextId++, widget.blank)]);
+    final id = _nextId++;
+    setState(() {
+      _justAddedIds.add(id);
+      _entries = [..._entries, (id, widget.blank)];
+    });
     HapticFeedback.selectionClick();
+    // The new entry scrolls into view, ready to type in: adding is one tap,
+    // not tap, scroll, tap.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final card = _cardKeys[id]?.currentContext;
+      if (card != null) unawaited(revealField(card, alignment: .15));
+    });
   }
 
   void _remove(int id) {
     setState(() {
+      _justAddedIds.remove(id);
       _entries = [
         for (final entry in _entries)
           if (entry.$1 != id) entry,
       ];
       if (_entries.isEmpty) _entries = [(_nextId++, widget.blank)];
     });
+    _cardKeys.remove(id);
     _write();
   }
 
@@ -180,38 +204,52 @@ class _EntryListFieldState<T> extends State<EntryListField<T>> {
               key: ValueKey('entry-$id'),
               index: index,
               english: widget.english,
+              animateIn: _justAddedIds.contains(id),
               onRemove: _entries.length > 1 || !widget.isBlank(entry)
                   ? () => _remove(id)
                   : null,
-              child: widget.cardBuilder(
-                context,
-                entry,
-                (next) => _update(id, next),
-                _showProblems && !widget.isBlank(entry)
-                    ? widget.problems(entry)
-                    : const {},
+              child: KeyedSubtree(
+                key: _cardKey(id),
+                child: widget.cardBuilder(
+                  context,
+                  entry,
+                  (next) => _update(id, next),
+                  _showProblems && !widget.isBlank(entry)
+                      ? widget.problems(entry)
+                      : const {},
+                ),
               ),
             ),
           ],
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            key: const ValueKey('entry-add'),
-            onPressed: _add,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              foregroundColor: c.primaryInk,
-              side: BorderSide(color: c.primaryInk),
+          PressScale(
+            child: OutlinedButton.icon(
+              key: const ValueKey('entry-add'),
+              onPressed: _add,
+              // The theme's grey capsule: no outline (iOS 26 restyle).
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(AppTouchTarget.min),
+              ),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(widget.addLabel),
             ),
-            icon: const Icon(Icons.add_rounded),
-            label: Text(widget.addLabel),
           ),
-          if (state.hasError) ...[
-            const SizedBox(height: 8),
-            Text(
-              state.errorText!,
-              style: TextStyle(color: c.error, fontSize: 13),
+          ErrorShake(
+            errorKey: state.errorText,
+            child: MotionExpandSlot(
+              alignment: AlignmentDirectional.topStart,
+              child: state.hasError
+                  ? Padding(
+                      key: ValueKey('entry-err-${state.errorText}'),
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        state.errorText!,
+                        style: AppFormStyles.errorTextStyle(c),
+                      ),
+                    )
+                  : const SizedBox.shrink(key: ValueKey('entry-err-none')),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -223,54 +261,73 @@ class _EntryCard extends StatelessWidget {
     super.key,
     required this.index,
     required this.english,
+    this.animateIn = false,
     required this.onRemove,
     required this.child,
   });
 
   final int index;
   final bool english;
+  final bool animateIn;
   final VoidCallback? onRemove;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
+    final reduce = MotionSettings.reduce(context);
     // Material, not a decorated box: the "currently" tile paints its ink on it.
-    return Material(
-      color: c.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: c.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${index + 1}',
-                    style: TextStyle(
-                      color: c.primaryInk,
-                      fontWeight: FontWeight.w700,
+    // Borderless, in the page's card fill; its fields and buttons use the
+    // other fill so they keep an edge inside it.
+    final card = Material(
+      color: PageSurface.fillOf(context),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.cardAll),
+      child: NestedFillScope(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        color: c.primaryInk,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                if (onRemove != null)
-                  IconButton(
-                    key: ValueKey('entry-remove-$index'),
-                    tooltip: AppLocalizations.of(context).cvEntryRemove,
-                    onPressed: onRemove,
-                    icon: Icon(Icons.delete_outline_rounded, color: c.error),
-                  ),
-              ],
-            ),
-            child,
-          ],
+                  if (onRemove != null)
+                    IconButton(
+                      key: ValueKey('entry-remove-$index'),
+                      tooltip: AppLocalizations.of(context).cvEntryRemove,
+                      onPressed: onRemove,
+                      icon: Icon(Icons.delete_outline_rounded, color: c.error),
+                    ),
+                ],
+              ),
+              child,
+            ],
+          ),
         ),
       ),
+    );
+    if (!animateIn || reduce) return card;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: MotionDurations.medium,
+      curve: MotionCurves.enter,
+      builder: (context, t, inner) => Opacity(
+        opacity: t,
+        child: Transform.scale(
+          scale: 0.96 + 0.04 * t,
+          alignment: Alignment.topCenter,
+          child: inner,
+        ),
+      ),
+      child: card,
     );
   }
 }
@@ -340,7 +397,7 @@ class _EntryTextInputState extends State<EntryTextInput> {
               padding: const EdgeInsetsDirectional.only(top: 4, start: 4),
               child: Text(
                 widget.error!,
-                style: TextStyle(color: c.error, fontSize: 12),
+                style: AppFormStyles.errorTextStyle(c),
               ),
             ),
         ],
@@ -371,6 +428,7 @@ class MonthYearButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
+    final fill = PageSurface.fillOf(context);
     final text = value == null
         ? AppLocalizations.of(context).cvMonthChoose
         : monthYearLabel(value!, english: english);
@@ -379,7 +437,14 @@ class MonthYearButton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(label, style: TextStyle(color: c.textSecondary, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(
+              color: c.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 4),
           OutlinedButton.icon(
             onPressed: enabled
@@ -392,12 +457,24 @@ class MonthYearButton extends StatelessWidget {
                     if (picked != null) onChanged(picked);
                   }
                 : null,
+            // Drawn like a filled field: the field fill, no resting outline,
+            // the error ring only in error (the error text says it too).
             style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
+              minimumSize: const Size.fromHeight(AppTouchTarget.min),
               alignment: AlignmentDirectional.centerStart,
+              backgroundColor: fill,
+              disabledBackgroundColor: fill,
               foregroundColor: c.textPrimary,
               disabledForegroundColor: c.textSecondary,
-              side: BorderSide(color: error != null ? c.error : c.borderStrong),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppFormStyles.radius),
+              ),
+              side: error != null
+                  ? BorderSide(
+                      color: c.error,
+                      width: AppFormStyles.errorRingWidth,
+                    )
+                  : BorderSide.none,
             ),
             icon: const Icon(Icons.calendar_month_outlined, size: 18),
             label: Text(text),
@@ -405,8 +482,7 @@ class MonthYearButton extends StatelessWidget {
           if (error != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child:
-                  Text(error!, style: TextStyle(color: c.error, fontSize: 12)),
+              child: Text(error!, style: AppFormStyles.errorTextStyle(c)),
             ),
         ],
       ),
@@ -439,7 +515,7 @@ Future<YearMonth?> showMonthYearPicker(
   var year = initial?.year ?? now.year;
   var month = initial?.month ?? now.month;
   final years = [for (var y = now.year + 6; y >= 1960; y--) y];
-  return showDialog<YearMonth>(
+  return showSiratiDialog<YearMonth>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) {

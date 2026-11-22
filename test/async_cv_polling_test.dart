@@ -27,6 +27,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump();
+    // The result arrives over the AI overlay (curtain lift): let it land.
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(service.statuses,
         [AiStatus.queued, AiStatus.processing, AiStatus.completed]);
@@ -41,6 +43,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump();
+    // The result arrives over the AI overlay (curtain lift): let it land.
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(service.statuses,
         [AiStatus.queued, AiStatus.processing, AiStatus.failed]);
@@ -60,6 +64,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump();
+    // The result arrives over the AI overlay (curtain lift): let it land.
+    await tester.pump(const Duration(milliseconds: 400));
 
     final result = tester.widget<AnalysisResultScreen>(
       find.byType(AnalysisResultScreen),

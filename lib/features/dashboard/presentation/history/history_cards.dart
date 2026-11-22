@@ -9,7 +9,7 @@ import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/models/generated_cv.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/animated_ats_score_bar.dart';
-import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
 
 String _dateLabel(DateTime? date, AppLocalizations l10n) =>
     date == null ? '-' : AppFormat.relativeTime(date, l10n);
@@ -82,6 +82,9 @@ class _MetaChip extends StatelessWidget {
   }
 }
 
+/// Inside an [AppListSection] a history item is a flat row of the
+/// section's white card (the press shows as a grey highlight); on its own
+/// it is a grouped-white card with no border or shadow.
 class _CardShell extends StatelessWidget {
   const _CardShell({required this.onTap, required this.child});
 
@@ -91,32 +94,40 @@ class _CardShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    final radius = BorderRadius.circular(14);
-    return PressScale(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          boxShadow: c.softShadow,
-        ),
-        child: Material(
-          color: c.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: radius,
-            side: BorderSide(color: c.border),
-          ),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: radius,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: child,
-            ),
-          ),
-        ),
+    final row = InkWell(
+      onTap: onTap,
+      splashFactory: NoSplash.splashFactory,
+      // The press darkens the white card, as AppContrast checks every ink
+      // against.
+      overlayColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.pressed)
+            ? c.pressed(c.groupedCard)
+            : null,
       ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: AppListSection.rowPadding,
+          vertical: AppSpacing.sm,
+        ),
+        child: child,
+      ),
+    );
+    if (AppListSection.contains(context)) return row;
+    return Material(
+      color: c.groupedCard,
+      borderRadius: AppRadius.cardAll,
+      clipBehavior: Clip.antiAlias,
+      child: row,
     );
   }
 }
+
+/// Icon box at the start of a history row; separators start past it.
+const double historyIconBox = 40;
+
+/// Separator start for history rows: under the text, past the icon box.
+const double historySeparatorIndent =
+    AppListSection.rowPadding + historyIconBox + AppListTileMetrics.gap;
 
 class AnalysisHistoryCard extends StatelessWidget {
   const AnalysisHistoryCard({
@@ -141,15 +152,15 @@ class AnalysisHistoryCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: historyIconBox,
+                height: historyIconBox,
                 decoration: BoxDecoration(
                   color: c.primaryLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.manage_search, size: 18, color: c.primary),
+                child: Icon(Icons.manage_search, size: 20, color: c.primaryInk),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: AppListTileMetrics.gap),
               Expanded(
                 child: Text(
                   LocaleFormat.mixedTitle(
@@ -220,25 +231,30 @@ class GeneratedCvHistoryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: historyIconBox,
+            height: historyIconBox,
             decoration: BoxDecoration(
               color: c.primaryLight,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
               child: ExcludeSemantics(
-                child: Text(
-                  BidiText.avatarInitial(name,
-                      fallback:
-                          AppLocalizations.of(context).avatarFallbackInitial),
-                  style: AppTypography.of(context, AppTypography.titleLg,
-                      color: c.primaryInk),
+                // Large text scales would overflow the fixed box and clip
+                // the letter; shrink it to fit instead.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    BidiText.avatarInitial(name,
+                        fallback:
+                            AppLocalizations.of(context).avatarFallbackInitial),
+                    style: AppTypography.of(context, AppTypography.titleLg,
+                        color: c.primaryInk),
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppListTileMetrics.gap),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

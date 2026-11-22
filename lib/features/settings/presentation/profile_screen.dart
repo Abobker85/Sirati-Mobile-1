@@ -16,12 +16,16 @@ import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/job_titles_provider.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/components/app_sheet.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/job_title_picker_field.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/profile_photo.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
@@ -93,33 +97,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final choice = await showGlassBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              key: const ValueKey('profile-photo-gallery'),
-              leading: const Icon(Icons.photo_library_outlined),
-              title: Text(l10n.settingsPhotoGallery),
-              onTap: () => Navigator.of(context).pop('gallery'),
-            ),
-            ListTile(
-              key: const ValueKey('profile-photo-camera'),
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: Text(l10n.settingsPhotoCamera),
-              onTap: () => Navigator.of(context).pop('camera'),
-            ),
-            if (hasPhoto)
-              ListTile(
-                key: const ValueKey('profile-photo-remove'),
-                leading: Icon(Icons.delete_outline_rounded,
-                    color: context.sirati.error),
-                title: Text(
-                  l10n.settingsPhotoRemove,
-                  style: TextStyle(color: context.sirati.error),
-                ),
-                onTap: () => Navigator.of(context).pop('remove'),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+          child: AppListSection(
+            children: [
+              AppListTile(
+                key: const ValueKey('profile-photo-gallery'),
+                leadingIcon: Icons.photo_library_outlined,
+                title: l10n.settingsPhotoGallery,
+                showChevron: false,
+                onTap: () => Navigator.of(context).pop('gallery'),
               ),
-          ],
+              AppListTile(
+                key: const ValueKey('profile-photo-camera'),
+                leadingIcon: Icons.photo_camera_outlined,
+                title: l10n.settingsPhotoCamera,
+                showChevron: false,
+                onTap: () => Navigator.of(context).pop('camera'),
+              ),
+              if (hasPhoto)
+                AppListTile(
+                  key: const ValueKey('profile-photo-remove'),
+                  leadingIcon: Icons.delete_outline_rounded,
+                  leadingBackground: context.sirati.errorLight,
+                  leadingIconColor: context.sirati.onErrorContainer,
+                  title: l10n.settingsPhotoRemove,
+                  titleColor: context.sirati.onErrorContainer,
+                  showChevron: false,
+                  onTap: () => Navigator.of(context).pop('remove'),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -205,7 +214,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         decoration: BoxDecoration(
                           color: c.primary,
                           shape: BoxShape.circle,
-                          border: Border.all(color: c.background, width: 2),
+                          border:
+                              Border.all(color: c.groupedBackground, width: 2),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(6),
@@ -241,7 +251,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (ref.read(profileSaveProvider)) return;
     final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
-    if (!_formKey.currentState!.validate()) {
+    if (!validateAndReveal(_formKey)) {
       unawaited(HapticFeedback.selectionClick());
       return;
     }
@@ -430,26 +440,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ],
               ),
             ],
-            if (isOther) ...[
-              const SizedBox(height: AppSpacing.md),
-              label(l10n.authJobTitleOtherLabel),
-              AppTextFormField(
-                controller: _otherCtrl,
-                showSuccessWhenValid: true,
-                successMessage: l10n.authLooksGood,
-                autovalidateMode: autovalidate,
-                textAlign: TextAlign.start,
-                maxLength: ProfileRules.jobTitleOtherMax,
-                onChanged: (_) => _jobTitleEdited = true,
-                hintText: l10n.authJobTitleOtherHint,
-                prefixIcon: const Icon(Icons.edit_outlined),
-                validator: (v) => _errorText(
-                  ProfileRules.jobTitleOther(v, isOther: isOther),
-                  requiredText: l10n.authJobTitleOtherRequired,
-                  max: ProfileRules.jobTitleOtherMax,
-                ),
-              ),
-            ],
+            MotionExpandSlot(
+              child: isOther
+                  ? Column(
+                      key: const ValueKey('profile-job-title-other'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: AppSpacing.md),
+                        label(l10n.authJobTitleOtherLabel),
+                        AppTextFormField(
+                          controller: _otherCtrl,
+                          showSuccessWhenValid: true,
+                          successMessage: l10n.authLooksGood,
+                          autovalidateMode: autovalidate,
+                          textAlign: TextAlign.start,
+                          maxLength: ProfileRules.jobTitleOtherMax,
+                          onChanged: (_) => _jobTitleEdited = true,
+                          hintText: l10n.authJobTitleOtherHint,
+                          prefixIcon: const Icon(Icons.edit_outlined),
+                          validator: (v) => _errorText(
+                            ProfileRules.jobTitleOther(v, isOther: isOther),
+                            requiredText: l10n.authJobTitleOtherRequired,
+                            max: ProfileRules.jobTitleOtherMax,
+                          ),
+                        ),
+                      ],
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey('profile-job-title-other-empty'),
+                    ),
+            ),
             const SizedBox(height: AppSpacing.md),
             label(l10n.emailLabel),
             readOnlyField(
@@ -503,10 +523,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: context.sirati.background,
-      appBar: AppBar(title: Text(l10n.settingsProfileTitle)),
-      body: body,
+    // Grouped grey page, like Settings: the white fields read as the
+    // inset cards of the design.
+    return GroupedSurface(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.settingsProfileTitle),
+        ),
+        body: body,
+      ),
     );
   }
 }

@@ -46,8 +46,9 @@ class HomeIntroItem extends StatelessWidget {
     final move = Interval(
       begin,
       end,
-      curve:
-          motion == HomeIntroMotion.pop ? MotionCurves.pop : MotionCurves.enter,
+      curve: motion == HomeIntroMotion.pop
+          ? MotionCurves.settle
+          : MotionCurves.enter,
     );
     final fade = Interval(begin, end, curve: MotionCurves.enter);
     // FadeTransition reuses one layer instead of an Opacity saveLayer that

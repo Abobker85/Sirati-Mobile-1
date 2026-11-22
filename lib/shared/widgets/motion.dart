@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/cupertino.dart'
+    show CupertinoFullscreenDialogTransition, CupertinoPageTransition;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:sirati/core/routing/edge_back_swipe.dart';
+import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/lively_icon.dart';
 
@@ -43,7 +47,8 @@ class MotionDurations {
   static const step = Duration(milliseconds: 280);
 
   /// Soft pulse for skeleton placeholders (single shared loop feel).
-  static const skeleton = Duration(milliseconds: 1100);
+  /// Skeleton pulse: slow, near a calm breath, so long loads feel quiet.
+  static const skeleton = Duration(milliseconds: 1700);
 
   /// Max staggered reveal delay across a screen (order * step, capped).
   static const maxRevealDelay = Duration(milliseconds: 120);
@@ -60,10 +65,24 @@ class MotionCurves {
   /// moving things that stay on screen (indicators, sheets, expanding cards).
   static const standard = Cubic(0.4, 0, 0.2, 1);
 
-  /// Gentle overshoot for small elements popping in (Home service tiles).
-  static const pop = Cubic(0.3, 1.35, 0.5, 1);
+  /// A small overshoot (about 3%), kept for rewards only: CV created,
+  /// Premium unlocked, the score change chip.
+  static const pop = Cubic(0.3, 1.18, 0.5, 1);
+
+  /// Arrives quickly and settles softly, with no overshoot: for everything
+  /// that appears or responds but is not a reward (tiles, icons, marks).
+  static const settle = Cubic(0.2, 0.9, 0.3, 1);
 }
 
+/// Haptic rules (sound-free feedback), so the phone's feel is predictable:
+///
+/// - `selectionClick`: a choice (tab, chip, plan, step dot, band crossing,
+///   reorder detent) and a blocked submit (once, with one field shaking).
+/// - `lightImpact`: something lands (pill, check, ring, chip) or a step is
+///   completed.
+/// - `mediumImpact`: a milestone (stamp, Premium unlocked).
+/// - Never: per keystroke, on blur, or from ambient (self-playing) motion.
+/// - With reduced motion, only success and error feedback remain.
 class MotionSettings {
   /// Accessibility only: OS "remove animations" / disableAnimations.
   ///
@@ -106,8 +125,26 @@ class MotionAxis {
   }
 }
 
+/// Sirati's page transition, on every platform: the page slides in across
+/// the full width from the end edge (from the left in Arabic, from the right
+/// in English) while the page underneath moves a third of the way toward
+/// the start edge; back is the mirror.
+///
+/// Every page also has the back swipe ([EdgeBackSwipe]): drag from the start
+/// edge (the right in Arabic) and the page follows the finger; let go early
+/// and it settles back. With reduced motion pages simply appear and go, and
+/// the swipe still works.
 class SiratiPageTransitionsBuilder extends PageTransitionsBuilder {
   const SiratiPageTransitionsBuilder();
+
+  /// Push and back take the same time.
+  static const duration = Duration(milliseconds: 350);
+
+  @override
+  Duration get transitionDuration => duration;
+
+  @override
+  Duration get reverseTransitionDuration => duration;
 
   @override
   Widget buildTransitions<T>(
@@ -117,26 +154,23 @@ class SiratiPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    if (MotionSettings.reduce(context) || route.isFirst) return child;
-
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: MotionCurves.enter,
-      reverseCurve: MotionCurves.exit,
-    );
-
-    // Forward push enters from the end edge (mirrors in RTL).
-    final begin = MotionAxis.slideIn(context: context, distance: 0.04);
-
-    return FadeTransition(
-      opacity: curved,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: begin,
-          end: Offset.zero,
-        ).animate(curved),
+    if (route.fullscreenDialog) {
+      if (MotionSettings.reduce(context)) return child;
+      return CupertinoFullscreenDialogTransition(
+        primaryRouteAnimation: animation,
+        secondaryRouteAnimation: secondaryAnimation,
+        linearTransition: route.popGestureInProgress,
         child: child,
-      ),
+      );
+    }
+    final swipe = EdgeBackSwipe(route: route, child: child);
+    if (MotionSettings.reduce(context)) return swipe;
+    return CupertinoPageTransition(
+      primaryRouteAnimation: animation,
+      secondaryRouteAnimation: secondaryAnimation,
+      // While the finger drives it the page tracks the finger exactly.
+      linearTransition: route.popGestureInProgress,
+      child: swipe,
     );
   }
 }
@@ -161,7 +195,6 @@ class MotionTabStack extends StatefulWidget {
 
 class _MotionTabStackState extends State<MotionTabStack> {
   late int _renderedIndex = widget.currentIndex;
-  bool _animateTabChanges = false;
 
   /// How many times each tab has been opened after being away for at
   /// least [MotionTabStack.staleAfter]; content inside arrives again then.
@@ -181,7 +214,6 @@ class _MotionTabStackState extends State<MotionTabStack> {
         _leftAt[oldWidget.currentIndex] = now;
       }
       _renderedIndex = widget.currentIndex;
-      _animateTabChanges = true;
       final left =
           _renderedIndex < _leftAt.length ? _leftAt[_renderedIndex] : null;
       if (left != null && now - left >= MotionTabStack.staleAfter) {
@@ -192,46 +224,23 @@ class _MotionTabStackState extends State<MotionTabStack> {
 
   @override
   Widget build(BuildContext context) {
-    // IndexedStack is always the base so only the active tab is ever painted.
-    // This guarantees inactive tabs can never leak/overlap content (a known
-    // iOS compositing issue when hiding tabs with opacity alone), while every
-    // tab stays mounted to preserve scroll/form state.
-    //
-    // Each slot keeps a stable pane widget so form state survives tab changes.
-    // The first painted Home frame is fully visible; enter motion runs only
-    // when the user actually changes tabs.
-    // Hidden tabs keep their state but do not animate: their tickers are
-    // off until the tab is shown again.
-    if (MotionSettings.reduce(context)) {
-      return IndexedStack(
-        index: _renderedIndex,
-        children: [
-          for (var index = 0; index < widget.children.length; index++)
-            TickerMode(
-              enabled: index == _renderedIndex,
-              child: widget.children[index],
-            ),
-        ],
-      );
-    }
-
-    final directionSign = MotionAxis.endSign(context);
-
+    // IndexedStack paints only the active tab, so inactive tabs never leak
+    // or overlap, while every tab stays mounted to keep its scroll and form
+    // state. Switching is instant, as on iOS tab bars: the new tab is simply
+    // there. Hidden tabs keep their state but do not animate: their tickers
+    // are off until the tab is shown again.
+    final reduce = MotionSettings.reduce(context);
     return IndexedStack(
       index: _renderedIndex,
       children: [
         for (var index = 0; index < widget.children.length; index++)
-          _TabEnterTransition(
+          TickerMode(
             key: ValueKey('tab-$index'),
-            active: index == _renderedIndex,
-            animateOnActivate: _animateTabChanges,
-            directionSign: directionSign,
-            child: TickerMode(
-              enabled: index == _renderedIndex,
-              child: TabVisitScope(
-                visit: index < _visits.length ? _visits[index] : 0,
-                child: widget.children[index],
-              ),
+            enabled: index == _renderedIndex,
+            child: TabVisitScope(
+              // Nothing replays under reduced motion.
+              visit: reduce || index >= _visits.length ? 0 : _visits[index],
+              child: widget.children[index],
             ),
           ),
       ],
@@ -239,78 +248,16 @@ class _MotionTabStackState extends State<MotionTabStack> {
   }
 }
 
-/// Keeps one stable pane per tab. The first frame is fully visible; later
-/// activations fade/slide in without rebuilding the tab's child state.
-class _TabEnterTransition extends StatefulWidget {
-  final bool active;
-  final bool animateOnActivate;
-  final double directionSign;
-  final Widget child;
-
-  const _TabEnterTransition({
-    super.key,
-    required this.active,
-    required this.animateOnActivate,
-    required this.directionSign,
-    required this.child,
-  });
-
-  @override
-  State<_TabEnterTransition> createState() => _TabEnterTransitionState();
-}
-
-class _TabEnterTransitionState extends State<_TabEnterTransition>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    value: 1,
-    duration: MotionDurations.medium,
-  );
-  late final Animation<double> _curved = CurvedAnimation(
-    parent: _controller,
-    curve: MotionCurves.enter,
-  );
-
-  @override
-  void didUpdateWidget(covariant _TabEnterTransition oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.active &&
-        !oldWidget.active &&
-        widget.animateOnActivate &&
-        _controller.value == 1) {
-      _controller.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _curved,
-      builder: (context, child) {
-        final value = _curved.value;
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(widget.directionSign * .035 * (1 - value), 0),
-            child: child,
-          ),
-        );
-      },
-      child: widget.child,
-    );
-  }
-}
-
-/// Gives [child] a short "no" shake, with a light haptic, whenever a new
-/// error appears: [errorKey] going from null to a value, or to a different
-/// value (a different message). The same error staying put never shakes
-/// again. Reduced motion shows the error without the shake or the buzz.
+/// Gives [child] a short, soft "no" shake, with a selection tick, whenever a
+/// new error appears: [errorKey] going from null to a value, or to a
+/// different value (a different message). The same error staying put never
+/// shakes again. Reduced motion shows the error without the shake or the
+/// tick.
+///
+/// Only one field shakes at a time: when a submit finds several errors at
+/// once, the first of them (top-most, as it is built first) shakes and buzzes;
+/// the others just show their message. One "here, fix this" instead of a
+/// storm of vibrations.
 class ErrorShake extends StatefulWidget {
   const ErrorShake({super.key, required this.errorKey, required this.child});
 
@@ -319,7 +266,14 @@ class ErrorShake extends StatefulWidget {
   final Widget child;
 
   /// Widest sideways swing.
-  static const amplitude = 6.0;
+  static const amplitude = 3.0;
+
+  /// When the last shake started (frame time), shared by every field.
+  static Duration? _lastShakeAt;
+
+  /// Forget the last shake, for tests.
+  @visibleForTesting
+  static void reset() => _lastShakeAt = null;
 
   @override
   State<ErrorShake> createState() => ErrorShakeState();
@@ -343,7 +297,12 @@ class ErrorShakeState extends State<ErrorShake>
     final error = widget.errorKey;
     if (error == null || error == oldWidget.errorKey) return;
     if (MotionSettings.reduce(context)) return;
-    unawaited(HapticFeedback.lightImpact());
+    // Another field already shook for this same submit: stay still.
+    final now = SchedulerBinding.instance.currentFrameTimeStamp;
+    final last = ErrorShake._lastShakeAt;
+    if (last != null && now - last < MotionDurations.shake) return;
+    ErrorShake._lastShakeAt = now;
+    unawaited(HapticFeedback.selectionClick());
     _shake.forward(from: 0);
   }
 
@@ -359,10 +318,12 @@ class ErrorShakeState extends State<ErrorShake>
         child: widget.child,
         builder: (context, child) {
           final t = _shake.value;
-          if (t == 0 || t == 1) return child!;
-          // Three swings, each smaller than the last.
-          final dx =
-              ErrorShake.amplitude * math.sin(3 * 2 * math.pi * t) * (1 - t);
+          // Two soft swings, the second smaller. At rest dx is 0 but the
+          // wrapper stays, so the field below keeps its state (text, focus)
+          // when a shake starts and ends.
+          final dx = (t == 0 || t == 1)
+              ? 0.0
+              : ErrorShake.amplitude * math.sin(2 * 2 * math.pi * t) * (1 - t);
           return Transform.translate(offset: Offset(dx, 0), child: child);
         },
       );
@@ -455,7 +416,7 @@ class MotionMorph extends StatelessWidget {
         if (!pop) return faded;
         return ScaleTransition(
           scale: Tween<double>(begin: .6, end: 1).animate(
-            CurvedAnimation(parent: animation, curve: MotionCurves.pop),
+            CurvedAnimation(parent: animation, curve: MotionCurves.settle),
           ),
           child: faded,
         );
@@ -466,18 +427,24 @@ class MotionMorph extends StatelessWidget {
 }
 
 /// Swaps the content of a multi-step flow: the new step fades in while
-/// sliding a little from the reading end (left in Arabic, right in English),
-/// so "next" looks the same in every flow. Reduced motion swaps at once.
+/// sliding along the reading axis according to [direction] (`+1` forward,
+/// `-1` back). Forward enters from the reading end (left in Arabic, right in
+/// English) while the outgoing step exits toward the start; back reverses
+/// both. Reduced motion swaps at once.
 class MotionStepSwitcher extends StatelessWidget {
   const MotionStepSwitcher({
     super.key,
     required this.stepKey,
     required this.child,
+    this.direction = 1,
   });
 
   /// Changes when the step changes.
   final Object stepKey;
   final Widget child;
+
+  /// `+1` for forward navigation, `-1` for backward navigation.
+  final int direction;
 
   /// How far the new step slides in, as a share of its width.
   static const slide = .05;
@@ -487,6 +454,7 @@ class MotionStepSwitcher extends StatelessWidget {
     final keyed = KeyedSubtree(key: ValueKey(stepKey), child: child);
     if (MotionSettings.reduce(context)) return keyed;
     final end = MotionAxis.endSign(context);
+    final dir = direction >= 0 ? 1.0 : -1.0;
     return AnimatedSwitcher(
       duration: MotionDurations.step,
       reverseDuration: MotionDurations.fast,
@@ -496,21 +464,250 @@ class MotionStepSwitcher extends StatelessWidget {
         alignment: Alignment.topCenter,
         children: [
           // The step on its way out cannot be tapped (no double send).
-          for (final old in previous) IgnorePointer(child: old),
-          if (current != null) current,
+          // Same wrapper (keyed like its child) in both roles, so a step
+          // that stops being current keeps its element and state.
+          for (final old in previous) IgnorePointer(key: old.key, child: old),
+          if (current != null)
+            IgnorePointer(key: current.key, ignoring: false, child: current),
         ],
       ),
-      transitionBuilder: (child, animation) => FadeTransition(
-        opacity: animation,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: Offset(end * slide, 0),
-            end: Offset.zero,
-          ).animate(animation),
-          child: child,
+      transitionBuilder: (child, animation) {
+        final isIncoming = child.key == keyed.key;
+        final offsetX = (isIncoming ? 1.0 : -1.0) * end * dir * slide;
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(offsetX, 0),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child: keyed,
+    );
+  }
+}
+
+/// Smoothly expands/collapses and cross-fades conditional slot content.
+///
+/// Uses [AnimatedSize] (`MotionDurations.medium`, top-start aligned) wrapping
+/// [AnimatedSwitcher] (`MotionDurations.fast`), collapsing both to
+/// [Duration.zero] under [MotionSettings.reduce].
+class MotionExpandSlot extends StatelessWidget {
+  const MotionExpandSlot({
+    super.key,
+    required this.child,
+    this.alignment = AlignmentDirectional.topCenter,
+  });
+
+  final Widget child;
+  final AlignmentGeometry alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = MotionSettings.reduce(context);
+    if (reduce) return child;
+    return AnimatedSize(
+      duration: MotionDurations.medium,
+      curve: MotionCurves.enter,
+      alignment: alignment,
+      child: AnimatedSwitcher(
+        duration: MotionDurations.fast,
+        switchInCurve: MotionCurves.enter,
+        switchOutCurve: MotionCurves.exit,
+        child: child,
+      ),
+    );
+  }
+}
+
+/// One selectable option in a [MotionSegmentedPill].
+@immutable
+class MotionSegmentOption<T> {
+  const MotionSegmentOption({
+    required this.value,
+    required this.label,
+    this.icon,
+    this.key,
+  });
+
+  final T value;
+  final String label;
+  final IconData? icon;
+  final Key? key;
+}
+
+/// Direction-aware segmented selector with a sliding pill indicator.
+///
+/// Enforces `>= 48dp` touch targets, avoids `FontWeight` interpolation
+/// (fixed shipped `w700` via [AppTypography.labelLg]), maintains WCAG AA
+/// contrast in light and dark modes, and snaps under [MotionSettings.reduce].
+class MotionSegmentedPill<T> extends StatelessWidget {
+  const MotionSegmentedPill({
+    super.key,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+    this.semanticLabel,
+    this.enabled = true,
+  }) : assert(options.length >= 2, 'MotionSegmentedPill requires >= 2 options');
+
+  final List<MotionSegmentOption<T>> options;
+  final T value;
+  final ValueChanged<T> onChanged;
+  final String? semanticLabel;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    final reduce = MotionSettings.reduce(context);
+    final count = options.length;
+    final found = options.indexWhere((o) => o.value == value);
+    final selectedIndex = found < 0 ? 0 : found;
+    final alignX = -1.0 + (2.0 * selectedIndex / (count - 1));
+    final duration = reduce ? Duration.zero : MotionDurations.medium;
+
+    final pill = FractionallySizedBox(
+      widthFactor: 1 / count,
+      heightFactor: 1,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: AppRadius.mdAll,
+          border: Border.all(color: c.primaryInk),
+          boxShadow: AppShadows.of(
+            c,
+            elevation: AppElevation.raised,
+          ),
         ),
       ),
-      child: keyed,
+    );
+
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: Container(
+        decoration: BoxDecoration(
+          color: c.surfaceLow,
+          borderRadius: AppRadius.lgAll,
+          border: Border.all(color: c.outline),
+        ),
+        padding: const EdgeInsets.all(AppSpacing.xxs),
+        child: LayoutBuilder(
+          builder: (context, _) => Stack(
+            children: [
+              Positioned.fill(
+                child: reduce
+                    ? Align(
+                        alignment: AlignmentDirectional(alignX, 0),
+                        child: pill,
+                      )
+                    : AnimatedAlign(
+                        duration: duration,
+                        curve: MotionCurves.state,
+                        alignment: AlignmentDirectional(alignX, 0),
+                        child: pill,
+                      ),
+              ),
+              Material(
+                type: MaterialType.transparency,
+                child: Row(
+                  children: [
+                    for (var i = 0; i < count; i++)
+                      Expanded(
+                        child: _MotionSegmentButton<T>(
+                          option: options[i],
+                          selected: i == selectedIndex,
+                          enabled: enabled,
+                          reduce: reduce,
+                          onTap: () {
+                            if (options[i].value != value) {
+                              unawaited(HapticFeedback.selectionClick());
+                              onChanged(options[i].value);
+                            }
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MotionSegmentButton<T> extends StatelessWidget {
+  const _MotionSegmentButton({
+    required this.option,
+    required this.selected,
+    required this.enabled,
+    required this.reduce,
+    required this.onTap,
+  });
+
+  final MotionSegmentOption<T> option;
+  final bool selected;
+  final bool enabled;
+  final bool reduce;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    final fg = selected ? c.primaryInk : c.textSecondary;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      enabled: enabled,
+      label: option.label,
+      excludeSemantics: true,
+      // The InkWell's own tap action is excluded above; expose it here.
+      onTap: enabled ? onTap : null,
+      child: InkWell(
+        key: option.key,
+        borderRadius: AppRadius.mdAll,
+        splashFactory: reduce ? NoSplash.splashFactory : null,
+        onTap: enabled ? onTap : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppTouchTarget.min),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.xs,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (option.icon != null) ...[
+                  Icon(option.icon, size: 18, color: fg),
+                  const SizedBox(width: AppSpacing.xxs),
+                ],
+                Flexible(
+                  child: Text(
+                    option.label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.labelLg,
+                      color: fg,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -612,7 +809,7 @@ class _MotionNavIconState extends State<MotionNavIcon>
         child: AnimatedBuilder(
           animation: _settle,
           builder: (context, child) => Transform.scale(
-            scale: .85 + .15 * MotionCurves.pop.transform(_settle.value),
+            scale: .85 + .15 * MotionCurves.settle.transform(_settle.value),
             child: child,
           ),
           child:

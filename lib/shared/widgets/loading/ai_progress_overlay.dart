@@ -6,6 +6,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/branded_loader.dart';
+import 'package:sirati/shared/widgets/loading/cv_drafting_scene.dart';
 import 'package:sirati/shared/widgets/loading/scan_paper_scene.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
@@ -110,6 +111,73 @@ class AiProgressHandle {
 
   void _markCancelled() {
     _cancelled = true;
+  }
+
+  /// Opens the result of the wait as a "curtain lift": [route] is pushed on
+  /// [navigator] while this overlay is still showing, and the overlay leaves
+  /// only once the result is in place, so the screen behind (the form the
+  /// user filled) never flashes in between.
+  ///
+  /// - If the result lands under the overlay (another navigator), the
+  ///   overlay fades away and reveals it.
+  /// - If it lands above (same navigator), the overlay is removed from
+  ///   under it once the result's transition has finished.
+  ///
+  /// With the overlay already closed it is a plain push. Returns the
+  /// route's result, like [NavigatorState.push].
+  Future<T?> handOff<T>(NavigatorState navigator, Route<T> route) {
+    final ctx = _dialogContext;
+    final overlay = ctx != null && ctx.mounted ? ModalRoute.of(ctx) : null;
+    final pushed = navigator.push(route);
+    if (overlay == null || _closed) {
+      _closed = true;
+      _dialogContext = null;
+      return pushed;
+    }
+    _closed = true;
+    _dialogContext = null;
+
+    var lifted = false;
+    void lift({bool animate = true}) {
+      if (lifted) return;
+      lifted = true;
+      final nav = overlay.navigator;
+      if (nav == null || !overlay.isActive) return;
+      if (overlay.isCurrent && animate) {
+        nav.pop();
+      } else {
+        nav.removeRoute(overlay);
+      }
+    }
+
+    if (overlay.isCurrent) {
+      // The result went under the overlay: lift it now.
+      lift();
+      return pushed;
+    }
+    final arriving = route is TransitionRoute<T> ? route.animation : null;
+    if (arriving == null || arriving.isCompleted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => lift());
+    } else {
+      late final AnimationStatusListener listener;
+      listener = (status) {
+        if (status == AnimationStatus.completed) {
+          arriving.removeStatusListener(listener);
+          lift();
+        }
+      };
+      arriving.addStatusListener(listener);
+      // The result was closed before it had fully arrived: take the overlay
+      // away at once, without showing it again. (Deferred: popped completes
+      // while the navigator is still busy with that pop.)
+      unawaited(route.popped.then((_) {
+        if (arriving.status != AnimationStatus.completed) {
+          arriving.removeStatusListener(listener);
+        }
+        scheduleMicrotask(() => lift(animate: false));
+      }));
+    }
+    return pushed;
   }
 }
 
@@ -362,17 +430,27 @@ class _AiProgressOverlayBodyState extends State<_AiProgressOverlayBody> {
               child: SizedBox(
                 height: 96,
                 child: Center(
-                  // A scan tells its story on a page; other jobs and reduced
-                  // motion keep the loader and tick.
-                  child: widget.kind == AiProgressKind.analysis && !reduce
+                  // A scan tells its story on a page; generation sketches the
+                  // CV; reduced motion keeps the loader and tick.
+                  child: !reduce && widget.kind == AiProgressKind.analysis
                       ? ScanPaperScene(
+                          // After a long wait the beam slows down: the
+                          // scene settles instead of racing.
+                          slow: _longWait,
                           stage: finished
                               ? ScanStage.done
                               : ScanStage.values[step.clamp(0, 2)],
                         )
-                      : finished
-                          ? _DoneMark(reduce: reduce)
-                          : BrandedLoader(size: 56, halo: !reduce),
+                      : !reduce && widget.kind == AiProgressKind.generation
+                          ? CvDraftingScene(
+                              slow: _longWait,
+                              stage: finished
+                                  ? DraftStage.done
+                                  : DraftStage.values[step.clamp(0, 2)],
+                            )
+                          : finished
+                              ? _DoneMark(reduce: reduce)
+                              : BrandedLoader(size: 56, halo: !reduce),
                 ),
               ),
             ),

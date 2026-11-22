@@ -1,0 +1,14 @@
+diff --git a/lib/features/ats_scanner/presentation/cv_analysis_screen.dart b/lib/features/ats_scanner/presentation/cv_analysis_screen.dart
+index cb58824..dbc3f84 100644
+--- a/lib/features/ats_scanner/presentation/cv_analysis_screen.dart
++++ b/lib/features/ats_scanner/presentation/cv_analysis_screen.dart
+@@ -162,7 +162,8 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
+   }
+ 
+   Future<void> _submit() async {
+-    if (_isLoading) return;
++    // A snackbar Retry can outlive this form.
++    if (_isLoading || !mounted) return;
+     final english = AppLocale.isEnglish(context);
+     setState(() => _submitted = true);
+     if (!validateAndReveal(_formKey)) {

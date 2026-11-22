@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/ambient_motion.dart';
-import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/offline_view.dart';
 
-/// Centered empty-state panel with optional primary action.
+/// Centered empty / error state: a grey icon in a soft circle, a bold
+/// title, a short grey explanation and, only where one is needed, one
+/// action (a second, quieter one only when the screen has two equal ways
+/// out, e.g. My CVs: create or upload).
 ///
 /// Use for History tabs, My CVs zero-state, Education empty tabs, etc.
 class AppEmptyState extends StatelessWidget {
@@ -18,11 +19,29 @@ class AppEmptyState extends StatelessWidget {
   final String? subtitle;
   final String? actionLabel;
   final VoidCallback? onAction;
-  final IconData actionIcon;
+
+  /// Null draws the button without an icon.
+  final IconData? actionIcon;
   final bool scrollable;
   final double topInsetFactor;
+
+  /// Overrides for the circle and glyph. Leave null for the calm grey
+  /// default every state shares.
   final Color? iconBackground;
   final Color? iconColor;
+
+  /// Drawn in the circle instead of [icon] (which then only names the state
+  /// for code readers), e.g. the 404 compass. It brings its own motion.
+  final Widget? illustration;
+
+  /// Quieter second action, drawn as a text button under the first.
+  final String? secondaryActionLabel;
+  final VoidCallback? onSecondaryAction;
+  final IconData? secondaryActionIcon;
+
+  /// Keys on the two buttons, for callers whose tests find them.
+  final Key? actionKey;
+  final Key? secondaryActionKey;
 
   const AppEmptyState({
     super.key,
@@ -36,10 +55,20 @@ class AppEmptyState extends StatelessWidget {
     this.topInsetFactor = 0.12,
     this.iconBackground,
     this.iconColor,
+    this.illustration,
+    this.secondaryActionLabel,
+    this.onSecondaryAction,
+    this.secondaryActionIcon,
+    this.actionKey,
+    this.secondaryActionKey,
   });
+
+  /// Width the explanation wraps at: about two lines of the usual copy.
+  static const textMaxWidth = 300.0;
 
   @override
   Widget build(BuildContext context) {
+    final c = context.sirati;
     final panel = Semantics(
       container: true,
       label: title,
@@ -48,60 +77,88 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: iconBackground ?? context.sirati.primaryLight,
-                borderRadius: BorderRadius.circular(22),
-              ),
-              // Floats gently by itself while the screen is empty.
-              child: AmbientMove(
-                kind: AmbientKind.float,
-                delay: const Duration(seconds: 1),
-                child: LivelyIcon(
-                  icon,
-                  size: 32,
-                  color: iconColor ?? context.sirati.primaryInk,
-                ),
-              ),
+            AppStateIcon(
+              icon,
+              background: iconBackground,
+              color: iconColor,
+              illustration: illustration,
             ),
             const SizedBox(height: AppSpacing.md + 2),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: AppTypography.of(context, AppTypography.titleLg),
-            ),
-            if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                subtitle!,
-                textAlign: TextAlign.center,
-                style: AppTypography.of(
-                  context,
-                  AppTypography.bodyMd,
-                  color: context.sirati.textSecondary,
-                ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: textMaxWidth),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    // The panel's own label already announces the title.
+                    semanticsLabel: '',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.titleLg,
+                      color: c.textPrimary,
+                    ),
+                  ),
+                  if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      subtitle!,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.of(
+                        context,
+                        AppTypography.bodyMd,
+                        color: c.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: AppSpacing.lg),
-              // The way out of an empty screen hints at itself when idle.
-              IdleNudge(
-                child: FilledButton.icon(
-                  onPressed: onAction,
-                  icon: Icon(actionIcon, size: 18),
-                  label: Text(actionLabel!),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: context.sirati.primary,
-                    foregroundColor: context.sirati.onPrimary,
-                    minimumSize: const Size(0, AppTouchTarget.min),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    shape:
-                        RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
-                    textStyle: AppTypography.of(context, AppTypography.labelLg),
-                  ),
+              Builder(builder: (context) {
+                final style = FilledButton.styleFrom(
+                  backgroundColor: c.primary,
+                  foregroundColor: c.onPrimary,
+                  minimumSize: const Size(0, AppTouchTarget.min),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                  shape: const StadiumBorder(),
+                  textStyle: AppTypography.of(context, AppTypography.labelLg),
+                );
+                return actionIcon == null
+                    ? FilledButton(
+                        key: actionKey,
+                        onPressed: onAction,
+                        style: style,
+                        child: Text(actionLabel!),
+                      )
+                    : FilledButton.icon(
+                        key: actionKey,
+                        onPressed: onAction,
+                        icon: Icon(actionIcon, size: 18),
+                        label: Text(actionLabel!),
+                        style: style,
+                      );
+              }),
+            ],
+            if (secondaryActionLabel != null && onSecondaryAction != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              TextButton.icon(
+                key: secondaryActionKey,
+                onPressed: onSecondaryAction,
+                icon: Icon(
+                  secondaryActionIcon ?? Icons.arrow_upward_rounded,
+                  size: 18,
+                ),
+                label: Text(secondaryActionLabel!),
+                style: TextButton.styleFrom(
+                  foregroundColor: c.primaryInk,
+                  minimumSize: const Size(0, AppTouchTarget.min),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: const StadiumBorder(),
+                  textStyle: AppTypography.of(context, AppTypography.labelLg),
                 ),
               ),
             ],
@@ -123,6 +180,51 @@ class AppEmptyState extends StatelessWidget {
         panel,
         const SizedBox(height: 48),
       ],
+    );
+  }
+}
+
+/// The soft circle with a grey glyph that heads every empty, error and
+/// offline state. Decorative: the state's title says what it means.
+class AppStateIcon extends StatelessWidget {
+  const AppStateIcon(
+    this.icon, {
+    super.key,
+    this.background,
+    this.color,
+    this.illustration,
+  });
+
+  final IconData icon;
+
+  /// Circle fill; defaults to the page's fill ([PageSurface.fillOf]), so the
+  /// circle stands out on plain and grouped pages.
+  final Color? background;
+
+  /// Glyph colour; defaults to `textHint` (AA on `cardFill`).
+  final Color? color;
+
+  /// Drawn instead of the glyph.
+  final Widget? illustration;
+
+  static const size = 80.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    return ExcludeSemantics(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: background ?? PageSurface.fillOf(context),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child:
+              illustration ?? Icon(icon, size: 34, color: color ?? c.textHint),
+        ),
+      ),
     );
   }
 }
@@ -185,8 +287,6 @@ class AppErrorState extends StatelessWidget {
           ? null
           : () => unawaited(Future.sync(onRetry!).catchError((Object _) {})),
       actionIcon: Icons.refresh_rounded,
-      iconBackground: context.sirati.errorLight,
-      iconColor: context.sirati.error,
       scrollable: scrollable,
       topInsetFactor: 0.16,
     );

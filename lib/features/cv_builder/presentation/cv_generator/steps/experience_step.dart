@@ -38,59 +38,63 @@ class ExperienceStep extends StatelessWidget {
       children: [
         FieldGroup(
           label: AppLocalizations.of(context).cvExperienceLabel,
-          child: AiCvField(
-            field: 'experience',
-            controller: props.fields.experience,
-            english: english,
-            isLoading: enhancing,
-            minimumCharacters: CvFormData.minExperienceChars,
-            helperText: AppLocalizations.of(context).cvExperienceHelper,
-            result: props.fieldResults['experience'],
-            onEnhance: () => props.onEnhance('experience'),
-            onDismissResult: () => props.onDismissResult('experience'),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: OutlinedButton.icon(
-                    key: const Key('open_achievement_builder_btn'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 11),
-                      foregroundColor: c.primaryDark,
-                      side: BorderSide(color: c.primary.withValues(alpha: .35)),
-                      backgroundColor: c.primaryLight.withValues(alpha: .5),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    onPressed: enhancing ? null : onOpenAchievementBuilder,
-                    icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                    label: Text(
-                      AppLocalizations.of(context).cvExperienceXyzBuilder,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 13),
+          child: AiEnhancedBeatFrame(
+            beat: props.enhanceBeats['experience'] ?? 0,
+            child: AiCvField(
+              field: 'experience',
+              controller: props.fields.experience,
+              english: english,
+              isLoading: enhancing,
+              minimumCharacters: CvFormData.minExperienceChars,
+              helperText: AppLocalizations.of(context).cvExperienceHelper,
+              result: props.fieldResults['experience'],
+              onEnhance: () => props.onEnhance('experience'),
+              onDismissResult: () => props.onDismissResult('experience'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: OutlinedButton.icon(
+                      key: const Key('open_achievement_builder_btn'),
+                      // A teal-tinted capsule with no outline.
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(AppTouchTarget.min),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 11),
+                        foregroundColor: c.primaryInk,
+                        backgroundColor: c.primaryLight,
+                        side: BorderSide.none,
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: enhancing ? null : onOpenAchievementBuilder,
+                      icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                      label: Text(
+                        AppLocalizations.of(context).cvExperienceXyzBuilder,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
                     ),
                   ),
-                ),
-                EntryListField<ExperienceEntry>(
-                  key: const ValueKey('experience-entries'),
-                  controller: props.fields.experience,
-                  english: english,
-                  autovalidateMode: props.autovalidateMode,
-                  parse: parseExperience,
-                  serialize: (entries) =>
-                      serializeExperience(entries, language),
-                  problems: experienceProblems,
-                  blank: const ExperienceEntry(),
-                  isBlank: (e) => e.isBlank,
-                  minimumCharacters: CvFormData.minExperienceChars,
-                  addLabel: AppLocalizations.of(context).cvExperienceAdd,
-                  cardBuilder: (context, entry, onChanged, problems) =>
-                      experienceCard(context, entry, onChanged, problems,
-                          english: english),
-                ),
-              ],
+                  EntryListField<ExperienceEntry>(
+                    key: const ValueKey('experience-entries'),
+                    controller: props.fields.experience,
+                    english: english,
+                    autovalidateMode: props.autovalidateMode,
+                    parse: parseExperience,
+                    serialize: (entries) =>
+                        serializeExperience(entries, language),
+                    problems: experienceProblems,
+                    blank: const ExperienceEntry(),
+                    isBlank: (e) => e.isBlank,
+                    minimumCharacters: CvFormData.minExperienceChars,
+                    addLabel: AppLocalizations.of(context).cvExperienceAdd,
+                    cardBuilder: (context, entry, onChanged, problems) =>
+                        experienceCard(context, entry, onChanged, problems,
+                            english: english),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -115,8 +115,9 @@ class _ChipRow extends StatelessWidget {
   }
 }
 
-/// A 48dp-tall pill. Selected = dark brand fill + check icon, so the state
-/// never relies on colour alone.
+/// A 48dp-tall filled capsule, like the theme's chips: grey at rest; when
+/// selected the teal tint with primary ink and a checkmark, so the state
+/// never relies on colour alone. Pressing darkens the fill and springs.
 class _FilterPill extends StatelessWidget {
   const _FilterPill({
     required this.label,
@@ -135,8 +136,10 @@ class _FilterPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    // brandSurface keeps white text at AA in both themes (primary does not).
-    final fg = selected ? c.onBrandSurface : c.textPrimary;
+    final reduce = MotionSettings.reduce(context);
+    final fill = selected ? c.primaryLight : PageSurface.fillOf(context);
+    final fg = AppTheme.chipLabelColor(c)
+        .resolve({if (selected) WidgetState.selected});
 
     return Semantics(
       button: true,
@@ -144,13 +147,19 @@ class _FilterPill extends StatelessWidget {
       child: PressScale(
         pressedScale: 0.96,
         child: Material(
-          color: selected ? c.brandSurface : c.surface,
-          shape: StadiumBorder(
-            side: BorderSide(color: selected ? c.brandSurface : c.border),
-          ),
+          color: fill,
+          animationDuration: reduce ? Duration.zero : MotionDurations.fast,
+          shape: const StadiumBorder(),
           child: InkWell(
             onTap: onTap,
             customBorder: const StadiumBorder(),
+            // The darker fill is the feedback; no ripple.
+            splashFactory: NoSplash.splashFactory,
+            overlayColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.pressed)
+                  ? c.pressOverlay(fill)
+                  : fill.withValues(alpha: 0),
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
               child: Padding(
@@ -158,10 +167,14 @@ class _FilterPill extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      selected ? Icons.check_rounded : icon,
-                      size: 18,
-                      color: selected ? fg : iconColor,
+                    MotionMorph(
+                      morphKey: selected,
+                      pop: false,
+                      child: Icon(
+                        selected ? Icons.check_rounded : icon,
+                        size: 18,
+                        color: selected ? fg : _legibleTint(c, fill),
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -184,6 +197,17 @@ class _FilterPill extends StatelessWidget {
   }
 }
 
+/// [_FilterPill.iconColor] when it holds 3:1 on [fill] resting and
+/// pressed; otherwise the grey icon ink (light amber on the grey capsule is
+/// under 3:1). The label carries the meaning, the tint is only a cue.
+extension on _FilterPill {
+  Color _legibleTint(SiratiColors c, Color fill) =>
+      AppContrast.ratio(iconColor, fill) >= 3 &&
+              AppContrast.ratio(iconColor, c.pressed(fill)) >= 3
+          ? iconColor
+          : c.textSecondary;
+}
+
 class JobSearchBar extends StatelessWidget {
   final bool english;
   final TextEditingController controller;
@@ -198,40 +222,72 @@ class JobSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.sirati;
+    final reduce = MotionSettings.reduce(context);
+    const searchIcon = Icon(Icons.search_rounded, size: 20);
+
     return Material(
       type: MaterialType.transparency,
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        textAlign: TextAlign.start,
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          hintText: AppLocalizations.of(context).jobsSearchHint,
-          // Keep the search affordance on the physical leading edge of the field
-          // (left) in both locales — matches the current product screenshots.
-          prefixIcon:
-              english ? const Icon(Icons.search_rounded, size: 20) : null,
-          suffixIcon:
-              english ? null : const Icon(Icons.search_rounded, size: 20),
-          filled: true,
-          fillColor: context.sirati.surface,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: context.sirati.border),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: context.sirati.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: context.sirati.primary, width: 1.4),
-          ),
-        ),
-        style: TextStyle(
-            fontSize: 14, height: 1.3, color: context.sirati.textPrimary),
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, value, _) {
+          final hasText = value.text.isNotEmpty;
+          final clearButton = AnimatedSwitcher(
+            duration: reduce ? Duration.zero : MotionDurations.fast,
+            switchInCurve: MotionCurves.enter,
+            switchOutCurve: MotionCurves.exit,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.75, end: 1).animate(animation),
+                child: child,
+              ),
+            ),
+            child: hasText
+                ? IconButton(
+                    key: const ValueKey('jobs-search-clear'),
+                    tooltip:
+                        MaterialLocalizations.of(context).deleteButtonTooltip,
+                    onPressed: () {
+                      controller.clear();
+                      onChanged('');
+                    },
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: c.textSecondary,
+                    ),
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      splashFactory: reduce ? NoSplash.splashFactory : null,
+                      highlightColor:
+                          reduce ? c.surface.withValues(alpha: 0) : null,
+                    ),
+                  )
+                : const SizedBox.shrink(key: ValueKey('jobs-search-empty')),
+          );
+
+          return TextField(
+            controller: controller,
+            onChanged: onChanged,
+            textAlign: TextAlign.start,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: AppLocalizations.of(context).jobsSearchHint,
+              // Keep the search affordance on the physical leading edge of the
+              // field (left) in both locales — matches the current screenshots.
+              prefixIcon: english ? searchIcon : clearButton,
+              suffixIcon: english ? clearButton : searchIcon,
+              // The theme's filled field: page fill, no resting outline,
+              // primary focus ring.
+            ),
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.3,
+              color: c.textPrimary,
+            ),
+          );
+        },
       ),
     );
   }

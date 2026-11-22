@@ -13,12 +13,17 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/ai_status.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Score, keyword coverage, gaps and selectable edits for the match held by
 /// [jobMatchControllerProvider]. Pushed by `JobMatchScreen`, which keeps the
 /// controller alive underneath.
 class JobMatchResultScreen extends ConsumerWidget {
   const JobMatchResultScreen({super.key});
+
+  /// The docked apply bar.
+  static const applyBarKey = ValueKey('jm-apply-bar');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,7 +43,10 @@ class JobMatchResultScreen extends ConsumerWidget {
                 AppSpacing.xxl,
               ),
               children: [
-                _ScoreCard(match: match),
+                _ScoreCard(
+                  key: ValueKey('jm-score-${match.id}'),
+                  match: match,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 _KeywordsCard(match: match),
                 const SizedBox(height: AppSpacing.md),
@@ -173,28 +181,27 @@ class JobMatchResultScreen extends ConsumerWidget {
           child: Semantics(
             label: l.jobMatchAiPreparing,
             child: ExcludeSemantics(
-              child: SizedBox(
-                key: const ValueKey('jm-suggestions-skeleton'),
-                height: 220,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final width in [0.55, 1.0, 0.85, 1.0, 0.7])
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: FractionallySizedBox(
-                          alignment: AlignmentDirectional.centerStart,
-                          widthFactor: width,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: context.sirati.border,
-                              borderRadius: AppRadius.smAll,
+              child: AppSkeletonScope(
+                child: SizedBox(
+                  key: const ValueKey('jm-suggestions-skeleton'),
+                  height: 220,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final width in [0.55, 1.0, 0.85, 1.0, 0.7])
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: FractionallySizedBox(
+                            alignment: AlignmentDirectional.centerStart,
+                            widthFactor: width,
+                            child: const AppSkeleton(
+                              height: 22,
+                              radius: AppRadius.sm,
                             ),
-                            child: const SizedBox(height: 22),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -206,46 +213,63 @@ class JobMatchResultScreen extends ConsumerWidget {
     final c = context.sirati;
     final suggestions = match.suggestions;
     return [
-      JobMatchSection(
-        title: l.jobMatchSuggestionsTitle,
-        child: Text(
-          suggestions.isEmpty
-              ? l.jobMatchNoSuggestions
-              : l.jobMatchSuggestionsHint,
-          style: AppTypography.of(
-            context,
-            AppTypography.bodySm,
-            color: c.textSecondary,
+      MotionReveal(
+        order: 0,
+        child: JobMatchSection(
+          title: l.jobMatchSuggestionsTitle,
+          child: Text(
+            suggestions.isEmpty
+                ? l.jobMatchNoSuggestions
+                : l.jobMatchSuggestionsHint,
+            style: AppTypography.of(
+              context,
+              AppTypography.bodySm,
+              color: c.textSecondary,
+            ),
           ),
         ),
       ),
-      for (final suggestion in suggestions) ...[
+      for (var i = 0; i < suggestions.length; i++) ...[
         const SizedBox(height: AppSpacing.sm),
-        JobMatchSuggestionCard(
-          suggestion: suggestion,
-          selected: state.selected.contains(suggestion.key),
-          applied: match.appliedSuggestionKeys.contains(suggestion.key),
-          enabled: !state.applying,
-          factConfirmed: state.confirmedFactKeys.contains(suggestion.key),
-          onConfirmFact: (confirmed) => ref
-              .read(jobMatchControllerProvider.notifier)
-              .confirmFact(suggestion.key, confirmed),
-          onToggle: () => ref
-              .read(jobMatchControllerProvider.notifier)
-              .toggle(suggestion.key),
+        MotionReveal(
+          order: i + 1,
+          child: JobMatchSuggestionCard(
+            suggestion: suggestions[i],
+            selected: state.selected.contains(suggestions[i].key),
+            applied: match.appliedSuggestionKeys.contains(suggestions[i].key),
+            enabled: !state.applying,
+            factConfirmed: state.confirmedFactKeys.contains(suggestions[i].key),
+            onConfirmFact: (confirmed) => ref
+                .read(jobMatchControllerProvider.notifier)
+                .confirmFact(suggestions[i].key, confirmed),
+            onToggle: () => ref
+                .read(jobMatchControllerProvider.notifier)
+                .toggle(suggestions[i].key),
+          ),
         ),
       ],
     ];
   }
 }
 
-class _ScoreCard extends StatelessWidget {
-  const _ScoreCard({required this.match});
+class _ScoreCard extends StatefulWidget {
+  const _ScoreCard({super.key, required this.match});
 
   final JobMatch match;
 
   @override
+  State<_ScoreCard> createState() => _ScoreCardState();
+}
+
+class _ScoreCardState extends State<_ScoreCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
+    final match = widget.match;
     final l = AppLocalizations.of(context);
     final c = context.sirati;
     final secondary = AppTypography.of(
@@ -358,7 +382,10 @@ class _ApplyBar extends ConsumerWidget {
       child: ElevatedButton(
         key: const ValueKey('jm-apply'),
         style: ElevatedButton.styleFrom(
-          disabledBackgroundColor: c.surface,
+          // Change fill and foreground together when entering busy/disabled state.
+          animationDuration: Duration.zero,
+          // The grey capsule on the white bar.
+          disabledBackgroundColor: c.cardFill,
           disabledForegroundColor: c.textSecondary,
         ),
         onPressed: busy || count == 0 ? null : () => _apply(context, ref),
@@ -396,11 +423,10 @@ class _ApplyBar extends ConsumerWidget {
       ),
     );
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: c.surface,
-        border: Border(top: BorderSide(color: c.textSecondary, width: 2)),
-      ),
+    // The page colour, no edge: the button carries its own fill.
+    return ColoredBox(
+      key: JobMatchResultScreen.applyBarKey,
+      color: c.pageBackground,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -460,82 +486,76 @@ class _AdviceFailedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final c = context.sirati;
-    return DecoratedBox(
+    return JobMatchSection(
       key: const ValueKey('jm-advice-failed'),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.textSecondary),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Icon(Icons.cloud_off_rounded, size: 36, color: c.textSecondary),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 36, color: c.textSecondary),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l.jobMatchFailedTitle,
+            textAlign: TextAlign.center,
+            style: AppTypography.of(context, AppTypography.titleMd),
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            l.jobMatchAiFailed,
+            textAlign: TextAlign.center,
+            style: AppTypography.of(
+              context,
+              AppTypography.bodySm,
+              color: c.textSecondary,
+            ),
+          ),
+          if (retryFailure != null) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              l.jobMatchFailedTitle,
-              textAlign: TextAlign.center,
-              style: AppTypography.of(context, AppTypography.titleMd),
-            ),
-            const SizedBox(height: AppSpacing.xxs),
-            Text(
-              l.jobMatchAiFailed,
-              textAlign: TextAlign.center,
-              style: AppTypography.of(
-                context,
-                AppTypography.bodySm,
-                color: c.textSecondary,
-              ),
-            ),
-            if (retryFailure != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              JobMatchNotice(
-                tone: JobMatchTone.error,
-                message: l.jobMatchFailureMessage(retryFailure!),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.xs),
-            ElevatedButton(
-              key: const ValueKey('jm-retry-advice'),
-              onPressed: retrying ? null : onRetry,
-              style: ElevatedButton.styleFrom(
-                // Change fill and foreground together when entering busy state.
-                animationDuration: Duration.zero,
-                disabledBackgroundColor: c.surface,
-                disabledForegroundColor: c.textSecondary,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (retrying) ...[
-                    SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(
-                        key: const ValueKey('jm-retry-progress'),
-                        strokeWidth: 2,
-                        color: c.primaryInk,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                  ],
-                  Flexible(
-                    child: Text(
-                      l.jobMatchRetrySuggestions,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
             JobMatchNotice(
-              tone: JobMatchTone.info,
-              message: l.jobMatchFailedManualHint,
+              tone: JobMatchTone.error,
+              message: l.jobMatchFailureMessage(retryFailure!),
             ),
           ],
-        ),
+          const SizedBox(height: AppSpacing.xs),
+          ElevatedButton(
+            key: const ValueKey('jm-retry-advice'),
+            onPressed: retrying ? null : onRetry,
+            style: ElevatedButton.styleFrom(
+              // Change fill and foreground together when entering busy state.
+              animationDuration: Duration.zero,
+              // One step darker than the card, so the capsule keeps its
+              // shape while busy.
+              disabledBackgroundColor: c.pressed(PageSurface.fillOf(context)),
+              disabledForegroundColor: c.textSecondary,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (retrying) ...[
+                  SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(
+                      key: const ValueKey('jm-retry-progress'),
+                      strokeWidth: 2,
+                      color: c.primaryInk,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
+                Flexible(
+                  child: Text(
+                    l.jobMatchRetrySuggestions,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          JobMatchNotice(
+            tone: JobMatchTone.info,
+            message: l.jobMatchFailedManualHint,
+          ),
+        ],
       ),
     );
   }

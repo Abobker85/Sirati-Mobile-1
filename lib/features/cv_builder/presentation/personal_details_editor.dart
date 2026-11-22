@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/bidi_text_utils.dart';
+import 'package:sirati/core/utils/latin_digits.dart';
 import 'package:sirati/features/cv_builder/controllers/cv_builder_controller.dart';
 import 'package:sirati/features/cv_builder/presentation/section_editor_framework.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/shared/widgets/components.dart';
 
 /// Validation utilities for Gulf phone numbers and emails (SIRATI-37).
@@ -20,7 +22,7 @@ class ContactValidators {
   /// - International E.164: +[country code][number]
   static String? validateGulfPhone(String? value, AppLocalizations l10n) {
     if (value == null || value.trim().isEmpty) return null;
-    final cleaned = value.replaceAll(RegExp(r'[\s\-()]'), '');
+    final cleaned = latinDigits(value).replaceAll(RegExp(r'[\s\-()]'), '');
 
     // Gulf country patterns with explicit country codes
     final ksaMobile = RegExp(r'^(\+966|00966|966)0?5[0-9]{8}$');
@@ -119,6 +121,12 @@ class PersonalDetailsEditor extends StatefulWidget {
     required this.controller,
   });
 
+  /// Key of the CV input-language switch.
+  static const languageModeKey = ValueKey('cv-language-mode');
+
+  /// Key of the ATS photo card.
+  static const photoCardKey = ValueKey('cv-photo-card');
+
   @override
   State<PersonalDetailsEditor> createState() => _PersonalDetailsEditorState();
 }
@@ -141,7 +149,6 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
 
   String? _phoneError;
   String? _emailError;
-  bool _includePhoto = false;
 
   @override
   void initState() {
@@ -179,7 +186,7 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
   }
 
   void _onPersonalChanged() {
-    final phoneText = _phoneCtrl.text.trim();
+    final phoneText = latinDigits(_phoneCtrl.text.trim());
     final emailText = _emailCtrl.text.trim();
 
     final l10n = AppLocalizations.of(context);
@@ -250,39 +257,31 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Language Mode Selector
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  Text(
-                    l10n.inputLanguageLabel,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: c.textSecondary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  SegmentedButton<String>(
-                    segments: [
-                      ButtonSegment(
-                          value: 'dual', label: Text(l10n.languageModeDual)),
-                      ButtonSegment(
-                          value: 'ar', label: Text(l10n.languageModeArOnly)),
-                      ButtonSegment(
-                          value: 'en', label: Text(l10n.languageModeEnOnly)),
-                    ],
-                    selected: {_languageMode},
-                    onSelectionChanged: (set) =>
-                        setState(() => _languageMode = set.first),
-                    style: ButtonStyle(
-                      visualDensity: VisualDensity.compact,
-                      textStyle: WidgetStatePropertyAll(
-                        Theme.of(context).textTheme.labelSmall,
+              EditorGroupCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      l10n.inputLanguageLabel,
+                      style: AppTypography.of(
+                        context,
+                        AppTypography.caption,
+                        color: c.textSecondary,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: AppSpacing.xs),
+                    AppSegmentedControl<String>(
+                      key: PersonalDetailsEditor.languageModeKey,
+                      segments: [
+                        AppSegment(value: 'dual', label: l10n.languageModeDual),
+                        AppSegment(value: 'ar', label: l10n.languageModeArOnly),
+                        AppSegment(value: 'en', label: l10n.languageModeEnOnly),
+                      ],
+                      value: _languageMode,
+                      onChanged: (mode) => setState(() => _languageMode = mode),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
 
@@ -384,20 +383,15 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // ── ATS Photo Warning & Toggle ────────────────────────────────
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: c.surfaceHigh,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  border: Border.all(color: c.border),
-                ),
+              // ── ATS Photo Warning ─────────────────────────────────────────
+              EditorGroupCard(
+                key: PersonalDetailsEditor.photoCardKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.info_outline, color: c.primary, size: 20),
+                        Icon(Icons.info_outline, color: c.primaryInk, size: 20),
                         const SizedBox(width: AppSpacing.xs),
                         Expanded(
                           child: Text(
@@ -411,11 +405,6 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
                                 ),
                           ),
                         ),
-                        Switch(
-                          value: _includePhoto,
-                          onChanged: (val) =>
-                              setState(() => _includePhoto = val),
-                        ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xs),
@@ -426,38 +415,6 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
                             height: 1.4,
                           ),
                     ),
-                    if (_includePhoto) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: c.primaryLight,
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.account_circle,
-                                color: c.primary, size: 24),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: Text(
-                                l10n.atsPhotoEnabled,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: c.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -544,7 +501,7 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
       adviceColor = c.textSecondary;
     } else if (words <= 200) {
       advice = l10n.summaryAdviceGood;
-      adviceColor = c.primary;
+      adviceColor = c.primaryInk;
     } else {
       advice = l10n.summaryAdviceLong;
       adviceColor = c.textSecondary;

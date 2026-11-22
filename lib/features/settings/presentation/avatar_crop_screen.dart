@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components/app_button.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Side of the uploaded photo, in pixels.
 const avatarOutputSize = 512;
@@ -124,8 +126,10 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
     final c = context.sirati;
     final image = _image;
 
-    return Scaffold(
-      backgroundColor: c.background,
+    // iOS 26 grouped page: the window shade is the page colour, the actions
+    // are a grey capsule and a primary capsule.
+    return GroupedSurface(
+        child: Scaffold(
       appBar: AppBar(
         title: Text(l10n.settingsAvatarCropTitle),
       ),
@@ -170,9 +174,29 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                                       child: SizedBox(
                                         width: image.width * scale,
                                         height: image.height * scale,
-                                        child: RawImage(
-                                          image: image,
-                                          fit: BoxFit.fill,
+                                        child: TweenAnimationBuilder<double>(
+                                          key: ValueKey(image),
+                                          tween: Tween(
+                                            begin:
+                                                MotionSettings.reduce(context)
+                                                    ? 1.0
+                                                    : 0.0,
+                                            end: 1.0,
+                                          ),
+                                          duration:
+                                              MotionSettings.reduce(context)
+                                                  ? Duration.zero
+                                                  : MotionDurations.medium,
+                                          curve: MotionCurves.enter,
+                                          builder: (context, opacity, child) =>
+                                              Opacity(
+                                            opacity: opacity,
+                                            child: child,
+                                          ),
+                                          child: RawImage(
+                                            image: image,
+                                            fit: BoxFit.fill,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -180,7 +204,7 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                                       child: CustomPaint(
                                         size: Size.infinite,
                                         painter: _RoundWindow(
-                                          shade: c.background
+                                          shade: c.groupedBackground
                                               .withValues(alpha: .6),
                                           ring: c.textPrimary,
                                         ),
@@ -197,28 +221,18 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: OutlinedButton(
+                                  child: AppButton.secondary(
+                                    label: l10n.cancel,
                                     onPressed: () =>
                                         Navigator.of(context).pop(),
-                                    style: OutlinedButton.styleFrom(
-                                      minimumSize: const Size.fromHeight(48),
-                                      foregroundColor: c.textPrimary,
-                                      side: BorderSide(color: c.borderStrong),
-                                    ),
-                                    child: Text(l10n.cancel),
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.sm),
                                 Expanded(
-                                  child: FilledButton(
+                                  child: AppButton.primary(
                                     key: AvatarCropScreen.doneKey,
+                                    label: l10n.settingsAvatarUsePhoto,
                                     onPressed: _saving ? null : _done,
-                                    style: FilledButton.styleFrom(
-                                      minimumSize: const Size.fromHeight(48),
-                                      backgroundColor: c.primary,
-                                      foregroundColor: c.onPrimary,
-                                    ),
-                                    child: Text(l10n.settingsAvatarUsePhoto),
                                   ),
                                 ),
                               ],
@@ -229,7 +243,7 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                     },
                   ),
       ),
-    );
+    ));
   }
 }
 

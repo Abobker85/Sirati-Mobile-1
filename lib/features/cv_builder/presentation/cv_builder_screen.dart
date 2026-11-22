@@ -15,7 +15,9 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_document.dart';
 import 'package:sirati/shared/models/cv_template.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/shared/widgets/components.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Background, hidden, or closing: persist pending edits now.
 bool savesOnLifecycle(AppLifecycleState state) =>
@@ -31,14 +33,19 @@ class CvBuilderScreen extends ConsumerStatefulWidget {
   final String? cvId;
   final CvDocument? initialDocument;
 
+  /// Key of the segmented editor tab bar.
+  static const tabBarKey = ValueKey('cv-builder-tabs');
+
   @override
   ConsumerState<CvBuilderScreen> createState() => _CvBuilderScreenState();
 }
 
 class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   CvBuilderController? _controller;
-  late final TabController _tabController;
+  TabController? _tabController;
+  late final AnimationController _previewController;
+  late final CurvedAnimation _previewCurve;
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -47,6 +54,17 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
   /// Set once the user starts leaving, so a second Back doesn't pop the
   /// route underneath this one.
   bool _leaving = false;
+
+  /// Bumped when the whole document is replaced (draft restore) so the
+  /// editors, which copy the document into their fields once, rebuild.
+  int _documentGeneration = 0;
+
+  static const _tabBarPadding = EdgeInsets.fromLTRB(
+    AppSpacing.xs,
+    AppSpacing.xxs,
+    AppSpacing.xs,
+    AppSpacing.xs,
+  );
 
   static const _template = CvTemplate(
     id: 1,
@@ -66,14 +84,54 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _tabController = TabController(length: 4, vsync: this);
+    _previewController = AnimationController(
+      vsync: this,
+      duration: MotionDurations.medium,
+      value: 0,
+    );
+    _previewCurve = CurvedAnimation(
+      parent: _previewController,
+      curve: MotionCurves.enter,
+      reverseCurve: MotionCurves.exit,
+    );
     unawaited(_initializeDocument());
+  }
+
+  /// The editor tabs' controller. Its page duration is fixed at creation,
+  /// so it is rebuilt (keeping the open tab) when reduced motion flips:
+  /// under reduced motion the pages jump with the segmented thumb.
+  TabController _ensureTabController() {
+    final duration = AppSegmentedTabBar.pageDuration(context);
+    final current = _tabController;
+    if (current != null && current.animationDuration == duration) {
+      return current;
+    }
+    final next = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: current?.index ?? 0,
+      animationDuration: duration,
+    );
+    _tabController = next;
+    if (current != null) {
+      // The old bar and pages let go of it during this frame's build.
+      WidgetsBinding.instance.addPostFrameCallback((_) => current.dispose());
+    }
+    return next;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ensureTabController();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _tabController.dispose();
+    _previewCurve.dispose();
+    _previewController.dispose();
+    _tabController?.dispose();
     final controller = _controller;
     if (controller != null) {
       // The route can be removed without a Back (logout, deep link): finish
@@ -150,7 +208,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
   Future<void> _showRecoveryPrompt(CvDocument draft) {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
-    return showDialog<void>(
+    return showSiratiDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
@@ -182,6 +240,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
             ),
             onPressed: () {
               _controller?.updateDocument(draft);
+              setState(() => _documentGeneration++);
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(l10n.draftRestored)),
@@ -282,8 +341,19 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
         listenable: controller,
         builder: (context, _) {
           final doc = controller.document;
-          return Scaffold(
+          final tabs = _ensureTabController();
+          final tabLabels = [
+            AppSegmentedTab(label: l10n.tabPersonal),
+            AppSegmentedTab(label: l10n.tabExperience),
+            AppSegmentedTab(label: l10n.tabSkills),
+            AppSegmentedTab(label: l10n.tabOrder),
+          ];
+          // iOS 26 grouped form page; the bar stays white so the segmented
+          // track keeps its grey-on-white look.
+          return GroupedSurface(
+              child: Scaffold(
             appBar: AppBar(
+              backgroundColor: AppTheme.barColor(c, c.pageBackground),
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -310,8 +380,17 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                   ),
                   tooltip:
                       _showPreviewPane ? l10n.backToEdit : l10n.livePreview,
-                  onPressed: () =>
-                      setState(() => _showPreviewPane = !_showPreviewPane),
+                  onPressed: () {
+                    final next = !_showPreviewPane;
+                    setState(() => _showPreviewPane = next);
+                    if (MotionSettings.reduce(context)) {
+                      _previewController.value = next ? 1 : 0;
+                    } else if (next) {
+                      unawaited(_previewController.forward());
+                    } else {
+                      unawaited(_previewController.reverse());
+                    }
+                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.save_outlined),
@@ -319,17 +398,22 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                   onPressed: () => unawaited(_saveNow()),
                 ),
               ],
-              bottom: TabBar(
-                controller: _tabController,
-                tabs: [
-                  Tab(icon: const Icon(Icons.person), text: l10n.tabPersonal),
-                  Tab(icon: const Icon(Icons.work), text: l10n.tabExperience),
-                  Tab(icon: const Icon(Icons.psychology), text: l10n.tabSkills),
-                  Tab(
-                    icon: const Icon(Icons.format_line_spacing),
-                    text: l10n.tabOrder,
-                  ),
-                ],
+              // Labels only, content-sized segments and tighter padding: on a
+              // 320dp phone at large text, long labels widen their segment or
+              // wrap, never cut off.
+              bottom: AppSegmentedTabBar(
+                key: CvBuilderScreen.tabBarKey,
+                controller: tabs,
+                textScaler: MediaQuery.textScalerOf(context),
+                tabs: tabLabels,
+                padding: _tabBarPadding,
+                labelPadding: AppSpacing.xs,
+                height: AppSegmentedTabBar.heightFor(
+                  context,
+                  tabs: tabLabels,
+                  padding: _tabBarPadding,
+                  labelPadding: AppSpacing.xs,
+                ),
               ),
             ),
             body: LayoutBuilder(
@@ -339,7 +423,8 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                       child: child,
                     );
                 final editor = TabBarView(
-                  controller: _tabController,
+                  key: ValueKey(_documentGeneration),
+                  controller: tabs,
                   children: [
                     page(PersonalDetailsEditor(controller: controller)),
                     page(ExperienceEducationEditor(controller: controller)),
@@ -356,7 +441,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                       Expanded(
                         flex: 2,
                         child: ColoredBox(
-                          color: c.surfaceLow,
+                          color: c.groupedBackground,
                           child: CvLivePreviewPane(
                             controller: controller,
                             template: _template,
@@ -367,19 +452,77 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                     ],
                   );
                 }
-                if (_showPreviewPane) {
-                  return ColoredBox(
-                    color: c.surfaceLow,
-                    child: CvLivePreviewPane(
-                      controller: controller,
-                      template: _template,
-                    ),
+                final reduce = MotionSettings.reduce(context);
+                if (reduce) {
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Visibility(
+                        visible: !_showPreviewPane,
+                        maintainState: true,
+                        child: editor,
+                      ),
+                      if (_showPreviewPane)
+                        ColoredBox(
+                          color: c.groupedBackground,
+                          child: CvLivePreviewPane(
+                            controller: controller,
+                            template: _template,
+                          ),
+                        ),
+                    ],
                   );
                 }
-                return editor;
+                final curved = _previewCurve;
+                return AnimatedBuilder(
+                  animation: curved,
+                  child: editor,
+                  builder: (context, editorChild) {
+                    final t = curved.value;
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Visibility(
+                          visible: t < 1,
+                          maintainState: true,
+                          child: IgnorePointer(
+                            ignoring: _showPreviewPane,
+                            child: ExcludeSemantics(
+                              excluding: _showPreviewPane,
+                              child: Opacity(
+                                opacity: (1 - t).clamp(0.0, 1.0),
+                                child: Transform.scale(
+                                  scale: 1.0 - 0.02 * t,
+                                  child: editorChild,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (t > 0)
+                          IgnorePointer(
+                            ignoring: !_showPreviewPane,
+                            child: Opacity(
+                              opacity: t.clamp(0.0, 1.0),
+                              child: Transform.scale(
+                                scale: 0.98 + 0.02 * t,
+                                child: ColoredBox(
+                                  color: c.groupedBackground,
+                                  child: CvLivePreviewPane(
+                                    controller: controller,
+                                    template: _template,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                );
               },
             ),
-          );
+          ));
         },
       ),
     );

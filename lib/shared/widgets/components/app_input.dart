@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'package:sirati/core/utils/bidi_text_utils.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/form_fields.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 /// Token-driven text field (SIRATI-21). Uses [AppFormStyles] / theme inputs.
@@ -83,6 +84,8 @@ class AppInput extends StatelessWidget {
                       ),
                     ),
               hintText: hint,
+              contentPadding:
+                  label == null ? null : AppFormStyles.labelledPadding,
               errorText: errorText,
               errorMaxLines: 100,
               helperText: helperText,

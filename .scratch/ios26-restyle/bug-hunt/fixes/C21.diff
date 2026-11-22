@@ -1,0 +1,28 @@
+diff --git a/lib/shared/widgets/form_fields.dart b/lib/shared/widgets/form_fields.dart
+index a6888da..d00b3fc 100644
+--- a/lib/shared/widgets/form_fields.dart
++++ b/lib/shared/widgets/form_fields.dart
+@@ -686,7 +686,10 @@ class _AppTextFormFieldState extends FormFieldState<String> {
+     }
+     // After first blur: re-validate as the user types (onUserInteraction).
+     // Before first blur: stay quiet — no error flash while typing.
+-    final forceAlways = widget._autovalidateMode == AutovalidateMode.always;
++    // An explicit always / onUserInteraction (e.g. after a submit) validates
++    // live without waiting for a blur.
++    final forceAlways = widget._autovalidateMode == AutovalidateMode.always ||
++        widget._autovalidateMode == AutovalidateMode.onUserInteraction;
+     if (_blurredOnce || forceAlways) {
+       // Forgive while editing: as long as the field has focus, typing may
+       // clear an error but never add one or change its message. New errors
+@@ -722,7 +725,10 @@ class _AppTextFormFieldState extends FormFieldState<String> {
+   bool _isShowingSuccess() {
+     if (!widget.showSuccessWhenValid) return false;
+     // Never show success chrome before the first blur (unless always mode).
+-    final forceAlways = widget._autovalidateMode == AutovalidateMode.always;
++    // An explicit always / onUserInteraction (e.g. after a submit) validates
++    // live without waiting for a blur.
++    final forceAlways = widget._autovalidateMode == AutovalidateMode.always ||
++        widget._autovalidateMode == AutovalidateMode.onUserInteraction;
+     if (!_blurredOnce && !forceAlways) return false;
+     final text = value?.trim() ?? '';
+     if (text.isEmpty) return false;

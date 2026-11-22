@@ -1,0 +1,23 @@
+diff --git a/lib/features/dashboard/presentation/premium_gate_screen.dart b/lib/features/dashboard/presentation/premium_gate_screen.dart
+index 73e7791..d6b4241 100644
+--- a/lib/features/dashboard/presentation/premium_gate_screen.dart
++++ b/lib/features/dashboard/presentation/premium_gate_screen.dart
+@@ -104,7 +104,7 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
+       _notice = null;
+     });
+     _GateNotice? notice;
+-    var active = false;
++    bool? active;
+     var stale = false;
+     try {
+       final user = await ref.read(authApiServiceProvider).me();
+@@ -119,7 +119,8 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
+     setState(() {
+       _refreshing = false;
+       if (stale) return;
+-      _activated = active;
++      // A failed check proves nothing: keep what was last known.
++      if (active != null) _activated = active;
+       _notice = notice;
+     });
+   }

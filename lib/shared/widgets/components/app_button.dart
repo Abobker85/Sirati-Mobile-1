@@ -3,11 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/l10n/remote_l10n.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/directional_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 enum AppButtonVariant { primary, secondary, text, destructive }
 
 /// Token-driven button (SIRATI-21). Min 48px target, semantic label, RTL-safe.
+///
+/// iOS 26 (ticket 10): primary and destructive are filled capsules; secondary
+/// is a grey filled capsule on the page's fill ([PageSurface.fillOf]).
+/// Disabled primary and destructive buttons (not loading) take that same
+/// grey page fill with a secondary-ink label (ticket 23).
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -94,7 +100,9 @@ class AppButton extends StatelessWidget {
             ),
           )
         else if (icon != null)
-          Icon(icon, size: 18, color: foreground),
+          DirectionalIcon.isDirectional(icon!)
+              ? DirectionalIcon(icon!, size: 18, color: foreground)
+              : Icon(icon, size: 18, color: foreground),
         if (isLoading || icon != null) const SizedBox(width: AppSpacing.xs),
         Flexible(
           child: Text(
@@ -119,27 +127,21 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             minimumSize: minSize,
             backgroundColor: c.primary,
-            disabledBackgroundColor: isLoading ? c.primary : c.surfaceHigh,
+            disabledBackgroundColor:
+                isLoading ? c.primary : PageSurface.fillOf(context),
             disabledForegroundColor: isLoading ? c.onPrimary : c.textSecondary,
             foregroundColor: c.onPrimary,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+            shape: const StadiumBorder(),
           ),
           child: child,
         );
       case AppButtonVariant.secondary:
+        // Grey filled capsule on the page's fill, no outline (iOS 26).
         button = OutlinedButton(
           onPressed: enabled ? onPressed : null,
-          style: OutlinedButton.styleFrom(
-            minimumSize: minSize,
-            foregroundColor: c.primaryInk,
-            disabledForegroundColor: c.textSecondary,
-            side: BorderSide(
-              color: !enabled && !isLoading ? c.outline : c.primaryInk,
-              width: 1.5,
-            ),
-            shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
-          ),
+          style: AppTheme.secondaryButtonStyle(c, PageSurface.fillOf(context))
+              .copyWith(minimumSize: WidgetStatePropertyAll(minSize)),
           child: child,
         );
       case AppButtonVariant.text:
@@ -159,11 +161,12 @@ class AppButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             minimumSize: minSize,
             backgroundColor: c.error,
-            disabledBackgroundColor: isLoading ? c.error : c.surfaceHigh,
+            disabledBackgroundColor:
+                isLoading ? c.error : PageSurface.fillOf(context),
             disabledForegroundColor: isLoading ? c.onError : c.textSecondary,
             foregroundColor: c.onError,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+            shape: const StadiumBorder(),
           ),
           child: child,
         );

@@ -22,8 +22,10 @@ import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/theme/app_theme_controller.dart';
 import 'package:sirati/shared/widgets/ambient_motion.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
 import 'package:sirati/shared/widgets/app_list_tile.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/components/app_dialog.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -138,11 +140,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _logout() async {
     if (_loggingOut) return;
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showSiratiDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.logOutConfirmTitle),
-        content: Text(l10n.logOutConfirmBody),
+        title: Text(l10n.logOutConfirmTitle, textAlign: TextAlign.center),
+        content: Text(l10n.logOutConfirmBody, textAlign: TextAlign.center),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -150,7 +153,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: context.sirati.error),
+            // Same destructive ink as the sign-out row (AA when pressed).
+            style: TextButton.styleFrom(
+              foregroundColor: context.sirati.onErrorContainer,
+            ),
             child: Text(l10n.logOut),
           ),
         ],
@@ -228,175 +234,210 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final subscription =
           user?.subscriptionStatus ?? const SubscriptionStatus.free();
       final premium = subscription.isPremium;
+      final c = context.sirati;
+      // Switch rows line up with AppListTile rows inside a section.
+      Widget switchRow({
+        Key? key,
+        required IconData icon,
+        required String title,
+        String? subtitle,
+        required bool value,
+        required ValueChanged<bool>? onChanged,
+      }) =>
+          SwitchListTile.adaptive(
+            key: key,
+            contentPadding: const EdgeInsetsDirectional.symmetric(
+              horizontal: AppListSection.rowPadding,
+            ),
+            horizontalTitleGap: AppListTileMetrics.gap,
+            minLeadingWidth: AppListTileMetrics.groupedIcon,
+            secondary: AppListIcon(icon),
+            title: Text(title),
+            subtitle: subtitle == null ? null : Text(subtitle),
+            value: value,
+            onChanged: onChanged,
+          );
       body = ListView(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
         children: [
           ProfileSummaryCard(user: user),
           const SizedBox(height: AppSpacing.xl),
-          SettingsSectionLabel(l10n.subscriptionSection),
-          const SizedBox(height: AppSpacing.sm),
-          AppListTile(
-            key: SettingsScreen.subscriptionKey,
-            leadingIcon: Icons.workspace_premium_rounded,
-            leadingBackground: premium ? context.sirati.amberLight : null,
-            leadingIconColor:
-                premium ? context.sirati.onWarningContainer : null,
-            title: premium ? l10n.premiumGateAppBar : l10n.subscriptionFreePlan,
-            subtitle: _subscriptionSubtitle(subscription),
-            onTap: () => unawaited(_openPremium()),
-          ),
-          // Store subscriptions are changed and cancelled in Apple's settings.
-          if (premium &&
-              subscription.managedByStore &&
-              defaultTargetPlatform == TargetPlatform.iOS) ...[
-            const SizedBox(height: AppSpacing.sm),
-            AppListTile(
-              key: SettingsScreen.manageSubscriptionKey,
-              leadingIcon: Icons.manage_accounts_outlined,
-              title: l10n.subscriptionManage,
-              subtitle: l10n.subscriptionManageHint,
-              onTap: () => unawaited(_manageSubscription()),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.xl),
-          SettingsSectionLabel(l10n.accountSection),
-          const SizedBox(height: AppSpacing.sm),
-          AppListTile(
-            leadingIcon: Icons.person_outline_rounded,
-            title: l10n.editProfile,
-            onTap: () => unawaited(_editProfile()),
-          ),
-          // Google/Apple-only accounts have no current password to change;
-          // "Forgot password" on the login screen can set one.
-          if (user?.hasPassword ?? true) ...[
-            const SizedBox(height: AppSpacing.sm),
-            AppListTile(
-              leadingIcon: Icons.lock_outline_rounded,
-              title: l10n.changePassword,
-              onTap: () => _push(const ChangePasswordScreen()),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.xl),
-          SettingsSectionLabel(l10n.preferencesSection),
-          const SizedBox(height: AppSpacing.sm),
-          AppListTile(
-            leadingIcon: Icons.language_rounded,
-            title: l10n.language,
-            subtitle: currentLanguageName(),
-            onTap: () => unawaited(showLanguagePicker(context)),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: AppThemeController.themeMode,
-            builder: (context, mode, _) => Column(
-              children: [
-                AppListTile(
-                  leadingIcon: Icons.palette_outlined,
-                  title: l10n.appearance,
-                  subtitle: switch (mode) {
-                    ThemeMode.light => l10n.themeLight,
-                    ThemeMode.dark => l10n.themeDark,
-                    ThemeMode.system => l10n.themeSystem,
-                  },
-                  showChevron: false,
-                  onTap: null,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                ThemeModeSelector(
-                  mode: mode,
-                  onChanged: (m) => unawaited(AppThemeController.setMode(m)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Material(
-            color: context.sirati.surface,
-            borderRadius: BorderRadius.circular(14),
-            child: SwitchListTile.adaptive(
-              secondary: Icon(Icons.notifications_none_rounded,
-                  color: context.sirati.primaryInk),
-              title: Text(l10n.pushNotifications),
-              value: notifications.value ?? true,
-              // Wait for the persisted value before accepting changes.
-              onChanged: notifications.hasValue
-                  ? (value) => unawaited(_toggleNotifications(value))
-                  : null,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          // Lets anyone stop the motion that plays by itself (shines,
-          // floating pictures, glows); motion that answers a tap stays.
-          Material(
-            color: context.sirati.surface,
-            borderRadius: BorderRadius.circular(14),
-            child: ValueListenableBuilder<bool>(
-              valueListenable: AmbientMotion.enabled,
-              builder: (context, on, _) => SwitchListTile.adaptive(
-                key: SettingsScreen.decorativeMotionKey,
-                secondary: Icon(Icons.auto_awesome_outlined,
-                    color: context.sirati.primaryInk),
-                title: Text(l10n.settingsDecorativeMotion),
-                subtitle: Text(l10n.settingsDecorativeMotionHint),
-                value: on,
-                onChanged: (value) =>
-                    unawaited(AmbientMotion.setEnabled(value)),
+          AppListSection(
+            header: l10n.subscriptionSection,
+            children: [
+              AppListTile(
+                key: SettingsScreen.subscriptionKey,
+                leadingIcon: Icons.workspace_premium_rounded,
+                leadingBackground: premium ? c.amberLight : null,
+                leadingIconColor: premium ? c.onWarningContainer : null,
+                title: premium
+                    ? l10n.premiumGateAppBar
+                    : l10n.subscriptionFreePlan,
+                subtitle: _subscriptionSubtitle(subscription),
+                onTap: () => unawaited(_openPremium()),
               ),
-            ),
+              // Store subscriptions are changed and cancelled in Apple's
+              // settings.
+              if (premium &&
+                  subscription.managedByStore &&
+                  defaultTargetPlatform == TargetPlatform.iOS)
+                AppListTile(
+                  key: SettingsScreen.manageSubscriptionKey,
+                  leadingIcon: Icons.manage_accounts_outlined,
+                  title: l10n.subscriptionManage,
+                  subtitle: l10n.subscriptionManageHint,
+                  onTap: () => unawaited(_manageSubscription()),
+                ),
+            ],
           ),
           const SizedBox(height: AppSpacing.xl),
-          SettingsSectionLabel(l10n.aboutSection),
-          const SizedBox(height: AppSpacing.sm),
-          AppListTile(
-            leadingIcon: Icons.privacy_tip_outlined,
-            title: l10n.privacyPolicy,
-            onTap: () => _push(const PrivacyPolicyScreen()),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          AppListTile(
-            leadingIcon: Icons.mail_outline_rounded,
-            title: l10n.contactUs,
-            subtitle: ApiConfig.supportEmail,
-            onTap: () => unawaited(_contactUs()),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          AppListTile(
-            leadingIcon: Icons.info_outline_rounded,
-            title: l10n.appVersion,
-            subtitle: ApiConfig.appVersion,
-            showChevron: false,
-            onTap: null,
+          AppListSection(
+            header: l10n.accountSection,
+            children: [
+              AppListTile(
+                leadingIcon: Icons.person_outline_rounded,
+                title: l10n.editProfile,
+                onTap: () => unawaited(_editProfile()),
+              ),
+              // Google/Apple-only accounts have no current password to
+              // change; "Forgot password" on the login screen can set one.
+              if (user?.hasPassword ?? true)
+                AppListTile(
+                  leadingIcon: Icons.lock_outline_rounded,
+                  title: l10n.changePassword,
+                  onTap: () => _push(const ChangePasswordScreen()),
+                ),
+            ],
           ),
           const SizedBox(height: AppSpacing.xl),
-          SettingsSectionLabel(l10n.dangerZone),
-          const SizedBox(height: AppSpacing.sm),
-          AppListTile(
-            leadingIcon: Icons.logout_rounded,
-            leadingBackground: context.sirati.errorLight,
-            leadingIconColor: context.sirati.error,
-            title: l10n.logOut,
-            titleColor: context.sirati.error,
-            showChevron: false,
-            onTap: _loggingOut ? null : () => unawaited(_logout()),
+          AppListSection(
+            header: l10n.preferencesSection,
+            children: [
+              AppListTile(
+                leadingIcon: Icons.language_rounded,
+                title: l10n.language,
+                subtitle: currentLanguageName(),
+                onTap: () => unawaited(showLanguagePicker(context)),
+              ),
+              ValueListenableBuilder<ThemeMode>(
+                valueListenable: AppThemeController.themeMode,
+                builder: (context, mode, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppListTile(
+                      leadingIcon: Icons.palette_outlined,
+                      title: l10n.appearance,
+                      subtitle: switch (mode) {
+                        ThemeMode.light => l10n.themeLight,
+                        ThemeMode.dark => l10n.themeDark,
+                        ThemeMode.system => l10n.themeSystem,
+                      },
+                      showChevron: false,
+                      onTap: null,
+                    ),
+                    Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        AppListSection.rowPadding,
+                        0,
+                        AppListSection.rowPadding,
+                        AppSpacing.sm,
+                      ),
+                      child: ThemeModeSelector(
+                        mode: mode,
+                        onChanged: (m) =>
+                            unawaited(AppThemeController.setMode(m)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              switchRow(
+                icon: Icons.notifications_none_rounded,
+                title: l10n.pushNotifications,
+                value: notifications.value ?? true,
+                // Wait for the persisted value before accepting changes.
+                onChanged: notifications.hasValue
+                    ? (value) => unawaited(_toggleNotifications(value))
+                    : null,
+              ),
+              // Lets anyone stop the motion that plays by itself (shines,
+              // floating pictures, glows); motion that answers a tap stays.
+              ValueListenableBuilder<bool>(
+                valueListenable: AmbientMotion.enabled,
+                builder: (context, on, _) => switchRow(
+                  key: SettingsScreen.decorativeMotionKey,
+                  icon: Icons.auto_awesome_outlined,
+                  title: l10n.settingsDecorativeMotion,
+                  subtitle: l10n.settingsDecorativeMotionHint,
+                  value: on,
+                  onChanged: (value) =>
+                      unawaited(AmbientMotion.setEnabled(value)),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          AppListTile(
-            leadingIcon: Icons.delete_forever_rounded,
-            leadingBackground: context.sirati.errorLight,
-            leadingIconColor: context.sirati.error,
-            title: l10n.deleteAccount,
-            titleColor: context.sirati.error,
-            onTap: () => _push(const DeleteAccountScreen()),
+          const SizedBox(height: AppSpacing.xl),
+          AppListSection(
+            header: l10n.aboutSection,
+            children: [
+              AppListTile(
+                leadingIcon: Icons.privacy_tip_outlined,
+                title: l10n.privacyPolicy,
+                onTap: () => _push(const PrivacyPolicyScreen()),
+              ),
+              AppListTile(
+                leadingIcon: Icons.mail_outline_rounded,
+                title: l10n.contactUs,
+                subtitle: ApiConfig.supportEmail,
+                onTap: () => unawaited(_contactUs()),
+              ),
+              AppListTile(
+                leadingIcon: Icons.info_outline_rounded,
+                title: l10n.appVersion,
+                subtitle: ApiConfig.appVersion,
+                showChevron: false,
+                onTap: null,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          // Destructive titles use onErrorContainer: error itself drops
+          // under 4.5:1 on the pressed light card.
+          AppListSection(
+            header: l10n.dangerZone,
+            children: [
+              AppListTile(
+                leadingIcon: Icons.logout_rounded,
+                leadingBackground: c.errorLight,
+                leadingIconColor: c.onErrorContainer,
+                title: l10n.logOut,
+                titleColor: c.onErrorContainer,
+                showChevron: false,
+                onTap: _loggingOut ? null : () => unawaited(_logout()),
+              ),
+              AppListTile(
+                leadingIcon: Icons.delete_forever_rounded,
+                leadingBackground: c.errorLight,
+                leadingIconColor: c.onErrorContainer,
+                title: l10n.deleteAccount,
+                titleColor: c.onErrorContainer,
+                onTap: () => _push(const DeleteAccountScreen()),
+              ),
+            ],
           ),
         ],
       );
     }
 
-    return Scaffold(
-      backgroundColor: context.sirati.background,
-      appBar: AppBar(title: Text(l10n.settings)),
-      body: body,
+    return GroupedSurface(
+      child: Scaffold(
+        backgroundColor: context.sirati.groupedBackground,
+        appBar: AppBar(
+          title: Text(l10n.settings),
+        ),
+        body: body,
+      ),
     );
   }
 }

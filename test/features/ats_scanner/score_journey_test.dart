@@ -209,7 +209,7 @@ void main() {
             reason: 'the sign stays before the digits in Arabic too',
           );
           expect(_painter(tester).ghost, prev / 100);
-          expect(_painter(tester).ghostColor.a, greaterThan(0));
+          expect(_painter(tester).ghostColor!.a, greaterThan(0));
         });
       }
     }

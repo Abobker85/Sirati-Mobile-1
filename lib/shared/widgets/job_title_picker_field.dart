@@ -41,7 +41,7 @@ class JobTitlePickerField extends StatelessWidget {
     final selected = await showGlassBottomSheet<JobTitle?>(
       context: context,
       isScrollControlled: true,
-      // The sheet draws its own grab bar.
+      // The sheet draws its own top (no grab bar, no X).
       showDragHandle: false,
       builder: (ctx) => _JobTitlePickerSheet(
         titles: titles,
@@ -81,9 +81,13 @@ class JobTitlePickerField extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppFormStyles.radius),
           child: InputDecorator(
             isEmpty: value == null,
+            // The theme's filled field: page-matched fill, no resting
+            // outline (iOS 26 restyle), and the same padding as an
+            // unlabelled AppTextFormField so the two line up in a form.
             decoration: InputDecoration(
               filled: true,
-              fillColor: context.sirati.surface,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               hintText: AppLocalizations.of(context).sharedJobTitleSelectHint,
               prefixIcon: const Icon(Icons.work_outline_rounded),
               suffixIcon: loading
@@ -104,7 +108,14 @@ class JobTitlePickerField extends StatelessWidget {
               errorMaxLines: 100,
             ),
             child: value == null
-                ? null
+                // An empty line in the value's style: the field takes the
+                // same height as a text field showing its hint.
+                ? ExcludeSemantics(
+                    child: Text(
+                      ' ',
+                      style: AppTypography.of(context, AppTypography.bodyLg),
+                    ),
+                  )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -239,23 +250,23 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
     final l10n = AppLocalizations.of(context);
     final filtered = _filtered;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    // The sheet route strips the top inset from MediaQuery, so read it from
+    // the view: with the keyboard open the sheet must still end below the
+    // status bar / notch.
+    final view = View.of(context);
+    final topInset = view.padding.top / view.devicePixelRatio;
+    final screenH = MediaQuery.sizeOf(context).height;
+    final maxH =
+        screenH - bottom - topInset - MediaQuery.paddingOf(context).bottom;
+    final height = (screenH * 0.72).clamp(0.0, maxH < 0 ? 0.0 : maxH);
 
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(bottom: bottom),
         child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.72,
+          height: height,
           child: Column(
             children: [
-              const SizedBox(height: 10),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.sirati.borderStrong,
-                  borderRadius: BorderRadius.circular(99),
-                ),
-              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Row(
@@ -295,7 +306,7 @@ class _JobTitlePickerSheetState extends State<_JobTitlePickerSheet> {
                     : ListView.separated(
                         itemCount: filtered.length,
                         separatorBuilder: (_, __) =>
-                            Divider(height: 1, color: context.sirati.border),
+                            Divider(height: 1, color: context.sirati.separator),
                         itemBuilder: (context, index) {
                           final title = filtered[index];
                           final selected = widget.selected?.id == title.id;

@@ -1,0 +1,31 @@
+diff --git a/lib/features/cv_builder/presentation/section_editor_framework.dart b/lib/features/cv_builder/presentation/section_editor_framework.dart
+index c63f5f1..3e26957 100644
+--- a/lib/features/cv_builder/presentation/section_editor_framework.dart
++++ b/lib/features/cv_builder/presentation/section_editor_framework.dart
+@@ -341,12 +341,17 @@ class ReorderableEntryList<T> extends StatelessWidget {
+   final void Function(int oldIndex, int newIndex) onReorder;
+   final void Function(int index)? onDelete;
+ 
++  /// Stable identity of an entry. Entries are rebuilt on every keystroke
++  /// (copyWith), so their hashCode cannot key the row; falls back to index.
++  final Object? Function(T item)? itemId;
++
+   const ReorderableEntryList({
+     super.key,
+     required this.items,
+     required this.itemBuilder,
+     required this.onReorder,
+     this.onDelete,
++    this.itemId,
+   });
+ 
+   @override
+@@ -368,7 +373,7 @@ class ReorderableEntryList<T> extends StatelessWidget {
+         final isLast = index == items.length - 1;
+ 
+         return KeyedSubtree(
+-          key: ValueKey(item.hashCode ^ index),
++          key: ValueKey(itemId?.call(item) ?? index),
+           // Flat rows: entries are told apart by a hairline, not a box.
+           child: Container(
+             padding: EdgeInsets.only(

@@ -93,43 +93,49 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  for (final dark in [false, true]) {
-    for (final hasCv in [true, false]) {
-      testWidgets('home dark=$dark cv=$hasCv', (tester) async {
-        tester.view.physicalSize = const Size(390, 1900) * 2;
-        tester.view.devicePixelRatio = 2;
-        addTearDown(tester.view.reset);
-        final latest = hasCv ? cv(72, id: 71) : null;
-        await tester.pumpWidget(RepaintBoundary(
-          key: _rootKey,
-          child: app(
-            Scaffold(
-              body: DashboardHomeTab(onNavigate: (_) {}),
-              bottomNavigationBar: DashboardNavigationBar(
-                current: DashboardTab.home,
-                onChanged: (_) {},
+  for (final arabic in [true, false]) {
+    for (final dark in [false, true]) {
+      for (final hasCv in [true, false]) {
+        testWidgets('home ar=$arabic dark=$dark cv=$hasCv', (tester) async {
+          tester.view.physicalSize = const Size(390, 1900) * 2;
+          tester.view.devicePixelRatio = 2;
+          addTearDown(tester.view.reset);
+          final latest = hasCv ? cv(72, id: 71) : null;
+          await tester.pumpWidget(RepaintBoundary(
+            key: _rootKey,
+            child: app(
+              Scaffold(
+                body: DashboardHomeTab(onNavigate: (_) {}),
+                bottomNavigationBar: DashboardNavigationBar(
+                  current: DashboardTab.home,
+                  onChanged: (_) {},
+                ),
               ),
+              arabic: arabic,
+              dark: dark,
+              scale: 1,
+              latest: latest,
+              api: Api(latest: latest),
+              content: _Jobs(latest: latest),
             ),
-            arabic: true,
-            dark: dark,
-            scale: 1,
-            latest: latest,
-            api: Api(latest: latest),
-            content: _Jobs(latest: latest),
-          ),
-        ));
-        for (var i = 0; i < 30; i++) {
-          await tester.pump(const Duration(milliseconds: 100));
-        }
-        final boundary =
-            tester.renderObject<RenderRepaintBoundary>(find.byKey(_rootKey));
-        await tester.runAsync(() async {
-          final image = await boundary.toImage(pixelRatio: 1);
-          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-          File('build/home_board/home-${dark ? 'dark' : 'light'}-${hasCv ? 'cv' : 'empty'}.png')
-              .writeAsBytesSync(bytes!.buffer.asUint8List());
+          ));
+          for (var i = 0; i < 30; i++) {
+            await tester.pump(const Duration(milliseconds: 100));
+          }
+          final boundary =
+              tester.renderObject<RenderRepaintBoundary>(find.byKey(_rootKey));
+          await tester.runAsync(() async {
+            final image = await boundary.toImage(pixelRatio: 1);
+            final bytes =
+                await image.toByteData(format: ui.ImageByteFormat.png);
+            File('build/home_board/home-${arabic ? 'ar' : 'en'}-${dark ? 'dark' : 'light'}-${hasCv ? 'cv' : 'empty'}.png')
+                .writeAsBytesSync(bytes!.buffer.asUint8List());
+          });
+          // Let first-launch one-shot timers (intro, greeting) run out.
+          await tester.pumpWidget(const SizedBox());
+          await tester.pump(const Duration(seconds: 30));
         });
-      });
+      }
     }
   }
 }

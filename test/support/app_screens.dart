@@ -65,6 +65,7 @@ import 'package:sirati/shared/services/job_titles_provider.dart';
 import 'package:sirati/shared/services/mobile_content_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 
 import '../features/job_match/job_match_test_support.dart' as job_match;
 import 'l10n_label_capture.dart';
@@ -459,7 +460,7 @@ final appScreens = <AppScreen>[
       'Analysis result recommendations (hidden items)', (tester, h) async {
     await h.pumpApp(tester,
         AnalysisResultScreen(analysis: _sampleAnalysis(h, locked: true)));
-    await tester.tap(find.byType(Tab).at(1));
+    await tester.tap(find.descendant(of: find.byType(AppSegmentedTabBar), matching: find.byType(Text)).at(1));
     await settleScreen(tester);
   }),
   AppScreen('job_match', 'Job match', (tester, h) {

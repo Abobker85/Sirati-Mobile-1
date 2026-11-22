@@ -4,8 +4,10 @@ import 'package:sirati/core/network/api_config.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/ambient_motion.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
-import 'package:sirati/shared/widgets/components/brand_gradient_button.dart';
+import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/submit_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Shown once when the server rejects the session (HTTP 401), before sign-in.
@@ -63,74 +65,100 @@ class SessionExpiredScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Center(
-                        child: _Pill(
-                          icon: Icons.shield_outlined,
-                          label: l10n.authSessionExpiredBadge,
+                      MotionReveal(
+                        order: 0,
+                        child: Center(
+                          child: _Pill(
+                            icon: Icons.shield_outlined,
+                            label: l10n.authSessionExpiredBadge,
+                          ),
                         ),
                       ),
                       const Spacer(),
                       const SizedBox(height: AppSpacing.xl),
-                      const ExcludeSemantics(child: _ShieldIllustration()),
-                      const SizedBox(height: AppSpacing.xl),
-                      Center(
-                        child: _Chip(label: l10n.authSessionExpiredChip),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          l10n.authSessionExpiredTitle,
-                          textAlign: TextAlign.center,
-                          style: AppTypography.of(
-                            context,
-                            AppTypography.displayMd,
-                            color: c.textPrimary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        l10n.authSessionExpiredBody,
-                        textAlign: TextAlign.center,
-                        style: AppTypography.of(
-                          context,
-                          AppTypography.bodyLg,
-                          color: c.textSecondary,
-                        ),
+                      const MotionReveal(
+                        order: 0,
+                        child: ExcludeSemantics(child: _ShieldIllustration()),
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      _ReassuranceCard(text: l10n.authSessionExpiredDataSafe),
+                      MotionReveal(
+                        order: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Center(
+                              child: _Chip(label: l10n.authSessionExpiredChip),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Semantics(
+                              header: true,
+                              child: Text(
+                                l10n.authSessionExpiredTitle,
+                                textAlign: TextAlign.center,
+                                style: AppTypography.of(
+                                  context,
+                                  AppTypography.largeTitle,
+                                  color: c.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              l10n.authSessionExpiredBody,
+                              textAlign: TextAlign.center,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.bodyLg,
+                                color: c.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      MotionReveal(
+                        order: 2,
+                        child: _ReassuranceCard(
+                            text: l10n.authSessionExpiredDataSafe),
+                      ),
                       const Spacer(),
                       const SizedBox(height: AppSpacing.xl),
-                      BrandGradientButton(
-                        label: l10n.authSessionExpiredSignIn,
-                        icon: Icons.login_rounded,
-                        onPressed: () => _signIn(context),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Center(
-                        child: TextButton(
-                          onPressed: () => _contactSupport(context),
-                          style: TextButton.styleFrom(
-                            foregroundColor: c.primaryInk,
-                            minimumSize: const Size(
-                              AppTouchTarget.min,
-                              AppTouchTarget.min,
+                      MotionReveal(
+                        order: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SubmitButton(
+                              label: l10n.authSessionExpiredSignIn,
+                              icon: Icons.login_rounded,
+                              onPressed: () => _signIn(context),
                             ),
-                          ),
-                          child: Text(
-                            l10n.authSessionExpiredHelp,
-                            textAlign: TextAlign.center,
-                            style: AppTypography.of(
-                              context,
-                              AppTypography.bodyMd,
-                              color: c.primaryInk,
-                            ).copyWith(
-                              decoration: TextDecoration.underline,
-                              decorationColor: c.primaryInk,
+                            const SizedBox(height: AppSpacing.sm),
+                            Center(
+                              child: TextButton(
+                                onPressed: () => _contactSupport(context),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: c.primaryInk,
+                                  minimumSize: const Size(
+                                    AppTouchTarget.min,
+                                    AppTouchTarget.min,
+                                  ),
+                                ),
+                                child: Text(
+                                  l10n.authSessionExpiredHelp,
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.of(
+                                    context,
+                                    AppTypography.bodyMd,
+                                    color: c.primaryInk,
+                                  ).copyWith(
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: c.primaryInk,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ],
@@ -169,9 +197,8 @@ class _Pill extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: c.surfaceLow,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: c.border),
+        color: c.cardFill,
+        borderRadius: AppRadius.capsuleAll,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -209,8 +236,7 @@ class _Chip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: c.tealLight,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: c.teal.withValues(alpha: 0.3)),
+        borderRadius: AppRadius.capsuleAll,
       ),
       child: Text(
         label,
@@ -236,10 +262,8 @@ class _ReassuranceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.border),
-        boxShadow: c.softShadow,
+        color: c.cardFill,
+        borderRadius: AppRadius.cardAll,
       ),
       child: Row(
         children: [
@@ -298,26 +322,24 @@ class _ShieldIllustration extends StatelessWidget {
             Icon(
               Icons.shield_rounded,
               size: 140,
-              color: c.surface,
-              shadows: c.softShadow
-                  .map((s) => Shadow(
-                        color: s.color,
-                        blurRadius: s.blurRadius,
-                        offset: s.offset,
-                      ))
-                  .toList(),
+              color: c.pageBackground,
             ),
             const _CvPage(),
             PositionedDirectional(
               end: 14,
               bottom: 18,
-              child: _Badge(
-                size: 54,
-                gradient: [c.brandSurface, c.brandSurfaceDeep],
-                child: Icon(
-                  Icons.schedule_rounded,
-                  size: 28,
-                  color: c.onBrandSurface,
+              child: AmbientMove(
+                kind: AmbientKind.pulse,
+                delay: const Duration(seconds: 2),
+                rest: const Duration(seconds: 10),
+                child: _Badge(
+                  size: 54,
+                  color: c.brandSurface,
+                  child: Icon(
+                    Icons.schedule_rounded,
+                    size: 28,
+                    color: c.onBrandSurface,
+                  ),
                 ),
               ),
             ),
@@ -326,7 +348,7 @@ class _ShieldIllustration extends StatelessWidget {
               top: 92,
               child: _Badge(
                 size: 34,
-                color: c.surface,
+                color: c.cardFill,
                 child: Icon(
                   Icons.check_rounded,
                   size: 20,
@@ -361,7 +383,7 @@ class _CvPage extends StatelessWidget {
       height: 58,
       padding: const EdgeInsets.all(AppSpacing.xs),
       decoration: BoxDecoration(
-        color: c.surfaceLow,
+        color: c.cardFill,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: c.borderStrong),
       ),
@@ -380,15 +402,13 @@ class _CvPage extends StatelessWidget {
 
 class _Badge extends StatelessWidget {
   final double size;
-  final Color? color;
-  final List<Color>? gradient;
+  final Color color;
   final Widget child;
 
   const _Badge({
     required this.size,
     required this.child,
-    this.color,
-    this.gradient,
+    required this.color,
   });
 
   @override
@@ -400,9 +420,7 @@ class _Badge extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
-        gradient: gradient == null ? null : LinearGradient(colors: gradient!),
-        border: Border.all(color: c.surface, width: 3),
-        boxShadow: c.softShadow,
+        border: Border.all(color: c.pageBackground, width: 3),
       ),
       child: Center(child: child),
     );

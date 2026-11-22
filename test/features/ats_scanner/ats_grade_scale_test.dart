@@ -142,9 +142,9 @@ void main() {
       final ring = tester.widget<CircularProgressIndicator>(
           find.byType(CircularProgressIndicator));
       final expected = switch (band) {
-        ScoreBand.excellent || ScoreBand.veryGood => colors.success,
-        ScoreBand.fair => colors.warning,
-        ScoreBand.weak => colors.error,
+        ScoreBand.excellent || ScoreBand.veryGood => colors.onSuccessContainer,
+        ScoreBand.fair => colors.onWarningContainer,
+        ScoreBand.weak => colors.onErrorContainer,
       };
       expect(ring.color, expected, reason: 'score $s');
       expect(find.text(l.cvCardNeedsWork),

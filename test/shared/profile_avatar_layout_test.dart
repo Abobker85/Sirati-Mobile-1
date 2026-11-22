@@ -88,18 +88,19 @@ void main() {
                       (widget) =>
                           widget is Container &&
                           widget.decoration is BoxDecoration &&
-                          (widget.decoration! as BoxDecoration).gradient !=
-                              null,
+                          (widget.decoration! as BoxDecoration).shape ==
+                              BoxShape.circle,
                     ),
                   ),
                 );
-                final gradient = (face.decoration! as BoxDecoration).gradient!;
-                for (final fill in gradient.colors) {
-                  expect(
-                    AppContrast.ratio(style.color!, fill),
-                    greaterThanOrEqualTo(4.5),
-                  );
-                }
+                final decoration = face.decoration! as BoxDecoration;
+                // The face is one flat fill (no gradient), and the initials
+                // are AA on it.
+                expect(decoration.gradient, isNull);
+                expect(
+                  AppContrast.ratio(style.color!, decoration.color!),
+                  greaterThanOrEqualTo(4.5),
+                );
               }
             }
           }

@@ -1,0 +1,15 @@
+diff --git a/lib/features/cv_builder/presentation/skills_languages_editor.dart b/lib/features/cv_builder/presentation/skills_languages_editor.dart
+index 56ebca9..b045662 100644
+--- a/lib/features/cv_builder/presentation/skills_languages_editor.dart
++++ b/lib/features/cv_builder/presentation/skills_languages_editor.dart
+@@ -779,7 +779,9 @@ class _ProjectEntryTileState extends State<_ProjectEntryTile> {
+     setState(() {});
+ 
+     widget.onChanged(
+-      widget.project.copyWith(
++      // Not copyWith: copyWith(url: null) keeps the old URL.
++      Project(
++        id: widget.project.id,
+         title: LocalizedText(ar: _titleCtrl.text.trim()),
+         role: LocalizedText(ar: _roleCtrl.text.trim()),
+         url: urlText.isEmpty ? null : urlText,

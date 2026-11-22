@@ -21,7 +21,11 @@ import 'package:sirati/shared/services/auth_api_service_provider.dart';
 import 'package:sirati/shared/services/purchases/store_purchases.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
 
+import '../../support/card_chrome.dart';
+import '../../support/contrast_probe.dart';
+import '../../support/no_gradient.dart';
 import '../../support/non_text_contrast.dart';
 
 Map<String, dynamic> planJson(
@@ -1302,6 +1306,303 @@ void main() {
           };
           expect(shown.first.$1, expectedFirst);
         });
+      }
+    }
+  });
+
+  group('Premium on the grouped page (iOS 26)', () {
+    /// Scrolls the whole phone page, checking at every position that no card
+    /// is outlined or shadowed.
+    Future<void> walkCards(WidgetTester tester, String label) async {
+      final list = find.byType(ListView).last;
+      final position = tester
+          .state<ScrollableState>(find
+              .descendant(of: list, matching: find.byType(Scrollable))
+              .first)
+          .position;
+      position.jumpTo(0);
+      await tester.pump();
+      for (var step = 0; step < 120; step++) {
+        expectNoCardChrome(find.byType(PremiumGateScreen), label);
+        expectNoGradient(find.byType(PremiumGateScreen), label);
+        if (position.pixels >= position.maxScrollExtent) return;
+        await tester.drag(list, const Offset(0, -350));
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      fail('page cannot be traversed: $label');
+    }
+
+    void expectGroupedPage(WidgetTester tester, String label) {
+      final scaffold = find.descendant(
+          of: find.byType(PremiumGateScreen), matching: find.byType(Scaffold));
+      final c = tester.element(scaffold).sirati;
+      expect(Theme.of(tester.element(scaffold)).scaffoldBackgroundColor,
+          c.groupedBackground,
+          reason: label);
+      expect(tester.widget<Scaffold>(scaffold).backgroundColor, isNull,
+          reason: '$label: the grouped theme owns the page colour');
+    }
+
+    Future<void> expectBenefitsSection(
+        WidgetTester tester, String label) async {
+      final l = _l(tester);
+      await revealPhoneWidget(
+          tester, find.byKey(PremiumGateScreen.benefitsKey));
+      final benefits = find.byKey(PremiumGateScreen.benefitsKey);
+      final c = tester.element(benefits).sirati;
+      final card = find.descendant(
+          of: benefits, matching: find.byKey(AppListSection.cardKey));
+      expect(tester.widget<Material>(card).color, c.groupedCard, reason: label);
+      final titles = [
+        l.premiumGateBenefitPdf,
+        l.premiumGateBenefitAi,
+        l.premiumGateBenefitAts,
+        l.premiumGateBenefitJobMatch,
+        l.premiumGateBenefitLimits,
+      ];
+      for (final title in titles) {
+        expect(find.descendant(of: card, matching: find.text(title)),
+            findsOneWidget,
+            reason: '$label $title');
+      }
+      expect(find.descendant(of: card, matching: find.byType(Divider)),
+          findsNWidgets(titles.length - 1),
+          reason: label);
+      // Bodies are the only copy of each benefit: never truncated.
+      for (final body in [
+        l.premiumGateBenefitPdfBody,
+        l.premiumGateBenefitAiBody,
+        l.premiumGateBenefitAtsBody,
+        l.premiumGateBenefitJobMatchBody,
+        l.premiumGateBenefitLimitsBody,
+      ]) {
+        final text = tester
+            .widget<Text>(find.descendant(of: card, matching: find.text(body)));
+        expect(text.maxLines, isNull, reason: '$label $body');
+      }
+    }
+
+    for (final language in ['en', 'ar']) {
+      for (final dark in [false, true]) {
+        final arabic = language == 'ar';
+        final theme = dark
+            ? AppTheme.darkFor(arabic: arabic)
+            : AppTheme.lightFor(arabic: arabic);
+        final label = '$language/${dark ? 'dark' : 'light'}';
+
+        testWidgets('$label informational: benefits section, borderless plans',
+            (tester) async {
+          final auth = _FakeAuth();
+          await _pump(tester,
+              plans: _FakePlans([offerJson()]),
+              auth: auth,
+              language: language,
+              theme: theme);
+          expectGroupedPage(tester, label);
+          await expectBenefitsSection(tester, label);
+          for (final key in ['monthly', 'semiannual', 'annual']) {
+            final plan = find.byKey(PremiumGateScreen.planKey(key));
+            await revealPhoneWidget(tester, plan);
+            final c = tester.element(plan).sirati;
+            final fill = find
+                .descendant(of: plan, matching: find.byType(DecoratedBox))
+                .first;
+            final decoration =
+                tester.widget<DecoratedBox>(fill).decoration as BoxDecoration;
+            expect(decoration.color, c.groupedCard, reason: '$label $key');
+            expect(decoration.borderRadius, AppRadius.cardAll);
+          }
+          await walkCards(tester, '$label locked');
+
+          // Active after a refresh: still no outlined card.
+          auth.subscription = const {'is_subscribed': true};
+          await _tap(tester, find.byKey(PremiumGateScreen.refreshKey));
+          await revealPhoneWidget(
+              tester, find.byKey(PremiumGateScreen.continueKey));
+          await walkCards(tester, '$label active');
+        });
+
+        testWidgets(
+            '$label store: plan choices are borderless fills, the choice '
+            'reads through the radio and the halo', (tester) async {
+          final store = _FakeStore()
+            ..pendingPurchase = Completer<StorePurchaseOutcome>();
+          final auth = _FakeAuth();
+          await _pump(tester,
+              plans: _FakePlans([offerJson()]),
+              auth: auth,
+              store: store,
+              language: language,
+              theme: theme,
+              screen: _fastScreen);
+          expectGroupedPage(tester, label);
+          await expectBenefitsSection(tester, label);
+
+          final keys = ['monthly', 'semiannual', 'annual'];
+          for (final chosen in keys) {
+            await revealPhoneWidget(
+                tester, find.byKey(PremiumGateScreen.planKey(chosen)));
+            await tester.tap(find.byKey(PremiumGateScreen.planKey(chosen)));
+            await tester.pumpAndSettle();
+            for (final key in keys) {
+              final plan = find.byKey(PremiumGateScreen.planKey(key));
+              final c = tester.element(plan).sirati;
+              final material = tester.widget<Material>(find
+                  .descendant(of: plan, matching: find.byType(Material))
+                  .first);
+              expect(material.color, c.groupedCard, reason: '$label $key');
+              expect(material.shape, isNull,
+                  reason: '$label $key has no outline');
+              final selected = key == chosen;
+              expect(
+                  find.descendant(
+                      of: plan,
+                      matching: find.byIcon(selected
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.radio_button_unchecked_rounded)),
+                  findsOneWidget,
+                  reason: '$label $key selected=$selected');
+              expect(tester.getSemantics(plan),
+                  isSemantics(isSelected: selected, isButton: true),
+                  reason: '$label $key semantics');
+            }
+            // The halo sits on the chosen card.
+            final halo = tester
+                .state<PlanSelectionHaloState>(find.byType(PlanSelectionHalo))
+                .paintedHalo!;
+            expect(
+                halo,
+                tester
+                    .getRect(find.byKey(PremiumGateScreen.planKey(chosen)))
+                    .inflate(PlanSelectionHalo.outset));
+          }
+          await walkCards(tester, '$label store');
+
+          // The success view after a purchase has no card chrome either.
+          await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+          await tester.tap(find.byKey(PremiumGateScreen.buyKey));
+          await tester.pump();
+          auth.subscription = const {'is_subscribed': true};
+          store.pendingPurchase!.complete(const StorePurchaseCompleted());
+          await tester.pumpAndSettle();
+          expect(find.byKey(PremiumGateScreen.successKey), findsOneWidget);
+          await walkCards(tester, '$label success');
+        });
+      }
+    }
+
+    /// The hero is a flat page fill (no gradient) carrying the feature's
+    /// title and body in page ink, and the page's primary action is the
+    /// theme's teal capsule.
+    void expectFlatHero(WidgetTester tester, String label) {
+      final hero = find.byKey(PremiumGateScreen.heroKey);
+      final c = tester.element(hero).sirati;
+      final decoration =
+          tester.widget<DecoratedBox>(hero).decoration as BoxDecoration;
+      expect(decoration.color, c.groupedCard, reason: label);
+      expect(decoration.gradient, isNull, reason: label);
+      expect(decoration.borderRadius, AppRadius.cardAll, reason: label);
+      // The hero is a descendant of the screen, so its own box is walked.
+      expectNoCardChrome(find.byType(PremiumGateScreen), '$label hero');
+      expectNoGradient(hero, '$label hero');
+      for (final text in find
+          .descendant(of: hero, matching: find.byType(Text))
+          .evaluate()) {
+        expect(paintedBackgroundsOf(text), [c.groupedCard],
+            reason: '$label ${(text.widget as Text).data}');
+      }
+    }
+
+    void expectTealCapsule(WidgetTester tester, Key key, String label) {
+      final button = find.byKey(key);
+      final c = tester.element(button).sirati;
+      final material = tester.widget<Material>(
+          find.descendant(of: button, matching: find.byType(Material)).first);
+      expect(material.color, c.primary, reason: '$label $key fill');
+      expect(material.shape, isA<StadiumBorder>(), reason: '$label $key shape');
+    }
+
+    for (final language in ['en', 'ar']) {
+      for (final dark in [false, true]) {
+        final arabic = language == 'ar';
+        final theme = dark
+            ? AppTheme.darkFor(arabic: arabic)
+            : AppTheme.lightFor(arabic: arabic);
+        final label = '$language/${dark ? 'dark' : 'light'}';
+
+        for (final feature in PremiumFeature.values) {
+          testWidgets('$label ${feature.name}: hero is a flat grouped card',
+              (tester) async {
+            await _pump(tester,
+                plans: _FakePlans([offerJson()]),
+                language: language,
+                theme: theme,
+                screen: PremiumGateScreen(feature: feature));
+            final l = _l(tester);
+            final hero = find.byKey(PremiumGateScreen.heroKey);
+            expect(
+                find.descendant(
+                    of: hero, matching: find.text(feature.title(l))),
+                findsOneWidget);
+            expect(
+                find.descendant(of: hero, matching: find.text(feature.body(l))),
+                findsOneWidget);
+            expectFlatHero(tester, '$label ${feature.name}');
+            expectAllTextAa('$label ${feature.name}');
+            expectAllIconsNonTextAa('$label ${feature.name}');
+          });
+        }
+
+        testWidgets('$label: the primary action is the teal capsule',
+            (tester) async {
+          await _pump(tester,
+              plans: _FakePlans([offerJson()]),
+              language: language,
+              theme: theme);
+          await revealPhoneWidget(
+              tester, find.byKey(PremiumGateScreen.refreshKey));
+          await tester.pumpAndSettle();
+          expectTealCapsule(tester, PremiumGateScreen.refreshKey, label);
+
+          await _pump(tester,
+              plans: _FakePlans([offerJson()]),
+              store: _FakeStore(),
+              language: language,
+              theme: theme,
+              screen: _fastScreen);
+          expectFlatHero(tester, '$label store');
+          await revealPhoneWidget(tester, find.byKey(PremiumGateScreen.buyKey));
+          await tester.pumpAndSettle();
+          expectTealCapsule(tester, PremiumGateScreen.buyKey, '$label store');
+        });
+
+        for (final scale in [1.3, 2.0]) {
+          for (final store in [false, true]) {
+            final mode = store ? 'store' : 'informational';
+            testWidgets(
+                '$label $mode at 320x568, text x$scale: no overflow, strict '
+                'contrast', (tester) async {
+              tester.view.physicalSize = const Size(320, 568);
+              tester.view.devicePixelRatio = 1;
+              tester.platformDispatcher.textScaleFactorTestValue = scale;
+              addTearDown(tester.view.reset);
+              addTearDown(
+                  tester.platformDispatcher.clearTextScaleFactorTestValue);
+              await _pump(tester,
+                  keepView: true,
+                  plans: _FakePlans([offerJson()]),
+                  store:
+                      store ? _FakeStore() : const UnavailableStorePurchases(),
+                  language: language,
+                  theme: theme,
+                  screen: store ? _fastScreen : const PremiumGateScreen());
+              await tester.pumpAndSettle();
+              expectFlatHero(tester, '$label $mode x$scale');
+              await inspectPhoneScreen(tester, '$label $mode x$scale');
+              await walkCards(tester, '$label $mode x$scale');
+            });
+          }
+        }
       }
     }
   });

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/motion.dart';
@@ -125,18 +126,19 @@ class _AnimatedAtsScoreBarState extends State<AnimatedAtsScoreBar>
       _animation = AlwaysStoppedAnimation(target);
       if (!already) {
         _hasCompleted = true;
-        // Still fire celebration (haptic only under reduce motion).
-        if (widget.celebrateOnComplete && mounted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Defer callbacks out of didChangeDependencies so callers never trip
+        // setState-during-build under reduced motion.
+        if (widget.celebrateOnComplete || widget.onAnimationComplete != null) {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            SuccessBeat.celebrate(
-              context,
-              fullOverlay: false,
-            );
+            if (widget.celebrateOnComplete) {
+              SuccessBeat.celebrate(
+                context,
+                fullOverlay: false,
+              );
+            }
             widget.onAnimationComplete?.call();
           });
-        } else {
-          widget.onAnimationComplete?.call();
         }
       }
       return;
@@ -169,7 +171,10 @@ class _AnimatedAtsScoreBarState extends State<AnimatedAtsScoreBar>
 
   @override
   Widget build(BuildContext context) {
-    final track = widget.trackColor ?? context.sirati.border;
+    // Default track: the surrounding card fill, pressed one step darker
+    // (lighter in dark mode), so it reads on a grey card and a white one.
+    final track = widget.trackColor ??
+        context.sirati.pressed(PageSurface.fillOf(context));
     final clamped = widget.value.clamp(0.0, 1.0);
     final anim = _animation;
 
@@ -223,21 +228,23 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: SizedBox(
-        height: height,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            ColoredBox(color: trackColor),
-            // Start edge: LTR left / RTL right.
-            FractionallySizedBox(
-              widthFactor: progress.clamp(0.0, 1.0),
-              alignment: AlignmentDirectional.centerStart,
-              child: ColoredBox(color: color),
-            ),
-          ],
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: SizedBox(
+          height: height,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ColoredBox(color: trackColor),
+              // Start edge: LTR left / RTL right.
+              FractionallySizedBox(
+                widthFactor: progress.clamp(0.0, 1.0),
+                alignment: AlignmentDirectional.centerStart,
+                child: ColoredBox(color: color),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/analytics_service.dart';
 import 'package:sirati/core/network/api_exception.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/core/utils/ai_error_message.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/cv_builder/application/cv_draft_store.dart';
@@ -32,12 +34,15 @@ import 'package:sirati/shared/premium/premium_ui.dart';
 import 'package:sirati/shared/services/in_app_review_service.dart';
 import 'package:sirati/shared/services/mobile_content_service_provider.dart';
 import 'package:sirati/shared/services/notification_engagement_service.dart';
+import 'package:sirati/shared/theme/page_surface.dart';
 import 'package:sirati/shared/widgets/ai_cv_field.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/success_beat.dart';
+import 'package:sirati/shared/widgets/word_write_in.dart';
 
 /// Four-step CV wizard. Creates a CV, or edits [initialCv] when given.
 ///
@@ -69,6 +74,12 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
   /// Review panel data from the last successful enhancement, per field.
   final Map<String, Map<String, dynamic>> _fieldResults = {};
+
+  /// AI text being written into a field, word by word, per field.
+  final Map<String, WordWriteIn> _writeIns = {};
+
+  /// UI-only completion pulse counters per field after AI enhancement.
+  final Map<String, int> _enhanceBeats = {};
 
   // Captured in initState: ref cannot be used from dispose().
   late final CvDraftStore _draftStore;
@@ -111,6 +122,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       _suppressDirtyTracking = false;
     }
 
+    _lastTexts = [for (final c in _fields.all) c.text];
     _fields.addListener(_onAnyFieldChanged);
 
     unawaited(
@@ -123,6 +135,10 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
   @override
   void dispose() {
+    _stepTimer?.cancel();
+    for (final writer in _writeIns.values) {
+      writer.cancel();
+    }
     _autosaveTimer?.cancel();
     // Flush a pending create-mode draft so pop / background kill keeps data.
     // Read the form before the controllers are disposed below.
@@ -151,8 +167,15 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     _suppressDirtyTracking = false;
   }
 
+  /// Field texts at the last notification; controllers also notify on
+  /// caret/selection moves (e.g. just focusing a field), which are not edits.
+  List<String> _lastTexts = const [];
+
   void _onAnyFieldChanged() {
-    if (!_suppressDirtyTracking) _markDirty();
+    final texts = [for (final c in _fields.all) c.text];
+    final changed = !listEquals(texts, _lastTexts);
+    _lastTexts = texts;
+    if (changed && !_suppressDirtyTracking) _markDirty();
   }
 
   void _markDirty() {
@@ -223,8 +246,30 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
   // ── Navigation ────────────────────────────────────────────────────────────
 
+  /// Waits for the keyboard to close before a step changes.
+  Timer? _stepTimer;
+
+  /// How long the keyboard gets to close before the step slides.
+  static const keyboardCloseWait = Duration(milliseconds: 160);
+
   void _goToStep(int target) {
     if (target == _step || target < 0 || target >= _stepCount) return;
+    // One movement at a time: if the keyboard is open, close it first and
+    // let it go down, then slide the step (no three things moving at once).
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    FocusManager.instance.primaryFocus?.unfocus();
+    _stepTimer?.cancel();
+    if (keyboardOpen && !MotionSettings.reduce(context)) {
+      _stepTimer = Timer(keyboardCloseWait, () {
+        if (mounted) _showStep(target);
+      });
+    } else {
+      _showStep(target);
+    }
+  }
+
+  void _showStep(int target) {
+    if (target == _step) return;
     setState(() {
       _stepDirection = target < _step ? -1 : 1;
       _step = target;
@@ -238,7 +283,8 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       _stepSubmitted[_step] = true;
       _stepShowBanner[_step] = false;
     });
-    final ok = _stepFormKeys[_step].currentState?.validate() ?? true;
+    // Takes the user to the first field to fix (scroll + focus).
+    final ok = validateAndReveal(_stepFormKeys[_step]);
     if (!ok) {
       setState(() => _stepShowBanner[_step] = true);
       unawaited(HapticFeedback.selectionClick());
@@ -284,6 +330,8 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           AnalyticsService.logWizardAbandoned(step: _step, dirty: _isDirty),
         );
         _autosaveTimer?.cancel();
+        // Discarded: dispose must not flush the form back as a draft.
+        _isDirty = false;
         await _draftStore.clear();
         if (mounted) Navigator.of(context).pop();
       case WizardExitAction.saveDraft:
@@ -394,10 +442,19 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
 
         // Finish the overlay on a resolved state before it closes.
         if (!timedOut && !aiFailed) await progress.complete();
-        await progress.dismiss();
-        if (!mounted) return;
+        final handBack =
+            !_isEditMode && (widget.targetJob?.handBackResult ?? false);
+        // A new CV opens its own page: the overlay stays (under the
+        // celebration) until that page is in place, so the filled form
+        // never flashes in between. Every other ending closes it now.
+        final opensResult = !_isEditMode && !handBack && !timedOut;
+        if (!opensResult) await progress.dismiss();
+        if (!mounted) {
+          await progress.dismiss();
+          return;
+        }
 
-        if (!_isEditMode && (widget.targetJob?.handBackResult ?? false)) {
+        if (handBack) {
           // The opener (e.g. Job Match) continues with this CV and reports
           // its AI state itself; don't stack the preview on top of it.
           Navigator.of(context).pop<GeneratedCv>(cv);
@@ -423,7 +480,10 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
         // The full scene celebrates a new CV; saving an edit gets the haptic
         // only, so it never uses up the full plays or confetti for a tweak.
         await SuccessBeat.celebrate(context, fullOverlay: !_isEditMode);
-        if (!mounted) return;
+        if (!mounted) {
+          await progress.dismiss();
+          return;
+        }
         // Peak satisfaction: OS review prompt after SuccessBeat (create only).
         if (!_isEditMode) {
           unawaited(InAppReviewService.maybeRequestAfterCvGenerated());
@@ -434,8 +494,11 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           Navigator.of(context).pop<GeneratedCv>(cv);
           return;
         }
-        unawaited(Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => GeneratedCvScreen(generatedCv: cv)),
+        unawaited(progress.handOff(
+          Navigator.of(context),
+          FadeThroughPageRoute<void>(
+            builder: (_) => GeneratedCvScreen(generatedCv: cv),
+          ),
         ));
     }
   }
@@ -489,9 +552,22 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           fallback: AppLocalizations.of(context).cvEnhanceFieldFailed,
         );
       case CvEnhanced(:final text, :final details):
-        _setTextSilently(controller, text);
+        // The AI's text writes itself in, a few words at a time.
+        _writeIns.remove(field)?.cancel();
+        _writeIns[field] = WordWriteIn.start(
+          text: text,
+          animate: !MotionSettings.reduce(context) &&
+              !(MediaQuery.maybeAccessibleNavigationOf(context) ?? false),
+          current: () => controller.text,
+          write: (shown) {
+            if (mounted) _setTextSilently(controller, shown);
+          },
+        );
         _markDirty();
-        setState(() => _fieldResults[field] = details);
+        setState(() {
+          _fieldResults[field] = details;
+          _enhanceBeats[field] = (_enhanceBeats[field] ?? 0) + 1;
+        });
         AppSnackBar.show(
           context,
           message: AppLocalizations.of(context).cvFieldEnhanced,
@@ -499,6 +575,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           actionLabel: AppLocalizations.of(context).cvUndo,
           onAction: () {
             if (!mounted) return;
+            _writeIns.remove(field)?.cancel();
             _setTextSilently(controller, draft);
             _markDirty();
             setState(() => _fieldResults.remove(field));
@@ -550,6 +627,10 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       case CvEnhanced(:final text):
         // A real edit: goes through dirty tracking and autosave.
         _fields.jobDescription.text = text;
+        setState(() {
+          _enhanceBeats['jobDescription'] =
+              (_enhanceBeats['jobDescription'] ?? 0) + 1;
+        });
         AppSnackBar.success(
           context,
           AppLocalizations.of(context).cvJobDescriptionEnhanced,
@@ -590,6 +671,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       onEnhance: (field) => unawaited(_enhanceField(field)),
       onDismissResult: (field) => setState(() => _fieldResults.remove(field)),
       onPrimaryAction: _onPrimaryAction,
+      enhanceBeats: _enhanceBeats,
     );
   }
 
@@ -619,7 +701,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     final isGenerating = ref.watch(cvGenerationControllerProvider);
     final enhancingField = ref.watch(cvFieldEnhancerProvider);
     final pendingDraft = _pendingDraft;
-    final reduceMotion = MotionSettings.reduce(context);
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     // Clean form: back pops normally. Dirty: intercept and ask first.
     return PopScope(
@@ -627,74 +709,120 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) unawaited(_handleExitAttempt());
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_isEditMode
-              ? AppLocalizations.of(context).cvGeneratorEditTitle
-              : AppLocalizations.of(context).cvGeneratorCreateTitle),
-          actions: const [
-            Padding(
-              padding: EdgeInsetsDirectional.only(end: 12),
-              child: LanguageToggle(),
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            WizardHeader(step: _step, english: english, onStepTap: _goToStep),
-            if (pendingDraft != null && !_isEditMode)
-              DraftRestoreBanner(
-                english: english,
-                savedAt: pendingDraft.savedAt,
-                onStartFresh: () => unawaited(_startFresh()),
-                onRestore: _restoreDraft,
+      // Forms sit on the grouped page (iOS 26 restyle).
+      child: GroupedSurface(
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(_isEditMode
+                ? AppLocalizations.of(context).cvGeneratorEditTitle
+                : AppLocalizations.of(context).cvGeneratorCreateTitle),
+            actions: const [
+              Padding(
+                padding: EdgeInsetsDirectional.only(end: 12),
+                child: LanguageToggle(),
               ),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: reduceMotion ? Duration.zero : MotionDurations.slow,
-                switchInCurve: MotionCurves.enter,
-                switchOutCurve: MotionCurves.exit,
-                transitionBuilder: (child, animation) {
-                  if (reduceMotion) return child;
-                  final curved = CurvedAnimation(
-                    parent: animation,
-                    curve: MotionCurves.enter,
-                    reverseCurve: MotionCurves.exit,
-                  );
-                  return FadeTransition(
-                    opacity: curved,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: MotionAxis.slideIn(
-                          context: context,
-                          distance: 0.05,
-                          direction: _stepDirection,
-                        ),
-                        end: Offset.zero,
-                      ).animate(curved),
-                      child: child,
-                    ),
-                  );
-                },
-                child: ListView(
-                  key: ValueKey('cv-step-$_step'),
-                  padding: const EdgeInsets.all(20),
-                  children: [_buildStep(english, enhancingField)],
+            ],
+          ),
+          // Only the app bar, the step header and the footer are pinned; the
+          // draft offer scrolls with the step, so a small phone with the
+          // keyboard open still has room for the field being typed in.
+          // Footer at the bottom, header on top with the room left over
+          // (it folds its dot row when that room is short), the step in
+          // between.
+          body: CustomMultiChildLayout(
+            delegate: _WizardLayout(),
+            children: [
+              LayoutId(
+                id: _WizardSlot.header,
+                child: WizardHeader(
+                  step: _step,
+                  english: english,
+                  onStepTap: _goToStep,
+                  // Read above the Scaffold, which hides the inset from its body.
+                  keyboardOpen: keyboardOpen,
                 ),
               ),
-            ),
-            WizardFooter(
-              english: english,
-              step: _step,
-              stepCount: _stepCount,
-              isEditMode: _isEditMode,
-              isLoading: isGenerating,
-              onBack: () => _goToStep(_step - 1),
-              onPrimary: _onPrimaryAction,
-            ),
-          ],
+              LayoutId(
+                id: _WizardSlot.content,
+                child: MotionStepSwitcher(
+                  stepKey: _step,
+                  direction: _stepDirection,
+                  // PageStorageKey: going back to a step returns to where
+                  // the user was on it, not to the top.
+                  child: ListView(
+                    key: PageStorageKey('cv-step-$_step'),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    children: [
+                      MotionExpandSlot(
+                        child: pendingDraft != null && !_isEditMode
+                            ? DraftRestoreBanner(
+                                key: const ValueKey('draft-restore-banner'),
+                                english: english,
+                                savedAt: pendingDraft.savedAt,
+                                onStartFresh: () => unawaited(_startFresh()),
+                                onRestore: _restoreDraft,
+                              )
+                            : const SizedBox.shrink(
+                                key: ValueKey('draft-restore-empty'),
+                              ),
+                      ),
+                      _buildStep(english, enhancingField),
+                    ],
+                  ),
+                ),
+              ),
+              LayoutId(
+                id: _WizardSlot.footer,
+                child: WizardFooter(
+                  keyboardOpen: keyboardOpen,
+                  english: english,
+                  step: _step,
+                  stepCount: _stepCount,
+                  isEditMode: _isEditMode,
+                  isLoading: isGenerating,
+                  onBack: () => _goToStep(_step - 1),
+                  onPrimary: _onPrimaryAction,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+enum _WizardSlot { header, content, footer }
+
+/// Lays out the wizard: footer (natural height) at the bottom, header
+/// (natural height, at most what the footer leaves) on top, the step's
+/// scroll view filling the rest.
+class _WizardLayout extends MultiChildLayoutDelegate {
+  @override
+  void performLayout(Size size) {
+    final footer = layoutChild(
+      _WizardSlot.footer,
+      BoxConstraints.tightFor(width: size.width),
+    );
+    final header = layoutChild(
+      _WizardSlot.header,
+      BoxConstraints(
+        minWidth: size.width,
+        maxWidth: size.width,
+        maxHeight: (size.height - footer.height).clamp(0.0, size.height),
+      ),
+    );
+    final content =
+        (size.height - header.height - footer.height).clamp(0.0, size.height);
+    layoutChild(
+      _WizardSlot.content,
+      BoxConstraints.tightFor(width: size.width, height: content),
+    );
+    positionChild(_WizardSlot.header, Offset.zero);
+    positionChild(_WizardSlot.content, Offset(0, header.height));
+    positionChild(_WizardSlot.footer, Offset(0, size.height - footer.height));
+  }
+
+  @override
+  bool shouldRelayout(_WizardLayout oldDelegate) => false;
 }

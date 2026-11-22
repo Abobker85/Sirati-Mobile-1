@@ -5,6 +5,7 @@ import 'package:sirati/features/dashboard/presentation/home/home_intro.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/navigation/dashboard_tab.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
 import 'package:sirati/shared/widgets/motion.dart';
 
 /// Pumps the bottom bar in a host that really switches tabs on tap.
@@ -43,20 +44,24 @@ Future<void> _pumpBar(
   await tester.pumpAndSettle();
 }
 
-/// The pill as painted in the last frame, in global coordinates.
-Rect _pill(WidgetTester tester) => tester
-    .state<DashboardNavigationBarState>(find.byType(DashboardNavigationBar))
-    .paintedPill!;
+/// The grey pill behind the selected tab, as laid out now.
+Rect _pill(WidgetTester tester) =>
+    tester.getRect(find.byKey(DashboardNavigationBar.pillKey));
 
-/// Centre of the icon slot of the selected tab.
-Offset _selectedIconCenter(WidgetTester tester) => tester.getCenter(
-      find.byWidgetPredicate((w) => w is MotionNavIcon && w.selected),
-    );
+/// Centre of the selected tab's icon.
+Offset _selectedIconCenter(WidgetTester tester) =>
+    tester.getCenter(find.descendant(
+      of: find.byKey(DashboardNavigationBar.pillKey),
+      matching: find.byType(LivelyIcon),
+    ));
+
+/// Tab icons, in [DashboardNavigationBar.order].
+Finder get _icons => find.descendant(
+    of: find.byType(DashboardNavigationBar), matching: find.byType(LivelyIcon));
 
 /// Taps the bar item at [index] of [DashboardNavigationBar.order].
-Future<void> _tapItem(WidgetTester tester, int index) => tester.tap(
-      find.byWidgetPredicate((w) => w is MotionNavIcon).at(index),
-    );
+Future<void> _tapItem(WidgetTester tester, int index) =>
+    tester.tap(_icons.at(index));
 
 void main() {
   group('bottom bar pill', () {
@@ -70,17 +75,19 @@ void main() {
           for (var i = 0; i < order.length; i++) {
             await _tapItem(tester, i);
             await tester.pumpAndSettle();
-            final pill = _pill(tester);
-            final icon = _selectedIconCenter(tester);
-            expect((pill.center - icon).distance, lessThan(.5),
+            // Centred across the selected icon.
+            expect(
+                (_pill(tester).center.dx - _selectedIconCenter(tester).dx)
+                    .abs(),
+                lessThan(.5),
                 reason: 'tab ${order[i]}');
-            expect(pill.size, DashboardNavigationBar.pillSize);
           }
         });
       }
     }
 
-    testWidgets('the pill slides: midway it is between the two tabs',
+    testWidgets(
+        'switching is instant: the pill is at rest one frame after any tap',
         (tester) async {
       await _pumpBar(tester, locale: const Locale('ar'), width: 412);
       const order = DashboardNavigationBar.order;
@@ -89,18 +96,14 @@ void main() {
           if (from == to) continue;
           await _tapItem(tester, from);
           await tester.pumpAndSettle();
-          final start = _pill(tester).center.dx;
           await _tapItem(tester, to);
-          await tester.pump(); // selection changes
-          await tester.pump(); // pill target measured
-          await tester.pump(MotionDurations.navIndicator ~/ 2);
-          final mid = _pill(tester).center.dx;
+          await tester.pump();
+          final first = _pill(tester);
           await tester.pumpAndSettle();
-          final end = _pill(tester).center.dx;
-          final lo = start < end ? start : end;
-          final hi = start < end ? end : start;
-          expect(mid, greaterThan(lo), reason: '$from → $to');
-          expect(mid, lessThan(hi), reason: '$from → $to');
+          expect(_pill(tester), first, reason: '$from -> $to');
+          expect((first.center.dx - _selectedIconCenter(tester).dx).abs(),
+              lessThan(.5),
+              reason: '$from -> $to');
         }
       }
     });
@@ -117,7 +120,7 @@ void main() {
                       in ((o as dynamic).debugInkFeatures as List?) ?? const [])
                     if (f is! InteractiveInkFeature || f.color.a > 0) f,
             ];
-        final icons = find.byWidgetPredicate((w) => w is MotionNavIcon);
+        final icons = _icons;
         for (var i = 0; i < DashboardNavigationBar.order.length; i++) {
           final gesture =
               await tester.startGesture(tester.getCenter(icons.at(i)));
@@ -147,7 +150,7 @@ void main() {
         await tester.pump();
         await tester.pump();
         expect(
-          (_pill(tester).center - _selectedIconCenter(tester)).distance,
+          (_pill(tester).center.dx - _selectedIconCenter(tester).dx).abs(),
           lessThan(.5),
         );
       }

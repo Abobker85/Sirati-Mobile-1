@@ -1,0 +1,13 @@
+diff --git a/lib/shared/widgets/empty_state.dart b/lib/shared/widgets/empty_state.dart
+index df60013..30c8e40 100644
+--- a/lib/shared/widgets/empty_state.dart
++++ b/lib/shared/widgets/empty_state.dart
+@@ -91,6 +91,8 @@ class AppEmptyState extends StatelessWidget {
+                 children: [
+                   Text(
+                     title,
++                    // The panel's own label already announces the title.
++                    semanticsLabel: '',
+                     textAlign: TextAlign.center,
+                     style: AppTypography.of(
+                       context,

@@ -1,0 +1,14 @@
+diff --git a/lib/shared/widgets/form_fields.dart b/lib/shared/widgets/form_fields.dart
+index a6888da..01fcb98 100644
+--- a/lib/shared/widgets/form_fields.dart
++++ b/lib/shared/widgets/form_fields.dart
+@@ -757,6 +757,9 @@ class _AppTextFormFieldState extends FormFieldState<String> {
+   }) {
+     final showError = hasError && (errorText?.isNotEmpty ?? false);
+     final showSuccess = !showError && _isShowingSuccess();
++    // An error or success mark that takes the suffix slot ends the tick for
++    // good: it plays once per field and must not replay when the slot frees.
++    if (showError || showSuccess) _showTick = false;
+ 
+     final c = context.sirati;
+     final base = PageSurface.fillOf(context);

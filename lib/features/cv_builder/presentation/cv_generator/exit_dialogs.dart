@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/components/app_dialog.dart';
 
 enum WizardExitAction { cancel, discard, saveDraft }
 
@@ -8,7 +9,7 @@ enum WizardExitAction { cancel, discard, saveDraft }
 Future<bool> confirmDiscardEdits(BuildContext context) {
   final c = context.sirati;
   final l10n = AppLocalizations.of(context);
-  return showDialog<bool>(
+  return showSiratiDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: c.surface,
@@ -27,7 +28,8 @@ Future<bool> confirmDiscardEdits(BuildContext context) {
         ),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
-          style: TextButton.styleFrom(foregroundColor: c.red),
+          // Destructive copy ink: AA on the dialog fill in both themes.
+          style: TextButton.styleFrom(foregroundColor: c.onErrorContainer),
           child: Text(l10n.cvDiscard),
         ),
       ],
@@ -39,7 +41,7 @@ Future<bool> confirmDiscardEdits(BuildContext context) {
 Future<WizardExitAction> askSaveDraft(BuildContext context) {
   final c = context.sirati;
   final l10n = AppLocalizations.of(context);
-  return showDialog<WizardExitAction>(
+  return showSiratiDialog<WizardExitAction>(
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: c.surface,
@@ -58,7 +60,8 @@ Future<WizardExitAction> askSaveDraft(BuildContext context) {
         ),
         TextButton(
           onPressed: () => Navigator.pop(ctx, WizardExitAction.discard),
-          style: TextButton.styleFrom(foregroundColor: c.red),
+          // Destructive copy ink: AA on the dialog fill in both themes.
+          style: TextButton.styleFrom(foregroundColor: c.onErrorContainer),
           child: Text(l10n.cvDiscard),
         ),
         FilledButton(

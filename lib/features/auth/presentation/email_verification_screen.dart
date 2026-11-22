@@ -14,10 +14,13 @@ import 'package:sirati/shared/services/local_session_cleanup.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_form_constraint.dart';
-import 'package:sirati/shared/widgets/directional_icon.dart';
+import 'package:sirati/shared/widgets/auth_hero_page.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
-import 'package:sirati/shared/widgets/language_toggle.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
+import 'package:sirati/shared/widgets/lively_icon.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
+import 'package:sirati/shared/widgets/success_beat.dart';
 
 /// 6-digit OTP email verification after register / unverified login.
 ///
@@ -42,6 +45,7 @@ class _EmailVerificationScreenState
   bool _isLoading = false;
   bool _isResending = false;
   bool _submitted = false;
+  bool _verified = false;
   int _resendCooldown = 0;
   Timer? _cooldownTimer;
 
@@ -78,10 +82,11 @@ class _EmailVerificationScreenState
   Future<void> _verify() async {
     // One request at a time: auto-submit, keyboard Done, the button and the
     // snackbar Retry can all fire.
-    if (_isLoading) return;
+    // A snackbar Retry can outlive this screen.
+    if (_isLoading || !mounted) return;
     final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
-    if (!_formKey.currentState!.validate()) {
+    if (!validateAndReveal(_formKey)) {
       unawaited(HapticFeedback.selectionClick());
       return;
     }
@@ -92,7 +97,8 @@ class _EmailVerificationScreenState
           .read(authApiServiceProvider)
           .verifyEmail(code: _codeController.text.trim());
       if (!mounted) return;
-      unawaited(HapticFeedback.lightImpact());
+      setState(() => _verified = true);
+      unawaited(SuccessBeat.celebrate(context));
       AppSnackBar.success(
         context,
         l10n.authVerifySuccess,
@@ -187,155 +193,201 @@ class _EmailVerificationScreenState
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 12, 0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => unawaited(_leave()),
-                        tooltip: l10n.authVerifyBackToSignIn,
-                        icon: DirectionalIcon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: context.sirati.textPrimary,
-                          size: 18,
-                        ),
-                      ),
-                      const Spacer(),
-                      const LanguageToggle(),
-                    ],
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: AuthTopBar(
+                    onBack: () => unawaited(_leave()),
+                    backTooltip: l10n.authVerifyBackToSignIn,
                   ),
                 ),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Center(
-                            child: Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                color: context.sirati.primaryLight,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.mark_email_unread_outlined,
-                                size: 36,
-                                color: context.sirati.primaryInk,
+                          MotionReveal(
+                            order: 0,
+                            child: Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: AnimatedContainer(
+                                duration: MotionSettings.reduce(context)
+                                    ? Duration.zero
+                                    : MotionDurations.medium,
+                                curve: MotionCurves.state,
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: _verified
+                                      ? context.sirati.successLight
+                                      : context.sirati.primaryLight,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: MotionMorph(
+                                  morphKey: _verified,
+                                  child: LivelyIcon(
+                                    _verified
+                                        ? Icons.verified_rounded
+                                        : Icons.mark_email_unread_outlined,
+                                    size: 32,
+                                    color: _verified
+                                        ? context.sirati.onSuccessContainer
+                                        : context.sirati.primaryInk,
+                                    life: _verified
+                                        ? IconLife.none
+                                        : IconLife.float,
+                                    plays: 1,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          Text(
-                            l10n.authVerifyTitle,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: context.sirati.textPrimary,
+                          const SizedBox(height: AppSpacing.md),
+                          Semantics(
+                            header: true,
+                            child: Text(
+                              l10n.authVerifyTitle,
+                              textAlign: TextAlign.start,
+                              style: AppTypography.of(
+                                context,
+                                AppTypography.largeTitle,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: AppSpacing.xs),
                           Text(
                             l10n.authVerifyCodeSentTo,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              height: 1.5,
+                            textAlign: TextAlign.start,
+                            style: AppTypography.of(
+                              context,
+                              AppTypography.bodyLg,
                               color: context.sirati.textSecondary,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            email,
-                            textAlign: TextAlign.center,
-                            textDirection: TextDirection.ltr,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: context.sirati.primaryInk,
+                          // The address reads left to right in both
+                          // languages but sits on the start side.
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              email,
+                              textDirection: TextDirection.ltr,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: context.sirati.primaryInk,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 28),
-                          Text(
-                            l10n.authVerificationCodeLabel,
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: context.sirati.textSecondary,
+                          MotionReveal(
+                            order: 1,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  l10n.authVerificationCodeLabel,
+                                  textAlign: TextAlign.start,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.sirati.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ValueListenableBuilder<TextEditingValue>(
+                                  valueListenable: _codeController,
+                                  builder: (context, value, _) =>
+                                      _OtpProgressDots(
+                                    filledCount: value.text.trim().length,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                AppTextFormField(
+                                  controller: _codeController,
+                                  autovalidateMode: _submitted
+                                      ? AutovalidateMode.onUserInteraction
+                                      : AutovalidateMode.disabled,
+                                  keyboardType: TextInputType.number,
+                                  textDirection: TextDirection.ltr,
+                                  textAlign: TextAlign.center,
+                                  textInputAction: TextInputAction.done,
+                                  onFieldSubmitted: (_) => unawaited(_verify()),
+                                  // Submit as soon as the full code is in (typed,
+                                  // pasted, or autofilled).
+                                  onChanged: (value) {
+                                    if (value.length == 6) {
+                                      unawaited(_verify());
+                                    }
+                                  },
+                                  maxLength: 6,
+                                  hintText: '••••••',
+                                  autofillHints: const [
+                                    AutofillHints.oneTimeCode
+                                  ],
+                                  // Accepts codes typed on Arabic keyboards (٠-٩), unlike digitsOnly.
+                                  inputFormatters: const [
+                                    LatinDigitsInputFormatter(maxLength: 6)
+                                  ],
+                                  prefixIcon: const Icon(Icons.pin_outlined),
+                                  validator: (value) {
+                                    final code = value?.trim() ?? '';
+                                    if (code.length != 6) {
+                                      return l10n.authCodeRequired;
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          AppTextFormField(
-                            controller: _codeController,
-                            autovalidateMode: _submitted
-                                ? AutovalidateMode.onUserInteraction
-                                : AutovalidateMode.disabled,
-                            keyboardType: TextInputType.number,
-                            textDirection: TextDirection.ltr,
-                            textAlign: TextAlign.center,
-                            textInputAction: TextInputAction.done,
-                            onFieldSubmitted: (_) => unawaited(_verify()),
-                            // Submit as soon as the full code is in (typed,
-                            // pasted, or autofilled).
-                            onChanged: (value) {
-                              if (value.length == 6) unawaited(_verify());
-                            },
-                            maxLength: 6,
-                            hintText: '••••••',
-                            autofillHints: const [AutofillHints.oneTimeCode],
-                            // Accepts codes typed on Arabic keyboards (٠-٩), unlike digitsOnly.
-                            inputFormatters: const [
-                              LatinDigitsInputFormatter(maxLength: 6)
-                            ],
-                            prefixIcon: const Icon(Icons.pin_outlined),
-                            validator: (value) {
-                              final code = value?.trim() ?? '';
-                              if (code.length != 6) {
-                                return l10n.authCodeRequired;
-                              }
-                              return null;
-                            },
                           ),
                           const SizedBox(height: AppSpacing.lg),
-                          SubmitButton(
-                            label: l10n.authVerifyButton,
-                            loadingLabel: l10n.authVerifying,
-                            isLoading: _isLoading,
-                            icon: Icons.verified_outlined,
-                            onPressed: () => unawaited(_verify()),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Center(
-                            child: TextButton(
-                              // The countdown is information, not a dead control: keep it readable
-                              // while the button is disabled.
-                              style: TextButton.styleFrom(
-                                disabledForegroundColor:
-                                    context.sirati.textSecondary,
-                              ),
-                              onPressed: (_resendCooldown > 0 || _isResending)
-                                  ? null
-                                  : () => unawaited(_resend()),
-                              child: Text(
-                                _isResending
-                                    ? l10n.authSending
-                                    : _resendCooldown > 0
-                                        ? l10n.authResendCodeIn(_resendCooldown)
-                                        : l10n.authResendCode,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l10n.authVerifyCheckSpam,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              color: context.sirati.textHint,
+                          MotionReveal(
+                            order: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                SubmitButton(
+                                  label: l10n.authVerifyButton,
+                                  loadingLabel: l10n.authVerifying,
+                                  isLoading: _isLoading,
+                                  icon: Icons.verified_outlined,
+                                  onPressed: () => unawaited(_verify()),
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                Center(
+                                  child: TextButton(
+                                    // The countdown is information, not a dead control: keep it readable
+                                    // while the button is disabled.
+                                    style: TextButton.styleFrom(
+                                      disabledForegroundColor:
+                                          context.sirati.textSecondary,
+                                    ),
+                                    onPressed:
+                                        (_resendCooldown > 0 || _isResending)
+                                            ? null
+                                            : () => unawaited(_resend()),
+                                    child: Text(
+                                      _isResending
+                                          ? l10n.authSending
+                                          : _resendCooldown > 0
+                                              ? l10n.authResendCodeIn(
+                                                  _resendCooldown)
+                                              : l10n.authResendCode,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  l10n.authVerifyCheckSpam,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: context.sirati.textHint,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -346,6 +398,51 @@ class _EmailVerificationScreenState
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 6-dot progress indicator tied to the OTP input length.
+class _OtpProgressDots extends StatelessWidget {
+  const _OtpProgressDots({required this.filledCount});
+
+  static const keyIndicator = ValueKey('otp-progress-dots');
+  final int filledCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.sirati;
+    final reduce = MotionSettings.reduce(context);
+    final duration = reduce ? Duration.zero : MotionDurations.fast;
+    final count = filledCount.clamp(0, 6);
+
+    return ExcludeSemantics(
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Row(
+          key: keyIndicator,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(6, (i) {
+            final filled = i < count;
+            final active = i == count && count < 6;
+            return AnimatedContainer(
+              duration: duration,
+              curve: MotionCurves.state,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: filled ? 12 : (active ? 10 : 8),
+              height: 8,
+              decoration: BoxDecoration(
+                color: filled
+                    ? c.primary
+                    : (active ? c.primaryLight : c.borderStrong),
+                borderRadius: BorderRadius.circular(999),
+                border:
+                    active ? Border.all(color: c.primaryInk, width: 1.2) : null,
+              ),
+            );
+          }),
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sirati/core/routing/app_routes.dart';
 import 'package:sirati/core/routing/entitlement_store.dart';
 import 'package:sirati/core/routing/expand_page_route.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/core/storage/guest_session.dart';
 
 /// Feature screens register themselves so `core/` never imports `features/`.
@@ -60,8 +61,9 @@ class AppRouter {
       return;
     }
     if (pending == AppRoutes.myCvs) {
+      // A new root: fade through, no slide.
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
+        FadeThroughPageRoute<void>(
           settings: const RouteSettings(name: AppRoutes.myCvs),
           builder: (_) => _widgetFor(const ParsedRoute(name: AppRoutes.myCvs)),
         ),
@@ -292,6 +294,14 @@ class AppRouter {
     if (origin != null) {
       return ExpandPageRoute<dynamic>(
         origin: origin,
+        settings: settings,
+        builder: (_) => child,
+      );
+    }
+    // Home is always the root (after sign-in, "go home"): it fades through
+    // rather than sliding in, and plays its own intro.
+    if (name == AppRoutes.home) {
+      return FadeThroughPageRoute<dynamic>(
         settings: settings,
         builder: (_) => child,
       );

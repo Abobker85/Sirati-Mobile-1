@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sirati/core/network/api_exception.dart';
 import 'package:sirati/core/routing/app_routes.dart';
+import 'package:sirati/core/routing/expand_page_route.dart';
 import 'package:sirati/core/utils/app_locale.dart';
 import 'package:sirati/features/jobs/application/job_news_controllers.dart';
 import 'package:sirati/features/jobs/domain/job_news_feed.dart';
@@ -20,6 +21,7 @@ import 'package:sirati/shared/navigation/dashboard_scroll_end.dart';
 import 'package:sirati/shared/services/session_cache.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
+import 'package:sirati/shared/widgets/fresh_glint.dart';
 import 'package:sirati/shared/widgets/loading/app_async_body.dart';
 import 'package:sirati/shared/widgets/loading/app_skeleton.dart';
 import 'package:sirati/shared/widgets/loading/async_value_snapshot.dart';
@@ -79,10 +81,16 @@ class _JobNewsScreenState extends ConsumerState<JobNewsScreen> {
     ref.read(jobNewsFiltersProvider.notifier).clear();
   }
 
-  void _openJob(JobNews item) {
-    unawaited(Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => JobNewsDetailScreen(item: item)),
-    ));
+  void _openJob(JobNews item, {ExpandOrigin? origin}) {
+    final Route<void> route = origin != null
+        ? ExpandPageRoute<void>(
+            origin: origin,
+            builder: (_) => JobNewsDetailScreen(item: item),
+          )
+        : MaterialPageRoute<void>(
+            builder: (_) => JobNewsDetailScreen(item: item),
+          );
+    unawaited(Navigator.of(context).push(route));
   }
 
   @override
@@ -193,11 +201,12 @@ class _JobNewsList extends ConsumerWidget {
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onClearFilters;
   final Future<void> Function() onRefresh;
-  final ValueChanged<JobNews> onOpenJob;
+  final void Function(JobNews item, {ExpandOrigin? origin}) onOpenJob;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final c = context.sirati;
     final filterController = ref.read(jobNewsFiltersProvider.notifier);
     final now = DateTime.now();
     final failed = errorMessage != null;
@@ -236,11 +245,24 @@ class _JobNewsList extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.sm),
                     OfflineCacheBanner(english: english, surface: 'news'),
                   ],
-                  if (isReloading)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 10, bottom: 2),
-                      child: LinearProgressIndicator(minHeight: 3),
-                    ),
+                  MotionExpandSlot(
+                    child: isReloading
+                        ? Padding(
+                            key: const ValueKey('jobs-reloading'),
+                            padding: const EdgeInsets.only(top: 10, bottom: 2),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(999),
+                              child: LinearProgressIndicator(
+                                minHeight: 3,
+                                color: c.primaryInk,
+                                backgroundColor: c.primaryLight,
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(
+                            key: ValueKey('jobs-reload-idle'),
+                          ),
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   JobSearchBar(
                     english: english,
@@ -258,15 +280,22 @@ class _JobNewsList extends ConsumerWidget {
                     selectedRegion: filters.region,
                     onSelected: filterController.setRegion,
                   ),
-                  if (filters.preset == 'matched') ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    MatchedPresetNote(
-                      profile: feed.profile,
-                      // Guests get the sign-in invitation from the route.
-                      onSetJobTitle: () =>
-                          Navigator.of(context).pushNamed(AppRoutes.profile),
-                    ),
-                  ],
+                  MotionExpandSlot(
+                    child: filters.preset == 'matched'
+                        ? Padding(
+                            key: const ValueKey('jobs-matched-note'),
+                            padding: const EdgeInsets.only(top: AppSpacing.sm),
+                            child: MatchedPresetNote(
+                              profile: feed.profile,
+                              // Guests get the sign-in invitation from the route.
+                              onSetJobTitle: () => Navigator.of(context)
+                                  .pushNamed(AppRoutes.profile),
+                            ),
+                          )
+                        : const SizedBox.shrink(
+                            key: ValueKey('jobs-no-matched-note'),
+                          ),
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                   AnimatedSwitcher(
                     duration: MotionSettings.reduce(context)
@@ -288,10 +317,18 @@ class _JobNewsList extends ConsumerWidget {
                         else if (featured != null) ...[
                           MotionReveal(
                             order: 0,
-                            child: FeaturedJobCard(
-                              item: featured,
-                              english: english,
-                              onTap: () => onOpenJob(featured),
+                            child: Builder(
+                              builder: (cardContext) => FeaturedJobCard(
+                                item: featured,
+                                english: english,
+                                onTap: () => onOpenJob(
+                                  featured,
+                                  origin: ExpandOrigin.of(
+                                    cardContext,
+                                    radius: AppRadius.card,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.lg),
@@ -336,11 +373,21 @@ class _JobNewsList extends ConsumerWidget {
                   // +1: the featured card is reveal order 0.
                   child: MotionReveal(
                     order: index + 1,
-                    child: JobNewsCard(
-                      item: item,
-                      english: english,
-                      now: now,
-                      onTap: () => onOpenJob(item),
+                    child: FreshGlint(
+                      id: 'job:${item.id}',
+                      radius: AppRadius.card,
+                      child: Builder(
+                        builder: (cardContext) => JobNewsCard(
+                          item: item,
+                          english: english,
+                          now: now,
+                          onTap: () => onOpenJob(
+                            item,
+                            origin: ExpandOrigin.of(cardContext,
+                                radius: AppRadius.card),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 );

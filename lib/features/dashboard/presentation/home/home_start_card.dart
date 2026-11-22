@@ -102,9 +102,12 @@ class HomeStartCard extends StatelessWidget {
                   priority: AmbientPriority.nextStep,
                   delay: const Duration(seconds: 5),
                   rest: const Duration(seconds: 6),
-                  child: LivelyIcon(
-                    Icons.chevron_right_rounded,
-                    color: ink,
+                  child: Transform.flip(
+                    flipX: Directionality.of(context) == TextDirection.rtl,
+                    child: LivelyIcon(
+                      Icons.chevron_right_rounded,
+                      color: ink,
+                    ),
                   ),
                 ),
               ],

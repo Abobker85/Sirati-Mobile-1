@@ -4,7 +4,11 @@ import 'package:sirati/shared/theme/app_typography.dart';
 
 void main() {
   test('scale covers display through label', () {
-    expect(AppTypography.all, hasLength(13));
+    expect(AppTypography.all, hasLength(17));
+    expect(AppTypography.largeTitle.size, 34);
+    expect(AppTypography.sectionTitle.size, 22);
+    expect(AppTypography.bodyXl.size, 17);
+    expect(AppTypography.caption.size, 13);
     expect(AppTypography.displayLg.size, 32);
     expect(AppTypography.headlineLg.size, 24);
     expect(AppTypography.titleLg.size, 18);

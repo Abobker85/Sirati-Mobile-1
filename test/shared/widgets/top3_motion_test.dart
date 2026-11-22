@@ -10,6 +10,7 @@ import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
 import 'package:sirati/shared/widgets/loading/branded_loader.dart';
+import 'package:sirati/shared/widgets/loading/cv_drafting_scene.dart';
 import 'package:sirati/shared/widgets/loading/scan_paper_scene.dart';
 import 'package:sirati/shared/widgets/sirati_refresh_indicator.dart';
 
@@ -407,14 +408,19 @@ void main() {
           isFalse);
     });
 
-    for (final (kind, reduce, scene) in [
-      (AiProgressKind.analysis, false, true),
-      (AiProgressKind.analysis, true, false),
-      (AiProgressKind.generation, false, false),
+    for (final (kind, reduce) in [
+      (AiProgressKind.analysis, false),
+      (AiProgressKind.analysis, true),
+      (AiProgressKind.generation, false),
+      (AiProgressKind.generation, true),
     ]) {
+      final showScan = !reduce && kind == AiProgressKind.analysis;
+      final showDraft = !reduce && kind == AiProgressKind.generation;
+      final showLoader = reduce;
       testWidgets(
           'overlay: ${kind.name}${reduce ? ' (reduced motion)' : ''} shows '
-          '${scene ? 'the scan scene' : 'the loader'}', (tester) async {
+          '${showScan ? 'the scan scene' : showDraft ? 'the drafting scene' : 'the loader'}',
+          (tester) async {
         late BuildContext ctx;
         await tester.pumpWidget(_app(
           Builder(builder: (c) {
@@ -426,10 +432,12 @@ void main() {
         unawaited(AiProgressOverlay.show(ctx, kind: kind, english: true));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
-        expect(
-            find.byType(ScanPaperScene), scene ? findsOneWidget : findsNothing);
-        expect(
-            find.byType(BrandedLoader), scene ? findsNothing : findsOneWidget);
+        expect(find.byType(ScanPaperScene),
+            showScan ? findsOneWidget : findsNothing);
+        expect(find.byType(CvDraftingScene),
+            showDraft ? findsOneWidget : findsNothing);
+        expect(find.byType(BrandedLoader),
+            showLoader ? findsOneWidget : findsNothing);
         // Closing the app disposes the overlay and its timers.
         await tester.pumpWidget(const SizedBox());
       });

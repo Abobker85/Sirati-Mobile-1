@@ -10,6 +10,7 @@ import 'package:sirati/shared/services/cv_api_service_provider.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/empty_state.dart';
 import 'package:sirati/shared/widgets/loading/branded_loader.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Deep-link entry for `/cv/:id` — loads the CV then shows the real screen.
 class GeneratedCvLoaderScreen extends ConsumerStatefulWidget {
@@ -48,16 +49,21 @@ class _GeneratedCvLoaderScreenState
   @override
   Widget build(BuildContext context) {
     final english = AppLocale.isEnglish(context);
+    final reduce = MotionSettings.reduce(context);
     return FutureBuilder<GeneratedCv>(
       future: _future,
       builder: (context, snapshot) {
+        final Widget child;
         if (snapshot.hasData) {
-          return GeneratedCvScreen(generatedCv: snapshot.data!);
-        }
-        if (snapshot.hasError) {
+          child = GeneratedCvScreen(
+            key: ValueKey('cv-loader-data-${snapshot.data!.id}'),
+            generatedCv: snapshot.data!,
+          );
+        } else if (snapshot.hasError) {
           final error = snapshot.error;
           final apiError = error is ApiException ? error : null;
-          return Scaffold(
+          child = Scaffold(
+            key: const ValueKey('cv-loader-error'),
             backgroundColor: context.sirati.background,
             appBar: AppBar(),
             body: AppErrorState(
@@ -71,15 +77,25 @@ class _GeneratedCvLoaderScreenState
               onOpenSaved: () => Navigator.pushNamed(context, AppRoutes.myCvs),
             ),
           );
-        }
-        return Scaffold(
-          backgroundColor: context.sirati.background,
-          appBar: AppBar(
-            // Same as the page: a transparent bar over `background`.
+        } else {
+          child = Scaffold(
+            key: const ValueKey('cv-loader-loading'),
             backgroundColor: context.sirati.background,
-            elevation: 0,
-          ),
-          body: const Center(child: BrandedLoader()),
+            appBar: AppBar(
+              // Same as the page: a transparent bar over `background`.
+              backgroundColor: context.sirati.background,
+              elevation: 0,
+            ),
+            body: const Center(child: BrandedLoader()),
+          );
+        }
+
+        if (reduce) return child;
+        return AnimatedSwitcher(
+          duration: MotionDurations.medium,
+          switchInCurve: MotionCurves.enter,
+          switchOutCurve: MotionCurves.exit,
+          child: child,
         );
       },
     );

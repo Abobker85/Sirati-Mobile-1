@@ -247,11 +247,13 @@ class CvCreatedScene extends StatelessWidget {
         children: [
           Positioned.fill(
             child: IgnorePointer(
-              child: CustomPaint(
-                key: confettiKey,
-                painter: _ConfettiPainter(
-                  progress: burst,
-                  colors: [c.primary, c.amber, c.tertiary, c.success, c.info],
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  key: confettiKey,
+                  painter: _ConfettiPainter(
+                    progress: burst,
+                    colors: [c.primary, c.amber, c.tertiary, c.success, c.info],
+                  ),
                 ),
               ),
             ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sirati/core/routing/fade_through_page_route.dart';
 import 'package:sirati/features/auth/application/login_controller.dart';
 import 'package:sirati/features/auth/presentation/forgot_password_screen.dart';
 import 'package:sirati/features/auth/presentation/register_screen.dart';
@@ -11,6 +12,9 @@ import 'package:sirati/shared/theme/app_theme.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/auth_hero_page.dart';
 import 'package:sirati/shared/widgets/form_fields.dart';
+import 'package:sirati/shared/widgets/form_reveal.dart';
+import 'package:sirati/shared/widgets/motion.dart';
+import 'package:sirati/shared/widgets/password_visibility_toggle.dart';
 import 'package:sirati/shared/widgets/submit_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -58,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _submitted = true;
       _showFormBanner = false;
     });
-    if (!_formKey.currentState!.validate()) {
+    if (!validateAndReveal(_formKey)) {
       setState(() => _showFormBanner = true);
       unawaited(HapticFeedback.selectionClick());
       return;
@@ -78,8 +82,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _goToRegister() {
     final navigator = Navigator.of(context);
+    // A peer, not a step deeper: fade through.
     final route =
-        MaterialPageRoute<void>(builder: (_) => const RegisterScreen());
+        FadeThroughPageRoute<void>(builder: (_) => const RegisterScreen());
     // Replace when stacked (Login <-> Register ping-pong); push when Login is
     // the root so Back from Register returns here.
     unawaited(navigator.canPop()
@@ -97,7 +102,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         size: AuthHeroSize.regular,
         title: l10n.welcomeToSirati,
         subtitle: l10n.authLoginSubtitle,
-        card: _buildForm(context, l10n, isLoading),
+        markHeroTag: 'sirati-brand-mark',
+        card: MotionReveal(
+          order: 0,
+          child: _buildForm(context, l10n, isLoading),
+        ),
       ),
     );
   }
@@ -113,11 +122,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_showFormBanner)
-              AppFormErrorBanner(
-                message: l10n.authFixHighlightedFields,
-                onDismiss: () => setState(() => _showFormBanner = false),
-              ),
+            MotionExpandSlot(
+              child: _showFormBanner
+                  ? AppFormErrorBanner(
+                      key: const ValueKey('login-form-error'),
+                      message: l10n.authFixHighlightedFields,
+                      onDismiss: () => setState(() => _showFormBanner = false),
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey('login-form-error-empty'),
+                    ),
+            ),
             _AuthLabel(text: l10n.emailLabel),
             const SizedBox(height: 6),
             AppTextFormField(
@@ -162,13 +177,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onFieldSubmitted: (_) => unawaited(_login()),
               hintText: '••••••••',
               prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                tooltip:
-                    _obscurePassword ? l10n.showPassword : l10n.hidePassword,
-                icon: Icon(_obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined),
-                onPressed: () =>
+              suffixIcon: PasswordVisibilityToggle(
+                obscured: _obscurePassword,
+                onToggle: () =>
                     setState(() => _obscurePassword = !_obscurePassword),
               ),
               // Presence only: the server has no length rule for
@@ -189,13 +200,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
-            SubmitButton(
-              label: l10n.authSignInButton,
-              loadingLabel: l10n.authSigningIn,
-              isLoading: isLoading,
-              onPressed: () => unawaited(_login()),
+            MotionReveal(
+              order: 1,
+              child: SubmitButton(
+                label: l10n.authSignInButton,
+                loadingLabel: l10n.authSigningIn,
+                isLoading: isLoading,
+                onPressed: () => unawaited(_login()),
+              ),
             ),
-            const SocialSignInSection(),
+            const MotionReveal(
+              order: 2,
+              child: SocialSignInSection(),
+            ),
             const SizedBox(height: AppSpacing.md),
             Wrap(
               alignment: WrapAlignment.center,

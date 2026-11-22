@@ -11,6 +11,7 @@ import 'package:sirati/features/ats_scanner/presentation/analysis_result/score_t
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/models/cv_analysis.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
+import 'package:sirati/shared/widgets/app_segmented_control.dart';
 import 'package:sirati/shared/widgets/app_snack_bar.dart';
 import 'package:sirati/shared/widgets/language_toggle.dart';
 import 'package:sirati/shared/widgets/loading/ai_progress_overlay.dart';
@@ -36,50 +37,52 @@ class AnalysisResultScreen extends ConsumerWidget {
   /// was one: the ring then shows how far the score moved.
   final int? previousScore;
 
+  /// The docked "generate improved CV" bar.
+  static const actionBarKey = ValueKey('analysis-result-action-bar');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final english = AppLocale.isEnglish(context);
     final isGenerating = ref.watch(improvedCvControllerProvider(analysis.id));
+    final l = AppLocalizations.of(context);
+    final c = context.sirati;
 
     return Directionality(
       textDirection: AppLocale.direction(context),
       child: DefaultTabController(
         length: 2,
+        // Zero under reduced motion: the page jumps with the thumb.
+        animationDuration: AppSegmentedTabBar.pageDuration(context),
         child: Scaffold(
-          backgroundColor: context.sirati.background,
           appBar: AppBar(
-            title: Text(AppLocalizations.of(context).atsResultsTitle),
+            title: Text(l.atsResultsTitle),
             toolbarHeight:
                 56 * MediaQuery.textScalerOf(context).scale(1).clamp(1, 2),
             actions: const [LanguageToggle()],
-            bottom: TabBar(
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
+            bottom: AppSegmentedTabBar(
+              textScaler: MediaQuery.textScalerOf(context),
               tabs: [
-                Tab(
-                  height: 56,
-                  text: AppLocalizations.of(context).atsTabScore,
-                ),
-                Tab(
-                    height: 56,
-                    text: AppLocalizations.of(context).atsTabRecommendations),
+                AppSegmentedTab(label: l.atsTabScore),
+                AppSegmentedTab(label: l.atsTabRecommendations),
               ],
             ),
           ),
-          bottomNavigationBar: SafeArea(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-              decoration: BoxDecoration(
-                color: context.sirati.surface,
-                border: Border(top: BorderSide(color: context.sirati.border)),
-                boxShadow: context.sirati.softShadow,
-              ),
-              child: SubmitButton(
-                label: AppLocalizations.of(context).atsGenerateImprovedCv,
-                loadingLabel: AppLocalizations.of(context).atsGenerating,
-                isLoading: isGenerating,
-                icon: Icons.auto_awesome_rounded,
-                onPressed: isGenerating ? null : () => _generate(context, ref),
+          // The page colour, no edge: the button carries its own fill.
+          bottomNavigationBar: ColoredBox(
+            key: AnalysisResultScreen.actionBarKey,
+            color: c.pageBackground,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                child: SubmitButton(
+                  label: l.atsGenerateImprovedCv,
+                  loadingLabel: l.atsGenerating,
+                  isLoading: isGenerating,
+                  icon: Icons.auto_awesome_rounded,
+                  onPressed:
+                      isGenerating ? null : () => _generate(context, ref),
+                ),
               ),
             ),
           ),
@@ -121,13 +124,18 @@ class AnalysisResultScreen extends ConsumerWidget {
     final outcome = await controller.generate(
       isCancelled: () => progress.isCancelled,
     );
-    await progress.dismiss();
-    if (!context.mounted) return;
+    if (!context.mounted) {
+      await progress.dismiss();
+      return;
+    }
 
     switch (outcome) {
       case ImprovedCvCancelled():
+        await progress.dismiss();
         return;
       case ImprovedCvFailed(:final error):
+        await progress.dismiss();
+        if (!context.mounted) return;
         if (error is ApiException) {
           AppSnackBar.fromException(context, error);
         } else {
@@ -142,6 +150,11 @@ class AnalysisResultScreen extends ConsumerWidget {
           :final aiFailed,
           :final aiError,
         ):
+        if (!timedOut && !aiFailed) await progress.complete();
+        if (!context.mounted) {
+          await progress.dismiss();
+          return;
+        }
         if (timedOut) {
           AppSnackBar.warning(
             context,
@@ -156,7 +169,16 @@ class AnalysisResultScreen extends ConsumerWidget {
             onAction: () => _generate(context, ref),
           );
         }
-        unawaited(Navigator.of(context).pushNamed(AppRoutes.cv(generatedCvId)));
+        final navigator = Navigator.of(context);
+        final route = navigator.widget.onGenerateRoute?.call(
+          RouteSettings(name: AppRoutes.cv(generatedCvId)),
+        );
+        if (route != null) {
+          unawaited(progress.handOff<dynamic>(navigator, route));
+        } else {
+          await progress.dismiss();
+          unawaited(navigator.pushNamed(AppRoutes.cv(generatedCvId)));
+        }
     }
   }
 }

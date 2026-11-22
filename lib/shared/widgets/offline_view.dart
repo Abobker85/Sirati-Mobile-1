@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import 'package:sirati/l10n/generated/app_localizations.dart';
 import 'package:sirati/shared/theme/app_theme.dart';
-import 'package:sirati/shared/widgets/components/brand_gradient_button.dart';
+import 'package:sirati/shared/widgets/app_list_section.dart';
+import 'package:sirati/shared/widgets/components/app_button.dart';
+import 'package:sirati/shared/widgets/empty_state.dart';
+import 'package:sirati/shared/widgets/motion.dart';
 
 /// Full-screen "no internet" state with retry and automatic recovery.
 ///
@@ -42,6 +46,10 @@ class OfflineView extends StatefulWidget {
 class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
   Timer? _timer;
   int _attempt = 0;
+
+  /// Reconnect attempts started while this screen showed; each one makes
+  /// the offline badge send out a ping.
+  int _pings = 0;
   bool _checking = false;
   bool _foreground = true;
 
@@ -93,7 +101,10 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
     final onRetry = widget.onRetry;
     if (onRetry == null || _checking) return;
     _timer?.cancel();
-    setState(() => _checking = true);
+    setState(() {
+      _checking = true;
+      _pings++;
+    });
     try {
       await onRetry();
     } catch (_) {
@@ -123,17 +134,22 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
     final c = context.sirati;
     final l10n = AppLocalizations.of(context);
 
+    // A floating bar laid over the body (the dashboard tab bar) reaches the
+    // body only as bottom padding, so the actions must end above it.
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(
-          horizontal: _sidePadding(constraints.maxWidth),
-          vertical: AppSpacing.lg,
+        padding: EdgeInsets.fromLTRB(
+          _sidePadding(constraints.maxWidth),
+          AppSpacing.lg,
+          _sidePadding(constraints.maxWidth),
+          AppSpacing.lg + bottomInset,
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(
             minHeight: constraints.hasBoundedHeight
-                ? constraints.maxHeight - AppSpacing.lg * 2
+                ? constraints.maxHeight - AppSpacing.lg * 2 - bottomInset
                 : 0,
           ),
           child: IntrinsicHeight(
@@ -141,7 +157,14 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Spacer(),
-                const ExcludeSemantics(child: _OfflineIllustration()),
+                // The same grey circle as every other state; it pings on each
+                // reconnect attempt.
+                Center(
+                  child: OfflinePing(
+                    trigger: _pings,
+                    child: const AppStateIcon(Icons.wifi_off_rounded),
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 if (widget.onRetry != null) ...[
                   Center(
@@ -160,7 +183,7 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
                     textAlign: TextAlign.center,
                     style: AppTypography.of(
                       context,
-                      AppTypography.headlineLg,
+                      AppTypography.titleLg,
                       color: c.textPrimary,
                     ),
                   ),
@@ -185,39 +208,21 @@ class _OfflineViewState extends State<OfflineView> with WidgetsBindingObserver {
                 ),
                 const Spacer(),
                 const SizedBox(height: AppSpacing.lg),
+                // The teal primary capsule, like the error-state retry; it
+                // keeps its fill and shows a spinner while checking.
                 if (widget.onRetry != null)
-                  BrandGradientButton(
+                  AppButton(
                     label: l10n.retry,
-                    loadingLabel: l10n.sharedOfflineChecking,
                     icon: Icons.refresh_rounded,
                     isLoading: _checking,
                     onPressed: _retryNow,
                   ),
                 if (widget.onOpenSaved != null) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  OutlinedButton.icon(
+                  AppButton.secondary(
+                    label: l10n.sharedOfflineOpenSaved,
+                    icon: Icons.folder_open_rounded,
                     onPressed: widget.onOpenSaved,
-                    icon: Icon(
-                      Icons.folder_open_rounded,
-                      size: 20,
-                      color: c.primaryInk,
-                    ),
-                    label: Text(
-                      l10n.sharedOfflineOpenSaved,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.of(
-                        context,
-                        AppTypography.titleSm,
-                        color: c.primaryInk,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(AppTouchTarget.min),
-                      side: BorderSide(color: c.borderStrong),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.lgAll,
-                      ),
-                    ),
                   ),
                 ],
               ],
@@ -270,7 +275,7 @@ class _LivePillState extends State<_LivePill>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final reduce = MotionSettings.reduce(context);
     if (reduce) {
       _pulse.stop();
       _pulse.value = 0;
@@ -354,177 +359,147 @@ class _LivePillState extends State<_LivePill>
   }
 }
 
+/// Connection tips as an inset-grouped section: a grey header over one
+/// card of rows, on the page's own fill (no border, no warm tint).
 class _TipsCard extends StatelessWidget {
   final String title;
   final List<String> tips;
 
   const _TipsCard({required this.title, required this.tips});
 
+  static const double _iconSize = 20;
+
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: c.surfaceLow,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: c.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.tips_and_updates_outlined,
-                size: 20,
-                color: c.primaryInk,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTypography.of(
-                    context,
-                    AppTypography.titleSm,
-                    color: c.textPrimary,
+    return AppListSection(
+      header: title,
+      separatorIndent:
+          AppListSection.rowPadding + _iconSize + AppListTileMetrics.gap,
+      children: [
+        for (final tip in tips)
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppListSection.rowPadding,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(
+                    Icons.check_circle_outline_rounded,
+                    size: _iconSize,
+                    color: c.onSuccessContainer,
                   ),
                 ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: Divider(height: 1, color: c.border),
-          ),
-          for (final tip in tips)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.xxs),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Icon(
-                      Icons.check_circle_outline_rounded,
-                      size: 18,
-                      color: c.onSuccessContainer,
+                const SizedBox(width: AppListTileMetrics.gap),
+                Expanded(
+                  child: Text(
+                    tip,
+                    textAlign: TextAlign.start,
+                    style: AppTypography.of(
+                      context,
+                      AppTypography.bodyMd,
+                      color: c.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      tip,
-                      style: AppTypography.of(
-                        context,
-                        AppTypography.bodySm,
-                        color: c.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
 
-/// CV page with a "wifi off" badge on soft tinted shapes. Widgets only, so
-/// it follows the theme in dark mode.
-class _OfflineIllustration extends StatelessWidget {
-  const _OfflineIllustration();
+/// Each time [trigger] changes (a reconnect attempt starts), a ring goes
+/// out from [child] and the child hops once, as if calling out. It moves
+/// only on an attempt, never by itself; with reduced motion it is still.
+class OfflinePing extends StatefulWidget {
+  const OfflinePing({super.key, required this.trigger, required this.child});
+
+  final int trigger;
+  final Widget child;
+
+  /// One ping.
+  static const duration = Duration(milliseconds: 900);
+
+  /// Key of the ring, for tests.
+  static const ringKey = ValueKey('offline-ping-ring');
+
+  @override
+  State<OfflinePing> createState() => _OfflinePingState();
+}
+
+class _OfflinePingState extends State<OfflinePing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: OfflinePing.duration);
+
+  @override
+  void didUpdateWidget(OfflinePing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.trigger != oldWidget.trigger &&
+        !MotionSettings.reduce(context)) {
+      _c.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.sirati;
-    Widget line(double width, Color color) => Container(
-          width: width,
-          height: 6,
-          margin: const EdgeInsets.only(top: 8),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        );
-
-    return Center(
-      child: SizedBox(
-        width: 200,
-        height: 168,
-        child: Stack(
+    return AnimatedBuilder(
+      animation: _c,
+      child: widget.child,
+      builder: (context, child) {
+        final t = _c.value;
+        final moving = _c.isAnimating && t > 0 && t < 1;
+        final ring = Curves.easeOut.transform(t);
+        // A small hop at the start of the ping.
+        final hop = math.sin(math.pi * (t / .4).clamp(0.0, 1.0));
+        return Stack(
+          clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: c.tealLight,
-              ),
-            ),
-            PositionedDirectional(
-              end: 22,
-              top: 30,
-              child: Transform.rotate(
-                angle: 0.12,
-                child: Container(
-                  width: 80,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: c.surfaceContainer,
-                    borderRadius: AppRadius.mdAll,
+            // Positioned and unconstrained: the ring grows past the badge
+            // without resizing the Stack, so nothing around it moves.
+            if (moving)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: OverflowBox(
+                    maxWidth: double.infinity,
+                    maxHeight: double.infinity,
+                    child: Container(
+                      key: OfflinePing.ringKey,
+                      width: AppStateIcon.size + 44 * ring,
+                      height: AppStateIcon.size + 44 * ring,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color:
+                              c.brandSurface.withValues(alpha: .5 * (1 - ring)),
+                          width: 3 * (1 - ring) + .5,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Container(
-              width: 96,
-              height: 124,
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: c.surface,
-                borderRadius: AppRadius.mdAll,
-                border: Border.all(color: c.border),
-                boxShadow: c.softShadow,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  line(36, c.primaryInk),
-                  line(56, c.border),
-                  const SizedBox(height: 4),
-                  line(60, c.teal.withValues(alpha: 0.45)),
-                  line(46, c.teal.withValues(alpha: 0.45)),
-                  line(52, c.border),
-                ],
-              ),
-            ),
-            PositionedDirectional(
-              end: 34,
-              bottom: 8,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [c.brandSurface, c.brandSurfaceDeep],
-                  ),
-                  border: Border.all(color: c.surface, width: 4),
-                  boxShadow: c.softShadow,
-                ),
-                child: Icon(
-                  Icons.wifi_off_rounded,
-                  size: 26,
-                  color: c.onBrandSurface,
-                ),
-              ),
+            Transform.translate(
+              offset: Offset(0, moving ? -5 * hop : 0),
+              child: child,
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
