@@ -369,7 +369,8 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
           ar: _titleArCtrl.text.trim(),
           en: _titleEnCtrl.text.trim(),
         ),
-        location: LocalizedText(ar: _locationArCtrl.text.trim()),
+        location:
+            widget.entry.location.copyWith(ar: _locationArCtrl.text.trim()),
         startDate: start.isEmpty ? null : start,
         endDate: end?.isEmpty ?? true ? null : end,
         isCurrent: _isCurrent,
@@ -680,8 +681,9 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
           ar: _instArCtrl.text.trim(),
           en: _instEnCtrl.text.trim(),
         ),
-        degree: LocalizedText(ar: _degreeArCtrl.text.trim()),
-        fieldOfStudy: LocalizedText(ar: _fieldArCtrl.text.trim()),
+        degree: widget.entry.degree.copyWith(ar: _degreeArCtrl.text.trim()),
+        fieldOfStudy:
+            widget.entry.fieldOfStudy.copyWith(ar: _fieldArCtrl.text.trim()),
         startDate: start.isEmpty ? null : start,
         graduationDate: grad.isEmpty ? null : grad,
       ),

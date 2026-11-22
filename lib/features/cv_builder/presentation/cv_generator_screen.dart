@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -121,6 +122,7 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
       _suppressDirtyTracking = false;
     }
 
+    _lastTexts = [for (final c in _fields.all) c.text];
     _fields.addListener(_onAnyFieldChanged);
 
     unawaited(
@@ -165,8 +167,15 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
     _suppressDirtyTracking = false;
   }
 
+  /// Field texts at the last notification; controllers also notify on
+  /// caret/selection moves (e.g. just focusing a field), which are not edits.
+  List<String> _lastTexts = const [];
+
   void _onAnyFieldChanged() {
-    if (!_suppressDirtyTracking) _markDirty();
+    final texts = [for (final c in _fields.all) c.text];
+    final changed = !listEquals(texts, _lastTexts);
+    _lastTexts = texts;
+    if (changed && !_suppressDirtyTracking) _markDirty();
   }
 
   void _markDirty() {
@@ -321,6 +330,8 @@ class _CvGeneratorScreenState extends ConsumerState<CvGeneratorScreen> {
           AnalyticsService.logWizardAbandoned(step: _step, dirty: _isDirty),
         );
         _autosaveTimer?.cancel();
+        // Discarded: dispose must not flush the form back as a draft.
+        _isDirty = false;
         await _draftStore.clear();
         if (mounted) Navigator.of(context).pop();
       case WizardExitAction.saveDraft:

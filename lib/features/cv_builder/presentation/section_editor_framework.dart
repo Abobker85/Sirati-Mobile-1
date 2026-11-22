@@ -366,9 +366,13 @@ class ReorderableEntryList<T> extends StatelessWidget {
         final item = items[index];
         final isFirst = index == 0;
         final isLast = index == items.length - 1;
+        final body = itemBuilder(context, item, index);
 
         return KeyedSubtree(
-          key: ValueKey(item.hashCode ^ index),
+          // Key the row by the entry's stable identity (the tile's own key,
+          // e.g. its id), not by hashCode: copyWith on every keystroke makes
+          // a new object, and a changed key would rebuild the row's state.
+          key: ValueKey<Object>(body.key ?? index),
           // Flat rows: entries are told apart by a hairline, not a box.
           child: Container(
             padding: EdgeInsets.only(
@@ -424,7 +428,7 @@ class ReorderableEntryList<T> extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 // Entry Body
                 Expanded(
-                  child: itemBuilder(context, item, index),
+                  child: body,
                 ),
                 // Delete button
                 if (onDelete != null)

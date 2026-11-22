@@ -608,8 +608,9 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: widget.cert.name.ar);
-    _authorityCtrl = TextEditingController(text: widget.cert.authority.ar);
+    _nameCtrl = TextEditingController(text: _editableText(widget.cert.name));
+    _authorityCtrl =
+        TextEditingController(text: _editableText(widget.cert.authority));
     _issueDateCtrl = TextEditingController(text: widget.cert.issueDate ?? '');
     _expiryDateCtrl = TextEditingController(text: widget.cert.expiryDate ?? '');
     _noExpiry = widget.cert.expiryDate == null;
@@ -625,10 +626,15 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
   }
 
   void _notify() {
+    // Built directly: copyWith can't clear a field, and both dates can be
+    // cleared here (empty year, no-expiry ticked).
     widget.onChanged(
-      widget.cert.copyWith(
-        name: LocalizedText(ar: _nameCtrl.text.trim()),
-        authority: LocalizedText(ar: _authorityCtrl.text.trim()),
+      Certification(
+        id: widget.cert.id,
+        narrative: widget.cert.narrative,
+        name: _withEditedText(widget.cert.name, _nameCtrl.text.trim()),
+        authority:
+            _withEditedText(widget.cert.authority, _authorityCtrl.text.trim()),
         issueDate: _issueDateCtrl.text.trim().isEmpty
             ? null
             : _issueDateCtrl.text.trim(),
@@ -724,6 +730,17 @@ class _CertificationEntryTileState extends State<_CertificationEntryTile> {
   }
 }
 
+/// The variant a single-field editor shows: Arabic, or English when only
+/// English is stored.
+String _editableText(LocalizedText t) =>
+    t.ar.isEmpty && t.en.isNotEmpty ? t.en : t.ar;
+
+/// Writes [text] into the variant [_editableText] showed, keeping the other.
+LocalizedText _withEditedText(LocalizedText original, String text) =>
+    original.ar.isEmpty && original.en.isNotEmpty
+        ? original.copyWith(en: text)
+        : original.copyWith(ar: text);
+
 // ── Project Tile ────────────────────────────────────────────────────────────
 
 class _ProjectEntryTile extends StatefulWidget {
@@ -751,10 +768,12 @@ class _ProjectEntryTileState extends State<_ProjectEntryTile> {
   @override
   void initState() {
     super.initState();
-    _titleCtrl = TextEditingController(text: widget.project.title.ar);
-    _roleCtrl = TextEditingController(text: widget.project.role.ar);
+    _titleCtrl =
+        TextEditingController(text: _editableText(widget.project.title));
+    _roleCtrl = TextEditingController(text: _editableText(widget.project.role));
     _urlCtrl = TextEditingController(text: widget.project.url ?? '');
-    _descCtrl = TextEditingController(text: widget.project.narrative.ar);
+    _descCtrl =
+        TextEditingController(text: _editableText(widget.project.narrative));
   }
 
   @override
@@ -779,11 +798,14 @@ class _ProjectEntryTileState extends State<_ProjectEntryTile> {
     setState(() {});
 
     widget.onChanged(
-      widget.project.copyWith(
-        title: LocalizedText(ar: _titleCtrl.text.trim()),
-        role: LocalizedText(ar: _roleCtrl.text.trim()),
+      // Not copyWith: copyWith(url: null) keeps the old URL.
+      Project(
+        id: widget.project.id,
+        title: _withEditedText(widget.project.title, _titleCtrl.text.trim()),
+        role: _withEditedText(widget.project.role, _roleCtrl.text.trim()),
         url: urlText.isEmpty ? null : urlText,
-        narrative: LocalizedText(ar: _descCtrl.text.trim()),
+        narrative:
+            _withEditedText(widget.project.narrative, _descCtrl.text.trim()),
       ),
     );
   }
