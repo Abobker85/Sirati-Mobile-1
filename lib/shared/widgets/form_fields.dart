@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:sirati/core/utils/bidi_text_utils.dart';
 
@@ -584,6 +585,13 @@ class _AppTextFormFieldState extends FormFieldState<String> {
   bool _ticked = false;
   bool _showTick = false;
 
+  /// Set when a focused edit fails the validator, until the next frame. A
+  /// Form that autovalidates (onUserInteraction after a submit) re-runs
+  /// [validate] on every keystroke; while this is set and the field keeps
+  /// focus, that call keeps the current error state instead (forgive while
+  /// editing). Blur and submit validate normally.
+  bool _holdFormValidation = false;
+
   void _becameValid(String text) {
     widget.onBecameValid?.call(text);
     if (!widget.tickWhenValid || _ticked || text.trim().isEmpty) return;
@@ -686,12 +694,24 @@ class _AppTextFormFieldState extends FormFieldState<String> {
     }
     // After first blur: re-validate as the user types (onUserInteraction).
     // Before first blur: stay quiet — no error flash while typing.
-    final forceAlways = widget._autovalidateMode == AutovalidateMode.always;
+    // An explicit always / onUserInteraction (e.g. after a submit) validates
+    // live without waiting for a blur.
+    final forceAlways = widget._autovalidateMode == AutovalidateMode.always ||
+        widget._autovalidateMode == AutovalidateMode.onUserInteraction;
+    // Forgive while editing: as long as the field has focus, typing may
+    // clear an error but never add one or change its message. New errors
+    // show on blur or submit (the rules themselves are unchanged). This also
+    // holds back a parent Form that autovalidates on user interaction.
+    final failsWhileFocused =
+        _focusNode.hasFocus && widget.validator?.call(value) != null;
+    if (failsWhileFocused) {
+      _holdFormValidation = true;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _holdFormValidation = false,
+      );
+    }
     if (_blurredOnce || forceAlways) {
-      // Forgive while editing: as long as the field has focus, typing may
-      // clear an error but never add one or change its message. New errors
-      // show on blur or submit (the rules themselves are unchanged).
-      if (_focusNode.hasFocus && widget.validator?.call(value) != null) {
+      if (failsWhileFocused) {
         _wasValid = false;
         return;
       }
@@ -703,6 +723,18 @@ class _AppTextFormFieldState extends FormFieldState<String> {
         _wasValid = false;
       }
     }
+  }
+
+  @override
+  bool validate() {
+    // Only the Form's autovalidation, which runs while the Form builds, is
+    // held. A submit's Form.validate() (an event handler) always validates.
+    final inBuild = SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks;
+    if (_holdFormValidation && _focusNode.hasFocus && inBuild) {
+      return !hasError;
+    }
+    return super.validate();
   }
 
   @override
@@ -722,7 +754,10 @@ class _AppTextFormFieldState extends FormFieldState<String> {
   bool _isShowingSuccess() {
     if (!widget.showSuccessWhenValid) return false;
     // Never show success chrome before the first blur (unless always mode).
-    final forceAlways = widget._autovalidateMode == AutovalidateMode.always;
+    // An explicit always / onUserInteraction (e.g. after a submit) validates
+    // live without waiting for a blur.
+    final forceAlways = widget._autovalidateMode == AutovalidateMode.always ||
+        widget._autovalidateMode == AutovalidateMode.onUserInteraction;
     if (!_blurredOnce && !forceAlways) return false;
     final text = value?.trim() ?? '';
     if (text.isEmpty) return false;
@@ -757,6 +792,9 @@ class _AppTextFormFieldState extends FormFieldState<String> {
   }) {
     final showError = hasError && (errorText?.isNotEmpty ?? false);
     final showSuccess = !showError && _isShowingSuccess();
+    // An error or success mark that takes the suffix slot ends the tick for
+    // good: it plays once per field and must not replay when the slot frees.
+    if (showError || showSuccess) _showTick = false;
 
     final c = context.sirati;
     final base = PageSurface.fillOf(context);

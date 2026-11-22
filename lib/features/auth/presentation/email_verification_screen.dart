@@ -82,7 +82,8 @@ class _EmailVerificationScreenState
   Future<void> _verify() async {
     // One request at a time: auto-submit, keyboard Done, the button and the
     // snackbar Retry can all fire.
-    if (_isLoading) return;
+    // A snackbar Retry can outlive this screen.
+    if (_isLoading || !mounted) return;
     final l10n = AppLocalizations.of(context);
     setState(() => _submitted = true);
     if (!validateAndReveal(_formKey)) {

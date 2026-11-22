@@ -73,6 +73,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
         ));
       }
     } catch (error) {
+      if (!mounted) return;
       _reportError(
         error,
         AppLocalizations.of(context).cvOpenFailed,
@@ -293,7 +294,7 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
             ),
             builder: (data) => Stack(
               children: [
-                NotificationListener<ScrollNotification>(
+                NotificationListener<Notification>(
                   onNotification: _onListScroll,
                   child: SiratiRefreshIndicator(
                     onRefresh: _refresh,
@@ -325,9 +326,16 @@ class _MyCvsScreenState extends ConsumerState<MyCvsScreen> {
     super.dispose();
   }
 
-  bool _onListScroll(ScrollNotification notification) {
-    if (notification.depth == 0 && notification.metrics.axis == Axis.vertical) {
-      _slim.value = notification.metrics.pixels > MyCvsSlimHeader.showAfter;
+  // ScrollMetricsNotification also fires when a fresh list first lays out
+  // (language switch, Retry), so the slim state follows the new offset.
+  bool _onListScroll(Notification notification) {
+    final (depth, metrics) = switch (notification) {
+      ScrollNotification n => (n.depth, n.metrics),
+      ScrollMetricsNotification n => (n.depth, n.metrics),
+      _ => (-1, null),
+    };
+    if (depth == 0 && metrics != null && metrics.axis == Axis.vertical) {
+      _slim.value = metrics.pixels > MyCvsSlimHeader.showAfter;
     }
     return false;
   }

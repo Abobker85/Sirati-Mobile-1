@@ -514,12 +514,12 @@ class _OnboardingHeroState extends State<_OnboardingHero>
   @override
   void didUpdateWidget(covariant _OnboardingHero oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.active && !oldWidget.active) {
-      if (MotionSettings.reduce(context)) {
-        _controller.value = 1;
-        return;
-      }
-      _controller.forward(from: 0);
+    // A page becomes active at the swipe midpoint, while its hero is already
+    // on screen; replaying the entrance there would blank it mid-drag. The
+    // page view's own parallax/scale carries the transition, so only make
+    // sure the hero ends fully shown.
+    if (widget.active && !oldWidget.active && !_controller.isAnimating) {
+      _controller.value = 1;
     }
   }
 

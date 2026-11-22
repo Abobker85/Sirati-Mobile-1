@@ -91,6 +91,8 @@ class AppEmptyState extends StatelessWidget {
                 children: [
                   Text(
                     title,
+                    // The panel's own label already announces the title.
+                    semanticsLabel: '',
                     textAlign: TextAlign.center,
                     style: AppTypography.of(
                       context,

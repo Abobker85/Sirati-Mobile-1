@@ -784,10 +784,10 @@ class _NextStepCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
+            // chevron_right_rounded has matchTextDirection: Icon mirrors it
+            // in RTL itself, so it points to the trailing edge either way.
             Icon(
-              Directionality.of(context) == TextDirection.rtl
-                  ? Icons.chevron_left_rounded
-                  : Icons.chevron_right_rounded,
+              Icons.chevron_right_rounded,
               color: c.textSecondary,
             ),
           ],

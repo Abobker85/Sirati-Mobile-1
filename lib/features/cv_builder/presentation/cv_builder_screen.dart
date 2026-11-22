@@ -45,6 +45,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
   CvBuilderController? _controller;
   TabController? _tabController;
   late final AnimationController _previewController;
+  late final CurvedAnimation _previewCurve;
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -88,6 +89,11 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
       duration: MotionDurations.medium,
       value: 0,
     );
+    _previewCurve = CurvedAnimation(
+      parent: _previewController,
+      curve: MotionCurves.enter,
+      reverseCurve: MotionCurves.exit,
+    );
     unawaited(_initializeDocument());
   }
 
@@ -123,6 +129,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _previewCurve.dispose();
     _previewController.dispose();
     _tabController?.dispose();
     final controller = _controller;
@@ -466,11 +473,7 @@ class _CvBuilderScreenState extends ConsumerState<CvBuilderScreen>
                     ],
                   );
                 }
-                final curved = CurvedAnimation(
-                  parent: _previewController,
-                  curve: MotionCurves.enter,
-                  reverseCurve: MotionCurves.exit,
-                );
+                final curved = _previewCurve;
                 return AnimatedBuilder(
                   animation: curved,
                   child: editor,

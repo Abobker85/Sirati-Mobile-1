@@ -42,9 +42,29 @@ class ExperienceEducationEditor extends StatefulWidget {
     final s = start.trim();
     final e = end.trim();
 
-    // Chronological order verification via typed date parsing
-    final comparison = ArabicDateFormat.compareCvDates(s, e);
-    if (comparison > 0) {
+    // Only complete dates (with a four-digit year) can be compared; input
+    // still being typed, or a word such as "Present", is never "before".
+    final fourDigitYear = RegExp(r'\d{4}');
+    if (!fourDigitYear.hasMatch(ArabicDateFormat.toWesternDigits(s)) ||
+        !fourDigitYear.hasMatch(ArabicDateFormat.toWesternDigits(e))) {
+      return null;
+    }
+    final startDate = ArabicDateFormat.parseCvDate(s);
+    final endDate = ArabicDateFormat.parseCvDate(e);
+    if (startDate == null || endDate == null) return null;
+
+    // A year-only end covers the whole year: compare against its last month.
+    var endScore = endDate.year * 12 + endDate.month;
+    final yearOnly =
+        RegExp(r'^(\d{4})$').firstMatch(ArabicDateFormat.toWesternDigits(e));
+    if (yearOnly != null) {
+      final y = int.parse(yearOnly.group(1)!);
+      final last = y < 1700
+          ? ArabicDateFormat.hijriToGregorian(y, 12, 29)
+          : (year: y, month: 12, day: 31);
+      endScore = last.year * 12 + last.month;
+    }
+    if (startDate.year * 12 + startDate.month > endScore) {
       return l10n.endDateBeforeStart;
     }
     return null;
@@ -218,10 +238,12 @@ class _ExperienceEducationEditorState extends State<ExperienceEducationEditor> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    AppButton.text(
-                      label: l10n.sortChronologically,
-                      icon: Icons.sort,
-                      onPressed: _sortExperienceChronologically,
+                    Flexible(
+                      child: AppButton.text(
+                        label: l10n.sortChronologically,
+                        icon: Icons.sort,
+                        onPressed: _sortExperienceChronologically,
+                      ),
                     ),
                   ],
                 ),
@@ -260,10 +282,12 @@ class _ExperienceEducationEditorState extends State<ExperienceEducationEditor> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    AppButton.text(
-                      label: l10n.sortChronologically,
-                      icon: Icons.sort,
-                      onPressed: _sortEducationChronologically,
+                    Flexible(
+                      child: AppButton.text(
+                        label: l10n.sortChronologically,
+                        icon: Icons.sort,
+                        onPressed: _sortEducationChronologically,
+                      ),
                     ),
                   ],
                 ),
@@ -463,7 +487,7 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
                 child: AppInput(
                   controller: _startCtrl,
                   label: l10n.startDateLabel,
-                  hint: l10n.startDateHint,
+                  hint: _calendarHint(l10n.startDateHint, widget.calendarMode),
                   textDirection: TextDirection.ltr,
                   onChanged: (_) => _notifyChange(),
                 ),
@@ -490,7 +514,8 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
                     : AppInput(
                         controller: _endCtrl,
                         label: l10n.endDateLabel,
-                        hint: l10n.endDateHint,
+                        hint: _calendarHint(
+                            l10n.endDateHint, widget.calendarMode),
                         textDirection: TextDirection.ltr,
                         onChanged: (_) => _notifyChange(),
                       ),
@@ -505,11 +530,13 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
               children: [
                 Icon(Icons.error_outline, size: 14, color: c.error),
                 const SizedBox(width: AppSpacing.xxs),
-                Text(
-                  _dateError!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: c.error,
-                      ),
+                Expanded(
+                  child: Text(
+                    _dateError!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: c.error,
+                        ),
+                  ),
                 ),
               ],
             ),
@@ -527,11 +554,13 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
                   _notifyChange();
                 },
               ),
-              Text(
-                l10n.currentlyWorking,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: c.textPrimary,
-                    ),
+              Expanded(
+                child: Text(
+                  l10n.currentlyWorking,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: c.textPrimary,
+                      ),
+                ),
               ),
             ],
           ),
@@ -764,7 +793,8 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
                 child: AppInput(
                   controller: _gradCtrl,
                   label: l10n.graduationYearLabel,
-                  hint: l10n.graduationYearHint,
+                  hint: _calendarHint(
+                      l10n.graduationYearHint, widget.calendarMode),
                   textDirection: TextDirection.ltr,
                   onChanged: (_) => _notifyChange(),
                 ),
@@ -778,11 +808,13 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
               children: [
                 Icon(Icons.error_outline, size: 14, color: c.error),
                 const SizedBox(width: AppSpacing.xxs),
-                Text(
-                  _dateError!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: c.error,
-                      ),
+                Expanded(
+                  child: Text(
+                    _dateError!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: c.error,
+                        ),
+                  ),
                 ),
               ],
             ),
@@ -791,4 +823,18 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
       ),
     );
   }
+}
+
+/// Rewrites the Gregorian example dates in a date-field hint as Hijri when
+/// the Hijri calendar is selected, so the guidance matches the chosen mode.
+String _calendarHint(String hint, String calendarMode) {
+  if (calendarMode != 'hijri') return hint;
+  return hint.replaceAllMapped(RegExp(r'(\d{4})(?:-(\d{1,2}))?'), (m) {
+    final month = m.group(2);
+    final h = ArabicDateFormat.gregorianToHijri(
+        DateTime(int.parse(m.group(1)!), int.parse(month ?? '1'), 15));
+    return month == null
+        ? '${h.year}'
+        : '${h.year}-${h.month.toString().padLeft(2, '0')}';
+  });
 }

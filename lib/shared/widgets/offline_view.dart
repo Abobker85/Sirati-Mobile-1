@@ -469,17 +469,26 @@ class _OfflinePingState extends State<OfflinePing>
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
+            // Positioned and unconstrained: the ring grows past the badge
+            // without resizing the Stack, so nothing around it moves.
             if (moving)
-              IgnorePointer(
-                child: Container(
-                  key: OfflinePing.ringKey,
-                  width: AppStateIcon.size + 44 * ring,
-                  height: AppStateIcon.size + 44 * ring,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: c.brandSurface.withValues(alpha: .5 * (1 - ring)),
-                      width: 3 * (1 - ring) + .5,
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: OverflowBox(
+                    maxWidth: double.infinity,
+                    maxHeight: double.infinity,
+                    child: Container(
+                      key: OfflinePing.ringKey,
+                      width: AppStateIcon.size + 44 * ring,
+                      height: AppStateIcon.size + 44 * ring,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color:
+                              c.brandSurface.withValues(alpha: .5 * (1 - ring)),
+                          width: 3 * (1 - ring) + .5,
+                        ),
+                      ),
                     ),
                   ),
                 ),

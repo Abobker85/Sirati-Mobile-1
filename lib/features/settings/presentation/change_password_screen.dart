@@ -29,6 +29,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   final _newCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   final _confirmKey = GlobalKey<FormFieldState<String>>();
+  final _newKey = GlobalKey<FormFieldState<String>>();
 
   bool _obscureCurrent = true;
   bool _obscureNew = true;
@@ -152,12 +153,15 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 if (_currentFieldError != null) {
                   setState(() => _currentFieldError = null);
                 }
+                // A stale "same as current" must clear when current changes.
+                if (_submitted) _newKey.currentState?.validate();
               },
             ),
             const SizedBox(height: AppSpacing.lg),
             _Label(l10n.authNewPasswordLabel),
             const SizedBox(height: AppSpacing.xs + 2),
             AppTextFormField(
+              key: _newKey,
               controller: _newCtrl,
               autovalidateMode: auto,
               obscureText: _obscureNew,

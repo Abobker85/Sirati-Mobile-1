@@ -162,7 +162,8 @@ class _CvAnalysisScreenState extends ConsumerState<CvAnalysisScreen>
   }
 
   Future<void> _submit() async {
-    if (_isLoading) return;
+    // A snackbar Retry can outlive this form.
+    if (_isLoading || !mounted) return;
     final english = AppLocale.isEnglish(context);
     setState(() => _submitted = true);
     if (!validateAndReveal(_formKey)) {

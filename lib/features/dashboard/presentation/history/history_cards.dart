@@ -239,12 +239,17 @@ class GeneratedCvHistoryCard extends StatelessWidget {
             ),
             child: Center(
               child: ExcludeSemantics(
-                child: Text(
-                  BidiText.avatarInitial(name,
-                      fallback:
-                          AppLocalizations.of(context).avatarFallbackInitial),
-                  style: AppTypography.of(context, AppTypography.titleLg,
-                      color: c.primaryInk),
+                // Large text scales would overflow the fixed box and clip
+                // the letter; shrink it to fit instead.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    BidiText.avatarInitial(name,
+                        fallback:
+                            AppLocalizations.of(context).avatarFallbackInitial),
+                    style: AppTypography.of(context, AppTypography.titleLg,
+                        color: c.primaryInk),
+                  ),
                 ),
               ),
             ),

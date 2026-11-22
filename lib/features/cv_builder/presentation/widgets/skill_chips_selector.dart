@@ -221,19 +221,22 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                     if (_skills.isNotEmpty)
                       TextButton(
                         style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(48, 48),
+                          tapTargetSize: MaterialTapTargetSize.padded,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                           // Destructive copy ink: AA on every fill.
                           foregroundColor: c.onErrorContainer,
                         ),
-                        onPressed: () {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _justAddedKeys.clear();
-                            _skills.clear();
-                            _syncToController();
-                          });
-                        },
+                        onPressed: widget.enabled
+                            ? () {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _justAddedKeys.clear();
+                                  _skills.clear();
+                                  _syncToController();
+                                });
+                              }
+                            : null,
                         child: Text(
                           AppLocalizations.of(context).cvSkillsClearAll,
                           style: const TextStyle(
@@ -274,9 +277,7 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                               key: ValueKey('selected_skill_$index'),
                               padding: const EdgeInsetsDirectional.only(
                                 start: 10,
-                                end: 4,
-                                top: 4,
-                                bottom: 4,
+                                end: 0,
                               ),
                               // Selected: a filled teal capsule, no outline.
                               decoration: BoxDecoration(
@@ -302,19 +303,20 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  InkWell(
-                                    onTap: widget.enabled
+                                  IconButton(
+                                    onPressed: widget.enabled
                                         ? () => _removeSkill(index)
                                         : null,
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(3),
-                                      child: Icon(
-                                        Icons.close_rounded,
-                                        size: 15,
-                                        color: c.primaryInk,
-                                      ),
+                                    tooltip:
+                                        '${AppLocalizations.of(context).cvEntryRemove} $skill',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 48,
+                                      minHeight: 48,
                                     ),
+                                    iconSize: 15,
+                                    color: c.primaryInk,
+                                    icon: const Icon(Icons.close_rounded),
                                   ),
                                 ],
                               ),

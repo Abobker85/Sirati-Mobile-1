@@ -149,7 +149,6 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
 
   String? _phoneError;
   String? _emailError;
-  bool _includePhoto = false;
 
   @override
   void initState() {
@@ -384,7 +383,7 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // ── ATS Photo Warning & Toggle ────────────────────────────────
+              // ── ATS Photo Warning ─────────────────────────────────────────
               EditorGroupCard(
                 key: PersonalDetailsEditor.photoCardKey,
                 child: Column(
@@ -406,11 +405,6 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
                                 ),
                           ),
                         ),
-                        Switch(
-                          value: _includePhoto,
-                          onChanged: (val) =>
-                              setState(() => _includePhoto = val),
-                        ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xs),
@@ -421,38 +415,6 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
                             height: 1.4,
                           ),
                     ),
-                    if (_includePhoto) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: c.primaryLight,
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.account_circle,
-                                color: c.primaryInk, size: 24),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: Text(
-                                l10n.atsPhotoEnabled,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: c.primaryInk,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),

@@ -464,8 +464,11 @@ class MotionStepSwitcher extends StatelessWidget {
         alignment: Alignment.topCenter,
         children: [
           // The step on its way out cannot be tapped (no double send).
-          for (final old in previous) IgnorePointer(child: old),
-          if (current != null) current,
+          // Same wrapper (keyed like its child) in both roles, so a step
+          // that stops being current keeps its element and state.
+          for (final old in previous) IgnorePointer(key: old.key, child: old),
+          if (current != null)
+            IgnorePointer(key: current.key, ignoring: false, child: current),
         ],
       ),
       transitionBuilder: (child, animation) {
