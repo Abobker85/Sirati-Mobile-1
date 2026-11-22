@@ -318,10 +318,12 @@ class ErrorShakeState extends State<ErrorShake>
         child: widget.child,
         builder: (context, child) {
           final t = _shake.value;
-          if (t == 0 || t == 1) return child!;
-          // Two soft swings, the second smaller.
-          final dx =
-              ErrorShake.amplitude * math.sin(2 * 2 * math.pi * t) * (1 - t);
+          // Two soft swings, the second smaller. At rest dx is 0 but the
+          // wrapper stays, so the field below keeps its state (text, focus)
+          // when a shake starts and ends.
+          final dx = (t == 0 || t == 1)
+              ? 0.0
+              : ErrorShake.amplitude * math.sin(2 * 2 * math.pi * t) * (1 - t);
           return Transform.translate(offset: Offset(dx, 0), child: child);
         },
       );
@@ -663,6 +665,8 @@ class _MotionSegmentButton<T> extends StatelessWidget {
       enabled: enabled,
       label: option.label,
       excludeSemantics: true,
+      // The InkWell's own tap action is excluded above; expose it here.
+      onTap: enabled ? onTap : null,
       child: InkWell(
         key: option.key,
         borderRadius: AppRadius.mdAll,

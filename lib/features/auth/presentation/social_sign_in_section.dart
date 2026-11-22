@@ -64,6 +64,9 @@ class SocialSignInSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final social = ref.watch(socialSignInOptionsProvider);
+    // Keeps the auto-dispose controller alive while a provider's picker is
+    // open; Register doesn't watch it otherwise.
+    ref.watch(loginControllerProvider);
     if (!social.any) return const SizedBox.shrink();
     final l10n = AppLocalizations.of(context);
 

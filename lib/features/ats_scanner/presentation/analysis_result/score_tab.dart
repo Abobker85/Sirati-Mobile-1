@@ -60,7 +60,7 @@ class ScoreTab extends StatelessWidget {
           Text(
             AppLocalizations.of(context).atsResultKeywordSummary(
               analysis.keywordsFound.length,
-              analysis.keywordsMissing.length,
+              analysis.keywordsMissing.length + analysis.hidden.keywordsMissing,
             ),
             key: const ValueKey('ats-result-keyword-summary'),
             style: TextStyle(color: context.sirati.textSecondary),
@@ -89,6 +89,8 @@ class ScoreTab extends StatelessWidget {
                 _KeywordsCard(
                   found: analysis.keywordsFound,
                   missing: analysis.keywordsMissing,
+                  missingTotal: analysis.keywordsMissing.length +
+                      analysis.hidden.keywordsMissing,
                   english: english,
                 ),
               ],
@@ -495,11 +497,13 @@ class _KeywordsCard extends StatelessWidget {
   const _KeywordsCard({
     required this.found,
     required this.missing,
+    this.missingTotal,
     required this.english,
   });
 
   final List<String> found;
   final List<String> missing;
+  final int? missingTotal;
   final bool english;
 
   @override
@@ -523,8 +527,8 @@ class _KeywordsCard extends StatelessWidget {
           _KeywordHeading(
             dotColor: c.red,
             textColor: c.red,
-            label:
-                AppLocalizations.of(context).atsKeywordsMissing(missing.length),
+            label: AppLocalizations.of(context)
+                .atsKeywordsMissing(missingTotal ?? missing.length),
           ),
           const SizedBox(height: 10),
           KeywordGroup(keywords: missing, found: false, english: english),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sirati/core/utils/bidi_text_utils.dart';
+import 'package:sirati/core/utils/latin_digits.dart';
 import 'package:sirati/features/cv_builder/controllers/cv_builder_controller.dart';
 import 'package:sirati/features/cv_builder/presentation/section_editor_framework.dart';
 import 'package:sirati/l10n/generated/app_localizations.dart';
@@ -21,7 +22,7 @@ class ContactValidators {
   /// - International E.164: +[country code][number]
   static String? validateGulfPhone(String? value, AppLocalizations l10n) {
     if (value == null || value.trim().isEmpty) return null;
-    final cleaned = value.replaceAll(RegExp(r'[\s\-()]'), '');
+    final cleaned = latinDigits(value).replaceAll(RegExp(r'[\s\-()]'), '');
 
     // Gulf country patterns with explicit country codes
     final ksaMobile = RegExp(r'^(\+966|00966|966)0?5[0-9]{8}$');
@@ -186,7 +187,7 @@ class _PersonalDetailsEditorState extends State<PersonalDetailsEditor> {
   }
 
   void _onPersonalChanged() {
-    final phoneText = _phoneCtrl.text.trim();
+    final phoneText = latinDigits(_phoneCtrl.text.trim());
     final emailText = _emailCtrl.text.trim();
 
     final l10n = AppLocalizations.of(context);

@@ -205,6 +205,9 @@ class _NavButton extends StatelessWidget {
       // One choice out of the group of tabs.
       inMutuallyExclusiveGroup: true,
       label: '$label\n$tabLabel',
+      // excludeSemantics drops the child's tap action; declare it here so
+      // assistive tech can activate the tab.
+      onTap: onTap,
       excludeSemantics: true,
       // Its icon squishes under the finger and bounces back.
       child: IconPressListener(

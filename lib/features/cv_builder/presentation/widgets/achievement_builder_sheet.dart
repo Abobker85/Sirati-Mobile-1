@@ -156,9 +156,20 @@ class _AchievementBuilderSheetState extends State<AchievementBuilderSheet> {
         buffer.write('، $metric');
       }
       if (method.isNotEmpty) {
-        if (!method.startsWith('عبر') &&
-            !method.startsWith('من خلال') &&
-            !method.startsWith('باستخدام')) {
+        // A method already led by a means phrase keeps it; "عبر" before
+        // another preposition reads "via by ...".
+        const meansPhrases = [
+          'عبر',
+          'من خلال',
+          'باستخدام',
+          'بتطبيق',
+          'بواسطة',
+          'بالاعتماد',
+          'بالاستعانة',
+          'بفضل',
+          'بالتعاون',
+        ];
+        if (!meansPhrases.any(method.startsWith)) {
           buffer.write('، عبر $method');
         } else {
           buffer.write('، $method');

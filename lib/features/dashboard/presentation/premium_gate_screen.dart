@@ -104,7 +104,7 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       _notice = null;
     });
     _GateNotice? notice;
-    var active = false;
+    bool? active;
     var stale = false;
     try {
       final user = await ref.read(authApiServiceProvider).me();
@@ -119,7 +119,8 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
     setState(() {
       _refreshing = false;
       if (stale) return;
-      _activated = active;
+      // A failed check proves nothing: keep what was last known.
+      if (active != null) _activated = active;
       _notice = notice;
     });
   }
@@ -310,7 +311,11 @@ class _PremiumGateScreenState extends ConsumerState<PremiumGateScreen> {
       final flowUser = _flowUser;
       if (flowUser != null) {
         if (next != flowUser) _resetFlow();
-      } else if (next != previous && (_activated != null || _notice != null)) {
+      } else if (previous != null &&
+          next != previous &&
+          (_activated != null || _notice != null)) {
+        // A session that only became known (null -> id) is not a change,
+        // as in _refreshStillCurrent.
         // A refresh result shown for the previous account is not this one's.
         _resetFlow();
       }

@@ -173,9 +173,8 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
     // Categories grouping — keys stay as stored identifiers.
     final categories = <String, List<MapEntry<int, Skill>>>{};
     for (var i = 0; i < _skills.length; i++) {
-      final cat = _skills[i].category.ar.isEmpty
-          ? SkillStorageKeys.general
-          : _skills[i].category.ar;
+      final stored = _storedKey(_skills[i].category, SkillStorageKeys.english);
+      final cat = stored.isEmpty ? SkillStorageKeys.general : stored;
       categories.putIfAbsent(cat, () => []).add(MapEntry(i, _skills[i]));
     }
 
@@ -221,12 +220,14 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
                 children: entry.value.map((pair) {
                   final index = pair.key;
                   final skill = pair.value;
-                  final levelLabel = skill.level.ar.isEmpty
+                  final level =
+                      _storedKey(skill.level, SkillStorageKeys.english);
+                  final levelLabel = level.isEmpty
                       ? ''
-                      : ' (${_skillLevelLabel(l10n, skill.level.ar)})';
+                      : ' (${_skillLevelLabel(l10n, level)})';
                   return Chip(
                     label: Text(
-                      '${skill.name.ar}$levelLabel',
+                      '${_editableText(skill.name)}$levelLabel',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: c.textPrimary,
                           ),
@@ -279,7 +280,7 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
                 final lang = e.value;
                 return Chip(
                   label: Text(
-                    '${lang.name.ar} - ${_languageLevelLabel(l10n, lang.level.ar)}',
+                    '${_editableText(lang.name)} - ${_languageLevelLabel(l10n, _storedKey(lang.level, LanguageLevelStorageKeys.english))}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: c.textPrimary,
                         ),
@@ -360,6 +361,16 @@ class _SkillsLanguagesEditorState extends State<SkillsLanguagesEditor> {
 }
 
 // ── Display mapping (storage key → locale label) ────────────────────────────
+
+/// The stored schema key of [t]: `ar`, or the key whose English export
+/// string is `en` when only English is stored (else `en` as-is).
+String _storedKey(LocalizedText t, Map<String, String> english) {
+  if (t.ar.isNotEmpty || t.en.isEmpty) return t.ar;
+  for (final e in english.entries) {
+    if (e.value == t.en) return e.key;
+  }
+  return t.en;
+}
 
 String _skillLevelLabel(AppLocalizations l10n, String stored) {
   return switch (stored) {

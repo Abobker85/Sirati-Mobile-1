@@ -318,7 +318,14 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
   late final TextEditingController _endCtrl;
   late bool _isCurrent;
 
-  String? _dateError;
+  // Derived from the current field values so it survives tile rebuilds and
+  // is shown for entries that are already invalid when loaded.
+  String? get _dateError => ExperienceEducationEditor.validateDateRange(
+        _startCtrl.text.trim(),
+        _isCurrent ? null : _endCtrl.text.trim(),
+        _isCurrent,
+        AppLocalizations.of(context),
+      );
 
   @override
   void initState() {
@@ -348,16 +355,8 @@ class _ExperienceEntryTileState extends State<_ExperienceEntryTile> {
   void _notifyChange({List<LocalizedText>? bullets}) {
     final start = _startCtrl.text.trim();
     final end = _isCurrent ? null : _endCtrl.text.trim();
-    final l10n = AppLocalizations.of(context);
 
-    setState(() {
-      _dateError = ExperienceEducationEditor.validateDateRange(
-        start,
-        end,
-        _isCurrent,
-        l10n,
-      );
-    });
+    setState(() {});
 
     widget.onChanged(
       widget.entry.copyWith(
@@ -637,7 +636,14 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
   late final TextEditingController _startCtrl;
   late final TextEditingController _gradCtrl;
 
-  String? _dateError;
+  // Derived from the current field values so it survives tile rebuilds and
+  // is shown for entries that are already invalid when loaded.
+  String? get _dateError => ExperienceEducationEditor.validateDateRange(
+        _startCtrl.text.trim(),
+        _gradCtrl.text.trim(),
+        false,
+        AppLocalizations.of(context),
+      );
 
   @override
   void initState() {
@@ -664,16 +670,8 @@ class _EducationEntryTileState extends State<_EducationEntryTile> {
   void _notifyChange() {
     final start = _startCtrl.text.trim();
     final grad = _gradCtrl.text.trim();
-    final l10n = AppLocalizations.of(context);
 
-    setState(() {
-      _dateError = ExperienceEducationEditor.validateDateRange(
-        start,
-        grad,
-        false,
-        l10n,
-      );
-    });
+    setState(() {});
 
     widget.onChanged(
       widget.entry.copyWith(

@@ -154,10 +154,11 @@ class _SkillChipsSelectorState extends State<SkillChipsSelector> {
     // every suggestion is editable in the admin.
     if (widget.allJobTitles.isNotEmpty && title.isNotEmpty) {
       for (final jt in widget.allJobTitles) {
-        if (jt.nameAr.toLowerCase().contains(title) ||
-            jt.nameEn.toLowerCase().contains(title) ||
-            title.contains(jt.nameAr.toLowerCase()) ||
-            title.contains(jt.nameEn.toLowerCase())) {
+        final ar = jt.nameAr.trim().toLowerCase();
+        final en = jt.nameEn.trim().toLowerCase();
+        // An empty name is contained in every title; never match on it.
+        if ((ar.isNotEmpty && (ar.contains(title) || title.contains(ar))) ||
+            (en.isNotEmpty && (en.contains(title) || title.contains(en)))) {
           for (final kw in jt.keywords) {
             final t = kw.trim();
             if (t.isNotEmpty && !seen.contains(t.toLowerCase())) {

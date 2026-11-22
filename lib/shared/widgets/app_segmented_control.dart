@@ -496,7 +496,7 @@ class SegmentLayout {
       direction: Directionality.of(context),
       style: defaults.style.merge(
         AppTypography.of(context, AppSegmentedControl.labelToken)
-            .copyWith(fontWeight: FontWeight.w600),
+            .copyWith(fontWeight: FontWeight.w600, letterSpacing: 0),
       ),
       locale: Localizations.maybeLocaleOf(context),
       heightBehavior: defaults.textHeightBehavior ??
@@ -524,7 +524,7 @@ class SegmentLayout {
         direction: arabic ? TextDirection.rtl : TextDirection.ltr,
         style: AppSegmentedControl.labelToken
             .resolve(arabic: arabic)
-            .copyWith(fontWeight: FontWeight.w600),
+            .copyWith(fontWeight: FontWeight.w600, letterSpacing: 0),
       );
       height = math.max(height, layout.height);
     }
@@ -883,7 +883,11 @@ class _Segment extends StatelessWidget {
       context,
       AppSegmentedControl.labelToken,
       color: ink,
-    ).copyWith(fontWeight: inked ? FontWeight.w600 : FontWeight.w400);
+    ).copyWith(
+      fontWeight: inked ? FontWeight.w600 : FontWeight.w400,
+      // Fixed, not inherited, so the measured layout matches the paint.
+      letterSpacing: 0,
+    );
     // Never truncated: [SegmentLayout] gives the label room on one line, or
     // a taller segment to wrap into.
     Widget label = Text(
